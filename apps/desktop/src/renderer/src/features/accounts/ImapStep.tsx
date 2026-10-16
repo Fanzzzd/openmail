@@ -268,7 +268,17 @@ export function ImapStep({
       {addError && <ErrorLine text={addError} />}
       <Actions>
         <PrimaryButton disabled={!ready || add.waiting}>
-          {add.waiting ? <Trans>Verifying…</Trans> : <Trans>Add</Trans>}
+          {add.waiting ? (
+            signInAgain ? (
+              <Trans>Signing in…</Trans>
+            ) : (
+              <Trans>Verifying…</Trans>
+            )
+          ) : signInAgain ? (
+            <Trans>Sign in</Trans>
+          ) : (
+            <Trans>Add</Trans>
+          )}
         </PrimaryButton>
       </Actions>
     </form>

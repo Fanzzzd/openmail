@@ -370,6 +370,9 @@ it("Sign in again on an IMAP row opens on that account with its servers filled i
   const password = dialog.querySelector('input[type="password"]');
   expect(password).toHaveProperty("value", "");
   await waitFor(() => expect(document.activeElement).toBe(password));
+  // The submit button says what it does here: sign in, not add.
+  expect(within(dialog).getByRole("button", { name: "Sign in" })).toBeTruthy();
+  expect(within(dialog).queryByRole("button", { name: "Add" })).toBeNull();
   await audit();
 });
 

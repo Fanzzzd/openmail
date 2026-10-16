@@ -6893,6 +6893,10 @@ msgstr "在邮件上方显示从中找到的日期和邀请，核对后可以加
 msgid "Sidebar"
 msgstr "侧栏"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sign in"
+msgstr "登录"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6986,6 +6990,10 @@ msgstr "已登录为 {login}。这台 Mac 是 {device}。"
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "已登录。可以关闭这个页面，回到 OpenMail。"
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Signing in…"
+msgstr "正在登录…"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"

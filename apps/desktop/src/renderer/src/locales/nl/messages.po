@@ -6883,6 +6883,10 @@ msgstr "Toont datums en uitnodigingen uit een bericht erboven, zodat je ze na co
 msgid "Sidebar"
 msgstr "Zijbalk"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sign in"
+msgstr "Inloggen"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6976,6 +6980,10 @@ msgstr "Ingelogd als {login}. Deze Mac is {device}."
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Ingelogd. Je kunt deze pagina sluiten en teruggaan naar OpenMail."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Signing in…"
+msgstr "Bezig met inloggen…"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"

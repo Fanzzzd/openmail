@@ -6883,6 +6883,10 @@ msgstr "Nad zprávou zobrazí nalezená data a pozvánky, abyste je po kontrole 
 msgid "Sidebar"
 msgstr "Postranní panel"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sign in"
+msgstr "Přihlásit se"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6976,6 +6980,10 @@ msgstr "Přihlášeno jako {login}. Tento Mac je {device}."
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Přihlášení proběhlo. Tuto stránku můžete zavřít a vrátit se do OpenMail."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Signing in…"
+msgstr "Přihlašování…"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"

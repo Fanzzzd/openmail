@@ -6883,6 +6883,10 @@ msgstr "Mostra sopra un messaggio le date e gli inviti trovati, così puoi aggiu
 msgid "Sidebar"
 msgstr "Barra laterale"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sign in"
+msgstr "Accedi"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6976,6 +6980,10 @@ msgstr "Accesso effettuato come {login}. Questo Mac è {device}."
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Accesso effettuato. Puoi chiudere questa pagina e tornare a OpenMail."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Signing in…"
+msgstr "Accesso in corso…"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"

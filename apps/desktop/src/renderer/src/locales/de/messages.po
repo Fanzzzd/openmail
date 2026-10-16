@@ -6883,6 +6883,10 @@ msgstr "Zeigt Daten und Einladungen aus einer Nachricht darüber an, damit du si
 msgid "Sidebar"
 msgstr "Seitenleiste"
 
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Sign in"
+msgstr "Anmelden"
+
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6976,6 +6980,10 @@ msgstr "Angemeldet als {login}. Dieser Mac ist {device}."
 #: src/main/app/native-i18n.ts
 msgid "Signed in. You can close this page and go back to OpenMail."
 msgstr "Angemeldet. Du kannst diese Seite schließen und zu OpenMail zurückkehren."
+
+#: src/renderer/src/features/accounts/ImapStep.tsx
+msgid "Signing in…"
+msgstr "Anmeldung läuft…"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Size comparison"
