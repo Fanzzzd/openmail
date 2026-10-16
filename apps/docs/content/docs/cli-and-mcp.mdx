@@ -54,7 +54,7 @@ A date or size operator without a valid value, such as `newer:foo` or `larger:xy
 
 Commands log only errors on stderr; `--log-level warn` or `--log-level debug` shows more. A failed command prints `error: …` on stderr, with a `hint: …` line when there is a next step, and exits with code 1, or 2 for a usage error. With `--json`, stdout also gets `{"message": "...", "code": "...", "hint": "..."}`, so a script can read every failure the same way. stdout always holds one JSON document. `openmail sync --json` prints `{"results": [...]}`, one result per account. When an account fails, the same object also gets `"error": {"message": "...", "code": "...", "hint": "..."}` and the command exits with code 1.
 
-`openmail search --server` exits 1 with code `provider_unavailable` only when the server search failed for every account. When some accounts answer, it exits 0 and lists the failed accounts under `errors`. When every account fails, `--json` stdout holds the page plus an `error` object. `openmail sync` stops at the first account that meets a busy database and fails with code `busy`; the remaining accounts do not sync.
+`openmail search --server` exits 1 only when the server search failed for every account: with code `auth_failed` and a sign-in command per account when every failed account needs to sign in again, otherwise with code `provider_unavailable`. When some accounts answer, it exits 0 and lists the failed accounts under `errors`. When every account fails, `--json` stdout holds the page plus an `error` object. `openmail sync` stops at the first account that meets a busy database and fails with code `busy`; the remaining accounts do not sync.
 
 The `code` values of the CLI's own failures:
 
@@ -132,7 +132,7 @@ Each card's **Set up by hand** section has the exact command or JSON for your Ma
 - A packaged app: `/Applications/OpenMail.app/Contents/MacOS/OpenMail --mcp`
 - The CLI from source: `openmail mcp` after you [link the command](#install-the-command), or `node /absolute/path/to/openmail/packages/cli/dist/cli.js mcp`. Use an absolute path, because MCP clients start the server from their own working directory.
 
-Add `--allow-writes` for the [write tools](#ai-suggestions). The server logs warnings and errors on stderr, and the AI app keeps that as the server's log. Add `--log-level debug` to log more, or `--log-level error` to log less. Every server command above takes both flags.
+Add `--allow-writes` for the [write tools](#ai-suggestions). The server logs warnings and errors on stderr, and the AI app keeps that as the server's log. Add `--log-level debug` to log more, or `--log-level error` to log less. Every server command above takes both flags. An unknown level exits with code 2 and lists the valid levels.
 
 Claude Code:
 
