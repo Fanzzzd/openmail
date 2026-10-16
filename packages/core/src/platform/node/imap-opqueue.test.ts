@@ -24,6 +24,7 @@ import {
   Providers,
   type ProviderAdapter,
   type ProviderPushContext,
+  type SendPreparation,
 } from "../../providers/adapter.js";
 import { Secrets } from "../auth.js";
 import { Store } from "../../store/service.js";
@@ -496,6 +497,44 @@ it.effect("Node Sent append reconnects once and recovers", () =>
       assert.isUndefined(result);
       assert.strictEqual(vi.spyOn(c, "append").mock.calls.length, 2);
       assert.strictEqual(opens(), 2);
+    }),
+  ),
+);
+/** A send preparation whose `holdsAccepted` answers from `holds` in order, then false. */
+function heldPreparation(holds: readonly boolean[]) {
+  const answers = [...holds];
+  const accepted: Uint8Array[] = [];
+  return {
+    accepted,
+    preparation: {
+      load: Effect.succeed(Option.none()),
+      save: () => Effect.void,
+      accepted: (raw: Uint8Array) => Effect.sync(() => void accepted.push(raw)),
+      holdsAccepted: Effect.sync(() => answers.shift() ?? false),
+    } satisfies SendPreparation,
+  };
+}
+it.effect("Node send skips the Sent APPEND when a retry took the accepted record", () =>
+  fixture((a, c) =>
+    Effect.gen(function* () {
+      const append = vi.spyOn(c, "append");
+      const { accepted, preparation } = heldPreparation([false]);
+      const result = yield* a.send(account, message, Option.none(), preparation);
+      assert.isUndefined(result);
+      assert.strictEqual(accepted.length, 1);
+      assert.strictEqual(append.mock.calls.length, 0);
+    }),
+  ),
+);
+it.effect("Node send skips the Sent APPEND retry when a retry took the record meanwhile", () =>
+  fixture((a, c, _t, opens) =>
+    Effect.gen(function* () {
+      const append = vi.spyOn(c, "append").mockResolvedValue(false);
+      const { preparation } = heldPreparation([true, false]);
+      const result = yield* a.send(account, message, Option.none(), preparation);
+      assert.isUndefined(result);
+      assert.strictEqual(append.mock.calls.length, 1);
+      assert.strictEqual(opens(), 1);
     }),
   ),
 );
