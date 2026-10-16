@@ -44,8 +44,10 @@ export function searchFieldParts(value: string): {
 /**
  * The search the local list runs while the field is typed in. The last word stays unfinished
  * until a typed space ends it, so a plain word of two or more characters matches as a prefix:
- * `asy` finds "async". Enter keeps the word a prefix (see `submittedSearchText`). Operators,
- * quotes, exclusions and expressions run as typed, as do server, saved and CLI searches.
+ * `asy` finds "async". Enter keeps the word a prefix (see `submittedSearchText`). A word that
+ * starts with a digit may contain colons, so `10:0` finds "10:00"; operator keys start with a
+ * letter. Operators, quotes, exclusions and expressions run as typed, as do server, saved and
+ * CLI searches.
  */
 export function liveSearchText(value: string): string {
   const search = value.trim();
@@ -54,7 +56,7 @@ export function liveSearchText(value: string): string {
     Array.from(pending).length < 2 ||
     !search.endsWith(pending) ||
     hasSearchExpression(value) ||
-    !/^[\p{L}\p{N}][^\s":*()]*$/u.test(pending)
+    !/^(?:[\p{L}\p{N}][^\s":*()]*|\p{N}[^\s"*()]*)$/u.test(pending)
   )
     return search;
   return `${search}*`;

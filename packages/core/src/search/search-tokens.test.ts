@@ -370,6 +370,41 @@ it("keeps an unfinished word a prefix after Enter, and chips a finished operator
     assert.strictEqual(submittedSearchText(typed), `${typed.trimEnd()} `);
 });
 
+it("runs a time as typed so far as a prefix", () => {
+  // `10:` and `10:0` used to search the words 10 and 0, which find nothing, before `10:00`.
+  assert.strictEqual(liveSearchText("standup 10:"), "standup 10:*");
+  assert.strictEqual(liveSearchText("standup 10:0"), "standup 10:0*");
+  assert.strictEqual(liveSearchText("10:00"), "10:00*");
+  assert.strictEqual(liveSearchText("10:00 "), "10:00");
+  // A letter before the colon may be an operator key, so it still runs as typed.
+  for (const typed of ["re:", "https://ex", "from:al"])
+    assert.strictEqual(liveSearchText(typed), typed);
+});
+
+it.effect("finds a time from each typed prefix of it", () =>
+  Effect.gen(function* () {
+    const store = yield* Store;
+    const account = yield* store.upsertAccount("gmail", "me@gmail.com");
+    yield* store.upsertMessage(account.id, {
+      ...incoming("standup", ""),
+      bodyText: "standup moves to 10:00 tomorrow",
+    });
+    yield* store.upsertMessage(account.id, {
+      ...incoming("other", ""),
+      bodyText: "lunch at 12:30",
+    });
+    while (!(yield* store.backfillWordIndex(100)).ready) {
+      /* drain */
+    }
+    for (const typed of ["10:", "10:0", "10:00"])
+      assert.deepStrictEqual(
+        (yield* store.listThreads({ search: liveSearchText(typed) })).map((row) => row.id),
+        [`${account.id}/standup`],
+        typed,
+      );
+  }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
+);
+
 it("treats a colon outside a known operator as text", () => {
   const typed = "design 10:00 re: https://example.com/a review from:elena ";
   assert.deepStrictEqual(searchFieldParts(typed), {
