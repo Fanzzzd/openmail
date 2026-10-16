@@ -419,6 +419,23 @@ describe("reading", () => {
     }
   });
 
+  test("list refuses --before together with --cursor", async () => {
+    const page = await object(["list", "--limit", "2"]);
+    const { code, stdout } = await openmail([
+      "list",
+      "--before",
+      "1",
+      "--cursor",
+      String(page[CURSOR]),
+      "--json",
+    ]);
+    expect(code).toBe(1);
+    expect(errorObject(stdout)).toMatchObject({
+      code: "invalid_input",
+      hint: expect.stringContaining("Drop --before"),
+    });
+  });
+
   test("list --json pages with the cursor it prints", async () => {
     const first = await object(["list", "--limit", "2"]);
     expect(Object.keys(first)).toEqual(["threads", CURSOR]);

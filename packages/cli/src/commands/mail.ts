@@ -227,6 +227,11 @@ const list = Command.make(
     json: jsonFlag,
   },
   Effect.fn(function* (o) {
+    if (Option.isSome(o.before) && Option.isSome(o.cursor))
+      return yield* fail("--before and --cursor cannot be used together.", {
+        code: "invalid_input",
+        hint: "Drop --before; --cursor already carries the page boundary.",
+      });
     const mailbox = yield* Mailbox;
     const accountIds = yield* accountScope(
       o.account,
