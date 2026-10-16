@@ -9,7 +9,7 @@ import { MIGRATIONS } from "../db/migrations.js";
 import { fakeServer } from "../platform/node/fake-provider.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { Store } from "../store/service.js";
-import { waitLimit } from "../../test-support/test-time.js";
+import { scaledMs, waitLimit } from "../../test-support/test-time.js";
 
 const outgoing = {
   to: [{ name: "", address: "bob@example.com" }],
@@ -46,7 +46,8 @@ it("a held discard survives a crash: due ones go at start, pending ones resume a
           yield* mailbox.compose.saveDraft({ id, accountId: account.id, message: outgoing });
         // What a crash inside the window leaves: the stored deadline, no worker.
         yield* store.holdDraftDiscard("draft:due", Date.now() - 1000);
-        yield* store.holdDraftDiscard("draft:soon", Date.now() + 300);
+        // Still pending when the second runtime opens, even on a loaded machine.
+        yield* store.holdDraftDiscard("draft:soon", Date.now() + scaledMs(3000));
         yield* store.holdDraftDiscard("draft:undo", Date.now() + 60_000);
       }),
     );
