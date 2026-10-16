@@ -333,6 +333,38 @@ test.concurrent(
   scaledMs(40_000),
 );
 
+// A write lock that blocked the switch to WAL on first open printed `error: Failed to configure
+// database`, which reads like a bug, and the client only saw the server close.
+test.concurrent(
+  "a start blocked by another process's write lock says so on stderr",
+  async ({ expect, onTestFinished }) => {
+    const directory = await home(onTestFinished, "openmail-mcp-busy-");
+    await seedAttachmentMail(directory);
+    const holder = new DatabaseSync(join(directory, "mail.db"));
+    holder.exec("PRAGMA journal_mode=DELETE");
+    holder.exec("BEGIN IMMEDIATE");
+    onTestFinished(() => {
+      holder.exec("ROLLBACK");
+      holder.close();
+    });
+    const failed = await run(
+      process.execPath,
+      ["--disable-warning=ExperimentalWarning", "dist/mcp.js"],
+      { env: { ...process.env, OPENMAIL_HOME: directory } },
+    ).then(
+      () => null,
+      (error: unknown) => error,
+    );
+    expect(failed).toMatchObject({
+      code: 1,
+      stdout: "",
+      stderr:
+        "error: Another OpenMail process is writing to the local database.\nhint: Run the command again in a few seconds.\n",
+    });
+  },
+  scaledMs(30_000),
+);
+
 test.concurrent(
   "activity the server could not write before it closed is logged as dropped",
   async ({ expect, onTestFinished }) => {

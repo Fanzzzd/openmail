@@ -1,5 +1,6 @@
 /** How the CLI reports a failure: one line on stderr, and with --json an object on stdout. */
 
+import { isLockTimeout } from "@openmail/core";
 import { CliError } from "effect/cli";
 import { dataFolderError } from "./data-folder-error.js";
 
@@ -42,6 +43,19 @@ const plain = (message: string, code: string, hint: string): Explained => ({
   stdoutDone: false,
 });
 
+/**
+ * Another process kept the write lock past the busy timeout, such as the app writing a large
+ * sync batch, or the lock blocked the switch to WAL on first open. Waiting is the fix.
+ */
+export const BUSY: Explained = {
+  ...plain(
+    "Another OpenMail process is writing to the local database.",
+    "busy",
+    "Run the command again in a few seconds.",
+  ),
+  showHint: true,
+};
+
 /** The report for a failure. A usage error is already on stderr; the report says so. */
 export function explainError(error: unknown, home: string | undefined): Explained {
   if (CliError.isCliError(error))
@@ -53,6 +67,7 @@ export function explainError(error: unknown, home: string | undefined): Explaine
   }
   const tag = field(error, "_tag");
   if (tag === undefined) return plain(error.message, "failed", HELP_HINT);
+  if (tag === "DatabaseBusy" || isLockTimeout(error)) return BUSY;
   const folder = dataFolderError(error, home);
   if (folder)
     return plain(folder, "data_folder", "Set OPENMAIL_HOME to a folder you can write to.");
@@ -121,6 +136,7 @@ export function explainError(error: unknown, home: string | undefined): Explaine
 
 /** The report for a defect: a database from a newer OpenMail, a file another process locked. */
 export function explainDefect(defect: unknown, home: string | undefined): Explained {
+  if (isLockTimeout(defect)) return BUSY;
   const folder = dataFolderError(defect, home);
   return folder
     ? plain(folder, "data_folder", "Set OPENMAIL_HOME to a folder you can write to.")

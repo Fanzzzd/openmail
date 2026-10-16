@@ -775,6 +775,33 @@ describe("errors", () => {
     );
   });
 
+  // Another process holding the write lock printed `error: Failed to configure database` (or
+  // `Failed to execute statement`) after the 5 s busy timeout, with code internal and a hint to
+  // report a bug. In rollback-journal mode, as demo-data leaves mail.db, the switch to WAL on
+  // open needs the lock.
+  test("a write lock another process keeps is code busy with a retry hint", async () => {
+    const home = join(seeded, "busy");
+    await cp(join(seeded, "home"), home, { recursive: true });
+    const holder = new DatabaseSync(join(home, "mail.db"));
+    holder.exec("PRAGMA journal_mode=DELETE");
+    holder.exec("BEGIN IMMEDIATE");
+    try {
+      const { code, stdout, stderr } = await openmail(["list", "--json"], home);
+      expect(code).toBe(1);
+      expect(errorObject(stdout)).toEqual({
+        message: "Another OpenMail process is writing to the local database.",
+        code: "busy",
+        hint: "Run the command again in a few seconds.",
+      });
+      expect(stderr).toBe(
+        "error: Another OpenMail process is writing to the local database.\nhint: Run the command again in a few seconds.\n",
+      );
+    } finally {
+      holder.exec("ROLLBACK");
+      holder.close();
+    }
+  });
+
   test("agent write mode cannot be changed from the CLI", async () => {
     const { code, stderr } = await openmail(["agents", "write-mode", "allow"]);
     expect(code).toBe(1);

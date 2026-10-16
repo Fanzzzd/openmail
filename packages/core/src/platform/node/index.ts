@@ -24,6 +24,7 @@ export {
   MAILBOXES,
   MENU_BAR_MAIL_LIMIT,
   MailToolError,
+  isLockTimeout,
   MailToolkit,
   MailToolkitLayer,
   Mailbox,
