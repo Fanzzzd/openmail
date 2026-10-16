@@ -39,6 +39,7 @@ CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC
 | 常见词／CJK／运算符搜索，50 个会话     |     150 |
 | 稀有一／二字 CJK 搜索，50 个会话       |      50 |
 | 常见一／二字 CJK 搜索，50 个会话       |     150 |
+| 输入中的前缀与双词搜索，50 个会话      |     150 |
 | has:drive／has:spreadsheet，50 个会话  |      50 |
 | 消息文本＋OCR 搜索，200 个会话         |     100 |
 | OCR 摘要搜索，50 个会话                |     150 |
@@ -107,6 +108,23 @@ trigram 索引只能回答三个字符以上的词。一或两个汉字、假名
 ```sh
 OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK common 2-char,search CJK common 1-char" pnpm test:perf
 ```
+
+## 输入中的前缀搜索
+
+搜索框把未输完的最后一个词按前缀查，`we` 查 `we*`。`messages_words` 没有 prefix 索引，前缀查询每次都要合并所有以它开头的词的 doclist。常见词沿日期索引逐行检查时，原先对每行开一次 MATCH，前缀因此每行都合并一遍：100k fixture 上 `pe*` 查 200 个会话要 5.9 s。现在行内检查的前缀改为判断 rowid 是否在该前缀的命中集合里，集合每条语句只建一次，写成 `(m.rowid+0) IN (...)`，不让集合驱动日期遍历。精确词仍逐行探测。几个普通词同时出现在多数邮件里时（如 `weekly de*`），`planTextPage` 也探测组合 MATCH，超过 2048 条命中就走日期遍历；原先从第一个词的全部 rowid 出发，`weekly delivery` 查 50 个会话要 67 s。附件命中的代表邮件按 id 查，不再沿用常见词的日期遍历。
+
+2026-10-16 在同一份数据上测，Node v24.21.0，五次热运行中位数，一分钟负载 4–15，单位 ms，50 个会话：
+
+| 测量                 | 修复前 | 修复后 |
+| -------------------- | -----: | -----: |
+| fixture `we*`        |    376 |     77 |
+| fixture `pe*`        |   1654 |    131 |
+| fixture `weekly de*` |  69417 |    111 |
+| fixture `weekly`     |     34 |     34 |
+| 长尾词表 `co*`       |    973 |     80 |
+| 长尾词表 `re*`       |   1227 |     86 |
+
+长尾词表用例在 `performance-large.test.ts` 里另建 100k 邮件，词从 5 万个合成词中按重头长尾分布抽取。默认套件的 `search-prefix-plans.test.ts` 用 3,000 封邮件对照按消息文本直接计算的参考结果，覆盖前缀、精确词、双词、翻页和账户范围，并检查前缀没有逐行 MATCH。prefix 索引能把 `co*` 的 MATCH 从约 13 ms 降到 2 ms，但词索引变为 2.4 倍，升级时要重建，暂不加。
 
 ## 消息文本与附件检索排名
 
