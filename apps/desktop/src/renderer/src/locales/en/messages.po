@@ -3116,6 +3116,10 @@ msgstr "Folder or label"
 msgid "Folder path"
 msgstr "Folder path"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "Folders"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "Follow system"

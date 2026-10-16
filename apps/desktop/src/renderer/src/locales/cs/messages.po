@@ -3112,6 +3112,10 @@ msgstr "Složka nebo štítek"
 msgid "Folder path"
 msgstr "Cesta ke složce"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "Složky"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "Podle systému"

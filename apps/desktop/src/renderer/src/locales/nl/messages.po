@@ -3112,6 +3112,10 @@ msgstr "Map of label"
 msgid "Folder path"
 msgstr "Mappad"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "Mappen"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "Volg systeem"

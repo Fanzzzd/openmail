@@ -3112,6 +3112,10 @@ msgstr "Cartella o etichetta"
 msgid "Folder path"
 msgstr "Percorso della cartella"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "Cartelle"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "Segui il sistema"

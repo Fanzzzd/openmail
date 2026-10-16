@@ -3112,6 +3112,10 @@ msgstr "フォルダーまたはラベル"
 msgid "Folder path"
 msgstr "フォルダパス"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "フォルダ"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "システム設定に従う"

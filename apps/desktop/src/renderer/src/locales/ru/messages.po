@@ -3112,6 +3112,10 @@ msgstr "Папка или ярлык"
 msgid "Folder path"
 msgstr "Путь к папке"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "Папки"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "Как в системе"

@@ -3122,6 +3122,10 @@ msgstr "文件夹或标签"
 msgid "Folder path"
 msgstr "文件夹路径"
 
+#: src/renderer/src/features/sidebar/SidebarItems.tsx
+msgid "Folders"
+msgstr "文件夹"
+
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Follow system"
 msgstr "跟随系统"

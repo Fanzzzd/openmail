@@ -1,3 +1,4 @@
+import { providerCapabilities } from "@openmail/core/schema";
 import type { Account, Label } from "../../../../shared/api";
 import type { View } from "../../lib/view";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
@@ -41,7 +42,15 @@ export function LabelSections({
     return (
       <Section
         key={accountId}
-        title={categories ? t`Outlook categories` : groups.size > 1 ? email : t`Labels`}
+        title={
+          categories
+            ? t`Outlook categories`
+            : groups.size > 1
+              ? email
+              : account && providerCapabilities(account.provider).organization === "folders"
+                ? t`Folders`
+                : t`Labels`
+        }
       >
         {list.map((l) => (
           <ContextMenuRoot key={l.id}>

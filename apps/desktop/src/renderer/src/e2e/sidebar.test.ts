@@ -182,3 +182,14 @@ it("spaces switch from the sidebar alone, with no second picker above the panes"
   await eventually(() => expect(within(spaces).getByRole("button", { name: /Work/ })).toBeTruthy());
   expect(screen.queryByRole("combobox", { name: "Space" })).toBeNull();
 });
+
+for (const [provider, title] of [
+  ["imap", "Folders"],
+  ["gmail", "Labels"],
+] as const)
+  it(`a ${provider} account's own mailboxes sit under ${title}`, async () => {
+    current = await flow({ provider });
+    const nav = await screen.findByRole("navigation", { name: "Mailboxes" });
+    await eventually(() => expect(within(nav).getByRole("button", { name: /^Work/ })).toBeTruthy());
+    expect(within(nav).getByRole("heading", { name: title })).toBeTruthy();
+  });
