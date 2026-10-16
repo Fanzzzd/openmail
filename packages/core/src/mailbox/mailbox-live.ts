@@ -198,6 +198,7 @@ export const MailboxLive = (
         for (const step of [
           store.backfillWordIndex(),
           store.backfillSearchFlags(),
+          store.backfillOperatorText(),
           store.indexBigrams(),
         ]) {
           let ready = false;

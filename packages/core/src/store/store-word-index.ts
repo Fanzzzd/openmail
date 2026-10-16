@@ -1,5 +1,6 @@
 import { Effect, Schema } from "effect";
 import type { SqlClient } from "effect/sql";
+import { operatorTextValues } from "../db/operator-text.js";
 import { BACKFILL_SEARCH_FLAGS } from "../db/search-flags.js";
 import { bigramText } from "../search/search-bigrams.js";
 import { all, run } from "./sql-rows.js";
@@ -191,5 +192,56 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
         }),
       )
       .pipe(Effect.orDie);
-  return { wordIndexReady, backfillWordIndex, backfillSearchFlags, indexBigrams };
+  const OperatorTextProgress = Schema.Struct({
+    cursor: Schema.Int,
+    end_rowid: Schema.Int,
+    ready: Schema.BooleanFromBit,
+  });
+  const operatorTextProgress = all(OperatorTextProgress)(
+    sql`SELECT cursor,end_rowid,ready FROM message_operator_text_backfill`,
+  );
+  /** True once every message from before migration 57 has its message_operator_text row. */
+  const operatorTextReady = operatorTextProgress.pipe(
+    Effect.map((rows) => rows.every((row) => row.ready)),
+  );
+  /**
+   * Writes message_operator_text for messages stored before migration 57, in committed rowid
+   * ranges. Rows inserted or changed since then have theirs from the triggers; rewriting one
+   * gives the same text.
+   */
+  const backfillOperatorText = (requested = 500) =>
+    Effect.gen(function* () {
+      if (yield* operatorTextReady) return { processed: 0, ready: true };
+      return yield* backfillOperatorTextBatch(requested);
+    });
+  const backfillOperatorTextBatch = (requested: number) =>
+    sql
+      .withTransaction(
+        Effect.gen(function* () {
+          const batchSize = Math.min(Math.max(Math.floor(requested), 1), 2000);
+          const pending = (yield* operatorTextProgress).find((row) => !row.ready);
+          if (!pending) return { processed: 0, ready: true };
+          const rows = yield* all(Schema.Struct({ row_id: Schema.Int }))(
+            sql`SELECT rowid AS row_id FROM messages WHERE rowid>${pending.cursor} AND rowid<=${pending.end_rowid} ORDER BY rowid LIMIT ${batchSize}`,
+          );
+          const end = rows.at(-1)?.row_id ?? pending.end_rowid;
+          yield* run(sql`INSERT OR REPLACE INTO message_operator_text(row_id,to_text,cc_text,file_text,list_id_text,list_post_text)
+            SELECT m.rowid,${sql.literal(operatorTextValues("m"))}
+            FROM messages m WHERE m.rowid>${pending.cursor} AND m.rowid<=${end}`);
+          const ready = end >= pending.end_rowid;
+          yield* run(
+            sql`UPDATE message_operator_text_backfill SET cursor=${end},ready=${ready ? 1 : 0}`,
+          );
+          return { processed: rows.length, ready };
+        }),
+      )
+      .pipe(Effect.orDie);
+  return {
+    wordIndexReady,
+    backfillWordIndex,
+    backfillSearchFlags,
+    indexBigrams,
+    operatorTextReady,
+    backfillOperatorText,
+  };
 }

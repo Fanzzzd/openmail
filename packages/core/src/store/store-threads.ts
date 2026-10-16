@@ -177,6 +177,7 @@ export const makeThreadsStore = ({
       ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
       wordIndexReady: readiness.messages,
       derivedWordIndexReady: readiness.derived,
+      operatorTextReady: raw.search !== undefined && (yield* wordIndex.operatorTextReady),
     };
     // The text index count below cannot test labels, so a label: search counts its rows.
     const query = parsed.criteria?.labels?.length ? parsed : yield* planTextPage(parsed);
@@ -419,6 +420,7 @@ export const makeThreadsStore = ({
       ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
       wordIndexReady: readiness.messages,
       derivedWordIndexReady: readiness.derived,
+      operatorTextReady: raw.search !== undefined && (yield* wordIndex.operatorTextReady),
     });
     const mediaExpression = expressionMedia(q.search ?? "");
     const limit = mediaExpression ? Math.min(q.limit ?? 50, 1024) : (q.limit ?? 50);

@@ -799,6 +799,9 @@ test.concurrent(
     ON CONFLICT(name) DO UPDATE SET modify = 'allow'`);
     // Later migrations run again too, so undo what they added.
     db.exec("ALTER TABLE drafts DROP COLUMN revision; ALTER TABLE drafts DROP COLUMN editor;");
+    db.exec(`DROP TRIGGER message_operator_text_ai; DROP TRIGGER message_operator_text_au;
+      DROP TRIGGER message_operator_text_ad; DROP TABLE message_operator_text;
+      DROP TABLE message_operator_text_backfill;`);
     db.exec("PRAGMA user_version = 49");
     db.close();
     const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);

@@ -228,13 +228,17 @@ it.effect(
             .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
         );
       // Every subject has `report`, every body `weekly` and `alpha`, and invoice is only in the
-      // 10k OCR chunks.
+      // 10k OCR chunks. Without a match, to:, cc:, filename: and list: test every message.
       for (const [name, search, budget, threads] of [
         ["search subject: common", "subject:report", 200, 50],
         ["search subject: phrase", 'subject:"weekly report"', 200, 50],
         ["search OR", "weekly OR alpha", 200, 50],
         ["search OR is:unread", "(weekly OR delivery) is:unread", 200, 50],
         ["search attachment word OR common", "invoice OR weekly", 200, 50],
+        ["search to: no match", "to:nobody@example.com", 200, 0],
+        ["search cc: no match", "cc:nobody", 200, 0],
+        ["search filename: no match", "filename:none.pdf", 200, 0],
+        ["search list: no match", "list:nolist", 200, 0],
       ] as const)
         yield* measure(
           name,

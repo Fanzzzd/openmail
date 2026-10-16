@@ -4,6 +4,7 @@
  * an entry: add a new one at the end. migrations.test.ts pins the existing text.
  */
 
+import { operatorTextValues } from "./operator-text.js";
 import { searchFlags } from "./search-flags.js";
 
 // Append-only. Each entry runs once, in order, tracked by `PRAGMA user_version`.
@@ -1464,6 +1465,36 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      AND message_size IS NOT NULL
      AND message_size = COALESCE((SELECT SUM(json_extract(a.value, '$.size')) FROM json_each(messages.attachments_json) a), 0)
      AND account_id IN (SELECT id FROM accounts WHERE provider = 'outlook');`,
+  // user_version 57: to:, cc:, filename: and list: read short text from message_operator_text
+  // (db/operator-text.ts) instead of json_each over each message row, whose attachments and
+  // headers sit after the body. A search that matched nothing read every row: up to 6 s cold on
+  // 2.3 GB. Triggers keep the rows of new and changed messages. Older rows fill in through a
+  // resumable background backfill (store-word-index.ts); until it is done, search uses the
+  // per-row test. Filling 100k rows here took 13.7 s.
+  `CREATE TABLE message_operator_text (
+     row_id INTEGER PRIMARY KEY, to_text TEXT NOT NULL, cc_text TEXT NOT NULL,
+     file_text TEXT NOT NULL, list_id_text TEXT NOT NULL, list_post_text TEXT NOT NULL);
+   CREATE TABLE message_operator_text_backfill (id INTEGER PRIMARY KEY CHECK(id=1),
+     cursor INTEGER NOT NULL DEFAULT 0, end_rowid INTEGER NOT NULL, ready INTEGER NOT NULL DEFAULT 0);
+   INSERT INTO message_operator_text_backfill(id,end_rowid,ready)
+     SELECT 1,COALESCE(MAX(rowid),0),CASE WHEN MAX(rowid) IS NULL THEN 1 ELSE 0 END FROM messages;
+   CREATE TRIGGER message_operator_text_ai AFTER INSERT ON messages BEGIN
+     DELETE FROM message_operator_text WHERE row_id=new.rowid;
+     INSERT INTO message_operator_text(row_id,to_text,cc_text,file_text,list_id_text,list_post_text)
+     VALUES(new.rowid,
+       ${operatorTextValues("new")});
+   END;
+   CREATE TRIGGER message_operator_text_au AFTER UPDATE OF to_json,cc_json,attachments_json,headers_json ON messages
+     WHEN old.to_json IS NOT new.to_json OR old.cc_json IS NOT new.cc_json
+       OR old.attachments_json IS NOT new.attachments_json OR old.headers_json IS NOT new.headers_json BEGIN
+     DELETE FROM message_operator_text WHERE row_id=new.rowid;
+     INSERT INTO message_operator_text(row_id,to_text,cc_text,file_text,list_id_text,list_post_text)
+     VALUES(new.rowid,
+       ${operatorTextValues("new")});
+   END;
+   CREATE TRIGGER message_operator_text_ad AFTER DELETE ON messages BEGIN
+     DELETE FROM message_operator_text WHERE row_id=old.rowid;
+   END;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */

@@ -605,6 +605,8 @@ it("enumerates every migrated plain table as retained state or disposable cache"
     "search_word_index",
     "search_word_rows",
     "search_bigram_pending",
+    "message_operator_text",
+    "message_operator_text_backfill",
     "calendar_invites",
     "agent_activity",
   ]);

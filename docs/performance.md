@@ -183,7 +183,7 @@ OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK 
 
 试过把 `messages_account_list_date_id` 扩成覆盖 `labels_json` 的索引。没有统计时规划器换了计划，单账户标签列表从 578 ms 变成 23 s，单账户 Inbox 从 15 ms 变成 2.5 s，所以没有加迁移。标签列表现在已在 30 ms 内，`message_labels(account_id,label,row_id)` 副表也不再需要。
 
-仍慢的是找不到结果的运算符搜索：`to:nobody@example.com` 2.0 s，`filename:none.pdf` 1.1 s，`cc:nobody` 1.1 s，`list:nolist` 0.9 s（评审者测量，200 个会话）。它们要读完每封邮件的 `to_json`、`cc_json`、`attachments_json` 或头部，这些列在正文之后，逐行读取要越过正文溢出页。下一步是把这些地址、文件名和列表 ID 写进由现有触发器维护的副表（与 `message_search_meta` 相同的写入路径），运算符先查副表再取行。
+找不到结果的运算符搜索见下一节的“to:、cc:、filename:、list:”。
 
 ## subject:、OR 与运算符搜索
 
@@ -243,6 +243,38 @@ fixture P，修复前后：
 | `weekly OR 鲸鱼`                 |    103 |     98 |
 
 计数也用页面过滤，所以 `invoice OR weekly` 的计数从 21.5 s 降到 161 ms。search-operator-plans.test.ts 的 OR 部分覆盖普通词、`is:` 组合、只在附件文字里的词、否定和 `subject:`，有附件命中的页按相关度排序，只比较会话集合。它检查附件文字的查询计划里没有按 `derived_chunks_message (message_id=? AND rowid=?)` 的逐行探测，补附件命中的语句写 `+m.id IN`。小数据库在没有统计时也不会选中旧的坏计划，所以后一项只检查语句文本。`performance-large.test.ts` 的 `search OR`、`search OR is:unread` 和 `search attachment word OR common` 预算 200 ms。
+
+### to:、cc:、filename:、list:
+
+找不到结果的 `to:`、`cc:`、`filename:`、`list:` 要检查每封邮件：读出这一行，再对 `to_json`、`cc_json`、`attachments_json` 或 `headers_json` 跑 `json_each`。`to_json` 和 `cc_json` 在 `body_text` 前面，`attachments_json` 和 `headers_json` 在后面。成本主要是逐行随机读页加 `json_each`。fixture P 上 1–2 s，评审者在 2.3 GB 的 fixture R 上冷读最多 6 s。
+
+迁移 57 加了副表 `message_operator_text(row_id, to_text, cc_text, file_text, list_id_text, list_post_text)`，每封邮件一行，SQL 在 `packages/core/src/db/operator-text.ts`：
+
+- 每列用 char(30) 连接多个值，姓名和地址之间用 char(31)。不含这两个字符的 LIKE 模式只能在一个值内命中，和原来逐个 `json_each` 值判断相同。搜索值含这两个字符或为空时仍用原来的逐行判断。
+- `messages` 上的 INSERT、UPDATE、DELETE 触发器维护这张表，先删后插。UPDATE 触发器只在四个 JSON 列真的变了时执行，只改标签的同步不写副表。`json_valid` 和 `type='object'` 跳过坏 JSON，写入不会因此失败。
+- 迁移本身不回填：在 2.3 GB 上一次回填要 13.7 s，而迁移在启动窗口里同步运行。`message_operator_text_backfill` 记下迁移时的最大 rowid，后台循环（`mailbox-live.ts`，在词索引和 has: 标志之后）每批 500 行提交一次，可中断、可续。回填完成前，这几个运算符继续用原来的逐行判断，结果不变；完成后改成 `(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE to_text LIKE ? ESCAPE '\')`，`+0` 不让集合驱动遍历。新安装时迁移看到空表，直接标记完成。
+
+写入成本：1 万封带收件人、附件和 List-Id 的邮件，插入从 2.75 s 到 2.84 s（+3%），只改标签的再次写入从 2.15 s 到 2.17 s。fixture P 的回填 100k 行共 1.7 s，200 批，最慢一批 54 ms。
+
+fixture P，修复前后：
+
+| 测量                                | 修复前 | 修复后 |
+| ----------------------------------- | -----: | -----: |
+| `to:nobody@example.com`             |   1926 |     20 |
+| `to:nobody@example.com`，单账户     |    685 |     11 |
+| `cc:nobody`                         |   1034 |     18 |
+| `filename:none.pdf`                 |   1117 |     19 |
+| `list:nolist`                       |    926 |     22 |
+| `to:nobody OR cc:nobody`            |    177 |     27 |
+| `to:recipient`（每封都命中）        |     13 |     63 |
+| `to:recipient`，平铺                |    0.3 |     13 |
+| `filename:report.pdf`（1/10 命中）  |     49 |     26 |
+| `-filename:report.pdf from:person1` |     22 |     42 |
+| `to:recipient filename:report`      |     80 |     78 |
+
+代价在常见命中：原来日期遍历的前几十行就填满一页，现在每条语句要先扫一遍副表建集合。会话页的 `candidates`、`flag_candidates` 和 `page` 各扫一次，fixture P 上每次约 15–20 ms，所以 `to:recipient` 从 13 ms 变成 63 ms。找不到结果和稀疏命中从秒级降到 20 ms 左右，所以接受这个代价。
+
+search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小写、`_` 转义、空收件人和 NULL 头部、否定、OR、组合、会话与平铺、单账户、第二页和计数，并在四种状态下对照参考结果：新库（无需回填）、模拟的旧库（三分之一的行没有副表行，回填未开始）、回填一半、回填完成，以及通过 `upsertMessage` 改收件人、附件和头部、只改标志、`deleteMessage` 删除和新写入之后。每种状态都检查查询用的是副表还是逐行判断，并把副表和按 `operatorTextValues("m")` 重新计算的结果逐行比较。另一个测试从 user_version 56 的库升级，确认迁移不回填、搜索在回填前后结果相同。`performance-large.test.ts` 的四个 `no match` 测量预算 200 ms。
 
 ## 消息文本与附件检索排名
 

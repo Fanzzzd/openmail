@@ -1,9 +1,17 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage, ThreadQuery, ThreadSummary } from "../domain/message.js";
 import { traceQueries, type QueryPlan } from "../platform/node/fixtures/performance-mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { operatorTextValues } from "../db/operator-text.js";
+import { databaseLayer, MIGRATIONS } from "../platform/node/db.js";
+import { applyNativeMigration } from "../platform/node/migrations.js";
+import { NodeSystem } from "../platform/node/platform-node.js";
 import { wholeWordMatch } from "../search/fts.js";
 import { expressionMedia } from "./store-query.js";
 import { sqliteTextCompare } from "./sql-rows.js";
@@ -411,3 +419,210 @@ it.effect(
   },
   scaledMs(180_000),
 );
+
+const operatorSearches = [
+  "to:nobody@example.com",
+  "cc:nobody",
+  "filename:none.pdf",
+  "list:nolist",
+  "to:r3",
+  "to:R3@EXAMPLE",
+  "to:recipient",
+  "to:lead",
+  "cc:team2",
+  "filename:report1",
+  "filename:notes_1",
+  "filename:.txt",
+  "list:news@example.com",
+  "list:news1.example",
+  "list:mailto",
+  "-to:r3",
+  "-to:r3 weekly",
+  "to:r3 OR cc:team2",
+  "to:nobody OR cc:nobody",
+  "to:r3 filename:report",
+  "-filename:report from:s3",
+  "(to:r2 OR list:news) is:unread",
+  "subject:report to:lead",
+].map((search) => [search, true] as const);
+
+const OperatorRow = Schema.Struct({
+  row_id: Schema.Number,
+  to_text: Schema.String,
+  cc_text: Schema.String,
+  file_text: Schema.String,
+  list_id_text: Schema.String,
+  list_post_text: Schema.String,
+});
+
+it.effect(
+  "to:, cc:, filename: and list: return the same rows before, during and after the backfill",
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const { a, accountOf } = yield* seed;
+      const operatorQueries = (queries: readonly QueryPlan[]) =>
+        queries.filter((query) => query.sql.includes("FROM messages m"));
+      const usesSideTable = (queries: readonly QueryPlan[], expected: boolean) => {
+        const lists = operatorQueries(queries);
+        assert.isAbove(lists.length, 0);
+        for (const query of lists) {
+          const scans = /json_each\(m\.(to_json|cc_json|attachments_json|headers_json)\)/.test(
+            query.sql,
+          );
+          const side = query.sql.includes("message_operator_text");
+          if (expected) assert.isFalse(scans, query.sql);
+          else assert.isFalse(side, query.sql);
+        }
+        assert.strictEqual(
+          lists.some((query) => query.sql.includes("message_operator_text")),
+          expected,
+        );
+      };
+      // The text of every row, recomputed from the messages: the triggers keep it current.
+      const sideTableCurrent = Effect.gen(function* () {
+        const stored = yield* sql`SELECT * FROM message_operator_text ORDER BY row_id`.pipe(
+          Effect.flatMap(Schema.decodeUnknownEffect(Schema.Array(OperatorRow))),
+        );
+        const fresh =
+          yield* sql`WITH fresh(row_id,to_text,cc_text,file_text,list_id_text,list_post_text) AS (
+            SELECT rowid,${sql.literal(operatorTextValues("m"))} FROM messages m)
+            SELECT * FROM fresh ORDER BY row_id`.pipe(
+            Effect.flatMap(Schema.decodeUnknownEffect(Schema.Array(OperatorRow))),
+          );
+        assert.isAbove(fresh.length, COUNT - 100);
+        assert.deepStrictEqual(stored, fresh);
+      });
+
+      // A new database has nothing to backfill.
+      assert.isTrue(yield* store.operatorTextReady);
+      yield* sideTableCurrent;
+      let rows = yield* loadRows;
+      trace.start();
+      yield* checkAll(rows, operatorSearches, a);
+      usesSideTable(trace.stop(), true);
+
+      // A database from before migration 57: older rows have no operator text yet.
+      yield* sql`DELETE FROM message_operator_text WHERE row_id % 3 = 0`;
+      yield* sql`UPDATE message_operator_text_backfill SET cursor=0,end_rowid=(SELECT MAX(rowid) FROM messages),ready=0`;
+      assert.isFalse(yield* store.operatorTextReady);
+      trace.start();
+      yield* checkAll(rows, operatorSearches, a);
+      usesSideTable(trace.stop(), false);
+      assert.deepStrictEqual(yield* store.backfillOperatorText(1000), {
+        processed: 1000,
+        ready: false,
+      });
+      assert.isFalse(yield* store.operatorTextReady);
+      trace.start();
+      yield* checkAll(rows, operatorSearches, a);
+      usesSideTable(trace.stop(), false);
+      assert.deepStrictEqual(yield* store.backfillOperatorText(1000), {
+        processed: 1000,
+        ready: false,
+      });
+      assert.deepStrictEqual(yield* store.backfillOperatorText(1000), {
+        processed: 1000,
+        ready: true,
+      });
+      assert.deepStrictEqual(yield* store.backfillOperatorText(1000), {
+        processed: 0,
+        ready: true,
+      });
+      yield* sideTableCurrent;
+      trace.start();
+      yield* checkAll(rows, operatorSearches, a);
+      usesSideTable(trace.stop(), true);
+
+      // Changed recipients, attachments and headers, flag-only changes, deletes and new mail.
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let i = 0; i < COUNT; i++) {
+            if (i % 5 === 0) yield* store.upsertMessage(accountOf(i), message(i, 1));
+            else if (i % 7 === 1)
+              yield* store.upsertMessage(accountOf(i), { ...message(i), isUnread: i % 3 !== 0 });
+            if (i % 37 === 0) yield* store.deleteMessage(accountOf(i), `p${i}`);
+          }
+          for (let i = COUNT; i < COUNT + 50; i++)
+            yield* store.upsertMessage(accountOf(i), message(i, 2));
+        }),
+      );
+      yield* sideTableCurrent;
+      rows = yield* loadRows;
+      trace.start();
+      yield* checkAll(rows, operatorSearches, a);
+      usesSideTable(trace.stop(), true);
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
+  scaledMs(180_000),
+);
+
+it("migration 57 leaves older rows to the background backfill", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "openmail-operator-text-"));
+  const file = join(directory, "mail.sqlite");
+  try {
+    const legacy = new DatabaseSync(file);
+    for (const [index, migration] of MIGRATIONS.slice(0, 56).entries())
+      applyNativeMigration(legacy, migration, index + 1);
+    legacy
+      .prepare("INSERT INTO accounts(id,provider,email,created_at) VALUES(?,?,?,?)")
+      .run("gmail:me@example.com", "gmail", "me@example.com", 1);
+    const insert = legacy.prepare(
+      `INSERT INTO messages(id,account_id,provider_id,thread_id,subject,from_name,from_addr,to_json,cc_json,date,snippet,body_text,body_html,labels_json,attachments_json,headers_json,is_unread,is_starred)
+       VALUES(?,'gmail:me@example.com',?,?,'Hello','','x@example.com',?,'[]',?,'','','','["INBOX"]',?,?,0,0)`,
+    );
+    for (let i = 0; i < 7; i++)
+      insert.run(
+        `gmail:me@example.com/p${i}`,
+        `p${i}`,
+        `t${i}`,
+        JSON.stringify([{ name: `Person ${i}`, address: `p${i}@example.com` }]),
+        i,
+        JSON.stringify(
+          i % 2 ? [{ filename: `f${i}.pdf`, mimeType: "application/pdf", size: 1 }] : [],
+        ),
+        // Messages stored before headers were kept have NULL headers.
+        i === 4 ? null : JSON.stringify([{ name: "List-Id", value: `<l${i}.example>` }]),
+      );
+    legacy.close();
+    const layer = StoreLive.pipe(
+      Layer.provideMerge(databaseLayer(file).pipe(Layer.provide(NodeSystem))),
+    );
+    await Effect.runPromise(
+      Effect.gen(function* () {
+        const store = yield* Store;
+        const sql = yield* SqlClient.SqlClient;
+        const ids = (search: string) =>
+          store
+            .listThreads({ search, flat: true })
+            .pipe(
+              Effect.map((rows) => rows.map((row) => row.subject && row.id.slice(-2)).toSorted()),
+            );
+        const expectResults = Effect.gen(function* () {
+          assert.deepStrictEqual(yield* ids("to:p5@"), ["p5"]);
+          assert.deepStrictEqual(yield* ids("filename:.pdf"), ["p1", "p3", "p5"]);
+          assert.deepStrictEqual(yield* ids("list:l6.example"), ["p6"]);
+          assert.deepStrictEqual(yield* ids("to:nobody"), []);
+        });
+        const [pending] = yield* sql`SELECT COUNT(*) AS n FROM message_operator_text`;
+        assert.deepStrictEqual(pending, { n: 0 });
+        assert.isFalse(yield* store.operatorTextReady);
+        yield* expectResults;
+        assert.deepStrictEqual(yield* store.backfillOperatorText(4), {
+          processed: 4,
+          ready: false,
+        });
+        yield* expectResults;
+        assert.deepStrictEqual(yield* store.backfillOperatorText(4), { processed: 3, ready: true });
+        assert.isTrue(yield* store.operatorTextReady);
+        yield* expectResults;
+        const [filled] = yield* sql`SELECT COUNT(*) AS n FROM message_operator_text`;
+        assert.deepStrictEqual(filled, { n: 7 });
+      }).pipe(Effect.provide(layer)),
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

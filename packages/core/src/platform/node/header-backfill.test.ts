@@ -128,7 +128,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
 }
 
 it.effect(
-  "metadata update preserves rowid and existing headers/identity, and fires no FTS or other message triggers",
+  "metadata update preserves rowid and existing headers/identity, and fires no FTS or other message triggers except list: text",
   () =>
     Effect.gen(function* () {
       const store = yield* Store;
@@ -157,17 +157,28 @@ it.effect(
         all(Schema.Struct({ n: Schema.Number }))(sql`SELECT total_changes() AS n`).pipe(
           Effect.map((rows) => rows[0]?.n ?? 0),
         );
+      const listText = (id: string) =>
+        all(Schema.Struct({ list_id_text: Schema.String }))(
+          sql`SELECT o.list_id_text FROM message_operator_text o JOIN messages m ON m.rowid=o.row_id WHERE m.id=${id}`,
+        );
       for (const row of yield* store.headerBackfillCandidates(account.id, null, 20)) {
         const start = yield* count();
+        const stored = (yield* store.getMessage(`${account.id}/${row.providerId}`)).headers;
         const value = headers(row.providerId);
         assert.strictEqual(value.kind, "headers");
         if (value.kind === "headers") yield* store.updateCachedHeaders(account.id, row, value);
+        // New headers rewrite the message's list: text (a delete and an insert); kept ones
+        // change nothing else.
         assert.strictEqual(
           (yield* count()) - start,
-          1,
-          "only the message row changes; FTS shadow tables/jobs remain untouched",
+          stored === undefined ? 3 : 1,
+          "only the message row and its list: text change; FTS shadow tables/jobs remain untouched",
         );
       }
+      assert.deepStrictEqual(yield* listText(`${account.id}/a`), [
+        { list_id_text: "list.example.test" },
+      ]);
+      assert.deepStrictEqual(yield* listText(`${account.id}/b`), [{ list_id_text: "" }]);
       assert.deepStrictEqual(yield* snapshot(), before);
       assert.strictEqual(
         (yield* store.getMessage(`${account.id}/a`)).rfcMessageId,

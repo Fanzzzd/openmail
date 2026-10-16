@@ -15,6 +15,7 @@ import { ftsSearchTerm, usesSubstringSearch, wordTokens } from "../search/fts.js
 import { quoteSearchValue, searchTermText, searchWords } from "../search/search-tokens.js";
 import { typedDrivePath } from "../search/search-match.js";
 import { SEARCH_FLAG_BITS } from "../db/search-flags.js";
+import { OPERATOR_TEXT_SEPARATORS } from "../db/operator-text.js";
 import { bigramMatch } from "../search/search-bigrams.js";
 import { all } from "./sql-rows.js";
 import { MAILBOX_LABEL } from "../domain/mailbox-labels.js";
@@ -25,6 +26,8 @@ export type LocalQuery = ThreadQuery & {
   rowBoundText?: boolean;
   proximityPage?: { kind: "prefilter" } | { kind: "exact"; messageIds?: readonly string[] };
   textPage?: { index: "messages_words" | "messages_fts" | "messages_bigrams"; match: string };
+  /** message_operator_text has a row for every message (migration 57's backfill is done). */
+  operatorTextReady?: boolean;
 };
 
 export const expressionMedia = (text: string) =>
@@ -291,10 +294,30 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       )`;
   };
 
+  /**
+   * to:, cc:, filename: and list: read message_operator_text once per statement instead of
+   * json_each over each message row. `+0` keeps the set from driving the row walk. Before the
+   * backfill is done, and for a value that contains the column's separators, the per-row test
+   * stays.
+   */
+  const operatorText = (
+    context: Pick<LocalQuery, "operatorTextReady">,
+    values: readonly string[],
+    indexed: () => Fragment,
+    scan: () => Fragment,
+  ): Fragment =>
+    context.operatorTextReady &&
+    values.every(
+      (value) =>
+        value !== "" && !OPERATOR_TEXT_SEPARATORS.some((separator) => value.includes(separator)),
+    )
+      ? sql`(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE ${indexed()})`
+      : scan();
+
   const searchConditionFilter = (
     c: SearchCondition,
     ready = false,
-    context: Pick<LocalQuery, "proximityPage" | "rowBoundText"> = {},
+    context: Pick<LocalQuery, "proximityPage" | "rowBoundText" | "operatorTextReady"> = {},
   ): Fragment => {
     const where: Fragment[] = [];
     if (c.unread !== undefined) where.push(sql`m.is_unread=${c.unread ? 1 : 0}`);
@@ -306,10 +329,20 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (c.proximity) where.push(proximityFilter(c.proximity, false, ready, context));
     if (c.subjectContains)
       where.push(sql`m.subject LIKE ${literalLike(c.subjectContains)} ESCAPE '\\'`);
-    if (c.mailingList)
+    const list = c.mailingList;
+    if (list) {
+      const dotted = list.replace("@", ".");
       where.push(
-        sql`EXISTS (SELECT 1 FROM json_each(m.headers_json) h WHERE lower(json_extract(h.value,'$.name')) IN ('list-id','list-post') AND (json_extract(h.value,'$.value') LIKE ${literalLike(c.mailingList)} ESCAPE '\\' OR (lower(json_extract(h.value,'$.name'))='list-id' AND json_extract(h.value,'$.value') LIKE ${literalLike(c.mailingList.replace("@", "."))} ESCAPE '\\'))) `,
+        operatorText(
+          context,
+          [list, dotted],
+          () =>
+            sql`list_id_text LIKE ${literalLike(list)} ESCAPE '\\' OR list_post_text LIKE ${literalLike(list)} ESCAPE '\\' OR list_id_text LIKE ${literalLike(dotted)} ESCAPE '\\'`,
+          () =>
+            sql`EXISTS (SELECT 1 FROM json_each(m.headers_json) h WHERE lower(json_extract(h.value,'$.name')) IN ('list-id','list-post') AND (json_extract(h.value,'$.value') LIKE ${literalLike(list)} ESCAPE '\\' OR (lower(json_extract(h.value,'$.name'))='list-id' AND json_extract(h.value,'$.value') LIKE ${literalLike(dotted)} ESCAPE '\\'))) `,
+        ),
       );
+    }
     if (c.header)
       where.push(
         sql`EXISTS (SELECT 1 FROM json_each(m.headers_json) h WHERE lower(json_extract(h.value,'$.name'))=${c.header.name.toLowerCase()} AND json_extract(h.value,'$.value') LIKE ${literalLike(c.header.value)} ESCAPE '\\')`,
@@ -331,18 +364,32 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
           sql`m.body_text LIKE '%https://drive.google.com/%' OR m.body_html LIKE '%https://drive.google.com/%' OR m.body_text LIKE '%https://docs.google.com/%' OR m.body_html LIKE '%https://docs.google.com/%'`,
         ),
       );
-    if (c.cc)
+    const cc = c.cc;
+    if (cc)
       where.push(
-        sql`EXISTS (SELECT 1 FROM json_each(m.cc_json) WHERE json_extract(value,'$.address') LIKE ${literalLike(c.cc)} ESCAPE '\\' OR json_extract(value,'$.name') LIKE ${literalLike(c.cc)} ESCAPE '\\')`,
+        operatorText(
+          context,
+          [cc],
+          () => sql`cc_text LIKE ${literalLike(cc)} ESCAPE '\\'`,
+          () =>
+            sql`EXISTS (SELECT 1 FROM json_each(m.cc_json) WHERE json_extract(value,'$.address') LIKE ${literalLike(cc)} ESCAPE '\\' OR json_extract(value,'$.name') LIKE ${literalLike(cc)} ESCAPE '\\')`,
+        ),
       );
     for (const type of c.attachmentTypes ?? []) where.push(attachmentTypeFilter(type));
     if (c.from)
       where.push(
         sql`(m.from_addr LIKE ${literalLike(c.from)} ESCAPE '\\' OR m.from_name LIKE ${literalLike(c.from)} ESCAPE '\\')`,
       );
-    if (c.to)
+    const to = c.to;
+    if (to)
       where.push(
-        sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
+        operatorText(
+          context,
+          [to],
+          () => sql`to_text LIKE ${literalLike(to)} ESCAPE '\\'`,
+          () =>
+            sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(to)} ESCAPE '\\')`,
+        ),
       );
     if (c.subject)
       where.push(
@@ -366,9 +413,16 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
           ? sql`json_array_length(m.attachments_json)>0`
           : sql`json_array_length(m.attachments_json)=0`,
       );
-    if (c.filename)
+    const filename = c.filename;
+    if (filename)
       where.push(
-        sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(c.filename)} ESCAPE '\\')`,
+        operatorText(
+          context,
+          [filename],
+          () => sql`file_text LIKE ${literalLike(filename)} ESCAPE '\\'`,
+          () =>
+            sql`EXISTS (SELECT 1 FROM json_each(m.attachments_json) WHERE json_extract(value, '$.filename') LIKE ${literalLike(filename)} ESCAPE '\\')`,
+        ),
       );
     // Unary plus keeps SQLite off messages_account_date. Without ANALYZE the
     // planner prefers its date range over the thread index inside threadPage's
@@ -391,7 +445,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     media: boolean;
     attachmentOnly: boolean;
     rowBound: boolean;
-  } & Pick<LocalQuery, "proximityPage">;
+  } & Pick<LocalQuery, "proximityPage" | "operatorTextReady">;
 
   const expressionFilter = (node: SearchExpression, context: ExpressionContext): Fragment => {
     switch (node.kind) {
@@ -511,6 +565,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         attachmentOnly: q.criteria?.attachmentText ?? false,
         rowBound: q.rowBoundText ?? false,
         proximityPage: q.proximityPage,
+        operatorTextReady: q.operatorTextReady,
       }),
     );
     return sql.and(where);
