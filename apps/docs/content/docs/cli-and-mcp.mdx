@@ -13,6 +13,24 @@ The CLI comes with the OpenMail source. After building it, link the command glob
 pnpm --dir packages/cli link --global
 ```
 
+## Accounts
+
+```sh
+openmail accounts add gmail
+openmail accounts add outlook
+openmail accounts add imap --preset icloud --email me@icloud.com
+openmail accounts reauth gmail:me@example.com
+openmail accounts remove gmail:me@example.com
+```
+
+`openmail accounts add gmail` and `openmail accounts add outlook` open the provider's sign-in page in your browser. The CLI also prints the sign-in URL on stderr after `If nothing opens, visit:`, so you can open it by hand, for example over SSH. After sign-in, the command runs the first sync.
+
+`openmail accounts add imap` needs `--preset`: `icloud`, `yahoo`, `qq`, `163`, `fastmail` or `custom`. `--email` is the address; without it, the CLI asks. Add `--username` when the login name is not the address. For the app password, the CLI takes `--password`, then `OPENMAIL_IMAP_PASSWORD`, then asks. Prefer the variable or the prompt, because a flag ends up in your shell history. A preset fills in the servers. With `custom`, pass `--imap-host` and `--smtp-host`. `--imap-port` defaults to 993 and `--smtp-port` to 465. Without `--smtp-secure` or `--no-smtp-secure`, a custom server gets implicit TLS on port 465 and STARTTLS on any other port.
+
+`openmail accounts reauth <account-id>` signs a Gmail or Outlook account in again in the browser, after its sign-in stopped working. An IMAP account signs in again when you add it again with a new password. It keeps its local mail and sender name, and it keeps its authentication service trust while the IMAP server stays the same. `openmail accounts reauth` on an IMAP account fails and prints the `openmail accounts add imap` command for that account.
+
+`openmail accounts remove <account-id>` deletes the account's local mail, local drafts and stored sign-in, so it asks first. In a script, or anywhere stdin is not a terminal, it exits 1 unless you pass `--yes`.
+
 ## Common commands
 
 ```sh
@@ -32,11 +50,11 @@ After an upgrade, the word index is rebuilt. `search` and `sync` finish it first
 
 A date or size operator without a valid value, such as `newer:foo` or `larger:xyz`, is searched as plain text and usually matches nothing. `openmail search` prints a `note:` line on stderr with the accepted forms. MCP `search` and `openmail search --json` list the operator under `ignored` for every searched account.
 
-`openmail accounts remove <account-id>` deletes the account's local mail, local drafts and stored sign-in, so it asks first. In a script, or anywhere stdin is not a terminal, it exits 1 unless you pass `--yes`.
-
 `list` and `search` print one line per conversation: date, sender, subject and the message id that `openmail show` takes. Every command prints dates for people as local time in one format, `2026-10-14 17:48`. Unread conversations have a `*`. When there are more, the last line gives the `--cursor` for the next page. Add `--json` for the machine format: `{"threads": [...], "next_cursor": "..."}`. Every `--json` output uses snake_case keys at any depth, like MCP results: `account_id`, `is_unread`, `next_cursor`. Keys that are data, such as ids and addresses, keep their spelling. Two outputs keep their own key format: `openmail tools --json` prints the input schemas as MCP advertises them, and `openmail corpus-check` prints core's versioned corpus report.
 
 Commands log only errors on stderr; `--log-level warn` or `--log-level debug` shows more. A failed command prints `error: …` on stderr, with a `hint: …` line when there is a next step, and exits with code 1, or 2 for a usage error. With `--json`, stdout also gets `{"message": "...", "code": "...", "hint": "..."}`, so a script can read every failure the same way. stdout always holds one JSON document. `openmail sync --json` prints `{"results": [...]}`, one result per account. When an account fails, the same object also gets `"error": {"message": "...", "code": "...", "hint": "..."}` and the command exits with code 1.
+
+`openmail search --server` exits 1 with code `provider_unavailable` only when the server search failed for every account. When some accounts answer, it exits 0 and lists the failed accounts under `errors`. When every account fails, `--json` stdout holds the page plus an `error` object. `openmail sync` stops at the first account that meets a busy database and fails with code `busy`; the remaining accounts do not sync.
 
 The `code` values of the CLI's own failures:
 
