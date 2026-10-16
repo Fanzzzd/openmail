@@ -19,6 +19,9 @@ export function completeQuotes(text: string): boolean {
 
 export const unquoteSearchValue = (text: string) =>
   text.startsWith('"') && text.endsWith('"') ? text.slice(1, -1).replace(/\\(["\\])/g, "$1") : text;
+/** The text a search word looks for: without the `*` that makes it a prefix, and unquoted. */
+export const searchTermText = (word: string) =>
+  unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
 export const quoteSearchValue = (text: string): string =>
   `"${text.replaceAll("\\", "\\\\").replaceAll('"', '\\"')}"`;
 

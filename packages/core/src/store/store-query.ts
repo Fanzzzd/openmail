@@ -12,7 +12,7 @@ import {
 } from "../search/search.js";
 import { ATTACHMENT_TYPES } from "../search/attachment-types.js";
 import { ftsSearchTerm, usesSubstringSearch, wordTokens } from "../search/fts.js";
-import { quoteSearchValue, searchWords, unquoteSearchValue } from "../search/search-tokens.js";
+import { quoteSearchValue, searchTermText, searchWords } from "../search/search-tokens.js";
 import { typedDrivePath } from "../search/search-match.js";
 import { SEARCH_FLAG_BITS } from "../db/search-flags.js";
 import { bigramMatch } from "../search/search-bigrams.js";
@@ -31,6 +31,9 @@ export const expressionMedia = (text: string) =>
   hasSearchExpression(text) || searchWords(text).some((term) => term.startsWith("-"));
 
 export const EFFECTIVE_DATE = "m.list_date";
+
+/** A search term in more messages than this walks the date index (planTextPage). */
+export const COMMON_TERM_ROWS = 2048;
 
 export const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
   ${EFFECTIVE_DATE} AS date,
@@ -99,38 +102,32 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       ? sql`m.provider_id NOT IN (SELECT value FROM json_each(${JSON.stringify(keep)}))`
       : sql.literal("1");
 
+  const messageLike = (like: string, subjectOnly: boolean): Fragment =>
+    subjectOnly
+      ? sql`m.subject LIKE ${like} ESCAPE '\\'`
+      : sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`;
+
+  /** Rows the bigram index has not reached yet, matched with LIKE. */
+  const queuedBigramRows = (like: string, derived: boolean, subjectOnly: boolean): Fragment =>
+    derived
+      ? sql`(d.id IN (SELECT row_id FROM search_bigram_pending WHERE kind='derived') AND d.text LIKE ${like} ESCAPE '\\')`
+      : sql`(m.rowid IN (SELECT row_id FROM search_bigram_pending WHERE kind='messages') AND ${messageLike(like, subjectOnly)})`;
+
   const textFilter = (
     value: string,
     derived: boolean,
     ready: boolean,
     subjectOnly = false,
-    rowBound = false,
   ): Fragment => {
     const match = ftsSearchTerm(value);
     if (!match) return sql.literal("1");
-    const text = unquoteSearchValue(value.endsWith("*") ? value.slice(0, -1) : value);
-    if (ready && !usesSubstringSearch(text)) {
-      // The word index has no prefix index, so a probe for `pe*` expands the prefix over the
-      // whole term list for every row (5.9 s for 200 threads of 100k messages). A prefix reads
-      // its rowids once instead. `+0` keeps the set from driving the row walk.
-      if (rowBound && match.endsWith("*"))
-        return derived
-          ? sql`(d.id+0) IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ${match})`
-          : sql`(m.rowid+0) IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
-      if (rowBound)
-        return derived
-          ? sql`EXISTS (SELECT 1 FROM derived_words WHERE rowid=d.id AND derived_words MATCH ${match})`
-          : sql`EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
+    const text = searchTermText(value);
+    if (ready && !usesSubstringSearch(text))
       return derived
         ? sql`d.id IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ${match})`
         : sql`m.rowid IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
-    }
     if (Array.from(text).length >= 3) {
       const literal = ftsSearchTerm(quoteSearchValue(text));
-      if (rowBound)
-        return derived
-          ? sql`EXISTS (SELECT 1 FROM derived_fts WHERE rowid=d.id AND derived_fts MATCH ${literal})`
-          : sql`EXISTS (SELECT 1 FROM messages_fts WHERE rowid=m.rowid AND messages_fts MATCH ${subjectOnly ? `subject : ${literal}` : literal})`;
       return derived
         ? sql`d.id IN (SELECT rowid FROM derived_fts WHERE derived_fts MATCH ${literal})`
         : sql`m.rowid IN (SELECT rowid FROM messages_fts WHERE messages_fts MATCH ${subjectOnly ? `subject : ${literal}` : literal})`;
@@ -141,26 +138,37 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       // Indexed rows answer from the bigram index; rows still queued use LIKE.
       const query = subjectOnly ? `subject : ${bigram}` : bigram;
       const indexed = derived
-        ? rowBound
-          ? sql`EXISTS (SELECT 1 FROM derived_bigrams WHERE rowid=d.id AND derived_bigrams MATCH ${query})`
-          : sql`d.id IN (SELECT rowid FROM derived_bigrams WHERE derived_bigrams MATCH ${query})`
-        : rowBound
-          ? sql`EXISTS (SELECT 1 FROM messages_bigrams WHERE rowid=m.rowid AND messages_bigrams MATCH ${query})`
-          : sql`m.rowid IN (SELECT rowid FROM messages_bigrams WHERE messages_bigrams MATCH ${query})`;
-      const queued = derived
-        ? sql`(d.id IN (SELECT row_id FROM search_bigram_pending WHERE kind='derived') AND d.text LIKE ${like} ESCAPE '\\')`
-        : sql`(m.rowid IN (SELECT row_id FROM search_bigram_pending WHERE kind='messages') AND ${
-            subjectOnly
-              ? sql`m.subject LIKE ${like} ESCAPE '\\'`
-              : sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`
-          })`;
-      return sql`(${indexed} OR ${queued})`;
+        ? sql`d.id IN (SELECT rowid FROM derived_bigrams WHERE derived_bigrams MATCH ${query})`
+        : sql`m.rowid IN (SELECT rowid FROM messages_bigrams WHERE messages_bigrams MATCH ${query})`;
+      return sql`(${indexed} OR ${queuedBigramRows(like, derived, subjectOnly)})`;
     }
-    return derived
-      ? sql`d.text LIKE ${like} ESCAPE '\\'`
-      : subjectOnly
-        ? sql`m.subject LIKE ${like} ESCAPE '\\'`
-        : sql`(m.subject LIKE ${like} ESCAPE '\\' OR m.from_name LIKE ${like} ESCAPE '\\' OR m.from_addr LIKE ${like} ESCAPE '\\' OR m.body_text LIKE ${like} ESCAPE '\\')`;
+    return derived ? sql`d.text LIKE ${like} ESCAPE '\\'` : messageLike(like, subjectOnly);
+  };
+
+  /**
+   * textFilter over a message's own text for a page that walks the date index (rowBoundText).
+   * Each row looks its rowid up in the text index, so the index's rowid set does not drive the
+   * walk. planTextPage sets rowBoundText only for plain words, so there is no subject or
+   * attachment text variant.
+   */
+  const rowBoundTextFilter = (value: string, ready: boolean): Fragment => {
+    const match = ftsSearchTerm(value);
+    if (!match) return sql.literal("1");
+    const text = searchTermText(value);
+    if (ready && !usesSubstringSearch(text))
+      // The word index has no prefix index, so a probe for `pe*` expands the prefix over the
+      // whole term list for every row (5.9 s for 200 threads of 100k messages). A prefix reads
+      // its rowids once instead. `+0` keeps the set from driving the row walk.
+      return match.endsWith("*")
+        ? sql`(m.rowid+0) IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${match})`
+        : sql`EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH ${match})`;
+    if (Array.from(text).length >= 3)
+      return sql`EXISTS (SELECT 1 FROM messages_fts WHERE rowid=m.rowid AND messages_fts MATCH ${ftsSearchTerm(quoteSearchValue(text))})`;
+    const like = literalLike(text);
+    const bigram = bigramMatch(text);
+    if (bigram)
+      return sql`(EXISTS (SELECT 1 FROM messages_bigrams WHERE rowid=m.rowid AND messages_bigrams MATCH ${bigram}) OR ${queuedBigramRows(like, false, false)})`;
+    return messageLike(like, false);
   };
 
   /** Rows written or backfilled since migration 45 read their flags; older rows run `scan`. */
@@ -247,7 +255,6 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
   const searchConditionFilter = (
     c: SearchCondition,
     ready = false,
-    rowBound = false,
     context: Pick<LocalQuery, "proximityPage"> = {},
   ): Fragment => {
     const where: Fragment[] = [];
@@ -298,7 +305,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       where.push(
         sql`EXISTS (SELECT 1 FROM json_each(m.to_json) WHERE json_extract(value, '$.address') LIKE ${literalLike(c.to)} ESCAPE '\\' OR json_extract(value, '$.name') LIKE ${literalLike(c.to)} ESCAPE '\\')`,
       );
-    if (c.subject) where.push(textFilter(c.subject, false, ready, true, rowBound));
+    if (c.subject) where.push(textFilter(c.subject, false, ready, true));
     if (c.important) where.push(hasLabel("IMPORTANT"));
     if (c.attachmentText)
       where.push(sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id)`);
@@ -364,7 +371,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       case "term": {
         const q = parseSearchQuery({ search: node.value });
         const conditions = [
-          searchConditionFilter(q.criteria ?? {}, context.messagesReady, context.rowBound, context),
+          searchConditionFilter(q.criteria ?? {}, context.messagesReady, context),
         ];
         if (q.criteria?.proximity) {
           const body = conditions.pop() ?? sql.literal("1");
@@ -376,8 +383,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
         if (q.unreadOnly) conditions.push(sql`m.is_unread=1`);
         if (q.starredOnly) conditions.push(sql`m.is_starred=1`);
         if (q.search) {
-          const body = textFilter(q.search, false, context.messagesReady, false, context.rowBound);
-          const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady, false, context.rowBound)})`;
+          const body = context.rowBound
+            ? rowBoundTextFilter(q.search, context.messagesReady)
+            : textFilter(q.search, false, context.messagesReady);
+          const derived = sql`EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND ${textFilter(q.search, true, context.derivedReady)})`;
           conditions.push(
             context.attachmentOnly ? derived : context.media ? sql`(${body} OR ${derived})` : body,
           );
@@ -437,12 +446,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       if (flags.length) where.push(sql`(${sql.or(flags)})`);
       if (filters.inInbox) where.push(hasLabel("INBOX"));
     }
-    where.push(
-      searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false, q.rowBoundText, q),
-    );
+    where.push(searchConditionFilter(q.criteria ?? {}, q.wordIndexReady ?? false, q));
     for (const condition of q.criteria?.excluded ?? []) {
       if (q.proximityPage?.kind === "prefilter" && condition.proximity) continue;
-      const filter = searchConditionFilter(condition, q.wordIndexReady ?? false, q.rowBoundText, q);
+      const filter = searchConditionFilter(condition, q.wordIndexReady ?? false, q);
       where.push(
         condition.sizeLarger !== undefined || condition.sizeSmaller !== undefined
           ? sql`(m.message_size IS NULL OR NOT (${filter}))`
@@ -469,6 +476,25 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     return sql.literal(index ? `messages m INDEXED BY ${index}` : "messages m");
   };
 
+  /**
+   * Marks a plain search for the date index walk when its text index entry matches more than
+   * COMMON_TERM_ROWS messages. A bounded probe tells rare terms from common ones: a rare term
+   * starts from its rowids, a common one walks the date index and probes the text index by
+   * rowid only for recent rows.
+   */
+  const commonTerm = Effect.fnUntraced(function* (
+    q: LocalQuery,
+    index: NonNullable<LocalQuery["textPage"]>["index"],
+    match: string,
+  ) {
+    const table = sql.literal(index);
+    const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
+        SELECT rowid FROM ${table} WHERE ${table} MATCH ${match} LIMIT ${sql.literal(String(COMMON_TERM_ROWS + 1))})`);
+    return (rows[0]?.n ?? 0) > COMMON_TERM_ROWS
+      ? ({ ...q, textPage: { index, match }, rowBoundText: true } satisfies LocalQuery)
+      : q;
+  });
+
   const planTextPage = Effect.fnUntraced(function* (q: LocalQuery) {
     const words = searchWords(q.search ?? "");
     if (
@@ -484,54 +510,23 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       // Plain words AND together. Common words found together in most mail walk the date
       // index like one common word; the rowid sets of `weekly` and `de*` are each about every
       // message, and starting from one of them read 100k rows for a page (8 s for 200 threads).
-      const terms = words.map((word) => {
-        const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
-        return usesSubstringSearch(text) ? null : ftsSearchTerm(word);
-      });
+      const terms = words.map((word) =>
+        usesSubstringSearch(searchTermText(word)) ? null : ftsSearchTerm(word),
+      );
       if (!q.wordIndexReady || terms.some((term) => term === null)) return q;
-      const match = terms.join(" AND ");
-      const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
-        SELECT rowid FROM messages_words WHERE messages_words MATCH ${match} LIMIT 2049)`);
-      return (rows[0]?.n ?? 0) > 2048
-        ? ({
-            ...q,
-            textPage: { index: "messages_words", match },
-            rowBoundText: true,
-          } satisfies LocalQuery)
-        : q;
+      return yield* commonTerm(q, "messages_words", terms.join(" AND "));
     }
     const word = words[0];
     if (!word || word.startsWith("-")) return q;
-    const text = unquoteSearchValue(word.endsWith("*") ? word.slice(0, -1) : word);
+    const text = searchTermText(word);
     const ready = q.wordIndexReady && !usesSubstringSearch(text);
     const bigram = ready ? undefined : bigramMatch(text);
-    if (bigram) {
-      const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
-        SELECT rowid FROM messages_bigrams WHERE messages_bigrams MATCH ${bigram} LIMIT 2049)`);
-      // Common short terms walk the date index too; queued rows still use LIKE per row.
-      return (rows[0]?.n ?? 0) > 2048
-        ? ({
-            ...q,
-            textPage: { index: "messages_bigrams", match: bigram },
-            rowBoundText: true,
-          } satisfies LocalQuery)
-        : q;
-    }
+    // Common short terms walk the date index too; queued rows still use LIKE per row.
+    if (bigram) return yield* commonTerm(q, "messages_bigrams", bigram);
     if (!ready && Array.from(text).length < 3) return q;
     const match = ftsSearchTerm(ready ? word : quoteSearchValue(text));
     if (!match) return q;
-    const table = sql.literal(ready ? "messages_words" : "messages_fts");
-    const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
-        SELECT rowid FROM ${table} WHERE ${table} MATCH ${match} LIMIT 2049)`);
-    // A bounded probe distinguishes rare terms from common ones. Common
-    // terms walk the date index, probing FTS by rowid only for recent rows.
-    return (rows[0]?.n ?? 0) > 2048
-      ? ({
-          ...q,
-          textPage: { index: ready ? "messages_words" : "messages_fts", match },
-          rowBoundText: true,
-        } satisfies LocalQuery)
-      : q;
+    return yield* commonTerm(q, ready ? "messages_words" : "messages_fts", match);
   });
   return {
     hasLabel,

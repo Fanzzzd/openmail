@@ -1,6 +1,6 @@
 /** Word tokens and FTS terms shared by the SQLite index and local matching. */
 
-import { contains, unquoteSearchValue } from "./search-tokens.js";
+import { contains, searchTermText } from "./search-tokens.js";
 import type { SearchCondition } from "../domain/message.js";
 
 /**
@@ -25,7 +25,7 @@ export const withoutSoftHyphens = (text: string): string =>
 /** Only a trailing, explicit star enables FTS prefix matching; all syntax is quoted. */
 export function ftsSearchTerm(value: string): string | null {
   const prefix = value.endsWith("*");
-  const text = withoutSoftHyphens(unquoteSearchValue(prefix ? value.slice(0, -1) : value));
+  const text = withoutSoftHyphens(searchTermText(value));
   if (!/[\p{L}\p{N}]/u.test(text)) return null;
   return `"${text.replaceAll('"', '""')}"${prefix ? "*" : ""}`;
 }
@@ -90,12 +90,12 @@ export function wordTokens(text: string): string[] {
   return tokens;
 }
 export function wholeWordMatch(text: string, value: string): boolean {
-  const literal = unquoteSearchValue(value.endsWith("*") ? value.slice(0, -1) : value);
+  const literal = searchTermText(value);
   if (ftsSearchTerm(value) === null) return true;
   if (usesSubstringSearch(literal)) return contains(text, literal);
   const haystack = wordTokens(text);
   const prefix = value.endsWith("*");
-  const needle = wordTokens(unquoteSearchValue(prefix ? value.slice(0, -1) : value));
+  const needle = wordTokens(literal);
   return (
     needle.length > 0 &&
     haystack.some((_, start) =>
