@@ -24,7 +24,7 @@ import { Browser, OAuth } from "../platform/auth.js";
 import { Providers, type ProviderAdapter } from "./adapter.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
-import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
+import { classifySyncFailure, SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 
 type Fault = NonNullable<FakeHttpReply["fault"]>;
 type Route = FakeHttpReply | ((url: URL, call: FakeHttpCall) => FakeHttpReply);
@@ -614,6 +614,23 @@ it("IMAP and SMTP network errors stay retryable and never ask for a new sign-in"
     failure("imap:me", "imap.example.test", new Error("Server does not support STARTTLS")).message,
     "TLS is required",
   );
+});
+
+it("IMAP connections that drop mid-sync classify as a network failure", () => {
+  for (const code of [
+    "NoConnection",
+    "EConnectionClosed",
+    "ENETDOWN",
+    "EADDRNOTAVAIL",
+    "ECONNABORTED",
+  ]) {
+    const error = failure(
+      "imap:me",
+      "imap.example.test",
+      Object.assign(new Error("Connection not available"), { code }),
+    );
+    assert.strictEqual(classifySyncFailure(error), "network", code);
+  }
 });
 
 it.live("a refused IMAP connection is a retryable provider error", () =>

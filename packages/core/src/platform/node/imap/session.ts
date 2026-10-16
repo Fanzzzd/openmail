@@ -82,7 +82,7 @@ const errorCode = (error: unknown) =>
  */
 function connectionReason(
   error: unknown,
-): "dns" | "refused" | "timeout" | "unreachable" | "tls" | undefined {
+): "dns" | "refused" | "timeout" | "unreachable" | "connection" | "tls" | undefined {
   let code = errorCode(error) ?? "";
   if (code === "ESOCKET" || code === "ECONNECTION")
     code = /\b(E[A-Z_]+|ERR_[A-Z_]+|CERT_[A-Z_]+)\b/.exec(describe(error))?.[1] ?? code;
@@ -91,6 +91,9 @@ function connectionReason(
   if (code === "ETIMEDOUT" || code === "ETIMEOUT") return "timeout";
   // A proxy or firewall that resolves every name resets the socket instead of failing DNS.
   if (/^(?:ECONNRESET|EPIPE|ENETUNREACH|EHOSTUNREACH)$/.test(code)) return "unreachable";
+  // imapflow's codes for a socket that went away, and a network that dropped (Wi-Fi off).
+  if (/^(?:NoConnection|EConnectionClosed|ENETDOWN|EADDRNOTAVAIL|ECONNABORTED)$/.test(code))
+    return "connection";
   if (
     code === "ETLS" ||
     code === "EPROTO" ||
