@@ -24,14 +24,12 @@ The first public version. Everything below is new.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
 - Attachments you open in other apps are copied to an internal folder. Unchanged copies are deleted after 7 days, Settings → Local cache clears the rest, and Time Machine skips the folder.
 - Replying to or forwarding an HTML message keeps its quote as a read-only block below an editable body. Edit quoted text joins the quote into the editor.
-- A Sent copy that fails to save is tried again after 1 h, 2 h, 4 h and so on, at most a day apart, up to 10 tries in 7 days. After that OpenMail shows the notice.
-- The word index is finished before CLI and MCP search and before `openmail sync`. If another process holds the write lock, `openmail search` prints a note on stderr and the MCP `search` tool returns `search_notice`: results are approximate until the index is done.
+- A Sent copy that fails to save is tried again after 1 h, 2 h, 4 h and so on, at most a day apart, up to 10 tries in 7 days. After that OpenMail shows a notice.
+- OpenMail finishes the word index before CLI and MCP search and before `openmail sync`. If another process holds the write lock, `openmail search` prints a note on stderr and the MCP `search` tool returns `search_notice`: results are approximate until the index is done.
 - Date and size operators without a valid value, such as `newer:foo` or `larger:xyz`, are searched as plain text. MCP `search` and `openmail search --json` list them under `ignored`, and `openmail search` prints a note on stderr with the accepted forms.
-- Outlook messages with a large attachment, such as a 4 MB PDF next to a logo, show their inline images. The size check had counted attachments at twice their size.
 - Opening remote-session launchers, key material, certificates and the other risky attachment types needs Save first. vCard and vCalendar files open in the in-app preview.
-- Inline images in a message whose raw source is over 8 MB show as broken. OpenMail no longer downloads the whole message on every open. Attachments still download normally.
-- A space typed after plain words in the search field stays. The search field keeps focus when results replace the list, as in the narrow layout or with the reading pane hidden.
-- A word typed after an operator chip starts a new word. Typing `board notes is:unread next` searched for `board notesnext` before.
+- Inline images show when the message's raw source is 8 MB or less. Above that they show as broken, and OpenMail does not download the whole message to find them. Attachments download normally. An Outlook message with a 4 MB PDF next to a logo shows its images.
+- A space typed after plain words stays in the search field, and the field keeps focus when results replace the list, as in the narrow layout or with the reading pane hidden. A word typed after an operator chip starts a new word, so `board notes is:unread next` searches for `board notes` and `next`.
 - A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation that was open before it, scrolls the list back to where it was and puts focus on that row.
 
 ### Writing and organizing
@@ -42,19 +40,17 @@ The first public version. Everything below is new.
 - Replies and forwards go out when Gmail or Outlook no longer has the original message. IMAP replies stay threaded.
 - IMAP setup asks for a sender name, which appears in the From line.
 - Calendar invites with RSVP and recurrence, and contact suggestions from the server and, optionally, Apple Contacts.
-- Copy to folders is a menu item in the conversation and batch menus, so the arrow keys reach it. Enter opens its form after the menu closes.
-- Copy to folders is hidden when the account has no folders to copy to. Its form opens at the row or the Batch actions button whose menu opened it.
+- Copy to folders is a menu item in the conversation and batch menus, so the arrow keys reach it. Enter opens its form after the menu closes, at the row or the Batch actions button whose menu opened it. The item is hidden when the account has no folders to copy to.
 - The delete confirmation for a label or folder names it, for example: Delete the folder “Projects”?
-- The batch bar says "More messages not loaded" instead of "0 more not loaded" while the server still has older mail.
-- A draft saved on this Mac that is only waiting to sync closes without a prompt. The prompt now reads "This draft has unsaved changes or couldn't sync." and appears for unsaved changes or a sync that stopped.
+- The batch bar says "More messages not loaded" while the server still has older mail.
+- A draft saved on this Mac that is only waiting to sync closes without a prompt. The prompt reads "This draft has unsaved changes or couldn't sync." and appears for unsaved changes or a sync that stopped.
 
 ### Desktop
 
 - Keyboard-first: three shortcut sets, link hints, Back and Forward, command menus.
-- `openmail list --space` takes a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none`, cannot equal another space's id and cannot be blank once control and format characters are removed. Names are compared after NFKC normalization, and a name with a control character such as a line break is refused.
-- A space name with a line break or tab says "A space name can't contain line breaks or tabs." A name that equals another space's id says "That is another space's id. Choose another name."
+- `openmail list --space` takes a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none`, cannot equal another space's id and cannot be blank once control and format characters are removed. Names are compared after NFKC normalization. A name with a line break or tab says "A space name can't contain line breaks or tabs." A name that equals another space's id says "That is another space's id. Choose another name."
 - The space editor rings the selected icon in dark mode, clears a save error once you edit the name, and names each color in words for screen readers.
-- The space picker bar above the panes is gone. Switch spaces from the sidebar, the icon rail or the space shortcuts.
+- Switch spaces from the sidebar, the icon rail or the space shortcuts.
 - The sidebar titles an Outlook or IMAP account's own mailboxes Folders. Gmail keeps Labels.
 - Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
@@ -70,18 +66,16 @@ The first public version. Everything below is new.
 
 - Optional AI per account, off by default: summaries, a mail assistant (⌘J), writing help and triage suggestions. Changes the assistant proposes wait for your approval.
 - CLI (`openmail`) and an MCP server for Claude Code, Codex, Claude and Cursor. Tools are read-only by default; write tools only create AI suggestions (called proposals in `list_proposals`, `read_proposal` and `openmail proposals`), and sending always needs confirmation in the app.
-- MCP tools return the `busy` error when another OpenMail process holds the write lock past the timeout. The activity row each call writes no longer fails the call while the lock is held. OpenMail retries it in the background.
-- MCP stays responsive while another process holds the write lock during the search backfill. Each backfill step waits at most 200 ms for the lock and tries again later.
+- MCP tools return the `busy` error when another OpenMail process holds the write lock past the timeout. During the search backfill, each backfill step waits at most 200 ms for the lock and tries again later, so MCP stays responsive. Each call's activity row is written in the background, in call order, and is saved or logged when the server closes. A held lock does not fail the call.
 - `openmail accounts add` and `openmail accounts reauth` print the sign-in URL after "If nothing opens, visit:", so you can open it by hand over SSH or on a Mac with no browser.
-- A failed `openmail sync` says "Sync could not finish. Run it again, or add --log-level warn to see why." instead of promising an automatic retry.
+- A failed `openmail sync` says "Sync could not finish. Run it again, or add --log-level warn to see why."
 - The CLI logs only errors by default. `--log-level warn` shows diagnostics.
 - `openmail search -newsletter` reads words that start with `-` as query text. `--` before the query also works.
 - CLI commands fail with code `busy` and a retry hint when another OpenMail process keeps the write lock. `openmail-mcp` prints the same two lines on stderr when the lock keeps it from opening the database.
-- The CLI and MCP server start without the write lock when an account from an older version has no stored OAuth scopes. Before, `openmail mcp` exited after 5 s while the app was writing.
-- MCP tool results no longer wait for the activity row. OpenMail writes it in the background, in call order, and still saves or logs it when the server closes.
+- The CLI and MCP server start without the write lock when an account from an older version has no stored OAuth scopes, so `openmail mcp` opens while the app is writing.
 - `openmail sync --json` prints one JSON document. When an account fails, `{"results": [...]}` also gets an `error` object.
-- When every failed account needs a new sign-in, `openmail sync` says to sign in again instead of to rerun it.
-- `openmail sync --log-level warn` prints each unknown failure's error type, status and message, without addresses or tokens. `--log-level debug` adds the other failures. The hint no longer suggests the flag you already passed.
+- When every failed account needs a new sign-in, `openmail sync` tells you to sign in again, not to rerun it.
+- `openmail sync --log-level warn` prints each unknown failure's error type, status and message, without addresses or tokens. `--log-level debug` adds the other failures. The hint leaves out a flag you already passed.
 - `openmail mcp`, `openmail-mcp` and `OpenMail --mcp` all log warnings and errors by default and take `--log-level`.
 - `openmail spaces add --color` takes the color names the app shows: purple, red, brown, green and gray. The old keys still work.
 - The CLI and MCP page lists every `code` the CLI prints with `--json`.
@@ -92,7 +86,7 @@ The first public version. Everything below is new.
 ### Remote access
 
 - Use your mailbox from a phone browser over Tailscale Serve. Off by default, bound to 127.0.0.1, limited to an allowlist of Tailscale logins and of RPCs.
-- On a phone, Cc/Bcc sits on its own line under To, so a recipient's name is no longer cut to "Dana …".
+- On a phone, Cc/Bcc sits on its own line under To, so the To chip keeps a recipient's name.
 
 ### Mobile (preview)
 
