@@ -132,7 +132,8 @@ export function SearchField({
     }
     if (suggestion.kind === "recent") {
       recentSearches.add(suggestion.query);
-      onChange(`${suggestion.query} `);
+      // Runs as Enter ran it, so a saved unfinished word stays a prefix.
+      onChange(submittedSearchText(suggestion.query));
     } else onChange(selectSearchOperator(value, suggestion.token));
     setOpen(false);
   };

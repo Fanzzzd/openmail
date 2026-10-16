@@ -428,7 +428,7 @@ it("an empty field offers recent searches only, or one hint and search help", ()
       dom.element.querySelector(`[data-key="${recent}"]`)?.getAttribute("aria-describedby"),
     ).toBeTruthy();
     act(() => controls.pick(recent ?? ""));
-    expect(changed).toHaveBeenLastCalledWith("quarterly report ");
+    expect(changed).toHaveBeenLastCalledWith("quarterly report");
     expect(JSON.parse(values.get("openmail.recentSearches") ?? "[]")).toEqual([
       "quarterly report",
       "from:alice invoice",
@@ -443,7 +443,12 @@ it("an empty field offers recent searches only, or one hint and search help", ()
 
 it("Enter keeps an unfinished word a prefix and turns a finished operator into a chip", () => {
   const dom = testDom();
-  vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
+  const values = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => values.get(key) ?? null,
+    setItem: (key: string, value: string) => values.set(key, value),
+    removeItem: (key: string) => values.delete(key),
+  });
   const enter = () => {
     const input = dom.element.querySelector<HTMLInputElement>('input[aria-label="Search mail"]');
     if (!input) throw new Error("Missing search input");
@@ -466,6 +471,16 @@ it("Enter keeps an unfinished word a prefix and turns a finished operator into a
     act(() => controls.type("from:alice"));
     enter();
     expect(changed).toHaveBeenLastCalledWith("from:alice ");
+    // Picking the saved word from Recent runs it as Enter did, still a prefix.
+    const clear = dom.element.querySelector('[aria-label="Clear search"]');
+    if (!clear) throw new Error("Missing Clear search");
+    act(() => {
+      clear.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
+    });
+    const recent = controls.items.find((key) => key.endsWith("northw"));
+    expect(recent).toBeDefined();
+    act(() => controls.pick(recent ?? ""));
+    expect(changed).toHaveBeenLastCalledWith("northw");
   } finally {
     dom.dispose();
     vi.unstubAllGlobals();
