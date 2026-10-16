@@ -208,6 +208,40 @@ it.effect(
       for (const search of ["weekly delivery", "weekly de*"])
         assert.include(plans.get(search) ?? "", "messages m INDEXED BY messages_list_date_id");
       assert.notInclude(plans.get("weekly alpine") ?? "", "INDEXED BY messages_list_date_id");
+      // OCR text in older mail: its conversations are not in the first mail page, so the
+      // search looks their representatives up by id.
+      for (let i = 0; i < 400; i += 40) {
+        const messageId = `${i % 2 ? a.id : b.id}/p${i}`;
+        yield* sql`INSERT INTO derived_chunks(message_id,text,provenance_json) VALUES(${messageId},${"weekly pending scan"},${JSON.stringify(
+          {
+            messageId,
+            text: "weekly pending scan",
+            source: { kind: "attachment", index: 0, name: "scan.pdf", mimeType: "application/pdf" },
+            page: 1,
+            region: null,
+            pipelineVersion: "test",
+            visionRevision: 1,
+          },
+        )})`;
+      }
+      while (!(yield* store.backfillWordIndex(5000)).ready) {
+        /* drain */
+      }
+      trace.start();
+      const withAttachments = yield* store.listThreads({ search: "we*", limit: 5 });
+      const lookups = trace
+        .stop()
+        .filter(
+          (query) =>
+            query.sql.includes("candidates AS NOT MATERIALIZED") &&
+            query.sql.includes("m.id IN (SELECT value FROM json_each"),
+        );
+      assert.ok(
+        withAttachments.some((thread) => thread.derivedMatches?.length),
+        "an attachment-only conversation joins the results",
+      );
+      assert.isAbove(lookups.length, 0);
+      for (const query of lookups) assert.notInclude(plan([query]), "messages_list_date_id");
     }).pipe(
       Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
       Effect.ensuring(Effect.sync(trace.restore)),

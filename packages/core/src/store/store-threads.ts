@@ -506,6 +506,15 @@ export const makeThreadsStore = ({
         if (representative)
           (mailCandidates.has(key) ? knownIds : unknownIds).push(representative.id);
       }
+      // The representatives are looked up by id. The text page plan of a common term would walk
+      // the whole date index and test each row's thread head before its id (390 ms on 100k).
+      const representativeQuery = {
+        ...q,
+        search: "",
+        criteria,
+        textPage: undefined,
+        rowBoundText: false,
+      } satisfies LocalQuery;
       // The mail route already loaded these conversations' counts and participants.
       // Fetch the attachment representative's own fields without collapsing them again.
       endGrouping?.();
@@ -513,14 +522,14 @@ export const makeThreadsStore = ({
         ? yield* searchEffect(
             profile,
             "known attachment representatives",
-            messageList({ ...q, search: "", criteria, messageIds: knownIds }, knownIds.length),
+            messageList({ ...representativeQuery, messageIds: knownIds }, knownIds.length),
           )
         : [];
       const unknown = unknownIds.length
         ? yield* searchEffect(
             profile,
             "unknown attachment representatives",
-            listing({ ...q, search: "", criteria, messageIds: unknownIds }, unknownIds.length),
+            listing({ ...representativeQuery, messageIds: unknownIds }, unknownIds.length),
           )
         : [];
       const endSummaries = profile?.begin("attachment summary ordering");
