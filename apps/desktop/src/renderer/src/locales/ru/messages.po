@@ -49,11 +49,17 @@ msgstr "{0, plural, one {Ещё # сообщение не загружено} fe
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, one {# повторение} few {# повторения} many {# повторений} other {# повторения}}"
 
-#. Conversations selected in the list. Only loaded conversations can be selected.
+#. Every conversation loaded in the list is selected. Older ones on the server are not.
 #. placeholder {0}: rows.length
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
 msgstr "{0, plural, one {# переписка выбрана (загружена)} few {# переписки выбраны (загружены)} many {# переписок выбрано (загружено)} other {# переписки выбрано (загружено)}}"
+
+#. Conversations picked in the list.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected} other {# selected}}"
+msgstr "{0, plural, one {# переписка выбрана} few {# переписки выбраны} many {# переписок выбрано} other {# переписки выбрано}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx

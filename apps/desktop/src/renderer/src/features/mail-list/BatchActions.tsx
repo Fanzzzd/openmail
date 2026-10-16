@@ -151,7 +151,7 @@ export function BatchActions(
     onLabelPicker: (open: boolean) => void;
     canLoadMore: boolean;
     moreNotLoaded: number | null;
-    /** Every loaded row is selected, as after Select all. */
+    /** Every loaded conversation is selected, so the count says only loaded ones are. */
     everyLoaded: boolean;
   },
 ) {
@@ -183,13 +183,22 @@ export function BatchActions(
         {count}
       </span>
       <span className="mr-2 min-w-0 truncate text-callout text-a11y-muted @max-[300px]/batch:sr-only">
-        <Plural
-          value={rows.length}
-          one="# selected (loaded)"
-          other="# selected (loaded)"
-          comment="Conversations selected in the list. Only loaded conversations can be selected."
-        />
-        {props.canLoadMore && props.everyLoaded && (
+        {props.everyLoaded ? (
+          <Plural
+            value={rows.length}
+            one="# selected (loaded)"
+            other="# selected (loaded)"
+            comment="Every conversation loaded in the list is selected. Older ones on the server are not."
+          />
+        ) : (
+          <Plural
+            value={rows.length}
+            one="# selected"
+            other="# selected"
+            comment="Conversations picked in the list."
+          />
+        )}
+        {props.everyLoaded && props.canLoadMore && (
           <span className="ml-2">
             {/* No count, or 0 while the server still has older mail: the number is unknown. */}
             {!props.moreNotLoaded ? (

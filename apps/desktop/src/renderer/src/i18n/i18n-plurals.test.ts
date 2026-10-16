@@ -40,6 +40,7 @@ it("the sync health window counts days and messages with plurals", async () => {
 
 const COUNTED = [
   ["{0, plural, one {# selected (loaded)} other {# selected (loaded)}}", "0"],
+  ["{0, plural, one {# selected} other {# selected}}", "0"],
   ["{0, plural, one {# more not loaded} other {# more not loaded}}", "0"],
   ["{unreadCount, plural, one {# unread} other {# unread}}", "unreadCount"],
   ["{count, plural, one {Server preview: # message} other {Server preview: # messages}}", "count"],
@@ -49,8 +50,8 @@ const COUNTED = [
 // These counts were plain `{count}` placeholders, so Russian and Czech nouns after them could
 // not agree, and Japanese read "{0} more not loaded" as "{0} or more".
 it("selection, unread and preview counts use each plural form", async () => {
-  expect(await render("en", COUNTED[3][0], { count: 1 })).toBe("Server preview: 1 message");
-  expect(await render("en", COUNTED[1][0], { 0: 3 })).toBe("3 more not loaded");
+  expect(await render("en", COUNTED[4][0], { count: 1 })).toBe("Server preview: 1 message");
+  expect(await render("en", COUNTED[2][0], { 0: 3 })).toBe("3 more not loaded");
   for (const [source, name] of COUNTED)
     for (const locale of ["ru", "cs"]) {
       const forms = await Promise.all(
@@ -58,11 +59,11 @@ it("selection, unread and preview counts use each plural form", async () => {
       );
       expect(new Set(forms.map((form) => form.replace(/\d+/, "#"))).size, source).toBe(3);
     }
-  expect(await render("ja", COUNTED[1][0], { 0: 3 })).toBe(
+  expect(await render("ja", COUNTED[2][0], { 0: 3 })).toBe(
     "未読み込みのメッセージがあと3件あります",
   );
-  expect(await render("ru", COUNTED[1][0], { 0: 21 })).toBe("Ещё 21 сообщение не загружено");
-  expect(await render("ru", COUNTED[1][0], { 0: 1_000 })).toMatch(
+  expect(await render("ru", COUNTED[2][0], { 0: 21 })).toBe("Ещё 21 сообщение не загружено");
+  expect(await render("ru", COUNTED[2][0], { 0: 1_000 })).toMatch(
     /^Ещё 1\s000 сообщений не загружено$/,
   );
 });
@@ -73,7 +74,7 @@ it("the not-loaded notice says older messages exist, with a note for translators
   const entry = Object.values(catalog).find(
     (message) => message.message === "More messages not loaded",
   );
-  expect(entry?.comments.join(" ")).toContain("Older messages exist on the server");
+  expect(entry?.comments?.join(" ")).toContain("Older messages exist on the server");
   expect(entry?.translation).toBe("D’autres messages ne sont pas chargés");
   expect(await render("ru", "More messages not loaded", {})).toBe("Загружены не все сообщения");
 });

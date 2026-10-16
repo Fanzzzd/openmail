@@ -362,7 +362,7 @@ export function App({ composeId }: { composeId?: string }) {
           ...batch,
           canLoadMore: threads.canLoadMore,
           moreNotLoaded: threads.moreNotLoaded,
-          everyLoaded: batchRows.length === threads.threads.length,
+          everyLoaded: threads.threads.every((thread) => selection.ids.has(thread.id)),
           labelPicker,
           onLabelPicker: setLabelPicker,
         }

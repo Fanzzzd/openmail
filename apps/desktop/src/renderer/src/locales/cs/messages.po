@@ -49,11 +49,17 @@ msgstr "{0, plural, one {# další zpráva nenačtena} few {# další zprávy ne
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, one {# výskyt} few {# výskyty} many {# výskytu} other {# výskytů}}"
 
-#. Conversations selected in the list. Only loaded conversations can be selected.
+#. Every conversation loaded in the list is selected. Older ones on the server are not.
 #. placeholder {0}: rows.length
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
 msgstr "{0, plural, one {# vybraná (načtená)} few {# vybrané (načtené)} many {# vybrané (načtené)} other {# vybraných (načtených)}}"
+
+#. Conversations picked in the list.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected} other {# selected}}"
+msgstr "{0, plural, one {# vybraná} few {# vybrané} many {# vybrané} other {# vybraných}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx

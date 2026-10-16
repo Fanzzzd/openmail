@@ -348,7 +348,9 @@ it("the batch bar says more messages are not loaded when the local count has non
   expect(screen.queryByText(/more not loaded/)).toBeNull();
 });
 
-it("the batch bar leaves out the messages not loaded for rows picked by hand", () => {
+// A hand-picked selection said "(loaded)" and listed the messages not loaded, as if every
+// loaded conversation were selected.
+it("the batch bar counts a hand-picked selection without the loaded notes", () => {
   render(
     localized(
       h(BatchActions, {
@@ -365,7 +367,8 @@ it("the batch bar leaves out the messages not loaded for rows picked by hand", (
       }),
     ),
   );
-  expect(screen.queryByText(/not loaded/)).toBeNull();
+  expect(screen.getByText("2 selected")).toBeTruthy();
+  expect(screen.queryByText(/loaded/)).toBeNull();
 });
 
 it("moves focus from Sync now to the syncing status in an empty list", async () => {

@@ -49,11 +49,17 @@ msgstr "{0, plural, other {未読み込みのメッセージがあと#件あり�
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, other {#回}}"
 
-#. Conversations selected in the list. Only loaded conversations can be selected.
+#. Every conversation loaded in the list is selected. Older ones on the server are not.
 #. placeholder {0}: rows.length
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
 msgstr "{0, plural, other {#件を選択（読み込み済み）}}"
+
+#. Conversations picked in the list.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected} other {# selected}}"
+msgstr "{0, plural, other {#件を選択}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
