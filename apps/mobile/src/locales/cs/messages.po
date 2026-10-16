@@ -800,7 +800,7 @@ msgstr "Odebrat klíč"
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx
 msgid "Remove label"
-msgstr "Odstraňte štítek"
+msgstr "Odebrat štítek"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx

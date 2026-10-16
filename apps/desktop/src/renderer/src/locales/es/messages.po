@@ -2643,7 +2643,7 @@ msgstr "No se repite"
 
 #: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
-msgstr "No adjuntes el mensaje original"
+msgstr "No adjuntar el mensaje original"
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx

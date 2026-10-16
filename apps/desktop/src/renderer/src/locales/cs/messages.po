@@ -879,11 +879,11 @@ msgstr "Vždy přesouvat zprávy od tohoto odesílatele?"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "Vždy citujte celou zprávu"
+msgstr "Vždy citovat celou zprávu"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
-msgstr "Vždy používejte výběr"
+msgstr "Vždy použít výběr"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Always, block trackers"

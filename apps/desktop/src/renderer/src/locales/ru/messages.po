@@ -855,11 +855,11 @@ msgstr "Всегда светлый"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
-msgstr "Всегда загружайте изображения из {address}."
+msgstr "Всегда загружать изображения из {address}."
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
-msgstr "Всегда загружайте изображения из {domain}."
+msgstr "Всегда загружать изображения из {domain}."
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
@@ -879,11 +879,11 @@ msgstr "Всегда перемещать сообщения этого отпр
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "Всегда цитируйте все сообщение"
+msgstr "Всегда цитировать всё сообщение"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
-msgstr "Всегда используйте выделение"
+msgstr "Всегда использовать выделение"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Always, block trackers"
@@ -2643,7 +2643,7 @@ msgstr "Не повторяется"
 
 #: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
-msgstr "Не прикрепляйте исходное сообщение"
+msgstr "Не прикреплять исходное сообщение"
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx

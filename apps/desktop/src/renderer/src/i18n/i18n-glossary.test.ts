@@ -90,6 +90,9 @@ const COMMAND_LABELS = new Set([
   "Always load images from {domain}",
   "Open only this message in a new window",
   "Don't attach the original message",
+  "Always use selection",
+  "Always quote the whole message",
+  "Remove label",
   "Replace emoji text as you type",
   "Ask each time",
   "Stop suggesting {0}",
@@ -112,9 +115,12 @@ function isCommand(source: string, message: CatalogMessage): boolean {
  */
 const commandAsRequest: Partial<Record<string, RegExp>> = {
   ja: /(?:ください|ます)…?$/u,
-  ru: /^\p{L}+(?:йте|ите)(?!\p{L})/u,
-  fr: /^(?:Ne )?\p{L}+ez(?:-vous)?(?!\p{L})/u,
-  cs: /^(?:Znovu |Pokaždé )?(?:se )?\p{L}+(?:te|ete|ěte|ujte|ejte)(?!\p{L})/u,
+  ru: /^(?:(?:Всегда|Никогда|Не|Снова|Также) )?\p{L}+(?:йте|ите)(?!\p{L})/u,
+  fr: /^(?:(?:Ne|Toujours|Jamais) )?\p{L}+ez(?:-vous)?(?!\p{L})/u,
+  cs: /^(?:(?:Znovu|Pokaždé|Vždy|Nikdy|Ne) )?(?:se )?\p{L}+(?:te|ete|ěte|ujte|ejte)(?!\p{L})/u,
+  // Spanish uses the infinitive (Usar siempre, No adjuntar), not the tú or usted imperative
+  // (Usa, Adjunte) or the negative subjunctive (No adjuntes), alone or after Siempre/No/Nunca.
+  es: /^(?:(?:Siempre|No|Nunca) )?(?:(?:Usa|Use|Elige|Elija|Abre|Abra|Cita|Cite|Adjunta|Adjunte|Pregunta|Pregunte|Guarda|Guarde|Borra|Borre|Elimina|Elimine|Quita|Quite|Añade|Añada|Cierra|Cierre|Confirma|Confirme|Inicia|Inicie|Selecciona|Seleccione|Pulsa|Pulse|Muestra|Muestre|Carga|Cargue|Envía|Envíe|Responde|Responda|Reenvía|Reenvíe|Archiva|Archive|Mueve|Mueva|Marca|Marque|Descarga|Descargue)(?!\p{L})|(?<=^(?:No|Nunca) )\p{L}+[ae]s(?!\p{L}))/u,
 };
 
 /** The checks every catalog's messages pass, the desktop app's and the mobile app's. */
