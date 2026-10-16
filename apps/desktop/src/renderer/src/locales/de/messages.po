@@ -3889,7 +3889,7 @@ msgstr "Langes Wischen nach links"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left short swipe"
-msgstr "Kurzer Wisch nach links"
+msgstr "Kurzes Wischen nach links"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6279,11 +6279,11 @@ msgstr "Sofort"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right long swipe"
-msgstr "Langer Wisch nach rechts"
+msgstr "Langes Wischen nach rechts"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right short swipe"
-msgstr "Kurzer Wisch nach rechts"
+msgstr "Kurzes Wischen nach rechts"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

@@ -3885,11 +3885,11 @@ msgstr "Оставьте поле пустым, если администрат�
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left long swipe"
-msgstr "Длинный свайп влево"
+msgstr "Длинное смахивание влево"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left short swipe"
-msgstr "Короткий свайп влево"
+msgstr "Короткое смахивание влево"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6279,7 +6279,7 @@ msgstr "Сразу"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right long swipe"
-msgstr "Длинный свайп вправо"
+msgstr "Длинное смахивание вправо"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right short swipe"
@@ -7271,7 +7271,7 @@ msgstr "Действия смахивания"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."
-msgstr "Проведите по горизонтали двумя пальцами. Отпустите кнопку после короткого или длинного смахивания, чтобы применить действие."
+msgstr "Проведите по горизонтали двумя пальцами. Отпустите пальцы после короткого или длинного смахивания, чтобы применить действие."
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Switch spaces"

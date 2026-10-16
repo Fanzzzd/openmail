@@ -3885,11 +3885,11 @@ msgstr "メール管理者から信頼できる authserv-id が提供されて�
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left long swipe"
-msgstr "左ロングスワイプ"
+msgstr "左へ長くスワイプ"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left short swipe"
-msgstr "左に短くスワイプ"
+msgstr "左へ短くスワイプ"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6279,11 +6279,11 @@ msgstr "すぐに"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right long swipe"
-msgstr "右ロングスワイプ"
+msgstr "右へ長くスワイプ"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right short swipe"
-msgstr "右に短くスワイプ"
+msgstr "右へ短くスワイプ"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

@@ -6283,7 +6283,7 @@ msgstr "Dlouhé přejetí doprava"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right short swipe"
-msgstr "Krátký pohyb doprava"
+msgstr "Krátké přejetí doprava"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

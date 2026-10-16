@@ -94,6 +94,12 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       if (selector.test(visibleSource) && !new RegExp(pattern, "iu").test(target))
         failures.push(`${locale}: ${term}: ${source} → ${target}`);
     }
+    // A two-finger trackpad swipe has no button to release; Russian said "Отпустите кнопку".
+    if (
+      /two fingers/i.test(source) &&
+      /кнопк|tlačítk|knop|bouton|Taste|pulsante|botón|ボタン|按钮/iu.test(target)
+    )
+      failures.push(`${locale}: gesture: ${source} → ${target}`);
     // The UI calls an account group a space; "profile" is only the code name.
     if (/\bprofiles?\b/i.test(source) || /\bprofil|プロファイル|профил|werkruimte/iu.test(target))
       failures.push(`${locale}: Space: ${source} → ${target}`);

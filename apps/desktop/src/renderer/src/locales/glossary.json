@@ -298,5 +298,16 @@
   },
   "Unread": {
     "ja": "未開封"
+  },
+  "Swipe": {
+    "zh-CN": "滑",
+    "cs": "přejet|přejeď",
+    "nl": "veeg",
+    "fr": "balay",
+    "de": "wischen|wischaktion",
+    "it": "scorriment",
+    "ja": "(?<!ロング|ショート)スワイプ",
+    "ru": "смахив",
+    "es": "desliz"
   }
 }

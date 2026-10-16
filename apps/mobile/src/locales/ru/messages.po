@@ -561,12 +561,12 @@ msgstr "Только локальные уведомления. Текст со�
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe left"
-msgstr "Длинный свайп влево"
+msgstr "Длинное смахивание влево"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe right"
-msgstr "Длинный свайп вправо"
+msgstr "Длинное смахивание вправо"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -926,12 +926,12 @@ msgstr "Настройки"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe left"
-msgstr "Короткий свайп влево"
+msgstr "Короткое смахивание влево"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe right"
-msgstr "Короткий свайп вправо"
+msgstr "Короткое смахивание вправо"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx

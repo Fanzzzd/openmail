@@ -7267,7 +7267,7 @@ msgstr "Superscript"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Swipe actions"
-msgstr "Veeg acties"
+msgstr "Veegacties"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Swipe horizontally with two fingers. Release after a short or long swipe to apply the action."

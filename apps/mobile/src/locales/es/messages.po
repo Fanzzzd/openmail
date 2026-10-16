@@ -561,12 +561,12 @@ msgstr "Solo notificaciones locales. Nunca se muestra el texto del mensaje."
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe left"
-msgstr "Deslizamiento largo a la izquierda"
+msgstr "Deslizamiento largo hacia la izquierda"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe right"
-msgstr "Deslizamiento largo a la derecha"
+msgstr "Deslizamiento largo hacia la derecha"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -926,12 +926,12 @@ msgstr "Ajustes"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe left"
-msgstr "Deslizamiento corto a la izquierda"
+msgstr "Deslizamiento corto hacia la izquierda"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe right"
-msgstr "Deslizamiento corto a la derecha"
+msgstr "Deslizamiento corto hacia la derecha"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx

@@ -3885,11 +3885,11 @@ msgstr "Lascia vuoto se l’amministratore della posta non ha fornito un authser
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left long swipe"
-msgstr "Scorri lungo a sinistra"
+msgstr "Scorrimento lungo a sinistra"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Left short swipe"
-msgstr "Scorri breve a sinistra"
+msgstr "Scorrimento breve a sinistra"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -6279,11 +6279,11 @@ msgstr "Subito"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right long swipe"
-msgstr "Scorri lungo verso destra"
+msgstr "Scorrimento lungo a destra"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Right short swipe"
-msgstr "Scorri brevemente verso destra"
+msgstr "Scorrimento breve a destra"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

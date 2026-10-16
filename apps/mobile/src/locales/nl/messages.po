@@ -561,12 +561,12 @@ msgstr "Alleen lokale meldingen. Berichttekst wordt nooit getoond."
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe left"
-msgstr "Lang naar links vegen"
+msgstr "Lange veeg naar links"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Long swipe right"
-msgstr "Lang naar rechts vegen"
+msgstr "Lange veeg naar rechts"
 
 #. js-lingui-explicit-id
 #: app/_layout.tsx
@@ -926,12 +926,12 @@ msgstr "Instellingen"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe left"
-msgstr "Kort naar links vegen"
+msgstr "Korte veeg naar links"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Short swipe right"
-msgstr "Kort naar rechts vegen"
+msgstr "Korte veeg naar rechts"
 
 #. js-lingui-explicit-id
 #: src/ai-controls.tsx
@@ -1029,7 +1029,7 @@ msgstr "Gesprek samenvatten"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Swipe actions"
-msgstr "Veeg acties"
+msgstr "Veegacties"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
