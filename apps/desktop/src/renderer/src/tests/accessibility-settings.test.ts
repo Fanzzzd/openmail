@@ -582,3 +582,11 @@ it("Organize labels its visibility columns and names every color, including one 
   });
   expect(mismatch.map((issue) => issue.nodes.map((node) => node.html))).toEqual([]);
 });
+
+// The sidebar truncates a long tab label ("Жесты и панель инс…"); the title carries the whole of it.
+it("gives every settings tab its full label as a title", () => {
+  render(localized(h(Settings, { accounts: [account], onClose: vi.fn(), onAddAccount: vi.fn() })));
+  const tabs = screen.getAllByRole("tab");
+  expect(tabs.length).toBeGreaterThan(10);
+  for (const tab of tabs) expect(tab.getAttribute("title")).toBe(tab.textContent);
+});

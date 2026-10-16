@@ -3309,7 +3309,7 @@ msgstr "Генерация завершена"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Gestures and toolbar"
-msgstr "Жесты и панель инструментов"
+msgstr "Жесты и панель"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Get Tailscale"
