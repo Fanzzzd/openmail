@@ -5419,6 +5419,7 @@ msgstr "トークン上限に達したため出力が切り詰められました
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "概要"
 

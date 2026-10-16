@@ -5429,6 +5429,7 @@ msgstr "输出已达到 token 上限，内容被截断，未缓存。"
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "总览"
 

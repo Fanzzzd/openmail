@@ -5419,6 +5419,7 @@ msgstr "Ответ обрезан из-за лимита токенов. Он н
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "Обзор"
 

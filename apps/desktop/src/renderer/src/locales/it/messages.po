@@ -5419,6 +5419,7 @@ msgstr "Risposta troncata al limite di token. Non è stata salvata nella cache."
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "Panoramica"
 

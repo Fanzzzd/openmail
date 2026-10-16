@@ -239,6 +239,7 @@ export function App({ composeId }: { composeId?: string }) {
     undoRef,
     showUndo,
     sidebarShown: layout.mode === "wide" ? prefs.sidebarVisible : layout.drawerOpen,
+    spaces: profileList.map((profile) => profile.name),
   });
 
   const paneNav = usePaneNavigation({ layout, navigation, run });

@@ -5419,6 +5419,7 @@ msgstr "La respuesta se truncó al alcanzar el límite de tokens. No se guardó 
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "Descripción general"
 

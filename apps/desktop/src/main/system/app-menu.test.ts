@@ -1,10 +1,16 @@
 import { readFileSync } from "node:fs";
 import type { MenuItemConstructorOptions } from "electron";
 import { expect, it, vi } from "vitest";
-import { NativeAction, NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
+import {
+  NativeAction,
+  NO_MENU_SELECTION,
+  nativeActionStroke,
+  type NativeMenuState,
+} from "../../shared/native-actions";
 import {
   isShortcutAction,
   MENU_SHORTCUTS,
+  spaceShortcut,
   menuAccelerator,
   shortcutAccelerator,
   type MenuShortcut,
@@ -15,7 +21,11 @@ import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { externalUrl } from "../../shared/external-url";
 
-const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestream") => {
+const template = (
+  platform: NodeJS.Platform,
+  shortcutSet: ShortcutSet = "mimestream",
+  menuState: NativeMenuState = NO_MENU_SELECTION,
+) => {
   const nativeAction = vi.fn<(action: NativeAction, triggeredByAccelerator: boolean) => void>();
   const openHelp = vi.fn<() => void>();
   const menu = applicationMenuTemplate({
@@ -23,7 +33,7 @@ const template = (platform: NodeJS.Platform, shortcutSet: ShortcutSet = "mimestr
     labels: DEFAULT_DESKTOP_LABELS,
     shortcutSet,
     undoAvailable: false,
-    menuState: NO_MENU_SELECTION,
+    menuState,
     tabMenu: [],
     checkUpdates: vi.fn(),
     command: vi.fn(),
@@ -51,7 +61,8 @@ const labels = (menu: readonly MenuItemConstructorOptions[]) =>
 it("every native action is in the menu bar exactly once, and no accelerator repeats", () => {
   for (const platform of ["darwin", "win32"] as const)
     for (const set of ["mimestream", "gmail", "apple"] as const) {
-      const { menu, nativeAction } = template(platform, set);
+      const spaces = Array.from({ length: 9 }, (_, index) => `Space ${index + 1}`);
+      const { menu, nativeAction } = template(platform, set, { ...NO_MENU_SELECTION, spaces });
       for (const item of items(menu))
         if (item.click && !item.role)
           item.click(
@@ -90,6 +101,56 @@ it("menu actions keep the keymap's accelerators; Go adds the folder keys", () =>
   expect(nativeActionAccelerator("mimestream", "alignLeft")).toBe("CommandOrControl+{");
 });
 
+it("Go lists Overview, All accounts and each space with the keys that open them", () => {
+  const state = { ...NO_MENU_SELECTION, spaces: ["Work", "Home"] };
+  for (const set of ["mimestream", "gmail"] as const) {
+    const { menu, nativeAction } = template("darwin", set, state);
+    const go = submenu(menu, "Go");
+    expect(labels(go).slice(0, 5)).toEqual(["Overview", "All accounts", "Work", "Home", "---"]);
+    expect(go.slice(0, 4).map((item) => item.accelerator)).toEqual(
+      set === "gmail"
+        ? ["Control+1", "Control+2", "CommandOrControl+1", "CommandOrControl+2"]
+        : ["Control+1", "Control+2", "Control+CommandOrControl+1", "Control+CommandOrControl+2"],
+    );
+    for (const item of go.slice(0, 4))
+      item.click?.(
+        Object.create(null),
+        undefined,
+        Object.assign(Object.create(null), { triggeredByAccelerator: false }),
+      );
+    expect(nativeAction.mock.calls.map(([action]) => action)).toEqual([
+      "goOverview",
+      "goAllAccounts",
+      "goSpace1",
+      "goSpace2",
+    ]);
+  }
+  // The window gets the key the space shortcut reads.
+  for (const set of ["mimestream", "gmail", "apple"] as const)
+    expect(
+      (["goOverview", "goAllAccounts", "goSpace3"] as const).map((action) => {
+        const stroke = nativeActionStroke(set, action);
+        return spaceShortcut(
+          {
+            key: stroke?.key ?? "",
+            metaKey: Boolean(stroke?.cmd),
+            ctrlKey: Boolean(stroke?.control),
+            altKey: false,
+            shiftKey: false,
+          },
+          set,
+        );
+      }),
+    ).toEqual([{ kind: "overview" }, { kind: "all" }, { kind: "profile", index: 2 }]);
+  const renamed = template("darwin", "mimestream", { ...NO_MENU_SELECTION, spaces: ["Work"] });
+  expect(labels(submenu(renamed.menu, "Go")).slice(0, 4)).toEqual([
+    "Overview",
+    "All accounts",
+    "Work",
+    "---",
+  ]);
+});
+
 it("the menu bar has View and Go, and Format groups its actions in submenus", () => {
   const { menu } = template("darwin");
   expect(labels(menu)).toEqual([
@@ -117,6 +178,9 @@ it("the menu bar has View and Go, and Format groups its actions in submenus", ()
     "Toggle full screen",
   ]);
   expect(labels(submenu(menu, "Go"))).toEqual([
+    "Overview",
+    "All accounts",
+    "---",
     "Inbox",
     "Starred",
     "Snoozed",

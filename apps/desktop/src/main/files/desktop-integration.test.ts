@@ -9,7 +9,9 @@ import { COMPOSE_ATTACHMENT_LIMIT } from "@openmail/core";
 import { readDockFiles } from "./dock-files";
 import {
   GO_MAILBOXES,
+  goSpaceIndex,
   isGoMailbox,
+  isGoSpace,
   NativeAction,
   NATIVE_MENUS,
   nativeMenuActions,
@@ -17,7 +19,13 @@ import {
   nativeActionStroke,
   providerMenuState,
 } from "../../shared/native-actions";
-import { folderShortcut, historyShortcut, KEYMAP, matchesShortcut } from "../../shared/shortcuts";
+import {
+  folderShortcut,
+  historyShortcut,
+  KEYMAP,
+  matchesShortcut,
+  spaceShortcut,
+} from "../../shared/shortcuts";
 import { DesktopEvent, desktopEventRoute, shouldBufferDesktopEvent } from "../../shared/desktop";
 vi.mock("electron", () => ({
   app: new EventEmitter(),
@@ -71,6 +79,16 @@ it("native mail menus share the keymap and selection/composer capability rules",
         // Go menu keys are the window's folder and history keys, not keymap entries.
         if (isGoMailbox(action)) {
           expect(event && folderShortcut(set, event)).toBe(GO_MAILBOXES[action]);
+          continue;
+        }
+        if (action === "goOverview" || action === "goAllAccounts" || isGoSpace(action)) {
+          expect(event && spaceShortcut(event, set)).toEqual(
+            action === "goOverview"
+              ? { kind: "overview" }
+              : action === "goAllAccounts"
+                ? { kind: "all" }
+                : { kind: "profile", index: goSpaceIndex(action) },
+          );
           continue;
         }
         if (action === "goBack" || action === "goForward") {

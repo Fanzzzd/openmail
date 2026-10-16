@@ -8,6 +8,20 @@ import {
   type ShortcutSet,
 } from "./shortcuts";
 
+/** The Go menu's spaces, in the order of their keys; the menu lists one per profile. */
+const GO_SPACES = [
+  "goSpace1",
+  "goSpace2",
+  "goSpace3",
+  "goSpace4",
+  "goSpace5",
+  "goSpace6",
+  "goSpace7",
+  "goSpace8",
+  "goSpace9",
+] as const;
+export type GoSpaceAction = (typeof GO_SPACES)[number];
+
 export const NativeAction = Schema.Literals([
   "superscript",
   "subscript",
@@ -95,6 +109,9 @@ export const NativeAction = Schema.Literals([
   "goSpam",
   "goBack",
   "goForward",
+  "goOverview",
+  "goAllAccounts",
+  ...GO_SPACES,
 ]);
 export type NativeAction = typeof NativeAction.Type;
 export const NativeMenuState = Schema.Struct({
@@ -110,6 +127,8 @@ export const NativeMenuState = Schema.Struct({
   panes: Schema.optionalKey(
     Schema.Struct({ sidebar: Schema.Boolean, toolbar: Schema.Boolean, reader: Schema.Boolean }),
   ),
+  /** The names of the main window's spaces (profiles), which the Go menu lists. */
+  spaces: Schema.optionalKey(Schema.Array(Schema.String)),
 });
 export type NativeMenuState = typeof NativeMenuState.Type;
 const PANE_TOGGLES: Partial<
@@ -160,6 +179,12 @@ export const isGoMailbox = (action: NativeAction): action is GoMailboxAction =>
 export const goMailboxDigit = (action: NativeAction): number | undefined =>
   isGoMailbox(action) ? NUMBERED_MAILBOXES.indexOf(GO_MAILBOXES[action]) + 1 : undefined;
 
+export const isGoSpace = (action: NativeAction): action is GoSpaceAction =>
+  GO_SPACES.some((space) => space === action);
+/** The index of a Go menu space among the profiles (0 for the first), or undefined. */
+export const goSpaceIndex = (action: NativeAction): number | undefined =>
+  isGoSpace(action) ? GO_SPACES.indexOf(action) : undefined;
+
 /** A submenu of a native menu, named by its label key. */
 export interface NativeSubmenu {
   readonly submenu: "textStyle" | "alignment" | "lists" | "quoteLevel" | "direction";
@@ -188,6 +213,10 @@ export const NATIVE_MENUS: readonly NativeMenu[] = [
   {
     name: "go",
     entries: [
+      "goOverview",
+      "goAllAccounts",
+      ...GO_SPACES,
+      "separator",
       "goInbox",
       "goStarred",
       "goSnoozed",
@@ -326,9 +355,19 @@ export function nativeActionEnabled(action: NativeAction, state: NativeMenuState
 export const EDITOR_ACTION_EVENT = "openmail:editor-action";
 /**
  * Dispatch through existing handlers, including Composer and Reader, using the selected keymap.
- * Go menu keys are not in the keymap: ⌘1…⌘8 (⌃⌘ with Gmail keys) and ⌘[ ⌘] for Back and Forward.
+ * Go menu keys are not in the keymap: ⌃1 and ⌃2 for Overview and All accounts, ⌃⌘1…⌃⌘9 (⌘ with
+ * Gmail keys) for the spaces, ⌘1…⌘8 (⌃⌘ with Gmail keys) for the mailboxes, and ⌘[ ⌘] for Back
+ * and Forward.
  */
 export function nativeActionStroke(set: ShortcutSet, action: NativeAction): KeyStroke | undefined {
+  if (action === "goOverview") return { key: "1", control: true };
+  if (action === "goAllAccounts") return { key: "2", control: true };
+  if (isGoSpace(action))
+    return {
+      key: String(GO_SPACES.indexOf(action) + 1),
+      cmd: true,
+      ...(set === "gmail" ? {} : { control: true }),
+    };
   if (isGoMailbox(action))
     return {
       key: String(goMailboxDigit(action)),

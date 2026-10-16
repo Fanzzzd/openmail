@@ -5419,6 +5419,7 @@ msgstr "Ausgabe wegen des Token-Limits gekürzt. Sie wurde nicht im Cache gespei
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "Überblick"
 

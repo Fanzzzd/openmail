@@ -43,8 +43,11 @@ export function useNativeMenuBridge({
   showUndo,
   messages,
   sidebarShown,
+  spaces,
 }: {
   messages: AppMessages;
+  /** The names of the spaces (profiles), in the order of their keys. */
+  spaces: readonly string[];
   /** The docked sidebar or its drawer is on screen. */
   sidebarShown: boolean;
   searchRef: RefObject<HTMLInputElement | null>;
@@ -82,6 +85,8 @@ export function useNativeMenuBridge({
 
   const surfaceOpen = useSurfaceOpen();
   const provider = threadState?.provider;
+  // The Go menu lists the spaces the keys reach: the first nine. A NUL never occurs in a name.
+  const spaceNames = spaces.slice(0, 9).join("\0");
   useEffect(() => {
     run(
       withMail((call) =>
@@ -96,6 +101,7 @@ export function useNativeMenuBridge({
               toolbar: prefs.toolbarVisible,
               reader: prefs.readingPaneVisible,
             },
+            spaces: spaceNames ? spaceNames.split("\0") : [],
           },
         }),
       ),
@@ -110,6 +116,7 @@ export function useNativeMenuBridge({
     sidebarShown,
     prefs.toolbarVisible,
     prefs.readingPaneVisible,
+    spaceNames,
   ]);
 
   const receiveDesktop = (event: DesktopEvent) => {

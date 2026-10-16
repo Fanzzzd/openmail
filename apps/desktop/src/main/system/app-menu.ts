@@ -2,7 +2,9 @@ import type { MenuItemConstructorOptions } from "electron";
 import type { DesktopLabels } from "../../shared/desktop-labels";
 import {
   goMailboxDigit,
+  goSpaceIndex,
   isGoMailbox,
+  isGoSpace,
   NATIVE_MENUS,
   nativeActionEnabled,
   nativeActionLabelKey,
@@ -46,6 +48,8 @@ const DEFAULT_MENU_LABELS: Record<string, string> = {
   goAll: "All Mail",
   goTrash: "Trash",
   goSpam: "Spam",
+  goOverview: "Overview",
+  goAllAccounts: "All accounts",
   goBack: "Previous view",
   goForward: "Next view",
   showSidebar: "Show sidebar",
@@ -106,6 +110,10 @@ export function closeWindowTarget<W>(input: {
 
 /** The accelerator an action's menu item shows and registers, if it has a ⌘ key. */
 export function nativeActionAccelerator(set: ShortcutSet, action: NativeAction) {
+  if (action === "goOverview") return "Control+1";
+  if (action === "goAllAccounts") return "Control+2";
+  if (isGoSpace(action))
+    return `${set === "gmail" ? "" : "Control+"}CommandOrControl+${(goSpaceIndex(action) ?? 0) + 1}`;
   if (isGoMailbox(action))
     return `${set === "gmail" ? "Control+" : ""}CommandOrControl+${goMailboxDigit(action)}`;
   // ⌘[ and ⌘] belong to the Format menu's indent while composing; Back and Forward keep them
@@ -124,7 +132,9 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
     DEFAULT_MENU_LABELS[key] ??
     (key[0]?.toUpperCase() ?? "") + key.slice(1).replace(/[A-Z]/g, (l) => ` ${l.toLowerCase()}`);
   const actionItem = (action: NativeAction): MenuItemConstructorOptions => ({
-    label: label(nativeActionLabelKey(action, input.menuState)),
+    label:
+      input.menuState.spaces?.[goSpaceIndex(action) ?? -1] ??
+      label(nativeActionLabelKey(action, input.menuState)),
     accelerator: nativeActionAccelerator(shortcutSet, action),
     enabled: nativeActionEnabled(action, input.menuState),
     click: (_item, _window, event) =>
@@ -132,6 +142,9 @@ export function applicationMenuTemplate(input: AppMenuInput): MenuItemConstructo
   });
   const entry = (item: NativeMenuEntry): MenuItemConstructorOptions[] => {
     if (item === "separator") return [{ type: "separator" }];
+    // The Go menu lists a space for each of the window's profiles.
+    const space = typeof item === "string" ? goSpaceIndex(item) : undefined;
+    if (space !== undefined && space >= (input.menuState.spaces?.length ?? 0)) return [];
     if (typeof item === "string") return mac || !item.startsWith("share") ? [actionItem(item)] : [];
     return [{ label: label(item.submenu), submenu: item.actions.map(actionItem) }];
   };

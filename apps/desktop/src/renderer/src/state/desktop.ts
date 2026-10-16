@@ -1,6 +1,7 @@
 import {
   GO_MAILBOXES,
   isGoMailbox,
+  isGoSpace,
   NATIVE_MENUS,
   nativeMenuActions,
   type NativeAction,
@@ -75,9 +76,15 @@ export function useDesktopEvents(receive: (event: DesktopEvent) => void) {
   }, [run]);
 }
 
-/** A native menu item's name: the shortcut's name, or the mailbox or view the Go menu opens. */
-function menuActionName(action: NativeAction): MessageDescriptor {
+/**
+ * A native menu item's name: the shortcut's name, or the mailbox or view the Go menu opens. The Go
+ * menu's spaces take their profile's name from the menu state instead.
+ */
+function menuActionName(action: NativeAction): MessageDescriptor | undefined {
+  if (isGoSpace(action)) return undefined;
   if (isGoMailbox(action)) return MAILBOX_NAMES[GO_MAILBOXES[action]];
+  if (action === "goOverview") return msg`Overview`;
+  if (action === "goAllAccounts") return msg`All accounts`;
   if (action === "goBack") return msg`Previous view`;
   if (action === "goForward") return msg`Next view`;
   return ACTION_NAMES[action];
@@ -122,10 +129,10 @@ export function useDesktopLabels() {
               }),
               front: t`Bring all to front`,
               ...Object.fromEntries(
-                NATIVE_MENUS.flatMap(nativeMenuActions).map((action) => [
-                  action,
-                  i18n._(menuActionName(action)),
-                ]),
+                NATIVE_MENUS.flatMap(nativeMenuActions).flatMap((action) => {
+                  const name = menuActionName(action);
+                  return name ? [[action, i18n._(name)]] : [];
+                }),
               ),
               // The View menu's pane toggles, by the pane's current state (nativeActionLabelKey).
               showSidebar: t`Show sidebar`,

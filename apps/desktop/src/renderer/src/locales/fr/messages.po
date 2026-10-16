@@ -5419,6 +5419,7 @@ msgstr "La sortie a été tronquée à la limite de jetons. Elle n’a pas été
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
+#: src/renderer/src/state/desktop.ts
 msgid "Overview"
 msgstr "Aperçu"
 
