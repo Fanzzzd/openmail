@@ -219,8 +219,10 @@ function GroupCard({
                 className="flex shrink-0 items-center gap-1 text-a11y-danger"
                 title={syncErrorText(i18n, a.lastSyncError)}
               >
-                <CircleAlert className="size-3.5" />
-                <Trans>Sync failed</Trans>
+                <CircleAlert className="size-3.5" aria-hidden />
+                <span className="sr-only">
+                  <Trans>Sync failed</Trans>
+                </span>
               </span>
             ) : (
               <span className="shrink-0 text-footnote text-a11y-muted">

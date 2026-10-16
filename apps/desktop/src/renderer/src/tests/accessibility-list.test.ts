@@ -5,6 +5,7 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-li
 import userEvent from "@testing-library/user-event";
 import { type Account } from "@openmail/core/schema";
 import { MessageList } from "../features/mail-list/MessageList";
+import { Overview } from "../features/overview/Overview";
 import { Sidebar } from "../features/sidebar/Sidebar";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { BatchActions } from "../features/mail-list/BatchActions";
@@ -689,3 +690,35 @@ for (const entries of [[], [{ undoId: "u1", createdAt: Date.UTC(2026, 9, 14, 9, 
     await audit();
   });
 }
+
+// In Russian the full status text pushed the account name down to "ale…" on two failed accounts.
+it("the overview keeps each failed account's name readable and moves the status to an icon", async () => {
+  const { i18n } = await catalogI18n("ru");
+  const failed = (id: string) => ({
+    ...account,
+    id,
+    email: `${id}@example.com`,
+    lastSyncError: "boom",
+  });
+  render(
+    h(
+      I18nProvider,
+      { i18n },
+      h(Overview, {
+        accounts: [failed("alexander"), failed("alexandra")],
+        profiles: [],
+        unread: {},
+        syncState: { running: false, lastFinishedAt: null, errors: [] },
+        onOpen: vi.fn(),
+        onEditProfile: vi.fn(),
+      }),
+    ),
+  );
+  for (const name of ["alexander@example.com", "alexandra@example.com"]) {
+    const row = screen.getByText(name).closest("li")!;
+    const status = within(row).getByText("Не удалось синхронизировать");
+    expect(status.className).toContain("sr-only");
+    expect(status.closest("[title]")?.getAttribute("title")).toBeTruthy();
+  }
+  await audit();
+});
