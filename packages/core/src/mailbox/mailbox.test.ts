@@ -90,7 +90,12 @@ import type { ProviderAdapter } from "../providers/adapter.js";
           agent,
         );
         assert.strictEqual(applied.status, "proposed");
-        assert.strictEqual((yield* m.proposals.audit(1))[0]?.actor, "agent:mcp:claude");
+        const [entry] = yield* m.proposals.audit(1);
+        assert.ok(entry);
+        assert.strictEqual(entry.actor, "agent:mcp:claude");
+        // The activity log names the account the suggested conversations belong to.
+        assert.strictEqual(entry.action, "proposed");
+        assert.strictEqual(entry.accountId, thread!.accountId);
       }),
     ),
   );

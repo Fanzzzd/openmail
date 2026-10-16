@@ -34,6 +34,12 @@ const isAiProposalActor = (actor: Actor): boolean =>
   (actor.surface === "mcp" || actor.surface === "assistant" || actor.name === "openmail-assistant");
 
 /** Where proposals are approved. The CLI and MCP only list and reject them. */
+/** The account every id belongs to, or undefined when they span several or none. */
+function sharedAccount(accounts: Iterable<string>): string | undefined {
+  const unique = new Set(accounts);
+  return unique.size === 1 ? [...unique][0] : undefined;
+}
+
 export const APPROVE_IN_APP =
   "Approve proposals in OpenMail, under AI suggestions. The CLI and MCP cannot approve them.";
 
@@ -308,9 +314,18 @@ export const makeApplyMailbox = (
     }
     if (actor.kind === "agent" && actor.surface === "mcp") yield* validateAiProposal(command);
     const decision = decide(command, actor, mode);
+    // The activity log's Account column: the command's account, or the one its threads share.
+    const audited = Effect.gen(function* () {
+      const accountId =
+        "accountId" in command
+          ? command.accountId
+          : sharedAccount((yield* store.messageAccounts(command.threads)).values());
+      return accountId === undefined ? {} : { accountId };
+    });
     if (decision.status === "denied") {
       yield* store.appendAudit({
         actor,
+        ...(yield* audited),
         action: "denied",
         detail: { command, reason: decision.reason },
       });
@@ -324,6 +339,7 @@ export const makeApplyMailbox = (
           ? Option.some({ accountId: command.accountId, message: command.message })
           : Option.none();
       if (Option.isSome(message)) yield* store.getAccount(message.value.accountId);
+      const account = yield* audited;
       const proposalId = yield* store.transaction(
         Effect.gen(function* () {
           const id = yield* store.insertProposal(actor, command);
@@ -345,6 +361,7 @@ export const makeApplyMailbox = (
           }
           yield* store.appendAudit({
             actor,
+            ...account,
             action: "proposed",
             detail: { proposalId: id, command },
           });
