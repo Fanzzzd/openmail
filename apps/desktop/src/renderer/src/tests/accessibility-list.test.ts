@@ -305,6 +305,7 @@ it("audits the narrow batch bar, whose count badge leaves the full count to scre
           onLabelPicker: setPicker,
           canLoadMore: true,
           moreNotLoaded: 3,
+          everyLoaded: true,
         }),
       ),
     );
@@ -339,11 +340,32 @@ it("the batch bar says more messages are not loaded when the local count has non
         onLabelPicker: vi.fn(),
         canLoadMore: true,
         moreNotLoaded: 0,
+        everyLoaded: true,
       }),
     ),
   );
   expect(screen.getByText("More messages not loaded")).toBeTruthy();
   expect(screen.queryByText(/more not loaded/)).toBeNull();
+});
+
+it("the batch bar leaves out the messages not loaded for rows picked by hand", () => {
+  render(
+    localized(
+      h(BatchActions, {
+        rows: [thread, { ...thread, id: "second" }],
+        accounts: [account],
+        labels: [],
+        mailbox: "inbox",
+        onOp: vi.fn(),
+        labelPicker: false,
+        onLabelPicker: vi.fn(),
+        canLoadMore: true,
+        moreNotLoaded: 3,
+        everyLoaded: false,
+      }),
+    ),
+  );
+  expect(screen.queryByText(/not loaded/)).toBeNull();
 });
 
 it("moves focus from Sync now to the syncing status in an empty list", async () => {

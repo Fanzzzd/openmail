@@ -108,6 +108,7 @@ it("keeps list notices, the batch count badge, empty list text and search marks 
             onLabelPicker: vi.fn(),
             canLoadMore: false,
             moreNotLoaded: null,
+            everyLoaded: false,
           }),
         }),
       ),

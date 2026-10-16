@@ -151,6 +151,8 @@ export function BatchActions(
     onLabelPicker: (open: boolean) => void;
     canLoadMore: boolean;
     moreNotLoaded: number | null;
+    /** Every loaded row is selected, as after Select all. */
+    everyLoaded: boolean;
   },
 ) {
   const { t, i18n } = useLingui();
@@ -182,7 +184,7 @@ export function BatchActions(
       </span>
       <span className="mr-2 min-w-0 truncate text-callout text-a11y-muted @max-[300px]/batch:sr-only">
         <Trans>{count} selected (loaded)</Trans>
-        {props.canLoadMore && (
+        {props.canLoadMore && props.everyLoaded && (
           <span className="ml-2">
             {/* No count, or 0 while the server still has older mail: the number is unknown. */}
             {!props.moreNotLoaded ? (
