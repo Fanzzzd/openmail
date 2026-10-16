@@ -348,6 +348,18 @@ it.effect(
         "subject:report -from:s3",
         "subject:nothing",
       ].map((search) => [search, true] as const);
+      // A plain common subject: probes the word index by rowid on the walked row.
+      trace.start();
+      yield* check(rows, "subject:report plan", { search: "subject:report" }, true);
+      assert.isTrue(
+        trace
+          .stop()
+          .some((query) =>
+            query.sql.includes(
+              "EXISTS (SELECT 1 FROM messages_words WHERE rowid=m.rowid AND messages_words MATCH",
+            ),
+          ),
+      );
       trace.start();
       yield* checkAll(rows, subjects, a);
       const queries = trace.stop();
@@ -525,6 +537,12 @@ it.effect(
   scaledMs(180_000),
 );
 
+// The side table joins values with char(30) and a name and address with char(31). A value with
+// either would match across values there, so it keeps the per-row json_each test.
+const separatorSearches = ['to:"a\u001eb"', 'cc:"team\u001fteam"', 'filename:"x\u001ey"'].map(
+  (search) => [search, true] as const,
+);
+
 const OperatorRow = Schema.Struct({
   row_id: Schema.Number,
   to_text: Schema.String,
@@ -582,6 +600,19 @@ it.effect(
       trace.start();
       yield* checkAll(rows, operatorSearches, a);
       usesSideTable(trace.stop(), true);
+      for (const entry of separatorSearches) {
+        trace.start();
+        yield* checkAll(rows, [entry], a);
+        const lists = operatorQueries(trace.stop());
+        assert.isAbove(lists.length, 0);
+        for (const query of lists) assert.notInclude(query.sql, "message_operator_text", entry[0]);
+        assert.isTrue(
+          lists.some((query) =>
+            /json_each\(m\.(cc_json|to_json|attachments_json)\)/.test(query.sql),
+          ),
+          entry[0],
+        );
+      }
 
       // A database from before migration 57: older rows have no operator text yet.
       yield* sql`DELETE FROM message_operator_text WHERE row_id % 3 = 0`;
