@@ -22,7 +22,7 @@ The first public version.
 - Inline images show when the message's raw source is 8 MB or less. OpenMail does not download a larger message to find them. Attachments download normally.
 - Attachments you open in other apps are copied to an internal folder. Unchanged copies are deleted after 7 days, Settings → Local cache clears the rest, and Time Machine skips the folder.
 - Full-text search over local mail with boolean, phrase, date, size and attachment operators, merged with server search, recent searches and match highlights.
-- While you type a search, its last word matches as a prefix, so `asy` finds "async". A space or Enter ends the word. Saved searches, server search, the CLI and MCP run the words as typed.
+- While you type a search, its last word matches as a prefix, so `asy` finds "async" and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP run the words as typed.
 - A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation from before and scrolls the list back to it.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
 
