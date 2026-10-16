@@ -141,22 +141,23 @@ describe("syncFailedHint", () => {
     needsReauth: true,
   };
   const broken = { ...ok, accountId: "imap:c@example.org", error: "Sync could not finish." };
+  const terminal = { json: false, verbose: false };
 
   it("names sign-in when every failed account needs it", () => {
-    expect(syncFailedHint([ok, signIn], false)).toBe("Sign in again with the commands above.");
-    expect(syncFailedHint([signIn], true)).toBe(
+    expect(syncFailedHint([ok, signIn], terminal)).toBe("Sign in again with the commands above.");
+    expect(syncFailedHint([signIn], { json: true, verbose: false })).toBe(
       "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth.",
     );
   });
 
   it("keeps the rerun hint when no failed account needs sign-in", () => {
-    expect(syncFailedHint([ok, broken], false)).toBe(
+    expect(syncFailedHint([ok, broken], terminal)).toBe(
       "Run it again, or add --log-level warn to see why.",
     );
   });
 
   it("covers both when some need sign-in and others failed", () => {
-    expect(syncFailedHint([signIn, broken], false)).toBe(
+    expect(syncFailedHint([signIn, broken], terminal)).toBe(
       "Sign in again with the commands above. Run sync again for the other accounts, or add --log-level warn to see why.",
     );
   });

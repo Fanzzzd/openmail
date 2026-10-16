@@ -1,4 +1,4 @@
-import { Schema } from "effect";
+import { Context, Effect, Schema } from "effect";
 import { logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import { KEYCHAIN_LOCKED_MESSAGE } from "../domain/errors.js";
@@ -118,4 +118,51 @@ export function logSyncFailed(
     ...(error.status === undefined ? {} : { status: error.status }),
     accountHash: sha256Hex(account.id.toLowerCase()).slice(0, 16),
   } satisfies SyncFailedDiagnostic);
+}
+
+/**
+ * A failed sync's error for a log the person reads in their own terminal, never a diagnostics
+ * file. The message has addresses, URL queries and token-length runs replaced.
+ */
+export interface SyncFailureDetail {
+  readonly provider: Account["provider"];
+  readonly scope: SyncFailedDiagnostic["scope"];
+  readonly failure: SyncFailureReason;
+  readonly tag: string;
+  readonly reason?: string;
+  readonly status?: number;
+  readonly message: string;
+}
+
+/** Receives every failed sync's error. The default drops it; `openmail sync` logs it on stderr. */
+export const SyncFailureDetailLog = Context.Reference<
+  (detail: SyncFailureDetail) => Effect.Effect<void>
+>("openmail/SyncFailureDetailLog", { defaultValue: () => () => Effect.void });
+
+/** An error message without addresses, URL queries or anything as long as a token. */
+export const redactErrorMessage = (message: string): string =>
+  message
+    .replace(/[^\s<>()"',;:]+@[^\s<>()"',;:]+/g, "<address>")
+    .replace(/\?[^\s)]*/g, "")
+    .replace(/[A-Za-z0-9+/=_.-]{40,}/g, "<redacted>");
+
+export function syncFailureDetail(
+  account: Pick<Account, "provider">,
+  scope: SyncFailedDiagnostic["scope"],
+  error: {
+    readonly _tag: string;
+    readonly message?: string | undefined;
+    readonly status?: number | undefined;
+    readonly reason?: string | undefined;
+  },
+): SyncFailureDetail {
+  return {
+    provider: account.provider,
+    scope,
+    failure: classifySyncFailure(error),
+    tag: error._tag,
+    ...(error.reason === undefined ? {} : { reason: error.reason }),
+    ...(error.status === undefined ? {} : { status: error.status }),
+    message: redactErrorMessage(error.message ?? ""),
+  };
 }

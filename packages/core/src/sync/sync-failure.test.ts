@@ -10,6 +10,7 @@ import {
   classifySyncFailure,
   storedSyncFailureReason,
   SYNC_FAILURE_TEXT,
+  syncFailureDetail,
   syncFailureText,
 } from "./sync-failure.js";
 
@@ -92,4 +93,22 @@ it.effect("an IMAP sync failure logs a fixed-field sync-failed event", () => {
     assert.notInclude(JSON.stringify(record), "203.0.113.9");
     assert.notInclude(JSON.stringify(record), "me@example.com");
   }).pipe(Effect.provide(layer), Effect.provide(Logger.layer([logger])));
+});
+
+// `openmail sync --log-level warn` showed only fixed fields, so no line named the error. The
+// detail it now logs keeps addresses, URL queries and token-length strings out.
+it("names the error and redacts what could identify the person", () => {
+  const detail = syncFailureDetail({ provider: "gmail" }, "full", {
+    _tag: "ProviderError",
+    status: 400,
+    message: `Bad request for alex@example.com (/gmail/v1/users/me/messages?q=from:priya@example.com&pageToken=abc) ${"x".repeat(48)}`,
+  });
+  assert.deepStrictEqual(detail, {
+    provider: "gmail",
+    scope: "full",
+    failure: "unknown",
+    tag: "ProviderError",
+    status: 400,
+    message: "Bad request for <address> (/gmail/v1/users/me/messages) <redacted>",
+  });
 });

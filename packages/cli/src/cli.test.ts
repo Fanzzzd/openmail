@@ -460,10 +460,20 @@ describe("expected sync failures", () => {
     }
   });
 
-  test("--log-level warn still shows them", async () => {
+  // --log-level warn showed only fixed diagnostic fields, so no line named the error, and the
+  // hint still said to add the flag that was already there.
+  test("--log-level warn names each error and stops pointing at itself", async () => {
     const sync = await openmail(["--log-level", "warn", "sync"], home.path, offline);
     expect(sync.code).toBe(1);
     expect(sync.stderr).toContain("SyncFailedDiagnostic");
+    expect(sync.stderr).toContain(
+      "gmail sync failed (full): ProviderError: Network calls are disabled in this offline session",
+    );
+    expect(sync.stderr).toContain("imap sync failed (full): ProviderError");
+    expect(sync.stderr).not.toContain("alex@example.com");
+    expect(sync.stderr).toContain("error: Some accounts did not sync.\nhint: Run it again.\n");
+    expect(sync.stdout).toContain("error: Sync could not finish. Run it again.");
+    expect(`${sync.stdout}${sync.stderr}`).not.toContain("--log-level");
   });
 });
 

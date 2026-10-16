@@ -32,7 +32,13 @@ import { BackgroundRead } from "../providers/provider-connectivity.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
 import type { Change } from "../providers/adapter.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
-import { logSyncFailed, SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
+import {
+  logSyncFailed,
+  SYNC_FAILURE_TEXT,
+  SyncFailureDetailLog,
+  syncFailureDetail,
+  syncFailureText,
+} from "../sync/sync-failure.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
 import { makeResetGuard, resetBudgets, resetVerificationLimit } from "../sync/sync-reset.js";
 import { providerCapabilities } from "../providers/capabilities.js";
@@ -348,11 +354,15 @@ export const makeSyncMailbox = (
       // `counts` is filled while the stream runs, so read it afterwards.
       Effect.map(() => ({ accountId: account.id, ...counts }) satisfies SyncResult),
       Effect.catch((error) =>
-        logSyncFailed(account, scope ? "inbox" : "full", error).pipe(
-          Effect.andThen(
-            failed(syncFailureText(error), error._tag === "AuthError" ? error : undefined),
-          ),
-        ),
+        Effect.gen(function* () {
+          const where = scope ? "inbox" : "full";
+          yield* logSyncFailed(account, where, error);
+          yield* (yield* SyncFailureDetailLog)(syncFailureDetail(account, where, error));
+          return yield* failed(
+            syncFailureText(error),
+            error._tag === "AuthError" ? error : undefined,
+          );
+        }),
       ),
       // A bug in one provider must not stop the other accounts from syncing.
       Effect.catchCause((cause) =>

@@ -7,15 +7,18 @@
 
 import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
-import { Console, Effect, Logger, Option, Schema } from "effect";
+import { Console, Effect, LogLevel, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
 import { MAILBOXES, Mailbox, type SyncResult, printable, redactSyncHealth } from "@openmail/core";
 import {
   SEARCH_VALUE_FORMS,
+  type SearchResult,
+  type SyncFailureDetail,
+  SyncFailureDetailLog,
+  type ThreadSummary,
   unparsedSearchOperators,
   withUnparsedOperators,
 } from "@openmail/core/schema";
-import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
 import { cliSyncResult, syncFailedHint, messageText, syncTable, threadTable } from "../format.js";
 
@@ -56,6 +59,19 @@ const health = Command.make(
   }),
 ).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
 
+/**
+ * Why an account did not sync, for --log-level: an unknown failure at warn, the rest at debug.
+ * The CLI writes no diagnostics file, and core already took addresses and tokens out.
+ */
+const logSyncFailure = (detail: SyncFailureDetail) =>
+  (detail.failure === "unknown" ? Effect.logWarning : Effect.logDebug)(
+    [
+      `${detail.provider} sync failed (${detail.scope}): ${detail.tag}`,
+      ...(detail.reason === undefined ? [] : [`reason ${detail.reason}`]),
+      ...(detail.status === undefined ? [] : [`status ${detail.status}`]),
+    ].join(", ") + (detail.message ? `: ${detail.message}` : ""),
+  );
+
 const syncTableOf = (value: { readonly results: readonly SyncResult[] }) =>
   syncTable(value.results);
 
@@ -75,9 +91,11 @@ const sync = Command.make(
   Effect.fn(function* ({ account, json }) {
     const mailbox = yield* Mailbox;
     const ids = yield* accountScope(account, Option.none());
+    const verbose = yield* LogLevel.isEnabled("Warn");
     const results = yield* withProgress(
       Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(
-        Effect.map((rows) => rows.flat().map(cliSyncResult)),
+        Effect.map((rows) => rows.flat().map((row) => cliSyncResult(row, verbose))),
+        Effect.provideService(SyncFailureDetailLog, logSyncFailure),
       ),
       !json,
     );
@@ -89,7 +107,7 @@ const sync = Command.make(
     const error = {
       message: "Some accounts did not sync.",
       code: "failed",
-      hint: syncFailedHint(results, json),
+      hint: syncFailedHint(results, { json, verbose }),
     };
     // With --json, stdout stays one document: the results and the error object together.
     yield* print(json ? { results, error } : { results }, json, syncTableOf);

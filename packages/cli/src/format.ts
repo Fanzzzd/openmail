@@ -89,36 +89,45 @@ export function threadTable(rows: readonly ThreadSummary[]): string {
 export const SYNC_FAILED_HINT = "Run it again, or add --log-level warn to see why.";
 
 /**
+ * The rerun hint. With --log-level warn or lower the log above already says why, so it does
+ * not send people to the flag they passed.
+ */
+const rerunHint = (verbose: boolean) => (verbose ? "Run it again." : SYNC_FAILED_HINT);
+
+/**
  * The hint for a failed `openmail sync`. An account that needs sign-in has its reauth command
  * on its own line, or `needs_reauth` in --json; signing in again is the fix for it, not a rerun.
  */
-export function syncFailedHint(results: readonly SyncResult[], json: boolean): string {
+export function syncFailedHint(
+  results: readonly SyncResult[],
+  { json, verbose }: { readonly json: boolean; readonly verbose: boolean },
+): string {
   const failed = results.filter((r) => r.error);
   const signIns = failed.filter((r) => r.needsReauth).length;
   const signIn = json
     ? "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth."
     : "Sign in again with the commands above.";
-  if (signIns === 0) return SYNC_FAILED_HINT;
+  if (signIns === 0) return rerunHint(verbose);
   if (signIns === failed.length) return signIn;
-  return `${signIn} Run sync again for the other accounts, or add --log-level warn to see why.`;
+  return verbose
+    ? `${signIn} Run sync again for the other accounts.`
+    : `${signIn} Run sync again for the other accounts, or add --log-level warn to see why.`;
 }
 
 /**
  * The app retries a failed sync on its own and says so. `openmail sync` runs once, so these
- * failures say what to do instead.
+ * failures say what to do instead. Only an unknown failure is logged at warn level.
  */
-const CLI_SYNC_FAILURE_TEXT = new Map([
-  [SYNC_FAILURE_TEXT.unknown, `Sync could not finish. ${SYNC_FAILED_HINT}`],
-  [SYNC_FAILURE_TEXT.quota, "The mail provider is limiting requests. Run sync again later."],
-  [
-    SYNC_FAILURE_TEXT.server,
-    "The mail server had a problem. Run sync again later, or add --log-level warn to see why.",
-  ],
-]);
+const cliSyncFailureText = (verbose: boolean) =>
+  new Map([
+    [SYNC_FAILURE_TEXT.unknown, `Sync could not finish. ${rerunHint(verbose)}`],
+    [SYNC_FAILURE_TEXT.quota, "The mail provider is limiting requests. Run sync again later."],
+    [SYNC_FAILURE_TEXT.server, "The mail server had a problem. Run sync again later."],
+  ]);
 
 /** A sync result as `openmail sync` reports it. */
-export const cliSyncResult = (result: SyncResult): SyncResult => {
-  const error = result.error && CLI_SYNC_FAILURE_TEXT.get(result.error);
+export const cliSyncResult = (result: SyncResult, verbose = false): SyncResult => {
+  const error = result.error && cliSyncFailureText(verbose).get(result.error);
   return error ? { ...result, error } : result;
 };
 
