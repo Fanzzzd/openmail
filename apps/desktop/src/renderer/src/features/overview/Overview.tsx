@@ -83,7 +83,7 @@ export function Overview({
   const Root = landmark ? "main" : "div";
   return (
     <Root className="flex h-full w-full min-w-0 flex-col bg-surface">
-      <header className={`${titlebarRow} gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7`}>
+      <div className={`${titlebarRow} gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7`}>
         <TrafficLightSpace />
         {leading}
         <h1 className="shrink-0 text-title font-bold">
@@ -103,7 +103,7 @@ export function Overview({
             <Trans>Sync all</Trans>
           </span>
         </button>
-      </header>
+      </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-10 sm:px-7">
         {profiles.length === 0 && (

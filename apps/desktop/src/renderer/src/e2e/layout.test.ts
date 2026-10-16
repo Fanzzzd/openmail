@@ -800,6 +800,7 @@ it("the overview beside a docked sidebar keeps every control inside a landmark",
           "landmark-no-duplicate-main",
           "landmark-main-is-top-level",
           "landmark-complementary-is-top-level",
+          "landmark-banner-is-top-level",
         ],
       })
     ).violations;
