@@ -18,6 +18,8 @@ The search field suggests the common filters when you start typing their name, f
 | `invoice OR receipt`  | Either word. Parentheses group terms: `(invoice OR receipt) from:alice`.                                                    |
 | `alpha AROUND 3 beta` | The two words at most three words apart.                                                                                    |
 
+While you type in the search field, a last word of two or more characters also matches longer words, so `asy` finds async. A space or Enter ends the word. Saved searches, server search, the CLI and MCP match whole words; add `*`, as in `budg*`, to ask for a prefix.
+
 ## People
 
 | Filter                       | Finds                                                     |
