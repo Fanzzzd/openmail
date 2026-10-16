@@ -235,10 +235,14 @@ it("a failed server search says the results are local, names the account and can
   );
   expect(alert.closest('[role="alert"]')).toBeTruthy();
   expect(alert.className).not.toContain("truncate");
+  // The end of the list says it has only this Mac's results.
+  await eventually(() => expect(screen.getByText("No more messages on this Mac")).toBeTruthy());
+  expect(screen.queryByText("No more messages")).toBeNull();
   expect(h.account.id).toBe("gmail:me@gmail.com");
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   await eventually(() => expect(calls).toBe(2));
   await eventually(() => expect(screen.queryByText(/couldn't search the server/)).toBeNull());
+  await eventually(() => expect(screen.getByText("No more messages")).toBeTruthy());
 });
 
 it("the Go menu opens mailboxes and steps back and forward through views", async () => {

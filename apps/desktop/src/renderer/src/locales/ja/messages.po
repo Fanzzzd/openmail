@@ -4832,6 +4832,10 @@ msgstr "まだモードを選んでいません。リモート画像は読み込
 msgid "No more messages"
 msgstr "これ以上メッセージはありません"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "この Mac にはこれ以上メッセージはありません"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "取り消せる操作はありません"

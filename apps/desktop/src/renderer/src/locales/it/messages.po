@@ -4832,6 +4832,10 @@ msgstr "Nessuna modalità scelta. Le immagini remote vengono caricate e i tracke
 msgid "No more messages"
 msgstr "Nessun altro messaggio"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "Nessun altro messaggio su questo Mac"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "Nessuna operazione da annullare"

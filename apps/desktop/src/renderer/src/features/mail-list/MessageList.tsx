@@ -563,7 +563,14 @@ function MessageListBody({
             </>
           ) : exhausted ? (
             // An empty list already says so above; a server search still running may add rows.
-            threads.length > 0 && !searchingServer && <Trans>No more messages</Trans>
+            // After a failed server search, only the rows on this Mac have run out.
+            threads.length > 0 &&
+            !searchingServer &&
+            (searchErrorAccounts.length > 0 ? (
+              <Trans>No more messages on this Mac</Trans>
+            ) : (
+              <Trans>No more messages</Trans>
+            ))
           ) : (
             <button type="button" onClick={onEndReached}>
               <Trans>Load older messages</Trans>

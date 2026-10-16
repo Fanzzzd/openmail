@@ -4842,6 +4842,10 @@ msgstr "尚未选择方式。远程图片会加载，已知跟踪器仍被拦截
 msgid "No more messages"
 msgstr "没有更多邮件"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "此 Mac 上没有更多邮件"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "没有可撤销的操作"

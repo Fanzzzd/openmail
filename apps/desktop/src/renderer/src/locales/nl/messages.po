@@ -4832,6 +4832,10 @@ msgstr "Nog geen modus gekozen. Externe afbeeldingen worden geladen en bekende t
 msgid "No more messages"
 msgstr "Geen verdere berichten"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "Geen verdere berichten op deze Mac"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "Geen acties om ongedaan te maken"

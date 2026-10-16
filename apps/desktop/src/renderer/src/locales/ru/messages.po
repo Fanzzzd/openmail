@@ -4832,6 +4832,10 @@ msgstr "Режим ещё не выбран. Удалённые изображе
 msgid "No more messages"
 msgstr "Больше нет сообщений"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "На этом Mac больше нет сообщений"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "Нет действий для отмены"

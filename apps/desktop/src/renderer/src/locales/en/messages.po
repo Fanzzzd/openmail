@@ -4836,6 +4836,10 @@ msgstr "No mode picked yet. Remote images load, and known trackers stay blocked.
 msgid "No more messages"
 msgstr "No more messages"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "No more messages on this Mac"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "No operations to undo"

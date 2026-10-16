@@ -4832,6 +4832,10 @@ msgstr "Aún no has elegido un modo. Las imágenes remotas se cargan y los rastr
 msgid "No more messages"
 msgstr "No hay más mensajes"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "No hay más mensajes en este Mac"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "No hay operaciones que deshacer"

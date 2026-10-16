@@ -4832,6 +4832,10 @@ msgstr "Noch kein Modus gewählt. Externe Bilder werden geladen, bekannte Tracke
 msgid "No more messages"
 msgstr "Keine weiteren Nachrichten"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "Keine weiteren Nachrichten auf diesem Mac"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "Keine Aktionen zum Rückgängigmachen"

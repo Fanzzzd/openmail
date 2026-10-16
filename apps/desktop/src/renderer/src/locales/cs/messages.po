@@ -4832,6 +4832,10 @@ msgstr "Režim zatím není vybrán. Vzdálené obrázky se načítají a znám�
 msgid "No more messages"
 msgstr "Žádné další zprávy"
 
+#: src/renderer/src/features/mail-list/MessageList.tsx
+msgid "No more messages on this Mac"
+msgstr "Na tomto Macu nejsou žádné další zprávy"
+
 #: src/renderer/src/features/undo/UndoHistory.tsx
 msgid "No operations to undo"
 msgstr "Žádné operace k vrácení zpět"
