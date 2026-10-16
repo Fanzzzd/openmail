@@ -19,7 +19,28 @@ pnpm exec oxfmt --check .
 
 Some desktop tests read build output, such as the web build in `out/web`. Turbo runs the desktop `build` before `@openmail/desktop#test`. When the build hits the cache, that step takes about 0.3 seconds. Run `pnpm build` before you run these tests with vitest directly.
 
-Tests that read source from more than one package live in [scripts/repo-checks](../scripts/repo-checks/src). They check the core import boundary against `.oxlintrc.json`, provider-name comparisons, diagnostic codes on log sites, the Metro resolver and the turbo inputs of package tests. `@openmail/repo-checks#test` lists the trees they read as its turbo inputs. Package tests read their own package, its built dependencies and the files listed as `$TURBO_ROOT$` inputs of their task in [turbo.json](../turbo.json). For `@openmail/desktop#test` these are `.oxlintrc.json`, `docs/security.md`, `docs/agents.md`, `docs/licenses/`, `THIRD_PARTY_NOTICES.md`, `LICENSE` and `scripts/check-licenses.mjs`. For `@openmail/mobile#test` they are `apps/desktop/scripts/i18n-missing.mjs`, which `i18n:missing` runs, and `patches/`, whose react-native-tcp-socket patch the transport test reads from `node_modules`. A test that starts reading another file outside its package must add it there, or turbo replays a stale cached pass. [test-inputs.test.ts](../scripts/repo-checks/src/test-inputs.test.ts) fails when a package test, a script its `test` command runs or a config it loads names such a file without a matching input. The check counts a string as a read only when it reaches a call that opens, resolves or runs a path, such as `readFileSync`, `join`, `resolve`, `new URL` or `import`, or when it sits in a `*config.*` file. A `../` string that is only test data, such as a hostile filename, passes. When the check fails, add the `$TURBO_ROOT$/<path>` input, or add the reported key to `EXEMPT` in the test if the file is test data. An edit in the desktop app does not rerun the core suite. The CLI tests that run the built `corpus-check` command are in [packages/cli/src/corpus-check.test.ts](../packages/cli/src/corpus-check.test.ts).
+Tests that read source from more than one package live in [scripts/repo-checks](../scripts/repo-checks/src). They check:
+
+- the core import boundary against `.oxlintrc.json`
+- provider-name comparisons
+- diagnostic codes on log sites
+- the Metro resolver
+- the turbo inputs of package tests
+
+`@openmail/repo-checks#test` lists the trees they read as its turbo inputs.
+
+Package tests read their own package, its built dependencies and the files listed as `$TURBO_ROOT$` inputs of their task in [turbo.json](../turbo.json).
+
+- For `@openmail/desktop#test` these are `.oxlintrc.json`, `docs/security.md`, `docs/agents.md`, `docs/licenses/`, `THIRD_PARTY_NOTICES.md`, `LICENSE` and `scripts/check-licenses.mjs`.
+- For `@openmail/mobile#test` they are `apps/desktop/scripts/i18n-missing.mjs`, which `i18n:missing` runs, and `patches/`, whose react-native-tcp-socket patch the transport test reads from `node_modules`.
+
+A test that starts reading another file outside its package must add it there, or turbo replays a stale cached pass. [test-inputs.test.ts](../scripts/repo-checks/src/test-inputs.test.ts) fails when a package test, a script its `test` command runs or a config it loads names such a file without a matching input.
+
+- The check counts a string as a read only when it reaches a call that opens, resolves or runs a path, such as `readFileSync`, `join`, `resolve`, `new URL` or `import`, or when it sits in a `*config.*` file.
+- A `../` string that is only test data, such as a hostile filename, passes.
+- When the check fails, add the `$TURBO_ROOT$/<path>` input, or add the reported key to `EXEMPT` in the test if the file is test data.
+
+An edit in the desktop app does not rerun the core suite. The CLI tests that run the built `corpus-check` command are in [packages/cli/src/corpus-check.test.ts](../packages/cli/src/corpus-check.test.ts).
 
 `OPENMAIL_LOW_MEMORY_TESTS=1` turns on `packages/core/vitest.low-memory.ts`: one worker, files run in series, and a timeout of at least 60 seconds for tests and hooks. Core test files share one module graph. Files that call `vi.mock` or `vi.doMock` go into a separate isolated `mocking` project instead. In the shared graph, those files would get the real modules that an earlier file loaded, and the result would depend on file order. Normal runs, and every desktop, mobile and CLI run, isolate files. The full mail flow config has its own single worker and the scaled default timeouts from [Tests under load](#tests-under-load).
 
@@ -27,12 +48,16 @@ Tests that read source from more than one package live in [scripts/repo-checks](
 
 `pnpm audit:prod` runs [audit-prod.mjs](../scripts/audit-prod.mjs). It runs `pnpm audit --prod` over the whole lockfile and sorts each finding by where its dependency path starts. A vulnerability reached through the desktop app, the CLI, core or the root fails the command with exit code 1. A vulnerability reached only through the mobile app or the docs site prints as a warning and does not fail the command. Mobile findings get fixed with Expo SDK upgrades, and the docs site is a static export. `pnpm audit` has no `--filter`, so the script does the sorting.
 
-The audit needs the npm registry, so it is not part of the offline checks above. The [Audit workflow](../.github/workflows/audit.yml) runs every Monday at 06:00 UTC and can also be started by hand. On 2026-10-13 it reported 4 warnings, all from mobile (expo and react-native's metro): node-forge and braces at high, uuid and decode-uri-component at moderate. source-map-js used to arrive through core's css-tree; the lockfile now has 1.2.2.
+The audit needs the npm registry, so it is not part of the offline checks above. The [Audit workflow](../.github/workflows/audit.yml) runs every Monday at 06:00 UTC and can also be started by hand.
 
 ## Tests under load
 
 - Do not synchronize with sleep. Advance time with fake timers, and wait for explicit events with an Effect Deferred.
-- Assert wall-clock budgets only under `OPENMAIL_PERF=1`, with `pnpm test:perf`. It runs `pnpm --filter @openmail/core test:perf` and then `pnpm --filter @openmail/cli test:perf`, which runs [mcp-server.test.ts](../packages/cli/src/mcp-server.test.ts) with its MCP call latency budget. Build the CLI first. One test with a wall-clock budget is in the default `pnpm test`: [seed-rate.test.ts](../packages/core/src/platform/node/seed-rate.test.ts) seeds 10,000 messages into a file database. The default suite checks insert-cost growth only. Each 500-message transaction is timed and divided by the smaller of two CPU calibration slices measured right before and after it. The median of these times for the last 2,000 inserts must stay under 2.5 times the median for the first 2,000. Steady load cancels out in the division, and the median drops one transaction or slice that a burst of load hit. The absolute budget runs only with `OPENMAIL_PERF=1`, so Check does not assert it and the weekly [perf.yml](../.github/workflows/perf.yml) job does: the total must stay under 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, calibration ratio), where the ratio is the largest of the full calibration and the slices. `OPENMAIL_PERF_FACTOR=2` relaxes that total locally. Details are in the [seed-rate section of performance.md](performance.md#写入速率预算).
+- Assert wall-clock budgets only under `OPENMAIL_PERF=1`, with `pnpm test:perf`. It runs `pnpm --filter @openmail/core test:perf` and then `pnpm --filter @openmail/cli test:perf`, which runs [mcp-server.test.ts](../packages/cli/src/mcp-server.test.ts) with its MCP call latency budget. Build the CLI first.
+  - One test with a wall-clock budget is in the default `pnpm test`: [seed-rate.test.ts](../packages/core/src/platform/node/seed-rate.test.ts) seeds 10,000 messages into a file database. The default suite checks insert-cost growth only.
+  - Each 500-message transaction is timed and divided by the smaller of two CPU calibration slices measured right before and after it. The median of these times for the last 2,000 inserts must stay under 2.5 times the median for the first 2,000. Steady load cancels out in the division, and the median drops one transaction or slice that a burst of load hit.
+  - The absolute budget runs only with `OPENMAIL_PERF=1`, so Check does not assert it and the weekly [perf.yml](../.github/workflows/perf.yml) job does. The total must stay under 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, calibration ratio), where the ratio is the largest of the full calibration and the slices. `OPENMAIL_PERF_FACTOR=2` relaxes that total locally.
+  - Details are in the [seed-rate section of performance.md](performance.md#写入速率预算).
 - Multiply every limit that must use real time by `testTimeScale` from [test-time.ts](../packages/core/test-support/test-time.ts). That covers `vi.waitFor`, `expect.poll`, waiting for a child process, the linear-time bounds in fuzz tests and every per-test or hook timeout.
   - The scale: `CI` set → 3; otherwise round(1-minute load average ÷ CPU count, 1 decimal), kept between 1 and 3.
   - That gives 1 on an idle machine, 2.5 at load 40 on 16 cores and 3 from load 48 up.
@@ -131,7 +156,13 @@ Regressions for the reset deletion guard are in [sync-reset.test.ts](../packages
 
 [imap.test.ts](../packages/core/src/providers/imap/imap.test.ts), [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts) cover telling a SEARCH failure from an empty set, reset verification with small counts and empty lists, missed folders and invalid UID identity. [outlook-sync-health.test.ts](../packages/core/src/providers/outlook/outlook-sync-health.test.ts) and [provider-calendar.test.ts](../packages/core/src/calendar/provider-calendar.test.ts) check Graph key-segment paging, rejection of foreign domains, nested contact folders, deduplication and the People limit.
 
-[provider-retry.test.ts](../packages/core/src/providers/provider-retry.test.ts), [gmail-send.test.ts](../packages/core/src/providers/gmail/gmail-send.test.ts), [gmail-labels.test.ts](../packages/core/src/providers/gmail/gmail-labels.test.ts), [outlook-draft-recovery.test.ts](../packages/core/src/providers/outlook/outlook-draft-recovery.test.ts) and [outlook-draft-retry.test.ts](../packages/core/src/providers/outlook/outlook-draft-retry.test.ts) cover single submission of non-idempotent writes, reconciliation after a lost response, keeping draft IDs, attachment paging, changeKey conflicts and Trash compensation. [undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts) and [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) check the creation log, the send-claim transaction, retries after a definite failure, a disconnected renderer and reopening the database. They also cover late draft callbacks after a merge, stale claims, ID remapping and the partial-rejection guard. On desktop, [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) checks the core RPC for undo. The behavior rules are maintained only in [sync correctness](sync-correctness.md#草稿与其他写入). A normal low-memory test run covers all of these without starting Electron.
+Write safety and draft recovery:
+
+- [provider-retry.test.ts](../packages/core/src/providers/provider-retry.test.ts), [gmail-send.test.ts](../packages/core/src/providers/gmail/gmail-send.test.ts), [gmail-labels.test.ts](../packages/core/src/providers/gmail/gmail-labels.test.ts), [outlook-draft-recovery.test.ts](../packages/core/src/providers/outlook/outlook-draft-recovery.test.ts) and [outlook-draft-retry.test.ts](../packages/core/src/providers/outlook/outlook-draft-retry.test.ts) cover single submission of non-idempotent writes, reconciliation after a lost response, keeping draft IDs, attachment paging, changeKey conflicts and Trash compensation.
+- [undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts) and [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) check the creation log, the send-claim transaction, retries after a definite failure, a disconnected renderer and reopening the database. They also cover late draft callbacks after a merge, stale claims, ID remapping and the partial-rejection guard.
+- On desktop, [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) checks the core RPC for undo.
+
+The behavior rules are maintained only in [sync correctness](sync-correctness.md#草稿与其他写入). A normal low-memory test run covers all of these without starting Electron.
 
 ## Parser fuzzing and accessibility
 
@@ -198,7 +229,28 @@ pnpm build
 pnpm --filter @openmail/desktop test:titlebar
 ```
 
-The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs](../scripts/demo-data.mjs), starts the preview offline, read-only and with `OPENMAIL_BACKGROUND_WINDOWS=1`, and drives the main window over a local CDP connection. It narrows the window to 600 px, resizes it in 20 px steps and back with `window.resizeTo`, and records the left edge of the toggle and the search field once per painted frame. The sampler is a `ResizeObserver` created after the app's own, so it sees each frame's layout after the app's observers have run. Then it hides and shows the sidebar in a 1320 px window (narrower when the screen is) and fails on any frame that is in neither state. Before that it checks that nothing crosses the lights' box, from the window edge to the free area and down their row: no pane divider (a border or a 1 px separator) and no control or heading. It checks the mail view and the overview at widths on both sides of each breakpoint (1320 or the screen width, 961, 960, 959, 880, 801, 800, 799 and 640 px), then sweeps from 1000 to 760 px and checks every painted frame. `--app <path to OpenMail.app>` starts that packaged app on the same demo profile instead of the preview; the Package workflow runs it this way after the unsigned build. A packaged app ignores `OPENMAIL_BACKGROUND_WINDOWS`, so its window takes focus. `--port <n>` attaches to a development build that is already running with `--remote-debugging-port=<n>` instead of starting one. `--timeout <ms>` (default 120000) bounds each attempt. If the started app exits first, the attempt fails at once, and a failed attempt includes the app's stdout and stderr under `output`. After a failed attempt the script runs the whole check once more on a fresh launch. The run fails only when both attempts fail, and `retried` in the report shows that the first one failed. The JSON report lists each attempt under `attempts`, with every check, the frames that moved, and `overlayXs`, the raw `getTitlebarAreaRect().x` values seen during the resize. `--report <path>` also writes it to a file; the Package workflow uploads that file as the `titlebar-resize` artifact, also when the step fails. Window heights are capped to `screen.availHeight` and the wide width to `screen.availWidth`, so the check fits the 1024x768 screen of a CI runner. The implementation is in [titlebar-resize.mjs](../apps/desktop/scripts/titlebar-resize.mjs).
+The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs](../scripts/demo-data.mjs), starts the preview offline, read-only and with `OPENMAIL_BACKGROUND_WINDOWS=1`, and drives the main window over a local CDP connection. It runs these checks:
+
+- It narrows the window to 600 px, resizes it in 20 px steps and back with `window.resizeTo`, and records the left edge of the toggle and the search field once per painted frame. The sampler is a `ResizeObserver` created after the app's own, so it sees each frame's layout after the app's observers have run.
+- It hides and shows the sidebar in a 1320 px window (narrower when the screen is) and fails on any frame that is in neither state.
+- Before that it checks that nothing crosses the lights' box, from the window edge to the free area and down their row: no pane divider (a border or a 1 px separator) and no control or heading.
+- It checks the mail view and the overview at widths on both sides of each breakpoint (1320 or the screen width, 961, 960, 959, 880, 801, 800, 799 and 640 px), then sweeps from 1000 to 760 px and checks every painted frame.
+
+Options:
+
+- `--app <path to OpenMail.app>` starts that packaged app on the same demo profile instead of the preview. The Package workflow runs it this way after the unsigned build. A packaged app ignores `OPENMAIL_BACKGROUND_WINDOWS`, so its window takes focus.
+- `--port <n>` attaches to a development build that is already running with `--remote-debugging-port=<n>` instead of starting one.
+- `--timeout <ms>` (default 120000) bounds each attempt.
+- `--report <path>` also writes the JSON report to a file. The Package workflow uploads that file as the `titlebar-resize` artifact, also when the step fails.
+
+Failures and the report:
+
+- If the started app exits first, the attempt fails at once, and a failed attempt includes the app's stdout and stderr under `output`.
+- After a failed attempt the script runs the whole check once more on a fresh launch. The run fails only when both attempts fail, and `retried` in the report shows that the first one failed.
+- The JSON report lists each attempt under `attempts`, with every check, the frames that moved, and `overlayXs`, the raw `getTitlebarAreaRect().x` values seen during the resize.
+- Window heights are capped to `screen.availHeight` and the wide width to `screen.availWidth`, so the check fits the 1024x768 screen of a CI runner.
+
+The implementation is in [titlebar-resize.mjs](../apps/desktop/scripts/titlebar-resize.mjs).
 
 On macOS 26 `overlayXs` holds 96 and 87: after every resize step Electron reports the titlebar area 9 px left for one frame, through `getTitlebarAreaRect()` and `env(titlebar-area-x)` alike. [titlebar-area.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.ts) keeps the last settled rect until a new one holds for 200 ms, and `TrafficLightSpace` writes its width to the DOM in the same frame instead of through React state. Regressions are in [titlebar-area.test.ts](../apps/desktop/src/renderer/src/ui/titlebar-area.test.ts) and the narrow window case in [layout.test.ts](../apps/desktop/src/renderer/src/e2e/layout.test.ts).
 
@@ -222,7 +274,7 @@ When the app gets `--user-data-dir`, that directory holds both Electron's profil
 - [undo-journal.test.ts](../packages/core/src/mailbox/undo-journal.test.ts), [signatures.test.ts](../packages/core/src/compose/signatures.test.ts): undo across restarts, and signatures.
 - [optional-services.test.ts](../packages/core/src/providers/optional-services.test.ts): consent, service switches and the message text budget.
 - [graph-recurrence.test.ts](../packages/core/src/calendar/graph-recurrence.test.ts), [calendar.test.ts](../packages/core/src/calendar/calendar.test.ts): recurring events, invites and detecting events in mail.
-- [search.test.ts](../packages/core/src/search/search.test.ts), [preferences.test.ts](../packages/core/src/mailbox/preferences.test.ts), [organization.test.ts](../packages/core/src/domain/organization.test.ts): search, preferences, categories and rules.
+- [search.test.ts](../packages/core/src/search/search.test.ts), [search-prefix-plans.test.ts](../packages/core/src/store/search-prefix-plans.test.ts), [preferences.test.ts](../packages/core/src/mailbox/preferences.test.ts), [organization.test.ts](../packages/core/src/domain/organization.test.ts): search (search-prefix-plans.test.ts checks result equivalence and plan shape on 3,000 messages), preferences, categories and rules.
 - [uid-remap.test.ts](../packages/core/src/mailbox/uid-remap.test.ts): IMAP identity mapping.
 - [native-compose.test.ts](../apps/desktop/src/main/system/native-compose.test.ts): native sharing, images and writing aids.
 - [sender-auth.test.ts](../packages/core/src/reader/sender-auth.test.ts), [model-view-hiding.test.ts](../packages/core/src/ai/model-view-hiding.test.ts): sender authentication and hidden model input.
