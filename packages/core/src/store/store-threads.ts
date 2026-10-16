@@ -33,7 +33,6 @@ import { makeLabelsStore } from "./store-labels.js";
 import {
   type SearchContext,
   type MatchedSearch,
-  type SearchBodies,
   makeSearchMatches,
   nonzeroProximity,
   rowKey,
@@ -76,28 +75,31 @@ const ProximityProbeRow = Schema.Struct({
 const newestFirst = (a: ThreadSummary, b: ThreadSummary) =>
   b.date - a.date || sqliteTextCompare(b.id, a.id);
 
+/** Threads whose match is in an attachment's text; only these need mail ordered by BM25. */
+const attachmentMatched = (thread: ThreadSummary) =>
+  thread.searchMatches?.some((match) => match.source === "attachment") === true;
+
 const rankBySource = (
   { q, mailCandidates, derivedRanks, limit }: SearchContext,
   matched: MatchedSearch,
-  bodies: SearchBodies,
+  relevance: ReadonlyMap<string, number>,
 ): ThreadSummary[] => {
   const threads = matched.threads;
-  const body = threads
-    .filter((thread) => thread.searchMatches?.some((match) => match.source !== "attachment"))
-    .toSorted(
-      (a, b) =>
-        (bodies.get(mailCandidates.get(keyOf(a, q.flat))?.id ?? a.id)?.relevance ?? 0) -
-          (bodies.get(mailCandidates.get(keyOf(b, q.flat))?.id ?? b.id)?.relevance ?? 0) ||
-        b.date - a.date,
-    );
   const derived = threads
-    .filter((thread) => thread.searchMatches?.some((match) => match.source === "attachment"))
+    .filter(attachmentMatched)
     .toSorted(
       (a, b) =>
         (derivedRanks.get(keyOf(a, q.flat)) ?? Infinity) -
         (derivedRanks.get(keyOf(b, q.flat)) ?? Infinity),
     );
   if (!derived.length) return threads;
+  const body = threads
+    .filter((thread) => thread.searchMatches?.some((match) => match.source !== "attachment"))
+    .toSorted(
+      (a, b) =>
+        (relevance.get(mailCandidates.get(keyOf(a, q.flat))?.id ?? a.id) ?? 0) -
+          (relevance.get(mailCandidates.get(keyOf(b, q.flat))?.id ?? b.id) ?? 0) || b.date - a.date,
+    );
   const rankedKeys = new Set([...body, ...derived].map((thread) => keyOf(thread, q.flat)));
   const other = threads.filter((thread) => !rankedKeys.has(keyOf(thread, q.flat)));
   return [
@@ -127,8 +129,14 @@ export const makeThreadsStore = ({
   searchDrivenList: ReturnType<typeof makeQueryStore>["searchDrivenList"];
   planTextPage: ReturnType<typeof makeQueryStore>["planTextPage"];
 }) => {
-  const { threadMessageIds, derivedRanking, loadBodies, attachMatches, pageFieldMatches } =
-    makeSearchMatches({ sql, textFilter, listFilter });
+  const {
+    threadMessageIds,
+    derivedRanking,
+    loadBodies,
+    loadRelevance,
+    attachMatches,
+    pageFieldMatches,
+  } = makeSearchMatches({ sql, textFilter, listFilter });
   const labels = makeLabelsStore({ sql, compose, hasLabel });
 
   // For a simple atom, ASCII columns use exactly unicode61's token boundaries.
@@ -571,14 +579,17 @@ export const makeThreadsStore = ({
         limit,
         profile,
       };
-      const bodies = yield* searchEffect(profile, "body loading and BM25", loadBodies(context));
+      const bodies = yield* searchEffect(profile, "body loading", loadBodies(context));
       const matched = yield* searchEffect(
         profile,
         "match preparation",
         attachMatches(context, bodies),
       );
+      const relevance = matched.threads.some(attachmentMatched)
+        ? yield* searchEffect(profile, "BM25", loadRelevance(context))
+        : new Map<string, number>();
       threads = searchStep(profile, "source ranking and fusion", () =>
-        rankBySource(context, matched, bodies),
+        rankBySource(context, matched, relevance),
       );
     }
     if (threads.length && (highlights.length || q.criteria?.from || q.criteria?.filename))

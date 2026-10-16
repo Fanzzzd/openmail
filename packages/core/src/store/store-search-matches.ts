@@ -39,8 +39,9 @@ export const SearchBodyRow = Schema.Struct({
   id: Schema.String,
   body_text: Schema.String,
   body_html: Schema.String,
-  relevance: Schema.NullOr(Schema.Number),
 });
+
+const SearchRelevanceRow = Schema.Struct({ id: Schema.String, relevance: Schema.Number });
 
 export type SearchBodies = ReadonlyMap<string, typeof SearchBodyRow.Type>;
 
@@ -86,23 +87,9 @@ export const makeSearchMatches = ({
     };
   };
 
-  const loadBodies = Effect.fn("Store.loadSearchBodies")(function* ({
-    q,
-    readiness,
-    highlights,
-    threads,
-    mailCandidates,
-  }: SearchContext) {
-    const bodyMatch = highlights
-      .map(ftsSearchTerm)
-      .filter((term) => term !== null)
-      .join(" OR ");
-    const bodyIndex = sql.literal(
-      readiness.messages && !usesSubstringSearch(q.search ?? "")
-        ? "messages_words"
-        : "messages_fts",
-    );
-    const selectedIds = [
+  /** The selected conversations' messages whose text a result shows. */
+  const selectedBodyIds = ({ q, threads, mailCandidates }: SearchContext) => {
+    const ids = [
       ...new Set(
         threads.flatMap((thread) => [
           mailCandidates.get(keyOf(thread, q.flat))?.id ?? thread.id,
@@ -112,19 +99,43 @@ export const makeSearchMatches = ({
         ]),
       ),
     ];
-    const bodyIds = sql`SELECT rowid FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(selectedIds)}))`;
+    return sql`SELECT rowid FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(ids)}))`;
+  };
+
+  const loadBodies = Effect.fn("Store.loadSearchBodies")(function* (context: SearchContext) {
+    const rows = yield* all(SearchBodyRow)(
+      sql`SELECT m.id,m.body_text,m.body_html FROM messages m WHERE m.rowid IN (${selectedBodyIds(context)})`,
+    );
+    return new Map(rows.map((row) => [row.id, row]));
+  });
+
+  /**
+   * BM25 of the selected messages' text, which orders mail against attachment matches. A prefix
+   * that most mail contains expands to every word it starts, so this costs about 47 ms on 100k
+   * messages; the caller runs it only when attachment matches need the order.
+   */
+  const loadRelevance = Effect.fn("Store.loadSearchRelevance")(function* (context: SearchContext) {
+    const { q, readiness, highlights } = context;
+    const bodyMatch = highlights
+      .map(ftsSearchTerm)
+      .filter((term) => term !== null)
+      .join(" OR ");
+    const bodyIndex = sql.literal(
+      readiness.messages && !usesSubstringSearch(q.search ?? "")
+        ? "messages_words"
+        : "messages_fts",
+    );
     // A rowid IN constraint restarts the FTS cursor (and BM25 corpus stats) per id.
     // The numeric expression keeps one MATCH cursor and filters its compact rowids.
     const rows = yield* all(
-      SearchBodyRow,
-    )(sql`WITH selected_ids(rowid) AS MATERIALIZED (${bodyIds}), ranks AS MATERIALIZED (
+      SearchRelevanceRow,
+    )(sql`WITH selected_ids(rowid) AS MATERIALIZED (${selectedBodyIds(context)}), ranks AS MATERIALIZED (
           SELECT rowid,bm25(${bodyIndex},4,0,0,1) AS relevance FROM ${bodyIndex}
           WHERE ${bodyIndex} MATCH ${bodyMatch}
           AND rowid >= (SELECT MIN(rowid) FROM selected_ids) AND rowid <= (SELECT MAX(rowid) FROM selected_ids)
           AND (rowid+0) IN (SELECT rowid FROM selected_ids)
-        ) SELECT m.id,m.body_text,m.body_html,r.relevance FROM messages m LEFT JOIN ranks r ON r.rowid=m.rowid
-        WHERE m.rowid IN (SELECT rowid FROM selected_ids)`);
-    return new Map(rows.map((row) => [row.id, row]));
+        ) SELECT m.id,r.relevance FROM ranks r JOIN messages m ON m.rowid=r.rowid`);
+    return new Map(rows.map((row) => [row.id, row.relevance]));
   });
 
   const attachMatches = Effect.fn("Store.attachSearchMatches")(function* (
@@ -318,5 +329,12 @@ export const makeSearchMatches = ({
     });
   });
 
-  return { threadMessageIds, derivedRanking, loadBodies, attachMatches, pageFieldMatches };
+  return {
+    threadMessageIds,
+    derivedRanking,
+    loadBodies,
+    loadRelevance,
+    attachMatches,
+    pageFieldMatches,
+  };
 };

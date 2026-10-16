@@ -561,7 +561,8 @@ for (const messageCount of [20_000, 100_000]) {
 }
 
 // The 100k fixture repeats a few words. Real mail has a long tail, so a two-letter prefix such
-// as `co*` stands for many terms, and each per-row probe expanded all of them (650 ms).
+// as `co*` stands for many terms, and each per-row probe expanded all of them (650 ms). A prefix
+// that every message matches (`se*`) is measured too.
 it.effect(
   "typed prefixes over a 100k mailbox with a long-tail vocabulary stay within budget",
   () => {
@@ -653,10 +654,30 @@ it.effect(
       const results: { name: string; medianMs: number; budgetMs: number }[] = [];
       const common = vocabulary[0] ?? "";
       const rare = vocabulary.at(-1) ?? "";
-      for (const search of ["co*", "re*", "an*", "pro*", "sta*", "the*", `${common} re*`, rare]) {
-        const run = store.listThreads({ search, limit: 50 });
+      // `se` starts the syllables se and sel, so `se*` stands for about 2,500 words and every
+      // message has one. A page ran BM25 over that whole prefix: `se* co*` took 157 ms.
+      const [everywhere] = yield* sql<{
+        n: number;
+      }>`SELECT COUNT(*) AS n FROM messages_words WHERE messages_words MATCH '"se"*'`;
+      assert.isAbove(everywhere?.n ?? 0, 90_000, "se* hits most of the mailbox");
+      for (const [search, flat] of [
+        ["co*", false],
+        ["re*", false],
+        ["an*", false],
+        ["pro*", false],
+        ["sta*", false],
+        ["the*", false],
+        [`${common} re*`, false],
+        [rare, false],
+        ["se*", false],
+        ["se*", true],
+        ["se* co*", false],
+        ["a*", true],
+      ] as const) {
+        const name = `search vocabulary ${search}${flat ? " flat" : ""}`;
+        const run = store.listThreads({ search, limit: 50, flat });
         const first = yield* run;
-        if (search !== rare) assert.strictEqual(first.length, 50, search);
+        if (search !== rare) assert.strictEqual(first.length, 50, name);
         const samplesMs: number[] = [];
         for (let i = 0; i < 5; i++) {
           const start = performance.now();
@@ -664,9 +685,9 @@ it.effect(
           samplesMs.push(performance.now() - start);
         }
         const medianMs = samplesMs.toSorted((a, b) => a - b)[2] ?? 0;
-        results.push({ name: `search vocabulary ${search}`, medianMs, budgetMs: 150 });
+        results.push({ name, medianMs, budgetMs: 150 });
         process.stdout.write(
-          `search vocabulary ${search}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, budget 150)\n`,
+          `${name}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, budget 150)\n`,
         );
       }
       for (const result of results)
