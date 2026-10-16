@@ -18,7 +18,7 @@ The search field suggests the common filters when you start typing their name, f
 | `invoice OR receipt`  | Either word. Parentheses group terms: `(invoice OR receipt) from:alice`.                                                    |
 | `alpha AROUND 3 beta` | The two words at most three words apart.                                                                                    |
 
-While you type in the search field, a last word of two or more characters also matches longer words, so `asy` finds async and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP match whole words; add `*`, as in `budg*`, to ask for a prefix.
+While you type in the search field, a last word of two or more characters also matches longer words, so `asy` finds async and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP match whole words; add `*`, as in `budg*`, to ask for a prefix. A trailing `*` also works on `from:`, `to:`, `cc:`, `bcc:` and `filename:`, as in `from:pri*`. Label and folder names match whole: `label:Work*` is searched as plain text.
 
 ## People
 
@@ -69,6 +69,8 @@ While you type in the search field, a last word of two or more characters also m
 | `after:2026-01-31`, `before:2026-03-01` | Messages after or before a date. `newer:` and `older:` are the same.      |
 | `newer_than:7d`, `older_than:1y`        | Messages newer or older than a period: `d` days, `m` months, `y` years.   |
 | `larger:5M`, `smaller:100K`             | Messages larger or smaller than a size. `size:` is the same as `larger:`. |
+
+Outlook does not report a message size, so OpenMail estimates it from the body and the attachment sizes. On other accounts, a message whose size is unknown passes size filters.
 
 A date or size filter without a valid value, such as `newer:foo`, is searched as plain text. The CLI and MCP list it under `ignored`. See [CLI and MCP](/docs/cli-and-mcp).
 
