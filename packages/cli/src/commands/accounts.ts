@@ -122,6 +122,12 @@ const accountsAdd = Command.make(
       if (hint?.note) yield* Console.error(hint.note);
       if (hint?.appPasswordUrl) yield* Console.error(hint.appPasswordUrl);
       const fromEnv = yield* Config.option(Config.Redacted("OPENMAIL_IMAP_PASSWORD"));
+      if (Option.isNone(o.password) && Option.isNone(fromEnv) && !process.stdin.isTTY) {
+        return yield* fail("No app password to use and stdin is not a terminal.", {
+          code: "invalid_input",
+          hint: "Set OPENMAIL_IMAP_PASSWORD or run in a terminal.",
+        });
+      }
       const password = Option.isSome(o.password)
         ? o.password.value
         : Option.isSome(fromEnv)

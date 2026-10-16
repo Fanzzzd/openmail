@@ -207,6 +207,24 @@ describe("accounts add", () => {
     expect(stderr).toMatch(/^error: Unknown preset nope\.\nhint: Use one of .*\bcustom\./);
   });
 
+  test("without a password or a terminal, fails before prompting", async () => {
+    const { code, stdout, stderr } = await openmail(
+      ["accounts", "add", "imap", "--preset", "custom", "--email", "a@b.c"].concat([
+        "--imap-host",
+        "imap.b.c",
+        "--smtp-host",
+        "smtp.b.c",
+      ]),
+      join(seeded, "home"),
+      { OPENMAIL_IMAP_PASSWORD: undefined },
+    );
+    expect(code, stderr).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toContain("hint: Set OPENMAIL_IMAP_PASSWORD or run in a terminal.");
+    expect(stderr).not.toContain("\u001b");
+    expect(stderr).not.toMatch(/App password/);
+  });
+
   test("custom without hosts fails before any password prompt, even with stdin closed", async () => {
     const { code, stdout, stderr } = await openmail([
       "accounts",
