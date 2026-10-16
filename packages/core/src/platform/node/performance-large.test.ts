@@ -213,6 +213,37 @@ it.effect(
         ["search AROUND 3", "alpha AROUND 3 beta", 475],
       ] as const)
         yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
+      // Each thread carries one of 67 folders, so Folder_5 is on 1 in 67 messages; `weekly` is in
+      // every message. label: matches a label id or a label name in any case.
+      for (const [name, search] of [
+        ["search label: id", "label:Folder_5"],
+        ["search label: name", 'label:"folder 5"'],
+        ["search label: and common word", "label:Folder_5 weekly"],
+      ] as const)
+        yield* measure(
+          name,
+          200,
+          store
+            .listThreads({ search, limit: 50 })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
+      // The sidebar's label view lists one label id, across accounts or in one account.
+      for (const [name, accountIds] of [
+        ["list label view", undefined],
+        ["list label view, one account", [gmail]],
+      ] as const)
+        yield* measure(
+          name,
+          200,
+          store
+            .listThreads({
+              mailbox: "all",
+              label: "Folder_5",
+              limit: 50,
+              ...(accountIds ? { accountIds } : {}),
+            })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
       // While the person types, the search field runs the unfinished last word as a prefix.
       // The word index has no prefix index, so each probe of `pe*` expands it over all terms.
       for (const search of ["we*", "week*", "person", "pe*", "weekly de*", "weekly delivery"])

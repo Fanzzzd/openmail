@@ -24,41 +24,43 @@ CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC
 
 每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留各次时延、最大值和测量结束时的一／五／十五分钟负载。fixture 生成、查询计划采集及索引完整性检查不计入时延。
 
-| 路径                                   | 预算 ms |
-| -------------------------------------- | ------: |
-| provider ID 不命中查找                 |       5 |
-| sync-health 标签本地计数／观察标签     |     150 |
-| sync-health IMAP 本地计数              |     100 |
-| stale sweep 标签／IMAP 的 100 条候选页 |     100 |
-| stale sweep claim 与游标保存           |      25 |
-| reset 账户七日窗口                     |     200 |
-| reset 标签／IMAP 三十日窗口            |     150 |
-| reset 候选持久化                       |      50 |
-| 未读账户／标签徽标                     |     100 |
-| list_threads 首页 50 个会话            |      75 |
-| 常见词／CJK／运算符搜索，50 个会话     |     150 |
-| 稀有一／二字 CJK 搜索，50 个会话       |      50 |
-| 常见一／二字 CJK 搜索，50 个会话       |     150 |
-| 输入中的前缀与双词搜索，50 个会话      |     150 |
-| has:drive／has:spreadsheet，50 个会话  |      50 |
-| 消息文本＋OCR 搜索，200 个会话         |     100 |
-| OCR 摘要搜索，50 个会话                |     150 |
-| AROUND 0 搜索，50 个会话               |     500 |
-| AROUND 3 搜索，50 个会话               |     475 |
-| AROUND 精确命中稀疏，100k 消息         |     500 |
-| AROUND 深页游标，100k 会话             |    1500 |
-| getThread，204 封长会话                |     100 |
-| 长会话模型文本                         |     500 |
-| 200 KiB HTML 可见文本                  |     150 |
-| 200 KiB HTML 清洗                      |     200 |
-| 200 KiB 结构化事件检测                 |     100 |
-| MCP list_threads／search               |     200 |
-| remap 100 个身份                       |     250 |
-| invalidate IMAP 文件夹                 |     500 |
-| 各账户消息文本字节数                   |     150 |
-| 消息文本预算全保护扫描                 |    5000 |
-| 消息文本预算淘汰 1 MiB                 |     500 |
-| 消息文本预算小时门控                   |      25 |
+| 路径                                         | 预算 ms |
+| -------------------------------------------- | ------: |
+| provider ID 不命中查找                       |       5 |
+| sync-health 标签本地计数／观察标签           |     150 |
+| sync-health IMAP 本地计数                    |     100 |
+| stale sweep 标签／IMAP 的 100 条候选页       |     100 |
+| stale sweep claim 与游标保存                 |      25 |
+| reset 账户七日窗口                           |     200 |
+| reset 标签／IMAP 三十日窗口                  |     150 |
+| reset 候选持久化                             |      50 |
+| 未读账户／标签徽标                           |     100 |
+| list_threads 首页 50 个会话                  |      75 |
+| 常见词／CJK／运算符搜索，50 个会话           |     150 |
+| 稀有一／二字 CJK 搜索，50 个会话             |      50 |
+| 常见一／二字 CJK 搜索，50 个会话             |     150 |
+| 输入中的前缀与双词搜索，50 个会话            |     150 |
+| has:drive／has:spreadsheet，50 个会话        |      50 |
+| label: 搜索（ID、名称、加常见词），50 个会话 |     200 |
+| 标签列表视图（全部账户／单账户），50 个会话  |     200 |
+| 消息文本＋OCR 搜索，200 个会话               |     100 |
+| OCR 摘要搜索，50 个会话                      |     150 |
+| AROUND 0 搜索，50 个会话                     |     500 |
+| AROUND 3 搜索，50 个会话                     |     475 |
+| AROUND 精确命中稀疏，100k 消息               |     500 |
+| AROUND 深页游标，100k 会话                   |    1500 |
+| getThread，204 封长会话                      |     100 |
+| 长会话模型文本                               |     500 |
+| 200 KiB HTML 可见文本                        |     150 |
+| 200 KiB HTML 清洗                            |     200 |
+| 200 KiB 结构化事件检测                       |     100 |
+| MCP list_threads／search                     |     200 |
+| remap 100 个身份                             |     250 |
+| invalidate IMAP 文件夹                       |     500 |
+| 各账户消息文本字节数                         |     150 |
+| 消息文本预算全保护扫描                       |    5000 |
+| 消息文本预算淘汰 1 MiB                       |     500 |
+| 消息文本预算小时门控                         |      25 |
 
 MCP 测量先为三个 fixture 账户打开 AI 权限，并断言 list_threads 和 search 都返回会话。此前没有授权，两项都返回空结果，测得 0.3 ms；授权后中位数约为 16 ms 和 75 ms。
 
@@ -136,6 +138,52 @@ OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK 
 这些用例的预算都是 150 ms。[search-relevance.test.ts](../packages/core/src/store/search-relevance.test.ts) 在默认套件里检查没有附件命中时不跑 BM25，有附件命中时主题命中排在正文命中前面。
 
 长尾词表用例在 `performance-large.test.ts` 里另建 100k 邮件，词从 5 万个合成词中按重头长尾分布抽取。默认套件的 `search-prefix-plans.test.ts` 用 3,000 封邮件对照按消息文本直接计算的参考结果，覆盖前缀、精确词、双词、翻页和账户范围，并检查前缀没有逐行 MATCH。prefix 索引能把 `co*` 的 MATCH 从约 13 ms 降到 2 ms，但词索引变为 2.4 倍，升级时要重建，暂不加。
+
+## label: 搜索与标签列表
+
+第 18 轮让 `label:` 按名称不分大小写匹配后，100k fixture 上一次 `label:Folder_5` 要 20 s。原因有两个：
+
+- 名称分支写成 `j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=? COLLATE NOCASE)`。子查询引用 `m.account_id`，SQLite 为每封邮件重建一次 IN 列表。100k 行计数用时 912 ms，不引用 `m` 时 143 ms。
+- 会话页的过滤先写 newest-in-thread 检查（`NOT EXISTS (SELECT 1 FROM candidates n …)`），再写该行自己的条件。日期遍历的每一行都先跑这个检查，检查又对会话里每封更新的邮件跑完整过滤，标签判断合计约 200 万次。
+
+改动：
+
+- 名称查找改成 `(m.account_id,j.value) IN (SELECT account_id,id FROM labels WHERE name=? COLLATE NOCASE)`，每条语句只建一次列表。ID 和系统标签的匹配不变。
+- 日期遍历（`listIndex` 给出索引时）先判断该行自己的过滤，再做 newest-in-thread 检查：`CASE WHEN 过滤 THEN newestMatch ELSE 0 END`。不走日期遍历时写成 `过滤 AND newestMatch`。全部套 CASE 会让规划器看不到 `m.id IN (…)` 和搜索标志位：has:drive 从 15 ms 变成 320 ms，CJK 从 3.4 ms 变成 371 ms。
+- `label:` 加常见词（`label:Folder_5 weekly`）原先从 `weekly` 的全部 rowid 出发，读 100k 行再排序，约 1.5 s。`planTextPage` 现在允许只带 `label:` 的搜索走日期遍历：遍历时先判断标签和可搜索性，再做 newest-in-thread 检查，最后才对候选会话头逐行 MATCH。乐观的 `recent` 窗口也先判断该行条件。`messages_list_date_id` 覆盖 `labels_json`，标签判断不读表。其他运算符仍不走这条路。计数不能在文字索引上判断标签，`countThreads` 对带 `label:` 的搜索按行计数。
+- 单账户的标签列表和 Inbox 以外的邮箱视图（如 Starred）也走 `messages_list_date_id`。原先走 `messages_account_list_date_id`，这个索引不含 `labels_json`，遍历的每一行都要读表，一个占 1/67 邮件的文件夹要 600 ms。单账户 Inbox 仍走账户索引。
+
+2026-10-17 在评审者的 100k fixture 副本上测（`seedMailbox(100_000)`，未运行 ANALYZE），Node v24.21.0，三次热运行中位数，50 个会话，单位 ms。修复前一分钟负载 11–64（16 核），修复后约 11：
+
+| 测量                             | 修复前 | 修复后 |
+| -------------------------------- | -----: | -----: |
+| `label:Folder_5`                 |  20390 |     16 |
+| `label:"folder 5"`               |  20150 |     20 |
+| `is:unread label:Folder_7`       |   2085 |     13 |
+| `label:Folder_5 OR from:person7` |  17828 |     39 |
+| `label:Folder_5 weekly`          |  30076 |     36 |
+| `label:Folder_5 we*`             |  33903 |     66 |
+| `label:INBOX weekly`             |  57539 |     35 |
+| `label:Folder_5`，单账户         |   7216 |     25 |
+| `label:Folder_5 weekly`，单账户  |   8078 |     68 |
+| Starred 列表（0 个结果）         |   1184 |     34 |
+| 标签列表，全部账户               |   1721 |     22 |
+| 标签列表，单账户                 |    575 |     21 |
+| `weekly`                         |     32 |     30 |
+| `we*`                            |     63 |     63 |
+| `pe*`                            |    107 |    107 |
+| `预算`                           |     17 |     17 |
+| has:drive                        |     12 |     11 |
+| `in:inbox`                       |     12 |     13 |
+| Inbox 列表                       |     11 |     13 |
+
+两边的结果页、第二页和计数逐项相同。只做前两项时，`label:Folder_5 weekly` 取 200 个会话仍要 1.5 s；加上第三项后为 68–91 ms。
+
+[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) 在默认套件里用 3,000 封邮件对照按标签和消息文本直接计算的参考结果。它覆盖标签 ID、名称和大小写、两个账户同名不同 ID 和同 ID 不同名、系统标签、否定、OR、与词和 `is:` 组合、会话与平铺、单账户、第二页和计数，也覆盖标签列表和 Important 视图。它还检查查询计划里标签查找前面没有 `CORRELATED`，日期遍历先判断标签再找会话里更新的匹配，MATCH 排在这个检查之后。`performance-large.test.ts` 的 `search label:` 三项和 `list label view` 两项预算为 200 ms，`OPENMAIL_PERF=1` 跑一次的中位数为 15、17、35、19、21 ms。
+
+试过把 `messages_account_list_date_id` 扩成覆盖 `labels_json` 的索引。没有统计时规划器换了计划，单账户标签列表从 578 ms 变成 23 s，单账户 Inbox 从 15 ms 变成 2.5 s，所以没有加迁移。标签列表现在已在 30 ms 内，`message_labels(account_id,label,row_id)` 副表也不再需要。
+
+仍慢的是找不到结果的运算符搜索：`to:nobody@example.com` 2.0 s，`filename:none.pdf` 1.1 s，`cc:nobody` 1.1 s，`list:nolist` 0.9 s（评审者测量，200 个会话）。它们要读完每封邮件的 `to_json`、`cc_json`、`attachments_json` 或头部，这些列在正文之后，逐行读取要越过正文溢出页。下一步是把这些地址、文件名和列表 ID 写进由现有触发器维护的副表（与 `message_search_meta` 相同的写入路径），运算符先查副表再取行。
 
 ## 消息文本与附件检索排名
 

@@ -59,8 +59,16 @@ const containsProximity = (node: SearchExpression): boolean => {
   }
 };
 
-const listIndex = (q: LocalQuery) => {
+export const listIndex = (q: LocalQuery) => {
   const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
+  // A label list or a mailbox view other than Inbox tests labels_json on each walked row, also
+  // in one account. The global date index covers labels_json and the account index does not:
+  // walking the account index read each of its rows from the table until the page filled
+  // (600 ms for a folder on 1 in 67 of 100k messages, 30 ms on the global index).
+  const labelView =
+    q.search === undefined &&
+    (q.label !== undefined ||
+      (q.mailbox !== undefined && q.mailbox !== "inbox" && q.mailbox !== "all"));
   // Across accounts SQLite otherwise sorts the entire inbox using the
   // account/date index. Walk the global date index and stop at the limit.
   // Search keeps the planner free to start from its selective FTS rowids.
@@ -68,7 +76,7 @@ const listIndex = (q: LocalQuery) => {
     ? "messages_account_list_date_id"
     : (boundedPage || q.search === undefined) &&
         q.messageIds === undefined &&
-        q.accountIds?.length !== 1
+        (q.accountIds?.length !== 1 || labelView)
       ? "messages_list_date_id"
       : undefined;
 };
@@ -332,9 +340,11 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (c.dateBefore !== undefined) where.push(sql`+m.date < ${c.dateBefore}`);
     if (c.dateAfter !== undefined) where.push(sql`+m.date >= ${c.dateAfter}`);
     // Names match without regard to case, like Gmail's label:. NOCASE folds ASCII only.
+    // The name lookup does not refer to m, so SQLite builds its (account, id) list once per
+    // statement. `account_id=m.account_id` inside it rebuilt the list for every message.
     for (const label of c.labels ?? [])
       where.push(
-        sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label} COLLATE NOCASE)))`,
+        sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE (m.account_id,j.value) IN (SELECT account_id,id FROM labels WHERE name=${label} COLLATE NOCASE)))`,
       );
     return sql.and(where);
   };
@@ -502,7 +512,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       words.length === 0 ||
       expressionMedia(q.search ?? "") ||
       hasSearchExpression(q.search ?? "") ||
-      Object.keys(q.criteria ?? {}).length ||
+      // label: is the one operator a date walk tests cheaply: across accounts it reads labels_json
+      // from messages_list_date_id. `label:Folder_5 weekly` started from the 100k rowids of
+      // `weekly` and took 1.5 s.
+      Object.keys(q.criteria ?? {}).some((key) => key !== "labels") ||
       q.messageIds ||
       (q.label && q.searchScope === "folder")
     )

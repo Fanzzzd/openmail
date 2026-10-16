@@ -23,6 +23,7 @@ import {
   accountScope,
   EFFECTIVE_DATE,
   expressionMedia,
+  listIndex,
   type LocalQuery,
   type makeQueryStore,
   SUMMARY_COLUMNS,
@@ -172,11 +173,13 @@ export const makeThreadsStore = ({
     // As listThreads: a search with no words finds nothing.
     if (raw.search !== undefined && searchHasNoWords(raw.search)) return 0;
     const readiness = yield* wordIndex.wordIndexReady;
-    const query = yield* planTextPage({
+    const parsed: LocalQuery = {
       ...(raw.search === undefined ? raw : parseSearchQuery(raw)),
       wordIndexReady: readiness.messages,
       derivedWordIndexReady: readiness.derived,
-    });
+    };
+    // The text index count below cannot test labels, so a label: search counts its rows.
+    const query = parsed.criteria?.labels?.length ? parsed : yield* planTextPage(parsed);
     if (
       query.textPage &&
       // Rows still queued for the bigram index are only found by LIKE.
@@ -240,12 +243,18 @@ export const makeThreadsStore = ({
     const unsearched = { ...q, search: "", textPage: undefined };
     const newestMatch = sql`NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
       AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))`;
-    // SQLite may evaluate a row-bound MATCH before the correlated exclusion.
-    // Skip old replies first, then open MATCH only for potential thread heads.
+    // newestMatch reruns the whole filter on every newer message of the row's thread. On a
+    // date walk, test the row's own filter first: the other order ran about 2M label tests for
+    // `label:Folder_5` on 100k messages (20 s). A row-bound MATCH stays last, so walked rows test
+    // their labels and eligibility, then only potential thread heads open MATCH.
+    // Off the date walk the planner starts from `m.id IN (…)`, the search flags or the text
+    // index's rowids. A CASE would hide those terms from it, so the filter stays a plain AND.
     const searchDriven = searchDrivenList(q);
     const headFilter = q.textPage
-      ? sql`CASE WHEN ${newestMatch} THEN ${listFilter(q, searchDriven || undefined)} ELSE 0 END`
-      : sql`${newestMatch} AND ${listFilter(q, searchDriven || undefined)}`;
+      ? sql`CASE WHEN ${listFilter(unsearched)} THEN CASE WHEN ${newestMatch} THEN ${listFilter(q)} ELSE 0 END ELSE 0 END`
+      : listIndex(q)
+        ? sql`CASE WHEN ${listFilter(q)} THEN ${newestMatch} ELSE 0 END`
+        : sql`${listFilter(q, searchDriven || undefined)} AND ${newestMatch}`;
     const query = (fast: boolean) =>
       (materialize
         ? grouped
@@ -254,7 +263,7 @@ export const makeThreadsStore = ({
         ${
           fast
             ? sql`recent AS MATERIALIZED (
-          SELECT m.rowid FROM ${listSource(q)} WHERE CASE WHEN ${newestMatch} THEN ${listFilter(unsearched)} ELSE 0 END
+          SELECT m.rowid FROM ${listSource(q)} WHERE CASE WHEN ${listFilter(unsearched)} THEN ${newestMatch} ELSE 0 END
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         ),`
             : sql.literal("")
