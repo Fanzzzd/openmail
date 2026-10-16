@@ -1,5 +1,5 @@
 import { type I18n, setupI18n } from "@lingui/core";
-import { msg } from "@lingui/core/macro";
+import { msg, plural } from "@lingui/core/macro";
 import { app } from "electron";
 import type { Language } from "@openmail/core/schema";
 import { loadCatalog } from "../../shared/catalogs";
@@ -78,7 +78,7 @@ function recoveryLabels(i18n: I18n) {
     recovered: i18n._(msg`The local database was recovered`),
     recoveredDetail: (backup: string, copied: number, skipped: number) =>
       i18n._(
-        msg`Recovered ${copied} local records. Skipped ${skipped} unreadable items. Original database: ${backup}`,
+        msg`${plural(copied, { one: "Recovered # local record.", other: "Recovered # local records." })} ${plural(skipped, { one: "Skipped # unreadable item.", other: "Skipped # unreadable items." })} Original database: ${backup}`,
       ),
     inUse: i18n._(
       msg`Close other OpenMail processes (CLI/MCP), then restart this app and try recovery again.`,

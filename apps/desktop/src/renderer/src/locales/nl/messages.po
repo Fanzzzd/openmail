@@ -25,6 +25,14 @@ msgstr "(geen geadresseerden)"
 msgid "(No subject)"
 msgstr "(Geen onderwerp)"
 
+#. placeholder {0}: progress.done
+#. placeholder {1}: progress.queued
+#. placeholder {2}: progress.running
+#. placeholder {3}: progress.failed
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# completed} other {# completed}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {# voltooid} other {# voltooid}} · {1, plural, one {# in wachtrij} other {# in wachtrij}} · {2, plural, one {# actief} other {# actief}} · {3, plural, one {# mislukt} other {# mislukt}}"
+
 #. Dates detected in the message text. Opens a menu to add one of them to the calendar.
 #. placeholder {0}: events.length
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -37,6 +45,14 @@ msgstr "{0, plural, one {# datum gevonden} other {# datums gevonden}}"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, one {# dag} other {# dagen}}, {1, plural, one {maximaal # bericht} other {maximaal # berichten}}"
+
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# embedded} other {# embedded}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {# ingebed} other {# ingebed}} · {1, plural, one {# in wachtrij} other {# in wachtrij}} · {2, plural, one {# actief} other {# actief}} · {3, plural, one {# mislukt} other {# mislukt}}"
 
 #. Messages on the server that are not in the list yet.
 #. placeholder {0}: props.moreNotLoaded
@@ -71,14 +87,6 @@ msgstr "{0, plural, one {# gesprek verwijderen?} other {# gesprekken verwijderen
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Voorbeeld: # bericht.} other {Voorbeeld: # berichten.}} Alleen de berichten uit het voorbeeld worden gewijzigd wanneer je dit op bestaande e-mail toepast."
 
-#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
-#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
-#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
-#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{0} embedded · {1} queued · {2} running · {3} failed"
-msgstr "{0} ingebed · {1} in wachtrij · {2} actief · {3} mislukt"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
 msgstr "{account}: de server kan niet zoeken met {names}. OpenMail heeft de server zonder deze operator doorzocht en hem hier op de resultaten toegepast."
@@ -88,8 +96,8 @@ msgid "{account}: the server can't search with {names}. OpenMail searched the se
 msgstr "{account}: de server kan niet zoeken met {names}. OpenMail heeft de server zonder deze operatoren doorzocht en ze hier op de resultaten toegepast."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
-msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total} ongelezen"
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}"
+msgstr "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# ongelezen} other {# ongelezen}}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
@@ -114,6 +122,10 @@ msgstr "{checked, plural, one {Oudere e-mail wordt tussen synchronisaties gedown
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 msgstr "{checked, plural, one {Oudere e-mail is up-to-date. # bericht gecontroleerd.} other {Oudere e-mail is up-to-date. # berichten gecontroleerd.}}"
+
+#: src/main/app/native-i18n.ts
+msgid "{copied, plural, one {Recovered # local record.} other {Recovered # local records.}} {skipped, plural, one {Skipped # unreadable item.} other {Skipped # unreadable items.}} Original database: {backup}"
+msgstr "{copied, plural, one {# lokaal record hersteld.} other {# lokale records hersteld.}} {skipped, plural, one {# onleesbaar item overgeslagen.} other {# onleesbare items overgeslagen.}} Oorspronkelijke database: {backup}"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "{count, plural, one {# cached contact} other {# cached contacts}}"
@@ -175,10 +187,6 @@ msgstr "{count, plural, one {Servervoorbeeld: # bericht} other {Servervoorbeeld:
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, one {# seconde} other {# seconden}}"
-
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
-msgstr "{done} voltooid · {queued} in wachtrij · {running} actief · {failed} mislukt"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
@@ -5810,10 +5818,6 @@ msgstr "Opnieuw verbinden"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "{name} opnieuw verbinden"
-
-#: src/main/app/native-i18n.ts
-msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "{copied} lokale records hersteld. {skipped} onleesbare items overgeslagen. Oorspronkelijke database: {backup}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Recovery copies"

@@ -25,6 +25,14 @@ msgstr "(без получателей)"
 msgid "(No subject)"
 msgstr "(Без темы)"
 
+#. placeholder {0}: progress.done
+#. placeholder {1}: progress.queued
+#. placeholder {2}: progress.running
+#. placeholder {3}: progress.failed
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# completed} other {# completed}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {завершено: #} few {завершено: #} many {завершено: #} other {завершено: #}} · {1, plural, one {в очереди: #} few {в очереди: #} many {в очереди: #} other {в очереди: #}} · {2, plural, one {выполняется: #} few {выполняется: #} many {выполняется: #} other {выполняется: #}} · {3, plural, one {не удалось: #} few {не удалось: #} many {не удалось: #} other {не удалось: #}}"
+
 #. Dates detected in the message text. Opens a menu to add one of them to the calendar.
 #. placeholder {0}: events.length
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -37,6 +45,14 @@ msgstr "{0, plural, one {Найдена # дата} few {Найдены # дат
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, one {# день} few {# дня} many {# дней} other {# дня}}, {1, plural, one {до # сообщения} few {до # сообщений} many {до # сообщений} other {до # сообщения}}"
+
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# embedded} other {# embedded}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {встроено: #} few {встроено: #} many {встроено: #} other {встроено: #}} · {1, plural, one {в очереди: #} few {в очереди: #} many {в очереди: #} other {в очереди: #}} · {2, plural, one {выполняется: #} few {выполняется: #} many {выполняется: #} other {выполняется: #}} · {3, plural, one {не удалось: #} few {не удалось: #} many {не удалось: #} other {не удалось: #}}"
 
 #. Messages on the server that are not in the list yet.
 #. placeholder {0}: props.moreNotLoaded
@@ -71,14 +87,6 @@ msgstr "{0, plural, one {Удалить # переписку?} few {Удалит
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Предпросмотр: # сообщение.} few {Предпросмотр: # сообщения.} many {Предпросмотр: # сообщений.} other {Предпросмотр: # сообщения.}} При применении к существующей почте изменятся только сообщения из предпросмотра."
 
-#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
-#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
-#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
-#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{0} embedded · {1} queued · {2} running · {3} failed"
-msgstr "{0} встроен · {1} поставлен в очередь · {2} работает · {3} не выполнен"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
 msgstr "{account}: сервер не умеет искать с {names}. OpenMail выполнил поиск на сервере без этого оператора и применил его к результатам здесь."
@@ -88,8 +96,8 @@ msgid "{account}: the server can't search with {names}. OpenMail searched the se
 msgstr "{account}: сервер не умеет искать с {names}. OpenMail выполнил поиск на сервере без этих операторов и применил их к результатам здесь."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
-msgstr "{accountCount, plural, one {# учётная запись} few {# учётные записи} many {# учётных записей} other {# учётной записи}}, непрочитанных: {total}"
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}"
+msgstr "{accountCount, plural, one {# учётная запись} few {# учётные записи} many {# учётных записей} other {# учётной записи}}, {total, plural, one {# непрочитанная} few {# непрочитанные} many {# непрочитанных} other {# непрочитанной}}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
@@ -114,6 +122,10 @@ msgstr "{checked, plural, one {Старая почта загружается м
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 msgstr "{checked, plural, one {Старая почта актуальна. Проверено # сообщение.} few {Старая почта актуальна. Проверено # сообщения.} many {Старая почта актуальна. Проверено # сообщений.} other {Старая почта актуальна. Проверено # сообщения.}}"
+
+#: src/main/app/native-i18n.ts
+msgid "{copied, plural, one {Recovered # local record.} other {Recovered # local records.}} {skipped, plural, one {Skipped # unreadable item.} other {Skipped # unreadable items.}} Original database: {backup}"
+msgstr "{copied, plural, one {Восстановлена # локальная запись.} few {Восстановлены # локальные записи.} many {Восстановлено # локальных записей.} other {Восстановлено # локальной записи.}} {skipped, plural, one {Пропущен # нечитаемый элемент.} few {Пропущено # нечитаемых элемента.} many {Пропущено # нечитаемых элементов.} other {Пропущено # нечитаемого элемента.}} Исходная база данных: {backup}"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "{count, plural, one {# cached contact} other {# cached contacts}}"
@@ -175,10 +187,6 @@ msgstr "{count, plural, one {Предпросмотр на сервере: # с�
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, one {# секунда} few {# секунды} many {# секунд} other {# секунды}}"
-
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
-msgstr "{done} завершено · {queued} в очереди · {running} выполняется · {failed} не удалось"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
@@ -5810,10 +5818,6 @@ msgstr "Переподключить"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "Переподключить {name}"
-
-#: src/main/app/native-i18n.ts
-msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "Восстановлено {copied} локальных записей. Пропущено {skipped} нечитаемых элементов. Исходная база данных: {backup}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Recovery copies"

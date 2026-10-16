@@ -35,6 +35,14 @@ msgstr "（未填收件人）"
 msgid "(No subject)"
 msgstr "（无主题）"
 
+#. placeholder {0}: progress.done
+#. placeholder {1}: progress.queued
+#. placeholder {2}: progress.running
+#. placeholder {3}: progress.failed
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# completed} other {# completed}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, other {已完成 #}} · {1, plural, other {等待 #}} · {2, plural, other {运行 #}} · {3, plural, other {失败 #}}"
+
 #. Dates detected in the message text. Opens a menu to add one of them to the calendar.
 #. placeholder {0}: events.length
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -47,6 +55,14 @@ msgstr "{0, plural, other {找到 # 个日期}}"
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, other {# 天}}，{1, plural, other {最多 # 封邮件}}"
+
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# embedded} other {# embedded}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, other {已生成向量 #}} · {1, plural, other {等待 #}} · {2, plural, other {运行 #}} · {3, plural, other {失败 #}}"
 
 #. Messages on the server that are not in the list yet.
 #. placeholder {0}: props.moreNotLoaded
@@ -81,14 +97,6 @@ msgstr "{0, plural, other {删除 # 个对话？}}"
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, other {预览：# 封邮件。}}应用到已有邮件时，只修改预览中的邮件。"
 
-#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
-#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
-#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
-#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{0} embedded · {1} queued · {2} running · {3} failed"
-msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
 msgstr "{account}：服务器无法用 {names} 搜索。OpenMail 已在不带这些条件的情况下搜索服务器，再在此处对结果应用这些条件。"
@@ -98,8 +106,8 @@ msgid "{account}: the server can't search with {names}. OpenMail searched the se
 msgstr "{account}：服务器无法用 {names} 搜索。OpenMail 已在不带这些条件的情况下搜索服务器，再在此处对结果应用这些条件。"
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
-msgstr "{accountCount, plural, other {# 个账户}}，{total} 封未读"
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}"
+msgstr "{accountCount, plural, other {# 个账户}}，{total, plural, other {# 封未读}}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
@@ -124,6 +132,10 @@ msgstr "{checked, plural, other {同步间隙回填旧邮件。已检查 # 封�
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 msgstr "{checked, plural, other {旧邮件已回填。已检查 # 封邮件。}}"
+
+#: src/main/app/native-i18n.ts
+msgid "{copied, plural, one {Recovered # local record.} other {Recovered # local records.}} {skipped, plural, one {Skipped # unreadable item.} other {Skipped # unreadable items.}} Original database: {backup}"
+msgstr "{copied, plural, other {已恢复 # 条本地记录，}}{skipped, plural, other {跳过 # 个无法读取的项目。}}原数据库保留在：{backup}"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "{count, plural, one {# cached contact} other {# cached contacts}}"
@@ -185,10 +197,6 @@ msgstr "{count, plural, other {服务器预览：# 封邮件}}"
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, other {# 秒}}"
-
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
-msgstr "已完成 {done} · 等待 {queued} · 运行 {running} · 失败 {failed}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
@@ -5820,10 +5828,6 @@ msgstr "重新连接"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "重新连接 {name}"
-
-#: src/main/app/native-i18n.ts
-msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "已恢复 {copied} 条本地记录，跳过 {skipped} 个无法读取的项目。原数据库保留在：{backup}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Recovery copies"

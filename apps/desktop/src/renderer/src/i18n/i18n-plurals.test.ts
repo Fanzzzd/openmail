@@ -78,3 +78,59 @@ it("the not-loaded notice says older messages exist, with a note for translators
   expect(entry?.translation).toBe("D’autres messages ne sont pas chargés");
   expect(await render("ru", "More messages not loaded", {})).toBe("Загружены не все сообщения");
 });
+
+const OVERVIEW =
+  "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}";
+const INDEXING =
+  "{0, plural, one {# completed} other {# completed}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}";
+const EMBEDDING =
+  "{0, plural, one {# embedded} other {# embedded}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}";
+const RECOVERED =
+  "{copied, plural, one {Recovered # local record.} other {Recovered # local records.}} {skipped, plural, one {Skipped # unreadable item.} other {Skipped # unreadable items.}} Original database: {backup}";
+
+// The unread total, the indexing counters and the recovery notice interpolated a formatted
+// number into one form, so French read "1 non lus" and "5 terminé ... 5 a échoué".
+it("the overview, indexing and recovery counts agree with their numbers", async () => {
+  expect(await render("en", OVERVIEW, { accountCount: 2, total: 1 })).toBe("2 accounts, 1 unread");
+  expect(await render("fr", OVERVIEW, { accountCount: 1, total: 1 })).toBe("1 compte, 1 non lue");
+  expect(await render("fr", OVERVIEW, { accountCount: 3, total: 5 })).toBe("3 comptes, 5 non lues");
+  expect(await render("fr", INDEXING, { 0: 1, 1: 1, 2: 1, 3: 1 })).toBe(
+    "1 terminé · 1 en file d’attente · 1 en cours d’exécution · 1 a échoué",
+  );
+  expect(await render("fr", INDEXING, { 0: 5, 1: 5, 2: 5, 3: 5 })).toBe(
+    "5 terminés · 5 en file d’attente · 5 en cours d’exécution · 5 ont échoué",
+  );
+  expect(await render("fr", EMBEDDING, { 0: 5, 1: 0, 2: 1, 3: 2 })).toBe(
+    "5 intégrés · 0 en file d’attente · 1 en cours d’exécution · 2 ont échoué",
+  );
+  const recovered = { copied: 1, skipped: 1, backup: "b" };
+  expect(await render("en", RECOVERED, recovered)).toBe(
+    "Recovered 1 local record. Skipped 1 unreadable item. Original database: b",
+  );
+  expect(await render("fr", RECOVERED, { ...recovered, copied: 4, skipped: 2 })).toBe(
+    "4 enregistrements locaux récupérés. 2 éléments illisibles ignorés. Base de données d’origine : b",
+  );
+  for (const source of [OVERVIEW, INDEXING, EMBEDDING, RECOVERED])
+    for (const locale of ["ru", "cs"]) {
+      const names = source === OVERVIEW ? ["total"] : source === RECOVERED ? ["copied"] : ["0"];
+      const forms = await Promise.all(
+        [1, 3, 5].map((n) =>
+          render(locale, source, {
+            accountCount: 1,
+            total: n,
+            copied: n,
+            skipped: 1,
+            backup: "b",
+            0: n,
+            1: 1,
+            2: 1,
+            3: 1,
+          }),
+        ),
+      );
+      expect(new Set(forms).size, `${locale} ${names[0]}`).toBeGreaterThan(1);
+    }
+  expect(await render("ja", OVERVIEW, { accountCount: 2, total: 3 })).toBe(
+    "2個のアカウント, 未読3件",
+  );
+});

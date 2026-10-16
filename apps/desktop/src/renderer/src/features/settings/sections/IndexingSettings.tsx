@@ -1,5 +1,6 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { ProgressBar } from "../../../ui/Progress";
+import { plural } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { MailClient } from "../../../state/rpc";
@@ -11,17 +12,13 @@ import { settingsHint, switchThumb, switchTrack } from "../../../ui/styles";
 const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
 export function IndexingSettings() {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const progress = AsyncResult.getOrElse(useAtomValue(indexingProgressAtom), () => null);
   const pause = useAtomSet(pauseAtom);
   const models = useAtomSet(modelsAtom);
   if (!progress) return null;
   // ONNX Runtime has no Intel Mac binding, so core never loads the models there.
   const unsupported = progress.modelsSupported === false;
-  const done = i18n.number(progress.done),
-    queued = i18n.number(progress.queued),
-    running = i18n.number(progress.running),
-    failed = i18n.number(progress.failed);
   return (
     <SettingsGroup
       title={<Trans>On-device indexing</Trans>}
@@ -77,12 +74,7 @@ export function IndexingSettings() {
               </p>
             )}
             <output aria-live="off" className={`block ${settingsHint}`}>
-              <Trans>
-                {i18n.number(progress.embeddingDone ?? 0)} embedded ·{" "}
-                {i18n.number(progress.embeddingQueued ?? 0)} queued ·{" "}
-                {i18n.number(progress.embeddingRunning ?? 0)} running ·{" "}
-                {i18n.number(progress.embeddingFailed ?? 0)} failed
-              </Trans>
+              {t`${plural(progress.embeddingDone ?? 0, { one: "# embedded", other: "# embedded" })} · ${plural(progress.embeddingQueued ?? 0, { one: "# queued", other: "# queued" })} · ${plural(progress.embeddingRunning ?? 0, { one: "# running", other: "# running" })} · ${plural(progress.embeddingFailed ?? 0, { one: "# failed", other: "# failed" })}`}
             </output>
           </>
         )}
@@ -92,9 +84,7 @@ export function IndexingSettings() {
           </p>
         )}
         <output aria-live="off" className={`block ${settingsHint}`}>
-          <Trans>
-            {done} completed · {queued} queued · {running} running · {failed} failed
-          </Trans>
+          {t`${plural(progress.done, { one: "# completed", other: "# completed" })} · ${plural(progress.queued, { one: "# queued", other: "# queued" })} · ${plural(progress.running, { one: "# running", other: "# running" })} · ${plural(progress.failed, { one: "# failed", other: "# failed" })}`}
         </output>
       </div>
       <SettingsRow

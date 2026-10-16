@@ -77,7 +77,7 @@ export function Overview({
       accounts: ungrouped,
     });
   }
-  const total = i18n.number(accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0));
+  const total = accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
   const accountCount = accounts.length;
 
   const Root = landmark ? "main" : "div";
@@ -90,7 +90,7 @@ export function Overview({
           <Trans>Overview</Trans>
         </h1>
         <span className="min-w-0 truncate text-body text-a11y-muted">
-          {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${total} unread`}
+          {t`${plural(accountCount, { one: "# account", other: "# accounts" })}, ${plural(total, { one: "# unread", other: "# unread" })}`}
         </span>
         <span className="flex-1" />
         <button

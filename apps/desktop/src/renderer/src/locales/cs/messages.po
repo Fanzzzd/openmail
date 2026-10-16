@@ -25,6 +25,14 @@ msgstr "(bez příjemců)"
 msgid "(No subject)"
 msgstr "(Bez předmětu)"
 
+#. placeholder {0}: progress.done
+#. placeholder {1}: progress.queued
+#. placeholder {2}: progress.running
+#. placeholder {3}: progress.failed
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# completed} other {# completed}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {dokončeno: #} few {dokončeno: #} many {dokončeno: #} other {dokončeno: #}} · {1, plural, one {ve frontě: #} few {ve frontě: #} many {ve frontě: #} other {ve frontě: #}} · {2, plural, one {běží: #} few {běží: #} many {běží: #} other {běží: #}} · {3, plural, one {selhalo: #} few {selhalo: #} many {selhalo: #} other {selhalo: #}}"
+
 #. Dates detected in the message text. Opens a menu to add one of them to the calendar.
 #. placeholder {0}: events.length
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
@@ -37,6 +45,14 @@ msgstr "{0, plural, one {Nalezeno # datum} few {Nalezena # data} many {Nalezeno 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, one {# den} few {# dny} many {# dne} other {# dní}}, {1, plural, one {nejvýše # zpráva} few {nejvýše # zprávy} many {nejvýše # zprávy} other {nejvýše # zpráv}}"
+
+#. placeholder {0}: progress.embeddingDone ?? 0
+#. placeholder {1}: progress.embeddingQueued ?? 0
+#. placeholder {2}: progress.embeddingRunning ?? 0
+#. placeholder {3}: progress.embeddingFailed ?? 0
+#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
+msgid "{0, plural, one {# embedded} other {# embedded}} · {1, plural, one {# queued} other {# queued}} · {2, plural, one {# running} other {# running}} · {3, plural, one {# failed} other {# failed}}"
+msgstr "{0, plural, one {vloženo: #} few {vloženo: #} many {vloženo: #} other {vloženo: #}} · {1, plural, one {ve frontě: #} few {ve frontě: #} many {ve frontě: #} other {ve frontě: #}} · {2, plural, one {běží: #} few {běží: #} many {běží: #} other {běží: #}} · {3, plural, one {selhalo: #} few {selhalo: #} many {selhalo: #} other {selhalo: #}}"
 
 #. Messages on the server that are not in the list yet.
 #. placeholder {0}: props.moreNotLoaded
@@ -71,14 +87,6 @@ msgstr "{0, plural, one {Smazat # konverzaci?} few {Smazat # konverzace?} many {
 msgid "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only the previewed messages will be changed when applying to existing mail."
 msgstr "{0, plural, one {Náhled: # zpráva.} few {Náhled: # zprávy.} many {Náhled: # zprávy.} other {Náhled: # zpráv.}} Při použití na existující poštu se změní pouze zprávy v náhledu."
 
-#. placeholder {0}: i18n.number(progress.embeddingDone ?? 0)
-#. placeholder {1}: i18n.number(progress.embeddingQueued ?? 0)
-#. placeholder {2}: i18n.number(progress.embeddingRunning ?? 0)
-#. placeholder {3}: i18n.number(progress.embeddingFailed ?? 0)
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{0} embedded · {1} queued · {2} running · {3} failed"
-msgstr "{0} vloženo · {1} ve frontě · {2} běží · {3} se nezdařilo"
-
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
 msgstr "{account}: server nemůže hledat s {names}. OpenMail prohledal server bez tohoto operátoru a použil ho na zdejší výsledky."
@@ -88,8 +96,8 @@ msgid "{account}: the server can't search with {names}. OpenMail searched the se
 msgstr "{account}: server nemůže hledat s {names}. OpenMail prohledal server bez těchto operátorů a použil je na zdejší výsledky."
 
 #: src/renderer/src/features/overview/Overview.tsx
-msgid "{accountCount, plural, one {# account} other {# accounts}}, {total} unread"
-msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} other {# účtů}}, nepřečtených: {total}"
+msgid "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}"
+msgstr "{accountCount, plural, one {# účet} few {# účty} many {# účtu} other {# účtů}}, {total, plural, one {# nepřečtená} few {# nepřečtené} many {# nepřečtené} other {# nepřečtených}}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
@@ -114,6 +122,10 @@ msgstr "{checked, plural, one {Starší pošta se stahuje mezi synchronizacemi. 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{checked, plural, one {Older mail is up to date. # message checked.} other {Older mail is up to date. # messages checked.}}"
 msgstr "{checked, plural, one {Starší pošta je aktuální. Zkontrolována # zpráva.} few {Starší pošta je aktuální. Zkontrolovány # zprávy.} many {Starší pošta je aktuální. Zkontrolováno # zprávy.} other {Starší pošta je aktuální. Zkontrolováno # zpráv.}}"
+
+#: src/main/app/native-i18n.ts
+msgid "{copied, plural, one {Recovered # local record.} other {Recovered # local records.}} {skipped, plural, one {Skipped # unreadable item.} other {Skipped # unreadable items.}} Original database: {backup}"
+msgstr "{copied, plural, one {Obnoven # místní záznam.} few {Obnoveny # místní záznamy.} many {Obnoveno # místního záznamu.} other {Obnoveno # místních záznamů.}} {skipped, plural, one {Vynechána # nečitelná položka.} few {Vynechány # nečitelné položky.} many {Vynechána # nečitelné položky.} other {Vynecháno # nečitelných položek.}} Původní databáze: {backup}"
 
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "{count, plural, one {# cached contact} other {# cached contacts}}"
@@ -175,10 +187,6 @@ msgstr "{count, plural, one {Náhled ze serveru: # zpráva} few {Náhled ze serv
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
 msgstr "{delay, plural, one {# sekunda} few {# sekundy} many {# sekundy} other {# sekund}}"
-
-#: src/renderer/src/features/settings/sections/IndexingSettings.tsx
-msgid "{done} completed · {queued} queued · {running} running · {failed} failed"
-msgstr "{done} dokončeno · {queued} ve frontě · {running} běží · {failed} se nezdařilo"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "{edited, plural, one {# copy was edited after you opened it. Clearing deletes it with your changes.} other {# copies were edited after you opened them. Clearing deletes them with your changes.}}"
@@ -5810,10 +5818,6 @@ msgstr "Znovu připojit"
 #: src/renderer/src/features/settings/sections/AiClientCard.tsx
 msgid "Reconnect {name}"
 msgstr "Znovu připojit {name}"
-
-#: src/main/app/native-i18n.ts
-msgid "Recovered {copied} local records. Skipped {skipped} unreadable items. Original database: {backup}"
-msgstr "Obnoveno {copied} místních záznamů. Vynechané {skipped} nečitelné položky. Původní databáze: {backup}"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "Recovery copies"
