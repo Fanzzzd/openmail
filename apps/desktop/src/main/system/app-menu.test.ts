@@ -365,7 +365,7 @@ it("the Window menu is the system Window menu and keeps its own items first", ()
   ]);
 });
 
-// R10 F4: the docs page lists the standard menu keys, so the menu must set the same ones.
+// The docs page lists the standard menu keys, so the menu must set the same ones.
 it("standard menu items carry the fixed accelerators the docs page lists", () => {
   const { menu } = template("darwin");
   const byRole = new Map(

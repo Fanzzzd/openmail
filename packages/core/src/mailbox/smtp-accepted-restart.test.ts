@@ -148,7 +148,7 @@ const failedTimes = (tries: number) =>
     );
   });
 
-// R10 E1: one failed filing at launch (offline, say) cleared the record, so the Sent copy was
+// One failed filing at launch (offline, say) used to clear the record, so the Sent copy was
 // never filed even once the server was back.
 it("a Sent copy that fails at launch is filed on the next successful sync", async () => {
   const server = fakeServer("me@example.com");
@@ -171,7 +171,7 @@ it("a Sent copy that fails at launch is filed on the next successful sync", asyn
         expect(yield* store.sendUncertain("draft:accepted")).toBe(false);
         expect(yield* mailbox.proposals.listFailedOps).toEqual([]);
         expect(server.sentCopies).toHaveLength(0);
-        // The retry after a failure waits an hour (R11 R2); that hour has passed.
+        // The retry after a failure waits an hour; that hour has passed.
         yield* backdateLastTry;
         yield* mailbox.sync.sync(accountId);
         yield* settled;

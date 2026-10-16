@@ -14,7 +14,7 @@ import {
 } from "../store/store-smtp-accepted.js";
 import { scaledMs, waitLimit } from "../../test-support/test-time.js";
 
-// R11 CH-1: the SMTP-accepted record a live send writes before its Sent APPEND looked like a
+// The SMTP-accepted record a live send writes before its Sent APPEND used to look like a
 // crash leftover to the retry every successful sync runs, here or in another process. The retry
 // filed a second Sent copy and finished the send under the live path.
 const outgoing = {
@@ -125,8 +125,8 @@ it("a failed live send gives its claim back, so the next retry finishes it at on
   );
 });
 
-// R11 R1: one transient Sent failure in the live send (after a single reconnect) cleared the
-// record and posted sentCopyMissing at once. R2: the retry limit counted syncs, not time.
+// One transient Sent failure in the live send (after a single reconnect) used to clear the
+// record and post sentCopyMissing at once, and the retry limit counted syncs, not time.
 it("a live send whose Sent copy fails hands the record to the retry, which backs off by time", async () => {
   const server = fakeServer("me@example.com");
   server.acceptedRaw = raw;
@@ -200,7 +200,7 @@ it("a failed Sent copy is tried again after 1 h, 2 h, 4 h and so on, at most a d
   ]);
 });
 
-// R12 F4: the renew interval was a separate literal, free to drift past the TTL it must beat.
+// The renew interval used to be a separate literal, free to drift past the TTL it must beat.
 it("a holder renews its claim several times within one claim TTL", () => {
   expect(SMTP_ACCEPTED_CLAIM_RENEW_MS).toBeGreaterThan(0);
   expect(SMTP_ACCEPTED_CLAIM_RENEW_MS * 2).toBeLessThan(SMTP_ACCEPTED_CLAIM_TTL);
@@ -244,7 +244,7 @@ const stalledLiveSend = (server: ReturnType<typeof fakeServer>) =>
     return { account, resume: Effect.sync(release).pipe(Effect.andThen(Fiber.join(fiber))) };
   });
 
-// R12 R2: the claim is stale by the wall clock, but the renewal sleeps on timers that stop while
+// The claim is stale by the wall clock, but the renewal sleeps on timers that stop while
 // macOS sleeps. On wake the sync retry took the record from the live send, which never learned
 // it had lost the claim: both filed a Sent copy.
 it("a live send that lost its claim over a sleep leaves the Sent copy to the retry", async () => {

@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import { MIGRATIONS } from "../../db/migrations.js";
 import { applyNativeMigration } from "./migrations.js";
 
-// R11: the word index backfill strips soft hyphens with an UPDATE on messages, which queued a
+// The word index backfill strips soft hyphens with an UPDATE on messages, which queued a
 // new embedding for every older message that had one and dropped its thread's AI summary.
 const migrated = () => {
   const db = new DatabaseSync(":memory:");

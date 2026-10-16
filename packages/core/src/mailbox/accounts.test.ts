@@ -537,7 +537,7 @@ it.effect("space names are stored trimmed and an empty name is refused", () =>
   }).pipe(Effect.provide(TestMailbox({ gmail: fakeServer("me@example.com", []) }))),
 );
 
-// R12 F5: a space named None, or sharing a name, from before those rules could not change its
+// A space named None, or sharing a name, from before those rules could not change its
 // icon or colour, since every edit checked the name it already had.
 it.effect("a space from before the name rules can change its icon and colour", () =>
   Effect.gen(function* () {

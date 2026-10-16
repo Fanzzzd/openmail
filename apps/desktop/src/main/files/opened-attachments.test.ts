@@ -46,7 +46,7 @@ it("an opened attachment the user edited survives cleanup; untouched old copies 
   expect(await exists(recent.file)).toBe(true);
 });
 
-// R11 R3: cleanup removed the folder of a copy still open in Word or LibreOffice, whose lock
+// Cleanup used to remove the folder of a copy still open in Word or LibreOffice, whose lock
 // files sit next to it, so the next save in place failed.
 it("cleanup keeps a folder that holds anything besides the copy and its record", async () => {
   const store = new OpenedAttachments(path.join(root, "Opened"), 7 * DAY);
@@ -108,7 +108,7 @@ it("discard removes only a copy inside the store; cleanup skips unknown folders"
   expect(await readdir(path.join(root, "Opened"))).toEqual(["keep-me"]);
 });
 
-// R10 A-1: removing an account left its copies; Settings had no way to clear them.
+// Removing an account used to leave its copies, and Settings had no way to clear them.
 it("removing an account deletes its unchanged copies and keeps edited ones", async () => {
   const store = new OpenedAttachments(path.join(root, "Opened"));
   const kept = await store.write("a/0", { filename: "a.txt", data: Buffer.from("a") }, "gmail:a");

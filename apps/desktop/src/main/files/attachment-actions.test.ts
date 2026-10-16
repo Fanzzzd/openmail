@@ -521,7 +521,7 @@ it("Open follows the Open attachments from setting and keeps internal copies pas
     }),
   );
 });
-// R10 A-1: removing an account left the copies it opened.
+// Removing an account used to leave the copies it opened.
 it("removing the account deletes the unchanged copies opened from its mail", async () => {
   await withFiles((m, id, parent) =>
     Effect.gen(function* () {

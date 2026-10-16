@@ -41,7 +41,7 @@ const runFor = <A, E>(effect: Effect.Effect<A, E>) =>
     }).pipe(Effect.provide(TestClock.layer())),
   );
 
-// R12 R1: the renewal raced the send with raceFirst, and the store dies on SQL errors, so a
+// The renewal used to race the send with raceFirst, and the store dies on SQL errors, so a
 // SQLITE_BUSY in a renewal ended the race and interrupted the live send, maybe after SMTP 250.
 it("a renewal that dies leaves the live send running to the end", async () => {
   const { store, calls } = claimStore(() =>
