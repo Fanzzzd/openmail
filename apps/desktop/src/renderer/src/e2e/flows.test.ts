@@ -204,6 +204,40 @@ it("AI key validation keeps its specific message through the production RPC boun
   expect((await h.run(h.m.ai.aiSettings)).keyConfigured).toBe(false);
 });
 
+it("Save key stays off for a blank key and only Remove key deletes the stored key", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  await h.event({ _tag: "Command", command: "settings" });
+  await eventually(() => expect(screen.getByRole("tab", { name: "AI Access" })).toBeTruthy());
+  fireEvent.click(screen.getByRole("tab", { name: "AI Access" }));
+  await eventually(() =>
+    expect(screen.getByLabelText("Anthropic API key", { exact: true })).toBeTruthy(),
+  );
+  const save = () => screen.getByRole("button", { name: "Save key" });
+  expect(save()).toHaveProperty("disabled", true);
+  edit("Anthropic API key", "sk-test");
+  expect(save()).toHaveProperty("disabled", false);
+  clickButton("Save key");
+  await eventually(async () => expect((await h.run(h.m.ai.aiSettings)).keyConfigured).toBe(true));
+  // A cleared or blank field cannot send "" and wipe the stored key.
+  await eventually(() => expect(save()).toHaveProperty("disabled", true));
+  edit("Anthropic API key", "   ");
+  expect(save()).toHaveProperty("disabled", true);
+  fireEvent.click(save());
+  expect(h.requests.filter((request) => request.tag === "SetAiKey")).toHaveLength(1);
+  expect((await h.run(h.m.ai.aiSettings)).keyConfigured).toBe(true);
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Remove key" })).toHaveProperty("disabled", false),
+  );
+  clickButton("Remove key");
+  await eventually(() =>
+    expect(h.requests.some((request) => request.tag === "RemoveAiKey")).toBe(true),
+  );
+  await eventually(async () => expect((await h.run(h.m.ai.aiSettings)).keyConfigured).toBe(false));
+  expect(h.requests.filter((request) => request.tag === "SetAiKey")).toHaveLength(1);
+});
+
 it("new compose autosaves, holds send, Cmd+Z reopens it, and the second send delivers once", async () => {
   current = await flow({ prefs: { undoSendSeconds: 5 } });
   const h = current;

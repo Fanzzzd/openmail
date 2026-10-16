@@ -86,7 +86,7 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                 disabled={busy}
                 label={i18n._({ id: "Remove key", message: "Remove key" })}
                 onPress={() =>
-                  void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.setAiKey("")))
+                  void change(Effect.flatMap(Mailbox, (mailbox) => mailbox.ai.removeAiKey))
                 }
               />
             </>

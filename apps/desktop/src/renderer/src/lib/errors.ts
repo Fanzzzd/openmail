@@ -86,8 +86,10 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Invalid AI compose request.": AI_REQUEST_INVALID,
 
   "Enter a single API key.": msg`Enter a single API key.`,
+  "Enter an API key.": msg`Enter an API key.`,
   "Invalid AI account settings.": msg`These AI settings aren't valid. Check them and try again.`,
   "Could not save the API key in the system keychain.": msg`Couldn't save the API key in the system keychain. Unlock the keychain and try again.`,
+  "Could not remove the API key from the system keychain.": msg`Couldn't remove the API key from the system keychain. Unlock the keychain and try again.`,
   "Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.": msg`Turn on “Allow AI to read this account” for each selected account in Settings → AI Access.`,
   "Enable this account to open mail on the web": msg`Turn on this account to open its mail on the web.`,
   "Enable this account to use its calendar": msg`Turn on this account to use its calendar.`,

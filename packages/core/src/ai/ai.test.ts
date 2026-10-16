@@ -489,7 +489,11 @@ it.effect("existing and new accounts default off; disabled AI never calls fetch"
       "Failure",
     );
     assert.strictEqual(fetch.mock.calls.length, 0);
-    yield* m.ai.setAiKey("");
+    // A blank key is refused and leaves the stored key in place; only removeAiKey deletes it.
+    for (const blank of ["", "   "])
+      assert.strictEqual((yield* m.ai.setAiKey(blank).pipe(Effect.exit))._tag, "Failure");
+    assert.strictEqual((yield* m.ai.aiSettings).keyConfigured, true);
+    yield* m.ai.removeAiKey;
     assert.strictEqual((yield* m.ai.aiSettings).keyConfigured, false);
   }).pipe(
     Effect.provide(

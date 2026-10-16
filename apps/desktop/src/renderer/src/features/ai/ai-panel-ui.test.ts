@@ -47,6 +47,7 @@ vi.mock("../../state/rpc", () => ({
     mutation: (tag: string) => tag,
   },
   submitAiKey: () => Effect.void,
+  removeAiKey: () => Effect.void,
 }));
 vi.mock("../../state/mail", () => ({
   useRunMail: () => Effect.runSync,

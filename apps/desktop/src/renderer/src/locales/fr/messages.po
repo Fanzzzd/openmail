@@ -2211,6 +2211,14 @@ msgstr "Impossible de récupérer ce brouillon. Fermez-le, puis rouvrez-le."
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "Impossible d’enregistrer OpenMail. Réessayez depuis l’application installée."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Couldn't remove the API key from the system keychain."
+msgstr "Impossible de supprimer la clé API du trousseau du système."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't remove the API key from the system keychain. Unlock the keychain and try again."
+msgstr "Impossible de supprimer la clé API du trousseau du système. Déverrouillez le trousseau et réessayez."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "Impossible de supprimer le mappage Tailscale. Ouvrez Tailscale : OpenMail le supprimera dès que Tailscale répondra."
@@ -2899,6 +2907,10 @@ msgstr "Saisissez un identifiant tailnet comme name@github."
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Entrez un nom de modèle."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter an API key."
+msgstr "Saisissez une clé API."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."

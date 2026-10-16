@@ -111,6 +111,13 @@ export const submitAiKey = (key: string) =>
     yield* client.SetAiKey({ key });
   }).pipe(Effect.provide(ElectronProtocol), Effect.scoped);
 
+/** Deletes the stored key. Saving a blank key fails instead of removing it. */
+export const removeAiKey = () =>
+  Effect.gen(function* () {
+    const client = yield* RpcClient.make(MailRpcs);
+    yield* client.RemoveAiKey();
+  }).pipe(Effect.provide(ElectronProtocol), Effect.scoped);
+
 /** Smoke reads through the app's RPC client, including its codecs and permission checks. */
 export const readSyncHealth = () =>
   Effect.runPromise(

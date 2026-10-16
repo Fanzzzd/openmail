@@ -170,6 +170,7 @@ export const remoteAccessMock = async () => {
 export const rpcMock = {
   MailClient: { query: (tag: string) => tag, mutation: (tag: string) => tag },
   submitAiKey: () => Effect.void,
+  removeAiKey: () => Effect.void,
 };
 
 export const mailMock = {

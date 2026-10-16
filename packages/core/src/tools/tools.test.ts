@@ -289,6 +289,7 @@ function stubMailbox(overrides: Overrides): Layer.Layer<Mailbox> {
         (rows) => rows.map((a) => ({ accountId: a.id, allowed: true, autoSummaries: false })),
       ),
       setAiKey: () => notUsed("setAiKey"),
+      removeAiKey: notUsed("removeAiKey"),
       setAiAccount: () => notUsed("setAiAccount"),
       setAiModel: () => notUsed("setAiModel"),
       aiSummary: () => notUsed("aiSummary"),

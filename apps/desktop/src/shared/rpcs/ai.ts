@@ -22,6 +22,7 @@ import { error } from "./fields";
 export const AiRpcs = [
   Rpc.make("AiSettings", { success: AiSettings, error }),
   Rpc.make("SetAiKey", { payload: { key: Schema.String }, error }),
+  Rpc.make("RemoveAiKey", { error }),
   Rpc.make("SetAiAccount", { payload: { input: AiAccountSettings }, error }),
   Rpc.make("SetAiModel", { payload: { model: AiModelName } }),
   Rpc.make("AiSummary", {

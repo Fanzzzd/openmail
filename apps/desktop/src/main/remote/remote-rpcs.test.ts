@@ -48,7 +48,7 @@ const MUST_DENY = [
   "PrepareAttachmentDrag", "ReleaseAttachmentDrag", "DownloadAction", "ClearDownloads",
   "SaveMessage", "PrintThread", "ChooseAttachmentFolder", "OpenMessageWeb", "OpenMailLink",
   "OpenMeeting", "SearchSender", "Connect", "Reauth", "SetGoogleClient", "SetMicrosoftClient",
-  "ClearClient", "ClientSetup", "RemoveAccount", "SetServiceEnabled", "SetAiKey",
+  "ClearClient", "ClientSetup", "RemoveAccount", "SetServiceEnabled", "SetAiKey", "RemoveAiKey",
   "SetAiAccount", "SetAiModel", "SetAgentWriteMode", "CheckForUpdates",
   "RequestNotificationPermission", "OpenNotificationSettings",
   "BecomeDefaultMailClient", "SetAppleContacts", "OpenAppleContact", "AddAppleContact",

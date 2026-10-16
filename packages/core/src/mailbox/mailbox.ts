@@ -539,7 +539,10 @@ export interface MailboxAi {
   readonly aiSettings: Effect.Effect<AiSettings, ProviderError>;
   /** Per-account AI consent from the database. Never reads the keychain, so agent tool calls use it. */
   readonly aiAccounts: Effect.Effect<readonly AiAccountSettings[]>;
+  /** Stores the Anthropic API key in the keychain. A blank key fails; it never removes the stored one. */
   setAiKey(key: string): Effect.Effect<void, InvalidInput>;
+  /** Deletes the stored Anthropic API key. */
+  readonly removeAiKey: Effect.Effect<void, InvalidInput>;
   setAiAccount(input: AiAccountSettings): Effect.Effect<void, NotFound | InvalidInput>;
   setAiModel(model: AiModelName): Effect.Effect<void>;
   /** The cached summary in `locale`, the UI language; summaries are cached per language. */

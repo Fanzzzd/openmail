@@ -2211,6 +2211,14 @@ msgstr "Tento koncept se nepodařilo obnovit. Zavřete ho a otevřete znovu."
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "OpenMail se nepodařilo zaregistrovat. Zkuste to znovu z nainstalované aplikace."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Couldn't remove the API key from the system keychain."
+msgstr "Klíč API se nepodařilo odebrat ze systémové klíčenky."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't remove the API key from the system keychain. Unlock the keychain and try again."
+msgstr "Klíč API se nepodařilo odebrat ze systémové klíčenky. Odemkněte klíčenku a zkuste to znovu."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "Mapování Tailscale se nepodařilo odebrat. Otevřete Tailscale a OpenMail ho odebere, jakmile Tailscale odpoví."
@@ -2899,6 +2907,10 @@ msgstr "Zadejte přihlášení do tailnetu, např. name@github."
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Zadejte název šablony."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter an API key."
+msgstr "Zadejte klíč API."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."

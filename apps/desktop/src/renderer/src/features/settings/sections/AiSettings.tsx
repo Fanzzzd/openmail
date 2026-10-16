@@ -14,7 +14,7 @@ import { AsyncResult } from "effect/reactivity";
 import { Effect } from "effect";
 import { useId, useRef, useState } from "react";
 import type { Account } from "../../../../../shared/api";
-import { MailClient, submitAiKey } from "../../../state/rpc";
+import { MailClient, removeAiKey, submitAiKey } from "../../../state/rpc";
 import { errorText, resultError } from "../../../lib/errors";
 import { Keys } from "../../../state/keys";
 import { SettingsCheckRow, SettingsRow } from "../../../ui/SettingsRows";
@@ -51,19 +51,29 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
   // Uncontrolled input: the key is never put in React state, atoms or preferences.
   const keyInput = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
+  // Only whether the field has text, so Save stays off for a blank key.
+  const [keyTyped, setKeyTyped] = useState(false);
   const [keyError, setKeyError] = useState<string | null>(null);
   const [accountResult, setAccount] = useAtom(accountMutation);
   const [modelResult, setModel] = useAtom(modelMutation);
   const save = (remove: boolean) => {
-    const value = remove ? "" : (keyInput.current?.value ?? "");
+    const value = keyInput.current?.value ?? "";
+    if (!remove && !value.trim()) return;
     if (keyInput.current) keyInput.current.value = "";
+    setKeyTyped(false);
     setSaving(true);
     setKeyError(null);
     Effect.runFork(
-      submitAiKey(value).pipe(
+      (remove ? removeAiKey() : submitAiKey(value)).pipe(
         Effect.catch((error) => Effect.sync(() => setKeyError(errorText(i18n, error)))),
         Effect.catchCause(() =>
-          Effect.sync(() => setKeyError(t`Couldn't save the API key in the system keychain.`)),
+          Effect.sync(() =>
+            setKeyError(
+              remove
+                ? t`Couldn't remove the API key from the system keychain.`
+                : t`Couldn't save the API key in the system keychain.`,
+            ),
+          ),
         ),
         Effect.ensuring(Effect.sync(() => setSaving(false))),
       ),
@@ -95,13 +105,14 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                 autoComplete="off"
                 spellCheck={false}
                 aria-label={t`Anthropic API key`}
+                onChange={(event) => setKeyTyped(event.currentTarget.value.trim() !== "")}
                 placeholder={settings?.keyConfigured ? "••••••••" : ""}
                 className={`min-w-0 flex-1 ${formInput}`}
               />
             </label>
             <button
               type="button"
-              disabled={saving}
+              disabled={saving || !keyTyped}
               onClick={() => save(false)}
               className={buttonSecondary}
             >

@@ -2211,6 +2211,14 @@ msgstr "Не удалось восстановить этот черновик. 
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "Не удалось зарегистрировать OpenMail. Попробуйте ещё раз из установленного приложения."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Couldn't remove the API key from the system keychain."
+msgstr "Не удалось удалить ключ API из системной Связки ключей."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't remove the API key from the system keychain. Unlock the keychain and try again."
+msgstr "Не удалось удалить ключ API из системной Связки ключей. Разблокируйте Связку ключей и попробуйте ещё раз."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "Не удалось удалить сопоставление Tailscale. Откройте Tailscale: OpenMail удалит его, как только Tailscale ответит."
@@ -2899,6 +2907,10 @@ msgstr "Введите логин tailnet, например name@github."
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Введите имя шаблона."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter an API key."
+msgstr "Введите ключ API."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."

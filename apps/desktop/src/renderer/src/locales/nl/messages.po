@@ -2211,6 +2211,14 @@ msgstr "Kan dit concept niet herstellen. Sluit het en open het opnieuw."
 msgid "Couldn't register OpenMail. Try again from the installed app."
 msgstr "Kon OpenMail niet registreren. Probeer het opnieuw vanuit de geïnstalleerde app."
 
+#: src/renderer/src/features/settings/sections/AiSettings.tsx
+msgid "Couldn't remove the API key from the system keychain."
+msgstr "De API-sleutel kon niet uit de systeemsleutelhanger worden verwijderd."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Couldn't remove the API key from the system keychain. Unlock the keychain and try again."
+msgstr "De API-sleutel kon niet uit de systeemsleutelhanger worden verwijderd. Ontgrendel de sleutelhanger en probeer het opnieuw."
+
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Couldn't remove the Tailscale mapping. Open Tailscale, and OpenMail removes it as soon as Tailscale responds."
 msgstr "De Tailscale-koppeling kon niet worden verwijderd. Open Tailscale; OpenMail verwijdert de koppeling zodra Tailscale reageert."
@@ -2899,6 +2907,10 @@ msgstr "Voer een tailnet-login in zoals name@github."
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Enter a template name."
 msgstr "Voer een sjabloonnaam in."
+
+#: src/renderer/src/lib/errors.ts
+msgid "Enter an API key."
+msgstr "Voer een API-sleutel in."
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Enter an OAuth client you registered yourself. New sign-ins use it instead of the built-in client."

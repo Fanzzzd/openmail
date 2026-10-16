@@ -246,6 +246,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     DecideProposal: ({ id, approve }) => m.proposals.decideProposal(id, approve, "app"),
     AiSettings: () => m.ai.aiSettings,
     SetAiKey: ({ key }) => m.ai.setAiKey(key),
+    RemoveAiKey: () => m.ai.removeAiKey,
     SetAiAccount: ({ input }) => m.ai.setAiAccount(input),
     SetAiModel: ({ model }) => m.ai.setAiModel(model),
     AiSummary: ({ id, locale }) => m.ai.aiSummary(id, locale),

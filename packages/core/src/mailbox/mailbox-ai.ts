@@ -527,20 +527,37 @@ export function makeAiMailbox(
       };
     }),
     aiAccounts: store.ai.accounts,
+    // A blank key is an error, not a removal: only removeAiKey deletes the stored key.
     setAiKey: (key: string) =>
       Effect.gen(function* () {
         if (key.length > 4096 || /[\r\n]/.test(key))
           yield* new InvalidInput({ message: "Enter a single API key." });
+        if (!key.trim()) yield* new InvalidInput({ message: "Enter an API key." });
         yield* cancel;
-        yield* (key.trim() ? secrets.set(MODEL_KEY, key.trim()) : secrets.remove(MODEL_KEY)).pipe(
-          Effect.catchCause(() =>
-            Effect.fail(
-              new InvalidInput({ message: "Could not save the API key in the system keychain." }),
+        yield* secrets
+          .set(MODEL_KEY, key.trim())
+          .pipe(
+            Effect.catchCause(() =>
+              Effect.fail(
+                new InvalidInput({ message: "Could not save the API key in the system keychain." }),
+              ),
             ),
-          ),
-        );
+          );
         yield* changed;
       }),
+    removeAiKey: Effect.gen(function* () {
+      yield* cancel;
+      yield* secrets.remove(MODEL_KEY).pipe(
+        Effect.catchCause(() =>
+          Effect.fail(
+            new InvalidInput({
+              message: "Could not remove the API key from the system keychain.",
+            }),
+          ),
+        ),
+      );
+      yield* changed;
+    }),
     setAiAccount: (raw: AiAccountSettings) =>
       Effect.gen(function* () {
         const settings = yield* Schema.decodeUnknownEffect(AiAccountSettings)(raw).pipe(
