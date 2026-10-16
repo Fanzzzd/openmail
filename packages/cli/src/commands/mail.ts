@@ -164,7 +164,14 @@ const decodePageCursor = (raw: Option.Option<string>) =>
     : Schema.decodeUnknownEffect(PageCursorJson)(
         Buffer.from(raw.value, "base64url").toString("utf8"),
       ).pipe(
-        Effect.mapError(() => new Failed({ message: "That --cursor is not from this command." })),
+        Effect.mapError(
+          () =>
+            new Failed({
+              message: "That --cursor is not from this command.",
+              code: "invalid_input",
+              hint: "Omit --cursor to start from the first page, or copy the cursor the previous page printed.",
+            }),
+        ),
       );
 
 /**

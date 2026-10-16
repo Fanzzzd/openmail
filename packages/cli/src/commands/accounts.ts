@@ -98,7 +98,22 @@ const accountsAdd = Command.make(
       const preset = Option.getOrUndefined(o.preset);
       if (!preset) return yield* fail(`--preset is required for imap: ${presetNames.join(", ")}`);
       if (!presetNames.includes(preset)) {
-        return yield* fail(`Unknown preset ${preset}. Use one of ${presetNames.join(", ")}.`);
+        return yield* fail(`Unknown preset ${preset}.`, {
+          code: "invalid_input",
+          hint: `Use one of ${presetNames.join(", ")}.`,
+        });
+      }
+      if (preset === "custom") {
+        const missing = [
+          Option.isNone(o.imapHost) && "--imap-host",
+          Option.isNone(o.smtpHost) && "--smtp-host",
+        ].filter((flag) => flag !== false);
+        if (missing.length > 0) {
+          return yield* fail(`--preset custom needs ${missing.join(" and ")}.`, {
+            code: "invalid_input",
+            hint: "Pass the IMAP and SMTP server hostnames, or choose a named preset.",
+          });
+        }
       }
       const email = Option.isSome(o.email)
         ? o.email.value

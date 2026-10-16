@@ -79,9 +79,13 @@ export const findSpace = (idOrName: string) =>
     const wanted = profileNameKey(idOrName);
     const named = spaces.filter((p) => profileNameKey(p.name) === wanted);
     if (named.length === 1 && named[0]) return named[0];
-    return yield* fail(
-      named.length > 1
-        ? `${named.length} spaces are named ${printable(idOrName)}. Pass the space id; \`openmail spaces list\` shows them.`
-        : `No space with id or name ${printable(idOrName)}. Run \`openmail spaces list\` to see them.`,
-    );
+    return yield* named.length > 1
+      ? fail(`${named.length} spaces are named ${printable(idOrName)}.`, {
+          code: "invalid_input",
+          hint: "Pass the space id; `openmail spaces list` shows them.",
+        })
+      : fail(`No space with id or name ${printable(idOrName)}.`, {
+          code: "not_found",
+          hint: "Run `openmail spaces list` to see them.",
+        });
   });

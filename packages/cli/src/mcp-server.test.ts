@@ -1292,11 +1292,12 @@ test.concurrent("spaces assign fails on unknown ids and takes an unambiguous nam
   });
   expect(unknownSpace).toMatchObject({
     code: 1,
-    stderr: "error: No space with id or name Nope. Run `openmail spaces list` to see them.\n",
+    stderr:
+      "error: No space with id or name Nope.\nhint: Run `openmail spaces list` to see them.\n",
   });
   expect(ambiguous).toMatchObject({
     code: 1,
-    stderr: expect.stringContaining("2 spaces are named work. Pass the space id"),
+    stderr: expect.stringContaining("2 spaces are named work.\nhint: Pass the space id"),
   });
   expect(assigned).toMatchObject({ code: 0, stdout: `Moved ${account} to Home.\n` });
   expect(health).toMatchObject({

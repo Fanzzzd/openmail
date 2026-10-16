@@ -98,6 +98,13 @@ function openmail(args: string[], home = join(seeded, "home"), env: NodeJS.Proce
   });
 }
 
+const ErrorObject = Schema.Struct({
+  message: Schema.String,
+  code: Schema.String,
+  hint: Schema.String,
+});
+const errorObject = (stdout: string) => Schema.decodeUnknownSync(ErrorObject)(JSON.parse(stdout));
+
 const Row = Schema.Record(Schema.String, Schema.Unknown);
 const row = Schema.decodeUnknownSync(Row);
 const rows = Schema.decodeUnknownSync(Schema.Array(Row));
@@ -187,6 +194,35 @@ describe("help", () => {
 });
 
 describe("accounts add", () => {
+  test("an unknown preset is invalid_input and lists the presets", async () => {
+    const { code, stdout, stderr } = await openmail([
+      "accounts",
+      "add",
+      "imap",
+      "--preset",
+      "nope",
+    ]);
+    expect(code, stderr).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toMatch(/^error: Unknown preset nope\.\nhint: Use one of .*\bcustom\./);
+  });
+
+  test("custom without hosts fails before any password prompt, even with stdin closed", async () => {
+    const { code, stdout, stderr } = await openmail([
+      "accounts",
+      "add",
+      "imap",
+      "--preset",
+      "custom",
+      "--email",
+      "a@b.c",
+    ]);
+    expect(code, stderr).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toMatch(/^error: --preset custom needs --imap-host and --smtp-host\.\nhint: /);
+    expect(stderr).not.toMatch(/password/i);
+  });
+
   // The fake opener exits 1, as on a machine with no browser. Nothing reaches Google: the
   // client is fake and the test stops the process once the URL is on stderr.
   test.skipIf(process.platform === "win32")(
@@ -279,6 +315,21 @@ describe("reading", () => {
     expect(lines[0]).toContain(LAUNCH);
     expect(lines[0]).toContain("Re: Q4 launch plan: final review (4)");
     expect(lines[2]).toMatch(/^More: add --cursor \S+$/);
+  });
+
+  test("list rejects an unknown space and a bad cursor with documented codes", async () => {
+    const space = await openmail(["list", "--space", "nope", "--json"]);
+    expect(space.code, space.stderr).toBe(1);
+    expect(errorObject(space.stdout)).toMatchObject({
+      code: "not_found",
+      hint: expect.stringContaining("openmail spaces list"),
+    });
+    const cursor = await openmail(["list", "--cursor", "garbage", "--json"]);
+    expect(cursor.code, cursor.stderr).toBe(1);
+    expect(errorObject(cursor.stdout)).toMatchObject({
+      code: "invalid_input",
+      hint: expect.stringContaining("Omit --cursor"),
+    });
   });
 
   test("list --json pages with the cursor it prints", async () => {
@@ -607,7 +658,7 @@ describe("spaces", () => {
       expect(byName).toEqual(byId);
       const unknown = await openmail(["list", "--space", "Nowhere"], home.path);
       expect(unknown.code).toBe(1);
-      expect(unknown.stderr).toMatch(/^error: No space with id or name Nowhere\./);
+      expect(unknown.stderr).toMatch(/^error: No space with id or name Nowhere\.\nhint: /);
     });
 
     test("spaces list escapes control and bidi characters in a name", async () => {
@@ -817,13 +868,6 @@ describe("errors", () => {
     expect(code).toBe(1);
     expect(stderr).toBe("error: No proposal with id 99.\n");
   });
-
-  const ErrorObject = Schema.Struct({
-    message: Schema.String,
-    code: Schema.String,
-    hint: Schema.String,
-  });
-  const errorObject = (stdout: string) => Schema.decodeUnknownSync(ErrorObject)(JSON.parse(stdout));
 
   test("--input-json that is not JSON names the flag", async () => {
     const { code, stdout, stderr } = await openmail([
