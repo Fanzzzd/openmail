@@ -1,6 +1,6 @@
 import { MultiOrganizationItem } from "../organize";
 import { moveSourceLabel, providerCapabilities } from "@openmail/core/schema";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
 import type { Account, Label, MailOp, Mailbox, ThreadSummary } from "../../../../shared/api";
 import {
@@ -183,14 +183,24 @@ export function BatchActions(
         {count}
       </span>
       <span className="mr-2 min-w-0 truncate text-callout text-a11y-muted @max-[300px]/batch:sr-only">
-        <Trans>{count} selected (loaded)</Trans>
+        <Plural
+          value={rows.length}
+          one="# selected (loaded)"
+          other="# selected (loaded)"
+          comment="Conversations selected in the list. Only loaded conversations can be selected."
+        />
         {props.canLoadMore && props.everyLoaded && (
           <span className="ml-2">
             {/* No count, or 0 while the server still has older mail: the number is unknown. */}
             {!props.moreNotLoaded ? (
               <Trans>More messages not loaded</Trans>
             ) : (
-              <Trans>{i18n.number(props.moreNotLoaded)} more not loaded</Trans>
+              <Plural
+                value={props.moreNotLoaded}
+                one="# more not loaded"
+                other="# more not loaded"
+                comment="Messages on the server that are not in the list yet."
+              />
             )}
           </span>
         )}

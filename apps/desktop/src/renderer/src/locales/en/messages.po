@@ -42,10 +42,22 @@ msgstr "{0, plural, one {# date found} other {# dates found}}"
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 
+#. Messages on the server that are not in the list yet.
+#. placeholder {0}: props.moreNotLoaded
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# more not loaded} other {# more not loaded}}"
+msgstr "{0, plural, one {# more not loaded} other {# more not loaded}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, one {# occurrence} other {# occurrences}}"
+
+#. Conversations selected in the list. Only loaded conversations can be selected.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
+msgstr "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
@@ -64,11 +76,6 @@ msgstr "{0, plural, one {Preview: # message.} other {Preview: # messages.}} Only
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "{0} embedded · {1} queued · {2} running · {3} failed"
-
-#. placeholder {0}: i18n.number(props.moreNotLoaded)
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{0} more not loaded"
-msgstr "{0} more not loaded"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
@@ -138,6 +145,10 @@ msgstr "{count, plural, one {# sent message is missing from Sent} other {# sent 
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Local preview: # message} other {Local preview: # messages}}"
+msgstr "{count, plural, one {Local preview: # message} other {Local preview: # messages}}"
+
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
 msgstr "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
@@ -155,13 +166,9 @@ msgstr "{count, plural, one {Permanently deleted # message} other {Permanently d
 msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
 msgstr "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
 
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{count} selected (loaded)"
-msgstr "{count} selected (loaded)"
-
-#: src/renderer/src/features/overview/Overview.tsx
-msgid "{count} unread"
-msgstr "{count} unread"
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Server preview: # message} other {Server preview: # messages}}"
+msgstr "{count, plural, one {Server preview: # message} other {Server preview: # messages}}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
@@ -307,6 +314,11 @@ msgstr "{text} → {recipient}"
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
 msgstr "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
+
+#. Unread conversations in a space.
+#: src/renderer/src/features/overview/Overview.tsx
+msgid "{unreadCount, plural, one {# unread} other {# unread}}"
+msgstr "{unreadCount, plural, one {# unread} other {# unread}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value, plural, one {# day} other {# days}}"
@@ -4000,10 +4012,6 @@ msgstr "Local has fewer: sync window"
 msgid "Local has more: stale"
 msgstr "Local has more: stale"
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Local preview: {count} messages"
-msgstr "Local preview: {count} messages"
-
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
@@ -6662,10 +6670,6 @@ msgstr "Server filters and automatic replies are available for Gmail and Outlook
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
 msgstr "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Server preview: {count} messages"
-msgstr "Server preview: {count} messages"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"

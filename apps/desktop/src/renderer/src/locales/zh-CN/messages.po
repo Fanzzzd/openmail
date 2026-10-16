@@ -48,10 +48,22 @@ msgstr "{0, plural, other {找到 # 个日期}}"
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, other {# 天}}，{1, plural, other {最多 # 封邮件}}"
 
+#. Messages on the server that are not in the list yet.
+#. placeholder {0}: props.moreNotLoaded
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# more not loaded} other {# more not loaded}}"
+msgstr "{0, plural, other {另有 # 封邮件未加载}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, other {# 次}}"
+
+#. Conversations selected in the list. Only loaded conversations can be selected.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
+msgstr "{0, plural, other {已选 # 项（已加载）}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
@@ -70,11 +82,6 @@ msgstr "{0, plural, other {预览：# 封邮件。}}应用到已有邮件时，�
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "已生成向量 {0} · 等待 {1} · 运行 {2} · 失败 {3}"
-
-#. placeholder {0}: i18n.number(props.moreNotLoaded)
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{0} more not loaded"
-msgstr "另有 {0} 项未加载"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
@@ -144,6 +151,10 @@ msgstr "{count, plural, other {# 封已发送邮件在“已发送”中缺少�
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {已拦截 # 个追踪器}}"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Local preview: # message} other {Local preview: # messages}}"
+msgstr "{count, plural, other {本地预览：# 封邮件}}"
+
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
 msgstr "{count, plural, other {已将 # 封邮件标为已读}}"
@@ -161,13 +172,9 @@ msgstr "{count, plural, other {已永久删除 # 封邮件}}"
 msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
 msgstr "{count, plural, other {正在将 # 个附件存到附件文件夹}}"
 
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{count} selected (loaded)"
-msgstr "已选 {count} 项（已加载）"
-
-#: src/renderer/src/features/overview/Overview.tsx
-msgid "{count} unread"
-msgstr "{count} 未读"
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Server preview: # message} other {Server preview: # messages}}"
+msgstr "{count, plural, other {服务器预览：# 封邮件}}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
@@ -313,6 +320,11 @@ msgstr "{text} → {recipient}"
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
 msgstr "{total, plural, other {涵盖最新的 {kept} 封邮件（共 # 封）}}"
+
+#. Unread conversations in a space.
+#: src/renderer/src/features/overview/Overview.tsx
+msgid "{unreadCount, plural, one {# unread} other {# unread}}"
+msgstr "{unreadCount, plural, other {# 封未读}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value, plural, one {# day} other {# days}}"
@@ -4006,10 +4018,6 @@ msgstr "本地较少：同步窗口"
 msgid "Local has more: stale"
 msgstr "本地较多：过时"
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Local preview: {count} messages"
-msgstr "本地预览：{count} 封邮件"
-
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "本地签名保存在此 Mac，Gmail 默认签名从 Gmail 读取。"
@@ -6668,10 +6676,6 @@ msgstr "Gmail 和 Outlook 支持服务器过滤器和自动回复。"
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
 msgstr "服务器地址是根据邮箱地址推测的，端口为标准端口。请对照邮箱服务商的设置核对。"
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Server preview: {count} messages"
-msgstr "服务器预览：{count} 封邮件"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"

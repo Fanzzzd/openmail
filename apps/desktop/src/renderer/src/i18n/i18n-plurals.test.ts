@@ -37,3 +37,32 @@ it("the sync health window counts days and messages with plurals", async () => {
   expect(await render("ru", HEADER_WINDOW, { 0: 30, 1: 500 })).toBe("30 дней, до 500 сообщений");
   expect(await render("cs", HEADER_WINDOW, { 0: 3, 1: 1 })).toBe("3 dny, nejvýše 1 zpráva");
 });
+
+const COUNTED = [
+  ["{0, plural, one {# selected (loaded)} other {# selected (loaded)}}", "0"],
+  ["{0, plural, one {# more not loaded} other {# more not loaded}}", "0"],
+  ["{unreadCount, plural, one {# unread} other {# unread}}", "unreadCount"],
+  ["{count, plural, one {Server preview: # message} other {Server preview: # messages}}", "count"],
+  ["{count, plural, one {Local preview: # message} other {Local preview: # messages}}", "count"],
+] as const;
+
+// These counts were plain `{count}` placeholders, so Russian and Czech nouns after them could
+// not agree, and Japanese read "{0} more not loaded" as "{0} or more".
+it("selection, unread and preview counts use each plural form", async () => {
+  expect(await render("en", COUNTED[3][0], { count: 1 })).toBe("Server preview: 1 message");
+  expect(await render("en", COUNTED[1][0], { 0: 3 })).toBe("3 more not loaded");
+  for (const [source, name] of COUNTED)
+    for (const locale of ["ru", "cs"]) {
+      const forms = await Promise.all(
+        [1, 3, 5].map((count) => render(locale, source, { [name]: count })),
+      );
+      expect(new Set(forms.map((form) => form.replace(/\d+/, "#"))).size, source).toBe(3);
+    }
+  expect(await render("ja", COUNTED[1][0], { 0: 3 })).toBe(
+    "未読み込みのメッセージがあと3件あります",
+  );
+  expect(await render("ru", COUNTED[1][0], { 0: 21 })).toBe("Ещё 21 сообщение не загружено");
+  expect(await render("ru", COUNTED[1][0], { 0: 1_000 })).toMatch(
+    /^Ещё 1\s000 сообщений не загружено$/,
+  );
+});

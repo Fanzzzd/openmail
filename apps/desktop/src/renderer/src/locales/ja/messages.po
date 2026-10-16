@@ -38,10 +38,22 @@ msgstr "{0, plural, other {#件の日付が見つかりました}}"
 msgid "{0, plural, one {# day} other {# days}}, {1, plural, one {up to # message} other {up to # messages}}"
 msgstr "{0, plural, other {#日}}、{1, plural, other {最大 # 件のメッセージ}}"
 
+#. Messages on the server that are not in the list yet.
+#. placeholder {0}: props.moreNotLoaded
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# more not loaded} other {# more not loaded}}"
+msgstr "{0, plural, other {未読み込みのメッセージがあと#件あります}}"
+
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{0, plural, one {# occurrence} other {# occurrences}}"
 msgstr "{0, plural, other {#回}}"
+
+#. Conversations selected in the list. Only loaded conversations can be selected.
+#. placeholder {0}: rows.length
+#: src/renderer/src/features/mail-list/BatchActions.tsx
+msgid "{0, plural, one {# selected (loaded)} other {# selected (loaded)}}"
+msgstr "{0, plural, other {#件を選択（読み込み済み）}}"
 
 #. placeholder {0}: deleteRequest?.ids.size ?? 0
 #: src/renderer/src/app/MailAlerts.tsx
@@ -60,11 +72,6 @@ msgstr "{0, plural, other {プレビュー：#件のメッセージ。}} 既存�
 #: src/renderer/src/features/settings/sections/IndexingSettings.tsx
 msgid "{0} embedded · {1} queued · {2} running · {3} failed"
 msgstr "埋め込み済み {0} · 待機中 {1} · 実行中 {2} · 失敗 {3}"
-
-#. placeholder {0}: i18n.number(props.moreNotLoaded)
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{0} more not loaded"
-msgstr "{0} 個以上が読み込まれていません"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{account}: the server can't search with {names}. OpenMail searched the server without it and applied it to the results here."
@@ -134,6 +141,10 @@ msgstr "{count, plural, other {# 件の送信済みメッセージが送信済�
 msgid "{count, plural, one {Blocked # tracker} other {Blocked # trackers}}"
 msgstr "{count, plural, other {#個のトラッカーをブロック}}"
 
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Local preview: # message} other {Local preview: # messages}}"
+msgstr "{count, plural, other {ローカルのプレビュー：#件のメッセージ}}"
+
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
 msgstr "{count, plural, other {#件のメッセージを既読にしました}}"
@@ -151,13 +162,9 @@ msgstr "{count, plural, other {#件のメッセージを完全に削除しまし
 msgid "{count, plural, one {Saving # attachment to your attachment folder} other {Saving # attachments to your attachment folder}}"
 msgstr "{count, plural, other {#件の添付ファイルを添付ファイルフォルダに保存しています}}"
 
-#: src/renderer/src/features/mail-list/BatchActions.tsx
-msgid "{count} selected (loaded)"
-msgstr "{count} 件を選択（読み込み済み）"
-
-#: src/renderer/src/features/overview/Overview.tsx
-msgid "{count} unread"
-msgstr "{count} 未開封"
+#: src/renderer/src/features/settings/sections/FilterEditor.tsx
+msgid "{count, plural, one {Server preview: # message} other {Server preview: # messages}}"
+msgstr "{count, plural, other {サーバーのプレビュー：#件のメッセージ}}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "{delay, plural, one {# second} other {# seconds}}"
@@ -303,6 +310,11 @@ msgstr "{text} → {recipient}"
 #: src/renderer/src/features/ai/AiPanel.tsx
 msgid "{total, plural, one {Covers the newest {kept} of # message} other {Covers the newest {kept} of # messages}}"
 msgstr "{total, plural, other {全 # 件のうち新しい {kept} 件のメッセージを対象にしています}}"
+
+#. Unread conversations in a space.
+#: src/renderer/src/features/overview/Overview.tsx
+msgid "{unreadCount, plural, one {# unread} other {# unread}}"
+msgstr "{unreadCount, plural, other {未読#件}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value, plural, one {# day} other {# days}}"
@@ -3996,10 +4008,6 @@ msgstr "ローカルが少ない：同期期間"
 msgid "Local has more: stale"
 msgstr "ローカルが多い：古い状態"
 
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Local preview: {count} messages"
-msgstr "ローカル プレビュー：{count} メッセージ"
-
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Local signatures stay on this Mac. Gmail default signatures are read from Gmail."
 msgstr "ローカル署名はこの Mac に残ります。Gmail のデフォルトの署名は Gmail から読み取られます。"
@@ -6658,10 +6666,6 @@ msgstr "サーバー フィルターと自動返信は、Gmail と Outlook で�
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Server names guessed from your email address, with the standard ports. Check them against your provider’s settings."
 msgstr "サーバー名はメールアドレスから推測し、ポートは標準のものです。プロバイダーの設定と照らし合わせて確認してください。"
-
-#: src/renderer/src/features/settings/sections/FilterEditor.tsx
-msgid "Server preview: {count} messages"
-msgstr "サーバー プレビュー：{count} メッセージ"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"

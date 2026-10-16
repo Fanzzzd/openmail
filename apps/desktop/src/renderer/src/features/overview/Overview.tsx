@@ -1,6 +1,6 @@
 import { useAtomValue } from "@effect/atom-react";
 import { plural } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { CircleAlert, Layers, Pencil, Plus, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
@@ -155,7 +155,6 @@ function GroupCard({
   const ids = group.accounts.map((a) => a.id);
   const threads = AsyncResult.getOrElse(useAtomValue(unreadInboxAtom(ids)), () => null);
   const unreadCount = group.accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0);
-  const count = i18n.number(unreadCount);
 
   return (
     <section className="flex flex-col rounded-sheet border border-separator">
@@ -180,7 +179,12 @@ function GroupCard({
         </button>
         {unreadCount > 0 && (
           <span className="text-body text-a11y-muted tabular-nums">
-            <Trans>{count} unread</Trans>
+            <Plural
+              value={unreadCount}
+              one="# unread"
+              other="# unread"
+              comment="Unread conversations in a space."
+            />
           </span>
         )}
         {onEdit && (

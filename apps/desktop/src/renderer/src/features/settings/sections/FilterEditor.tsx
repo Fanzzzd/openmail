@@ -1,5 +1,5 @@
 import { plural } from "@lingui/core/macro";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import type { Account } from "../../../../../shared/api";
 import {
   CATEGORIES,
@@ -592,9 +592,17 @@ export function FilterEditor({
             ) : previewUnavailable ? (
               <Trans>Preview unavailable</Trans>
             ) : rules?.preview === "server" ? (
-              <Trans>Server preview: {count} messages</Trans>
+              <Plural
+                value={count}
+                one="Server preview: # message"
+                other="Server preview: # messages"
+              />
             ) : (
-              <Trans>Local preview: {count} messages</Trans>
+              <Plural
+                value={count}
+                one="Local preview: # message"
+                other="Local preview: # messages"
+              />
             )}
             {count === 200 && " +"}
           </p>
