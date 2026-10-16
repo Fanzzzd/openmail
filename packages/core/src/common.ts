@@ -34,6 +34,7 @@ export {
 } from "./tools/tools.js";
 export { AgentIdentity, CLI_AGENT_NAME } from "./tools/agent-identity.js";
 export { READ_ONLY_CONNECTION } from "./tools/account-tools.js";
+export { cursorScope, decodeCursor, encodeCursor, type PageCursor } from "./tools/tool-pages.js";
 export { MailToolError, isLockTimeout, unknownArguments } from "./tools/tool-common.js";
 export { APPROVE_IN_APP } from "./mailbox/mailbox-apply.js";
 

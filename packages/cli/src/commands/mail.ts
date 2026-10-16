@@ -7,14 +7,15 @@
 
 import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
-import { Console, Effect, LogLevel, Logger, Option, Schema } from "effect";
-import { Buffer } from "node:buffer";
-import { createHash } from "node:crypto";
+import { Console, Effect, LogLevel, Logger, Option } from "effect";
 import {
   MAILBOXES,
   Mailbox,
   SyncFailureDetailLog,
   type SyncResult,
+  cursorScope,
+  decodeCursor,
+  encodeCursor,
   logWarning,
   printable,
   redactSyncHealth,
@@ -151,23 +152,10 @@ const spaceFlags = {
 };
 
 /**
- * The opaque --cursor for list and search: where the last page stopped, bound to a hash of the
- * query and scope that made it, so a cursor from one command never pages another.
+ * The opaque --cursor for list and search is core's page cursor: where the last page stopped,
+ * bound to a hash of the command and filters that made it, so a cursor from one command never
+ * pages another.
  */
-const PageCursor = Schema.Struct({
-  scope: Schema.String,
-  date: Schema.optionalKey(Schema.Number),
-  id: Schema.optionalKey(Schema.String),
-  offset: Schema.optionalKey(Schema.Int),
-});
-const PageCursorJson = Schema.fromJsonString(PageCursor);
-const cursorScope = (name: string, filters: unknown) =>
-  createHash("sha256")
-    .update(JSON.stringify([name, filters]))
-    .digest("hex")
-    .slice(0, 16);
-const encodePageCursor = (cursor: typeof PageCursor.Type) =>
-  Buffer.from(Schema.encodeSync(PageCursorJson)(cursor)).toString("base64url");
 const badCursor = (message: string) =>
   new Failed({
     message,
@@ -175,17 +163,10 @@ const badCursor = (message: string) =>
     hint: "Omit --cursor to start from the first page.",
   });
 const decodePageCursor = (raw: Option.Option<string>, scope: string) =>
-  Option.isNone(raw)
-    ? Effect.succeed<Omit<typeof PageCursor.Type, "scope">>({})
-    : Schema.decodeUnknownEffect(PageCursorJson)(
-        Buffer.from(raw.value, "base64url").toString("utf8"),
-      ).pipe(
-        Effect.mapError(() => badCursor("That --cursor is not a cursor from this command.")),
-        Effect.filterOrFail(
-          (cursor) => cursor.scope === scope,
-          () => badCursor("That --cursor belongs to another command or other filters."),
-        ),
-      );
+  Effect.try({
+    try: () => decodeCursor(Option.getOrUndefined(raw), scope),
+    catch: () => badCursor("That --cursor is not from this command with these filters."),
+  });
 
 /**
  * The accounts a person's list or search covers: every turned-on account, narrowed by --space
@@ -268,7 +249,7 @@ const list = Command.make(
     const last = threads.at(-1);
     const next =
       last && rows.length > threads.length
-        ? encodePageCursor({ scope, date: last.date, id: last.id })
+        ? encodeCursor({ scope, offset: 0, date: last.date, id: last.id })
         : undefined;
     yield* print({ threads, ...(next === undefined ? {} : { next_cursor: next }) }, o.json, () =>
       pageText(threads, next, []),
@@ -303,7 +284,7 @@ const search = Command.make(
     const accountIds = yield* accountScope(o.account, Option.none());
     const query = { search: o.query.join(" "), accountIds, limit: SEARCH_CAP + 1 };
     const scope = cursorScope("search", [query.search, accountIds, o.server]);
-    const { offset = 0 } = yield* decodePageCursor(o.cursor, scope);
+    const { offset } = yield* decodePageCursor(o.cursor, scope);
     if (accountIds.length && !(yield* finishSearchIndex)) yield* Console.error(SEARCH_INDEX_NOTE);
     const found: SearchResult = !accountIds.length
       ? { threads: [], truncated: false, errors: [] }
@@ -314,7 +295,7 @@ const search = Command.make(
     const threads = all.slice(offset, offset + o.limit);
     const next =
       offset + threads.length < all.length
-        ? encodePageCursor({ scope, offset: offset + threads.length })
+        ? encodeCursor({ scope, offset: offset + threads.length })
         : undefined;
     const truncated = found.truncated || found.threads.length > SEARCH_CAP;
     // newer:foo or larger:xyz matches nothing; say so on stderr, keeping stdout for results.
