@@ -147,6 +147,10 @@ function address(a: GraphAddress | null | undefined): Address {
   };
 }
 
+/** UTF-8 bytes of the body plus the attachment sizes. Migration 55 backfills stored rows the same way. */
+export const estimatedMessageSize = (body: string, attachments: readonly Attachment[]): number =>
+  attachments.reduce((total, a) => total + a.size, Buffer.byteLength(body));
+
 export const parseGraphMessage = (
   raw: GraphMessage,
   folderLabel: string,
@@ -201,6 +205,9 @@ function graphMessage(
     snippet: raw.bodyPreview ?? "",
     bodyText: text,
     bodyHtml: html,
+    // Graph has no message size. The body plus the file sizes stands in for it, so size:,
+    // larger: and smaller: match Outlook mail locally and in the server search postfilter.
+    size: estimatedMessageSize(html === "" ? text : html, attachments),
     // Graph header order is not used to establish authentication trust.
     security: messageSecurity([], "outlook"),
     ...(/eventMessage/i.test(raw["@odata.type"] ?? "") ? { hasCalendar: true } : {}),

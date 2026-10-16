@@ -1444,6 +1444,15 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
        OR old.cc_json IS NOT new.cc_json OR old.date IS NOT new.date BEGIN
      DELETE FROM derived WHERE account_id=old.account_id AND thread_id=old.account_id || '/' || old.thread_id;
    END;`,
+  // user_version 55: Graph reports no message size, so Outlook rows stored message_size NULL and
+  // size:, larger: and smaller: let every Outlook message through. The Outlook parser now stores
+  // the UTF-8 bytes of the body plus the attachment sizes (estimatedMessageSize in
+  // providers/outlook/parse.ts). This fills existing Outlook rows with the same estimate.
+  `UPDATE messages SET message_size =
+     length(CAST(CASE WHEN body_html != '' THEN body_html ELSE body_text END AS BLOB))
+     + COALESCE((SELECT SUM(json_extract(a.value, '$.size')) FROM json_each(messages.attachments_json) a), 0)
+   WHERE message_size IS NULL
+     AND account_id IN (SELECT id FROM accounts WHERE provider = 'outlook');`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */
