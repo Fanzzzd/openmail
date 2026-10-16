@@ -1106,7 +1106,7 @@ exports[`tool input and output schemas are stable 1`] = `
     "readonly": true,
   },
   {
-    "description": "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset. Times are ISO 8601 local times with a UTC offset, such as 2026-10-15T09:00:00+08:00; access_status gives now and time_zone.",
+    "description": "Read one pending proposal as the approval screen shows it. Pass id from list_proposals, or proposal_id as a write tool returned it. A long draft body pages with next_offset. Times are ISO 8601 local times with a UTC offset, such as 2026-10-15T09:00:00+08:00; access_status gives now and time_zone.",
     "idempotent": true,
     "input": {
       "additionalProperties": true,
@@ -1128,6 +1128,17 @@ exports[`tool input and output schemas are stable 1`] = `
           "minimum": 0,
           "type": "integer",
         },
+        "proposal_id": {
+          "anyOf": [
+            {
+              "type": "integer",
+            },
+            {
+              "type": "string",
+            },
+          ],
+          "description": "The same id under the name write tools return it. Pass id or proposal_id.",
+        },
         "token_budget": {
           "description": "Result size limit in UTF-8 JSON bytes. Default 12000.",
           "maximum": 24000,
@@ -1135,9 +1146,6 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "integer",
         },
       },
-      "required": [
-        "id",
-      ],
       "type": "object",
     },
     "name": "read_proposal",

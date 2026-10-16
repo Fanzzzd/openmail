@@ -211,13 +211,21 @@ export const ListProposals = collection(
 export const ReadProposal = readOnly(
   mailTool("read_proposal", {
     description:
-      "Read one pending proposal as the approval screen shows it. Use an id from list_proposals. A long draft body pages with next_offset.",
+      "Read one pending proposal as the approval screen shows it. Pass id from list_proposals, or proposal_id as a write tool returned it. A long draft body pages with next_offset.",
     times: true,
     parameters: Schema.Struct({
       // list_proposals returns the id as a number. Older clients send it as a string.
-      id: Schema.Union([ToolInt, Schema.String]).annotate({
-        description: "A pending proposal id from list_proposals, as list_proposals returns it.",
-      }),
+      id: Schema.optionalKey(
+        Schema.Union([ToolInt, Schema.String]).annotate({
+          description: "A pending proposal id from list_proposals, as list_proposals returns it.",
+        }),
+      ),
+      // draft_message and the other write tools return proposal_id, so agents pass it back as is.
+      proposal_id: Schema.optionalKey(
+        Schema.Union([ToolInt, Schema.String]).annotate({
+          description: "The same id under the name write tools return it. Pass id or proposal_id.",
+        }),
+      ),
       ...pageParameters,
     }),
     success: Schema.Struct({
@@ -323,14 +331,30 @@ export const proposalHandlers = ({
         ),
       ),
     read_proposal: Effect.fnUntraced(function* (p) {
-      const id = String(p.id);
+      if (p.id === undefined && p.proposal_id === undefined)
+        return yield* toolError(
+          "invalid_input",
+          "read_proposal needs a proposal id.",
+          "Pass id from list_proposals, or the proposal_id a write tool returned.",
+        );
+      if (
+        p.id !== undefined &&
+        p.proposal_id !== undefined &&
+        String(p.id) !== String(p.proposal_id)
+      )
+        return yield* toolError(
+          "invalid_input",
+          `id ${p.id} and proposal_id ${p.proposal_id} name different proposals.`,
+          "Pass only one of id and proposal_id.",
+        );
+      const id = String(p.id ?? p.proposal_id);
       const row = /^[1-9]\d{0,15}$/.test(id)
         ? Option.getOrUndefined(yield* visibleProposal(Number(id)))
         : undefined;
       if (!row)
         return yield* toolError(
           "not_found",
-          `No pending proposal with id ${p.id}.`,
+          `No pending proposal with id ${id}.`,
           "Get pending proposal ids from list_proposals.",
         );
       return yield* toolAttempt(() =>

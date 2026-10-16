@@ -2643,6 +2643,43 @@ it.effect(
     }),
 );
 
+it.effect("read_proposal takes the proposal_id a write tool returned", () =>
+  Effect.gen(function* () {
+    const rows = [pendingFrom("claude-code", 7)];
+    const layer = stubMailbox({
+      proposals: {
+        proposals: Effect.succeed(rows),
+        proposal: (id) =>
+          id === 7
+            ? Effect.succeed(rows[0] ?? pendingFrom("claude-code", 7))
+            : Effect.fail(new NotFound({ what: "proposal", id: String(id) })),
+      },
+      reading: {
+        messageAccounts: (ids) => Effect.succeed(new Map(ids.map((id) => [id, "a"]))),
+      },
+    });
+    const byId = yield* run(call("read_proposal", { id: 7 }), layer);
+    assert.isFalse(byId.isFailure, JSON.stringify(byId.encodedResult));
+    for (const proposal_id of [7, "7"]) {
+      const alias = yield* run(call("read_proposal", { proposal_id }), layer);
+      assert.isFalse(alias.isFailure, JSON.stringify(alias.encodedResult));
+      assert.deepStrictEqual(alias.encodedResult, byId.encodedResult);
+    }
+    const same = yield* run(call("read_proposal", { id: "7", proposal_id: 7 }), layer);
+    assert.deepStrictEqual(same.encodedResult, byId.encodedResult);
+    for (const input of [{}, { id: 7, proposal_id: 8 }])
+      assert.strictEqual(
+        failureOf(yield* run(call("read_proposal", input), layer)).code,
+        "invalid_input",
+        JSON.stringify(input),
+      );
+    assert.strictEqual(
+      failureOf(yield* run(call("read_proposal", { proposal_id: 8 }), layer)).code,
+      "not_found",
+    );
+  }),
+);
+
 /** Decodes a failed tool call as MCP sends it. */
 const ToolFailureShape = Schema.Struct({
   code: Schema.String,
