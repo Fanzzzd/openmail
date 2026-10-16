@@ -955,6 +955,40 @@ test("--log-level takes any letter case and a bad value is a usage error", async
   );
 });
 
+// openmail-mcp --log-level bogus said "Unknown option" and exited 1; openmail mcp names the value
+// and the valid ones and exits 2.
+test("openmail-mcp refuses a bad --log-level the way openmail mcp does", async () => {
+  const mcp = fileURLToPath(new URL("../dist/mcp.js", import.meta.url));
+  const home = join(seeded, "home");
+  const bin = (args: string[]) =>
+    new Promise<{ code: number | null; stderr: string }>((done, failed) => {
+      const child = spawn(
+        process.execPath,
+        ["--disable-warning=ExperimentalWarning", mcp, ...args],
+        {
+          env: { ...process.env, OPENMAIL_HOME: home },
+          stdio: ["ignore", "ignore", "pipe"],
+        },
+      );
+      let stderr = "";
+      child.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+      child.once("error", failed);
+      child.once("close", (code) => done({ code, stderr }));
+    });
+  for (const args of [
+    ["--log-level", "bogus"],
+    ["--log-level=bogus"],
+    ["--allow-writes", "--log-level"],
+  ]) {
+    const direct = await bin(args);
+    const viaCli = await openmail(["mcp", ...args]);
+    expect(direct.code, args.join(" ")).toBe(2);
+    expect(viaCli.code).toBe(2);
+    expect(direct.stderr.split("\n")[0]).toBe(viaCli.stderr.split("\n")[0]);
+  }
+  expect((await bin(["--bogus"])).code).toBe(1);
+});
+
 // A --server search that reached no server printed "(no conversations)" and exited 0.
 test("search --server fails when the server search failed for every account", async () => {
   const offline = { OPENMAIL_OFFLINE: "1" };

@@ -6,14 +6,20 @@ import { Cause, Effect, Logger, References } from "effect";
 import { mcpStartupError, runMcp, splitMcpLogLevel } from "./mcp-server.js";
 import { oauthClientsFile } from "./oauth-clients.js";
 
-const { level, rest: args } = splitMcpLogLevel(process.argv.slice(2));
+const { level, problem, rest: args } = splitMcpLogLevel(process.argv.slice(2));
 if (args.includes("--help")) {
   process.stdout.write(
     "openmail-mcp [--allow-writes] [--log-level <level>]\nRun MCP over stdio. Default: read tools only. --allow-writes exposes proposals, subject to app AI policy; approval and sending require the app.\nLogs warnings and errors on stderr. --log-level takes all, trace, debug, info, warn, error, fatal or none.\n",
   );
   process.exit(0);
 }
-if (level === undefined || args.some((arg) => arg !== "--allow-writes")) {
+if (level === undefined) {
+  process.stderr.write(
+    `error: ${problem}\nUsage: openmail-mcp [--allow-writes] [--log-level <level>]\nRun \`openmail-mcp --help\` for details.\n`,
+  );
+  process.exit(2);
+}
+if (args.some((arg) => arg !== "--allow-writes")) {
   process.stderr.write("Unknown option. Use openmail-mcp --help.\n");
   process.exit(1);
 }

@@ -15,6 +15,9 @@ import type { Tool, Toolkit } from "effect/ai";
 import { explainDefect, stderrText } from "./cli-errors.js";
 import { CLI_VERSION } from "./version.js";
 import { invalidArguments } from "./tool-errors.js";
+import { logLevelProblem, parseLogLevel } from "./log-levels.js";
+
+export { LOG_LEVEL_NAMES, parseLogLevel } from "./log-levels.js";
 
 /**
  * The minimum log level of every MCP entry point: `openmail mcp`, `openmail-mcp` and
@@ -23,19 +26,6 @@ import { invalidArguments } from "./tool-errors.js";
  */
 export const MCP_LOG_LEVEL: LogLevel.LogLevel = "Warn";
 
-/** The values `--log-level` takes, as in the CLI. */
-const LOG_LEVELS: Readonly<Record<string, LogLevel.LogLevel>> = {
-  all: "All",
-  trace: "Trace",
-  debug: "Debug",
-  info: "Info",
-  warn: "Warn",
-  warning: "Warn",
-  error: "Error",
-  fatal: "Fatal",
-  none: "None",
-};
-
 /**
  * `--log-level <level>` or `--log-level=<level>` taken out of an MCP command line. `level` is
  * MCP_LOG_LEVEL without the flag and undefined for a value that is not a level.
@@ -43,14 +33,18 @@ const LOG_LEVELS: Readonly<Record<string, LogLevel.LogLevel>> = {
 export function splitMcpLogLevel(args: readonly string[]): {
   readonly level: LogLevel.LogLevel | undefined;
   readonly rest: readonly string[];
+  /** Why the flag was refused, as `openmail` words it; set exactly when `level` is undefined. */
+  readonly problem?: string;
 } {
   const at = args.findIndex((arg) => arg === "--log-level" || arg.startsWith("--log-level="));
   if (at < 0) return { level: MCP_LOG_LEVEL, rest: args };
   const flag = args[at] ?? "";
   const inline = flag.startsWith("--log-level=");
-  const word = (inline ? flag.slice("--log-level=".length) : args[at + 1])?.toLowerCase();
+  const word = inline ? flag.slice("--log-level=".length) : args[at + 1];
+  const level = parseLogLevel(word);
   return {
-    level: word !== undefined && Object.hasOwn(LOG_LEVELS, word) ? LOG_LEVELS[word] : undefined,
+    level,
+    ...(level === undefined ? { problem: logLevelProblem(word) } : {}),
     rest: [...args.slice(0, at), ...args.slice(at + (inline ? 1 : 2))],
   };
 }
