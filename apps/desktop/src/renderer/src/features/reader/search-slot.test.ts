@@ -12,7 +12,7 @@ function grownWidth(className: string, bar: number): number {
 // At a 1320 px window the field stayed 320 px with ~300 px of header unused, so chips
 // truncated to "label:…" and "from:NO…".
 it("grows search with a query into the header's spare room, up to the field's 520 px", () => {
-  const withQuery = searchSlotClass(true, "from:nora label:travel");
+  const withQuery = searchSlotClass(true, "from:nora label:travel", true);
   expect(withQuery).not.toContain("focus-within:basis-[");
   expect(grownWidth(withQuery, 1300)).toBe(520);
   expect(grownWidth(withQuery, 1100)).toBe(460);
@@ -22,9 +22,19 @@ it("grows search with a query into the header's spare room, up to the field's 52
 });
 
 it("grows an empty field only while focused, and fills the header without a toolbar", () => {
-  const empty = searchSlotClass(true, "");
+  const empty = searchSlotClass(true, "", true);
   expect(empty).toContain("flex-[0_1_14rem]");
   expect(empty).toContain("focus-within:basis-[clamp(");
   expect(grownWidth(empty, 1200)).toBe(520);
-  expect(searchSlotClass(false, "from:nora")).toContain("flex-1");
+  expect(searchSlotClass(false, "from:nora", true)).toContain("flex-1");
+});
+
+// At 1320 px with nothing selected the toolbar shows no actions, yet search still reserved 40rem
+// and left ~490 px empty, so "label:r…" truncated.
+it("reserves only 14rem for the toolbar while no message is selected", () => {
+  const none = searchSlotClass(true, "label:receipts", false);
+  const selected = searchSlotClass(true, "label:receipts", true);
+  expect(grownWidth(none, 1000)).toBe(520);
+  expect(grownWidth(selected, 1000)).toBe(360);
+  expect(grownWidth(none, 500)).toBe(320);
 });

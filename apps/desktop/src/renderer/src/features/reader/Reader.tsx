@@ -121,7 +121,10 @@ export function Reader({
           </div>
         )}
         {!onBack && (
-          <div data-search-slot className={searchSlotClass(prefs.toolbarVisible, query)}>
+          <div
+            data-search-slot
+            className={searchSlotClass(prefs.toolbarVisible, query, Boolean(messageId && messages))}
+          >
             <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
           </div>
         )}
