@@ -1136,6 +1136,7 @@ msgstr "Onder geciteerde tekst"
 msgid "Blocked before loading:"
 msgstr "Geblokkeerd vóór laden:"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1165,6 +1166,11 @@ msgstr "Vet"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "Alles op voorgrond"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "Bruin"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3322,11 +3328,13 @@ msgstr "Google heeft de aanmelding bij OpenMail na 7 dagen beëindigd. Meld je o
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google toont een waarschuwing dat OpenMail nog niet is geverifieerd. Kies “Geavanceerd” en ga daarna door naar OpenMail."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "Grijs"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5262,6 +5270,7 @@ msgstr "Operatoren"
 msgid "Optional services"
 msgstr "Optionele diensten"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5610,6 +5619,7 @@ msgstr "Reclame"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "Publiceer OpenMail als Tailscale Service, zoals svc:openmail, met een eigen naam in plaats van poort 8443 op deze Mac. Maak de service eerst aan in de Tailscale-beheerconsole en keur deze Mac goed als host. Laat leeg om de naam van deze Mac te gebruiken."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5785,6 +5795,7 @@ msgstr "Herstelkopieën"
 msgid "Recurring meeting"
 msgstr "Terugkerende bijeenkomst"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7341,6 +7352,7 @@ msgstr "Tailscale laat OpenMail weten wie er verbinding maakt. Alleen deze tailn
 msgid "Target language"
 msgstr "Doeltaal"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"

@@ -1136,6 +1136,7 @@ msgstr "Pod citovaným textem"
 msgid "Blocked before loading:"
 msgstr "Blokováno před načtením:"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1165,6 +1166,11 @@ msgstr "Tučné"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "Převést vše do popředí"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "Hnědá"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3322,11 +3328,13 @@ msgstr "Google ukončil přihlášení do OpenMail po 7 dnech. Přihlaste se zno
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google zobrazí upozornění, že OpenMail zatím neověřil. Zvolte „Rozšířená nastavení“ a pak pokračujte do OpenMailu."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "Šedá"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5262,6 +5270,7 @@ msgstr "Operátory"
 msgid "Optional services"
 msgstr "Volitelné služby"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5610,6 +5619,7 @@ msgstr "Promo akce"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "Zveřejněte OpenMail jako Tailscale Service, např. svc:openmail, s vlastním názvem místo portu 8443 na tomto Macu. Nejprve službu definujte v administrační konzoli Tailscale a schvalte tento Mac jako hostitele. Ponechte prázdné, chcete-li použít název tohoto Macu."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5785,6 +5795,7 @@ msgstr "Kopie pro obnovu"
 msgid "Recurring meeting"
 msgstr "Opakující se setkání"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7341,6 +7352,7 @@ msgstr "Tailscale sděluje OpenMailu, kdo přistupuje. Dovnitř se dostanou jen 
 msgid "Target language"
 msgstr "Cílový jazyk"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"

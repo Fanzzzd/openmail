@@ -1146,6 +1146,7 @@ msgstr "引文下方"
 msgid "Blocked before loading:"
 msgstr "加载前已拦截："
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1175,6 +1176,11 @@ msgstr "粗体"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "前置全部窗口"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "棕色"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3332,11 +3338,13 @@ msgstr "Google 在 7 天后结束了 OpenMail 的登录。重新登录即可继�
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google 会提示尚未验证 OpenMail。请选择“高级”，然后继续前往 OpenMail。"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "灰色"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5272,6 +5280,7 @@ msgstr "搜索运算符"
 msgid "Optional services"
 msgstr "可选服务"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5620,6 +5629,7 @@ msgstr "推广"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "把 OpenMail 发布为 Tailscale Service，例如 svc:openmail，用独立名称代替这台 Mac 的 8443 端口。需先在 Tailscale 管理控制台定义该服务，并批准这台 Mac 作为它的主机。留空则使用这台 Mac 的名称。"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5795,6 +5805,7 @@ msgstr "恢复副本"
 msgid "Recurring meeting"
 msgstr "重复会议"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7351,6 +7362,7 @@ msgstr "Tailscale 会告诉 OpenMail 访问者是谁。只有这些 tailnet 登�
 msgid "Target language"
 msgstr "目标语言"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"

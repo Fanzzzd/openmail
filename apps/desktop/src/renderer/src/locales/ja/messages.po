@@ -1136,6 +1136,7 @@ msgstr "引用文の下"
 msgid "Blocked before loading:"
 msgstr "読み込み前にブロック："
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1165,6 +1166,11 @@ msgstr "太字"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "すべてを手前に移動"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "茶"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3322,11 +3328,13 @@ msgstr "Google が 7 日後に OpenMail のサインインを終了しました�
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google は OpenMail をまだ確認していないという警告を表示します。「詳細」を選び、OpenMail に進んでください。"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "グレー"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5262,6 +5270,7 @@ msgstr "検索演算子"
 msgid "Optional services"
 msgstr "オプションサービス"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5610,6 +5619,7 @@ msgstr "プロモーション"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "OpenMail を svc:openmail のような Tailscale Service として、この Mac のポート 8443 の代わりに独自の名前で公開します。先に Tailscale 管理コンソールでサービスを定義し、この Mac をホストとして承認してください。この Mac の名前を使う場合は空欄のままにします。"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5785,6 +5795,7 @@ msgstr "復旧用コピー"
 msgid "Recurring meeting"
 msgstr "定期的な会議"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7341,6 +7352,7 @@ msgstr "Tailscale が、アクセスしてきた人を OpenMail に知らせま�
 msgid "Target language"
 msgstr "翻訳先の言語"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"

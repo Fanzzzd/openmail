@@ -1,4 +1,6 @@
 import { useAtom } from "@effect/atom-react";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Radio } from "@base-ui/react/radio";
 import { RadioGroup } from "@base-ui/react/radio-group";
@@ -22,6 +24,18 @@ import { Dialog } from "../../ui/Dialog";
 import { buttonPrimary, buttonSecondary, formInput, settingsGroup } from "../../ui/styles";
 
 const ICONS = ["💼", "🏠", "🏭", "🧪", "🎓", "✈️", "💰", "⭐"];
+
+/** What each color swatch looks like, in the words label colors already use. */
+const COLOR_NAMES: Record<ProfileColor, MessageDescriptor> = {
+  blue: msg({ context: "label color", message: "Blue" }),
+  violet: msg({ context: "label color", message: "Purple" }),
+  rose: msg({ context: "label color", message: "Red" }),
+  orange: msg({ context: "label color", message: "Orange" }),
+  amber: msg({ context: "label color", message: "Brown" }),
+  emerald: msg({ context: "label color", message: "Green" }),
+  teal: msg({ context: "label color", message: "Teal" }),
+  slate: msg({ context: "label color", message: "Gray" }),
+};
 
 /** A field's label, above the field. */
 const fieldLabel = "mb-1.5 text-footnote font-medium text-a11y-muted";
@@ -162,7 +176,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
               <Radio.Root
                 key={c}
                 value={c}
-                aria-label={c}
+                aria-label={i18n._(COLOR_NAMES[c])}
                 className={`size-6 rounded-full ring-offset-2 ring-offset-raised outline-offset-[5px] outline-a11y-focus focus-visible:outline-2 data-checked:ring-2 data-checked:ring-neutral-900 dark:data-checked:ring-white ${PROFILE_BG[c]}`}
               />
             ))}

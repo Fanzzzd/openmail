@@ -103,3 +103,20 @@ it("editing the space name clears a save error and the field's invalid state", a
   expect(within(editor).queryByRole("alert")).toBeNull();
   expect(field.hasAttribute("aria-invalid")).toBe(false);
 });
+
+it("names each space color in words, not by its key", async () => {
+  const editor = await openNewSpace();
+  const colors = within(within(editor).getByRole("radiogroup", { name: "Color" })).getAllByRole(
+    "radio",
+  );
+  expect(colors.map((color) => color.getAttribute("aria-label"))).toEqual([
+    "Blue",
+    "Purple",
+    "Red",
+    "Orange",
+    "Brown",
+    "Green",
+    "Teal",
+    "Gray",
+  ]);
+});

@@ -1140,6 +1140,7 @@ msgstr "Below quoted text"
 msgid "Blocked before loading:"
 msgstr "Blocked before loading:"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1169,6 +1170,11 @@ msgstr "Bold"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "Bring all to front"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "Brown"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3326,11 +3332,13 @@ msgstr "Google ended OpenMail's sign-in after 7 days. Sign in again to keep sync
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "Gray"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5266,6 +5274,7 @@ msgstr "Operators"
 msgid "Optional services"
 msgstr "Optional services"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5614,6 +5623,7 @@ msgstr "Promotions"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5789,6 +5799,7 @@ msgstr "Recovery copies"
 msgid "Recurring meeting"
 msgstr "Recurring meeting"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7345,6 +7356,7 @@ msgstr "Tailscale tells OpenMail who is visiting. Only these tailnet logins get 
 msgid "Target language"
 msgstr "Target language"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"

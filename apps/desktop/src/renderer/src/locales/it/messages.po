@@ -1136,6 +1136,7 @@ msgstr "Sotto il testo citato"
 msgid "Blocked before loading:"
 msgstr "Bloccato prima del caricamento:"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Blue"
@@ -1165,6 +1166,11 @@ msgstr "Grassetto"
 #: src/renderer/src/state/desktop.ts
 msgid "Bring all to front"
 msgstr "Porta tutto in primo piano"
+
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
+msgctxt "label color"
+msgid "Brown"
+msgstr "Marrone"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Browsers"
@@ -3322,11 +3328,13 @@ msgstr "Google ha terminato l’accesso a OpenMail dopo 7 giorni. Accedi di nuov
 msgid "Google shows a warning that it hasn't verified OpenMail yet. Choose Advanced, then continue to OpenMail."
 msgstr "Google mostra un avviso perché non ha ancora verificato OpenMail. Scegli “Avanzate”, poi continua su OpenMail."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Gray"
 msgstr "Grigio"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Green"
@@ -5262,6 +5270,7 @@ msgstr "Operatori"
 msgid "Optional services"
 msgstr "Servizi facoltativi"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Orange"
@@ -5610,6 +5619,7 @@ msgstr "Promozioni"
 msgid "Publish OpenMail as a Tailscale Service, such as svc:openmail, with its own name instead of port 8443 on this Mac. Define the service in the Tailscale admin console and approve this Mac as its host first. Leave empty to use this Mac's name."
 msgstr "Pubblica OpenMail come Tailscale Service, ad esempio svc:openmail, con un nome proprio invece della porta 8443 di questo Mac. Prima definisci il servizio nella console di amministrazione di Tailscale e approva questo Mac come host. Lascia vuoto per usare il nome di questo Mac."
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Purple"
@@ -5785,6 +5795,7 @@ msgstr "Copie di ripristino"
 msgid "Recurring meeting"
 msgstr "Incontro ricorrente"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Red"
@@ -7341,6 +7352,7 @@ msgstr "Tailscale comunica a OpenMail chi si collega. Entrano solo questi login 
 msgid "Target language"
 msgstr "Lingua di destinazione"
 
+#: src/renderer/src/features/accounts/ProfileEditor.tsx
 #: src/renderer/src/features/organize/label-colors.ts
 msgctxt "label color"
 msgid "Teal"
