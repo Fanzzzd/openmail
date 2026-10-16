@@ -657,13 +657,19 @@ export class Store extends Context.Service<
       detail: unknown;
     }): Effect.Effect<void>;
     listAudit(limit: number): Effect.Effect<AuditEntry[]>;
-    /** Fails with DatabaseBusy when another process keeps the write lock past a short wait. */
-    appendAgentActivity(entry: {
-      client: string;
-      tool: string;
-      at: number;
-      ok: boolean;
-    }): Effect.Effect<void, DatabaseBusy>;
+    /**
+     * Fails with DatabaseBusy when another process keeps the write lock past a short wait, or
+     * at once with `waitForLock: false`.
+     */
+    appendAgentActivity(
+      entry: {
+        client: string;
+        tool: string;
+        at: number;
+        ok: boolean;
+      },
+      options?: { readonly waitForLock?: boolean },
+    ): Effect.Effect<void, DatabaseBusy>;
     listAgentActivity(limit: number): Effect.Effect<AgentActivity[]>;
     agentWriteMode(name: string): Effect.Effect<AgentWriteMode>;
     setAgentWriteMode(name: string, mode: AgentWriteMode): Effect.Effect<void>;

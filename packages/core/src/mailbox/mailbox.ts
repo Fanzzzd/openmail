@@ -344,15 +344,19 @@ export interface MailboxProposals {
   /** The last MCP tool calls, newest first: tool names and outcomes only. */
   agentActivity(limit: number): Effect.Effect<AgentActivity[]>;
   /**
-   * Fails with DatabaseBusy when another process keeps the write lock past a short wait. `at` is
-   * when the call ended, so a row written later keeps its time.
+   * Fails with DatabaseBusy when another process keeps the write lock past a short wait, or at
+   * once with `waitForLock: false`. `at` is when the call ended, so a row written later keeps
+   * its time.
    */
-  recordAgentActivity(entry: {
-    client: string;
-    tool: string;
-    ok: boolean;
-    at: number;
-  }): Effect.Effect<void, DatabaseBusy>;
+  recordAgentActivity(
+    entry: {
+      client: string;
+      tool: string;
+      ok: boolean;
+      at: number;
+    },
+    options?: { readonly waitForLock?: boolean },
+  ): Effect.Effect<void, DatabaseBusy>;
   /** OPENMAIL_READ_ONLY=1: no remote writes in this process. */
   readonly readOnlySession: boolean;
   /** Write mode for one agent: its own policy, else the default. */

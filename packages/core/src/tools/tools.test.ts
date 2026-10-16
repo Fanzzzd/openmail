@@ -1144,6 +1144,38 @@ it.effect("a tool result does not wait for its activity row", () =>
   }),
 );
 
+// node:sqlite waits for a held lock synchronously, and the first write ran before the result
+// went out, so every read call under another process's write lock took the 200 ms brief wait.
+it.effect(
+  "the first activity write gives up at once on a held lock, and retries wait briefly",
+  () =>
+    Effect.gen(function* () {
+      const waits: (boolean | undefined)[] = [];
+      let busy = true;
+      const mailbox = stubMailbox({
+        accounts: { accounts: Effect.succeed([]) },
+        proposals: {
+          recordAgentActivity: (_entry, options) =>
+            Effect.suspend(() => {
+              waits.push(options?.waitForLock);
+              return busy ? Effect.fail(new DatabaseBusy({ message: "busy" })) : Effect.void;
+            }),
+        },
+      });
+      const identity = AgentIdentity.fixed("mcp", "claude-code", { recordsActivity: true });
+      yield* Effect.gen(function* () {
+        assert.isFalse((yield* call("list_accounts", {})).isFailure);
+        yield* TestClock.adjust(0);
+        assert.deepStrictEqual(waits, [false]);
+        busy = false;
+        yield* TestClock.adjust("1 second");
+        assert.deepStrictEqual(waits, [false, true]);
+      }).pipe(
+        Effect.provide(MailToolkitLayer.pipe(Layer.provide(mailbox), Layer.provide(identity))),
+      );
+    }),
+);
+
 it.effect("search lists date and size operators without a valid value under ignored", () =>
   Effect.gen(function* () {
     const result = yield* run(

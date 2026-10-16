@@ -13,7 +13,7 @@ export const BRIEF_BUSY_TIMEOUT_MS = 200;
 const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
 
 /**
- * Runs `effect` waiting at most BRIEF_BUSY_TIMEOUT_MS for another process's write lock, not the
+ * Runs `effect` waiting at most `timeoutMs` (BRIEF_BUSY_TIMEOUT_MS) for another process's write lock, not the
  * connection's 5 s busy timeout. node:sqlite waits synchronously, so a 5 s wait froze the event
  * loop and every request of that process with it. The connection is reserved while its timeout
  * is lowered, so no other statement runs with the short one. A lock timeout, failed or died,
@@ -22,7 +22,10 @@ const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
  * Inside an open transaction `effect` runs as it is, on the transaction's connection and with its
  * busy timeout. The transaction holds the only connection, so reserving it would wait forever.
  */
-export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
+export const makeBriefLockWait = (
+  sql: SqlClient.SqlClient,
+  timeoutMs: number = BRIEF_BUSY_TIMEOUT_MS,
+) => {
   const reserve = Effect.gen(function* () {
     const conn = yield* Effect.orDie(sql.reserve);
     const timeout = yield* first(BusyTimeout)(
@@ -30,7 +33,7 @@ export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
     );
     const previous = Option.match(timeout, { onNone: () => 5000, onSome: (row) => row.timeout });
     yield* Effect.orDie(
-      conn.executeUnprepared(`PRAGMA busy_timeout = ${BRIEF_BUSY_TIMEOUT_MS}`, [], undefined),
+      conn.executeUnprepared(`PRAGMA busy_timeout = ${timeoutMs}`, [], undefined),
     );
     return { conn, previous };
   });

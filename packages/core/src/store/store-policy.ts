@@ -64,6 +64,7 @@ export const makePolicyStore = ({
   compose: ReturnType<typeof makeComposeStore>;
 }) => {
   const briefLockWait = makeBriefLockWait(sql);
+  const noLockWait = makeBriefLockWait(sql, 0);
   const purgeAccountProposals = Effect.fn("Store.purgeAccountProposals")(function* (
     ownerId: string,
     removeDraft: (draft: import("./service.js").StoredDraft) => Effect.Effect<void> = (draft) =>
@@ -114,13 +115,16 @@ export const makePolicyStore = ({
   });
 
   /** The row waits at most BRIEF_BUSY_TIMEOUT_MS for another process's write lock. */
-  const appendAgentActivity = Effect.fn("Store.appendAgentActivity")(function* (entry: {
-    client: string;
-    tool: string;
-    ok: boolean;
-    at: number;
-  }) {
-    yield* briefLockWait(
+  const appendAgentActivity = Effect.fn("Store.appendAgentActivity")(function* (
+    entry: {
+      client: string;
+      tool: string;
+      ok: boolean;
+      at: number;
+    },
+    options?: { readonly waitForLock?: boolean },
+  ) {
+    yield* (options?.waitForLock === false ? noLockWait : briefLockWait)(
       Effect.gen(function* () {
         yield* run(sql`INSERT INTO agent_activity (at, client, tool, ok)
           VALUES (${entry.at}, ${entry.client}, ${entry.tool}, ${entry.ok ? 1 : 0})`);

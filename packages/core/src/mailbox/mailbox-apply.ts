@@ -496,7 +496,7 @@ export const makeApplyMailbox = (
 
       agentActivity: (limit) => store.listAgentActivity(limit),
 
-      recordAgentActivity: (entry) => store.appendAgentActivity(entry),
+      recordAgentActivity: (entry, options) => store.appendAgentActivity(entry, options),
 
       agentWriteModeFor: (name) => store.agentWriteMode(name),
 

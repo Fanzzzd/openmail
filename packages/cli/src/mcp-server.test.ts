@@ -369,9 +369,11 @@ test.concurrent(
         setTimeout(resolve, 250);
       });
     }
+    // The first try of each call's activity row gives up at once; a typical call took the
+    // 200 ms brief wait before its result went out.
     if (process.env.OPENMAIL_PERF === "1") {
       const sorted = durations.toSorted((a, b) => a - b);
-      expect(sorted[Math.floor(sorted.length / 2)]).toBeLessThan(perfBudget(500));
+      expect(sorted[Math.floor(sorted.length / 2)]).toBeLessThan(perfBudget(150));
     }
     const { stderr } = await close();
     expect(stderr).not.toMatch(/search index|search-index/i);

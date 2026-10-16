@@ -57,6 +57,41 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
   }).pipe(Effect.scoped),
 );
 
+// The first try of each MCP call's activity row took the 200 ms brief wait under a held lock,
+// synchronously, before the call's result went out.
+it.effect("an agent_activity row without waitForLock fails at once on a held write lock", () =>
+  Effect.gen(function* () {
+    const file = join(yield* temp, "mail.db");
+    const layer = StoreLive.pipe(
+      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(MemoryPlatform()),
+    );
+    yield* Effect.gen(function* () {
+      const store = yield* Store;
+      const entry = { client: "claude-code", tool: "search", ok: true, at: 1 };
+      yield* store.appendAgentActivity(entry);
+      const writer = new DatabaseSync(file);
+      writer.exec("BEGIN IMMEDIATE");
+      try {
+        // Ten brief waits take at least 2 s, so the bound holds on a loaded runner.
+        const started = performance.now();
+        for (let i = 0; i < 10; i++) {
+          const failed = yield* Effect.flip(
+            store.appendAgentActivity(entry, { waitForLock: false }),
+          );
+          assert.strictEqual(failed._tag, "DatabaseBusy");
+        }
+        assert.isBelow(performance.now() - started, 1500);
+      } finally {
+        writer.exec("ROLLBACK");
+        writer.close();
+      }
+      yield* store.appendAgentActivity(entry, { waitForLock: false });
+      assert.strictEqual((yield* store.listAgentActivity(10)).length, 2);
+    }).pipe(Effect.provide(layer));
+  }).pipe(Effect.scoped),
+);
+
 // The search backfill opened a write transaction before it checked for work. With another
 // process holding the write lock, each step froze the event loop for the 5 s busy timeout.
 it.effect("search index steps read first and wait only briefly for a held write lock", () =>

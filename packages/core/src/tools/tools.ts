@@ -127,22 +127,28 @@ export const MailToolkitLayer = MailToolkit.toLayer(
      * process's write lock, and closing the server tries once more and logs the rows it drops.
      */
     const unrecorded: ActivityEntry[] = [];
-    /** Writes the waiting rows in order; false when the lock is still held. One at a time. */
+    /**
+     * Writes the waiting rows in order; false when the lock is still held. One at a time.
+     * Without `waitForLock` a held lock fails at once: node:sqlite waits synchronously, and the
+     * first try runs while the tool's result is still on its way out.
+     */
     const writing = yield* Semaphore.make(1);
-    const writeUnrecorded = Effect.gen(function* () {
-      for (let entry = unrecorded[0]; entry; entry = unrecorded[0]) {
-        // Uninterruptible, so a row the database took always leaves the queue: closing the
-        // server must not write it twice.
-        const written = yield* mailbox.proposals.recordAgentActivity(entry).pipe(
-          Effect.tap(() => Effect.sync(() => unrecorded.shift())),
-          Effect.as(true),
-          Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
-          Effect.uninterruptible,
-        );
-        if (!written) return false;
-      }
-      return true;
-    }).pipe(writing.withPermits(1));
+    const writeRows = (waitForLock: boolean) =>
+      Effect.gen(function* () {
+        for (let entry = unrecorded[0]; entry; entry = unrecorded[0]) {
+          // Uninterruptible, so a row the database took always leaves the queue: closing the
+          // server must not write it twice.
+          const written = yield* mailbox.proposals.recordAgentActivity(entry, { waitForLock }).pipe(
+            Effect.tap(() => Effect.sync(() => unrecorded.shift())),
+            Effect.as(true),
+            Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
+            Effect.uninterruptible,
+          );
+          if (!written) return false;
+        }
+        return true;
+      }).pipe(writing.withPermits(1));
+    const writeUnrecorded = writeRows(true);
     yield* Effect.addFinalizer(() =>
       writeUnrecorded.pipe(
         Effect.flatMap((done) =>
@@ -179,7 +185,7 @@ export const MailToolkitLayer = MailToolkit.toLayer(
     const record = (entry: ActivityEntry) =>
       Effect.suspend(() => {
         unrecorded.push(entry);
-        return Effect.flatMap(writeUnrecorded, (done) => (done ? Effect.void : retryLater)).pipe(
+        return Effect.flatMap(writeRows(false), (done) => (done ? Effect.void : retryLater)).pipe(
           Effect.ignoreCause,
           Effect.forkIn(scope),
           Effect.asVoid,
