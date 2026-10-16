@@ -3,7 +3,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { assert, it } from "@effect/vitest";
-import { Effect, Logger } from "effect";
+import { Cause, Effect, Exit, Logger, References, Stream } from "effect";
+import type { ProviderAdapter } from "../providers/adapter.js";
+import { isLockTimeout } from "../store/store-brief-lock.js";
 import { logCodeOf } from "../domain/diagnostic-log.js";
 import { fakeServer, incoming, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "./mailbox.js";
@@ -18,7 +20,9 @@ it.effect(
       const file = join(dir, "mail.db");
       const server = fakeServer("me@example.com", [incoming("one")]);
       const codes: unknown[] = [];
-      const logger = Logger.make((options) => codes.push(logCodeOf(options.annotations)));
+      const logger = Logger.make((options) => {
+        codes.push(logCodeOf(options.fiber.getRef(References.CurrentLogAnnotations)));
+      });
       try {
         yield* Effect.gen(function* () {
           const m = yield* Mailbox;
@@ -57,4 +61,75 @@ it.effect(
       }
     }),
   30_000,
+);
+
+// A full sync that finds the write lock held dies with the lock timeout once, so the CLI and MCP
+// say "busy". Without the per-account branch each account logged a sync-crashed and went on to
+// write its failure under the 5 s timeout again.
+it.effect(
+  "a full sync under a held write lock dies with the lock timeout and logs no crash",
+  () =>
+    Effect.gen(function* () {
+      const dir = mkdtempSync(join(tmpdir(), "openmail-sync-lock-"));
+      const file = join(dir, "mail.db");
+      const gmail = fakeServer("me@example.com", [incoming("one")]);
+      const outlook = fakeServer("me@example.org", [incoming("two")]);
+      const codes: unknown[] = [];
+      const logger = Logger.make((options) => {
+        codes.push(logCodeOf(options.fiber.getRef(References.CurrentLogAnnotations)));
+      });
+      let writer: DatabaseSync | undefined;
+      // The lock is taken when the first account starts to pull, so the sync reaches its pulls.
+      const lockOnPull = (base: ProviderAdapter): ProviderAdapter => ({
+        ...base,
+        pull: (...args) =>
+          Stream.unwrap(
+            Effect.sync(() => {
+              if (writer && !writer.isTransaction) {
+                writer.exec("BEGIN IMMEDIATE");
+              }
+              return base.pull(...args);
+            }),
+          ),
+      });
+      try {
+        yield* Effect.gen(function* () {
+          const m = yield* Mailbox;
+          yield* m.accounts.connect({ provider: "gmail" });
+          yield* m.accounts.connect({ provider: "outlook" });
+          yield* m.sync.sync();
+          gmail.messages.set("three", incoming("three"));
+          outlook.messages.set("four", incoming("four"));
+          writer = new DatabaseSync(file);
+          try {
+            const exit = yield* Effect.exit(m.sync.sync());
+            assert.isTrue(
+              Exit.isFailure(exit) &&
+                Cause.hasDies(exit.cause) &&
+                isLockTimeout(Cause.squash(exit.cause)),
+            );
+            assert.notInclude(codes, "sync-crashed");
+          } finally {
+            try {
+              writer.exec("ROLLBACK");
+            } catch {
+              // The lock was never taken.
+            }
+            writer.close();
+          }
+        }).pipe(
+          Effect.provide(
+            TestMailbox.withAdapter(lockOnPull, {
+              servers: { gmail, outlook },
+              platformOptions: { database: file },
+            }),
+          ),
+          Effect.provide(Logger.layer([logger])),
+          Effect.scoped,
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }),
+  60_000,
 );
