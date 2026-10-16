@@ -295,5 +295,8 @@
   },
   "Move down": {
     "cs": "posunout(?: \\S+)? dolů"
+  },
+  "Unread": {
+    "ja": "未開封"
   }
 }

@@ -97,7 +97,7 @@ msgstr "{account}：サーバーは {names} を使って検索できません。
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{accountCount, plural, one {# account} other {# accounts}}, {total, plural, one {# unread} other {# unread}}"
-msgstr "{accountCount, plural, other {#個のアカウント}}, {total, plural, other {未読#件}}"
+msgstr "{accountCount, plural, other {#個のアカウント}}、{total, plural, other {未開封#件}}"
 
 #: src/renderer/src/features/downloads/Downloads.tsx
 msgid "{active, plural, one {Downloads (# in progress)} other {Downloads (# in progress)}}"
@@ -315,7 +315,7 @@ msgstr "{summary}、{date}まで"
 
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "{summary}, {count, plural, one {# occurrence} other {# occurrences}}"
-msgstr "{summary}, {count, plural, other {#回}}"
+msgstr "{summary}、{count, plural, other {#回}}"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "{text} → {recipient}"
@@ -328,7 +328,7 @@ msgstr "{total, plural, other {全 # 件のうち新しい {kept} 件のメッ�
 #. Unread conversations in a space.
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "{unreadCount, plural, one {# unread} other {# unread}}"
-msgstr "{unreadCount, plural, other {未読#件}}"
+msgstr "{unreadCount, plural, other {未開封#件}}"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "{value, plural, one {# day} other {# days}}"
@@ -4028,7 +4028,7 @@ msgstr "ローカル署名はこの Mac に残ります。Gmail のデフォル�
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Local total / unread / threads"
-msgstr "ローカル：合計 / 未読 / スレッド"
+msgstr "ローカル：合計 / 未開封 / スレッド"
 
 #: src/renderer/src/features/calendar/InviteBanner.tsx
 msgid "Location changed:"
@@ -6680,7 +6680,7 @@ msgstr "サーバー名はメールアドレスから推測し、ポートは標
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server total / unread / threads"
-msgstr "サーバー：合計 / 未読 / スレッド"
+msgstr "サーバー：合計 / 未開封 / スレッド"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Server unavailable"
@@ -7917,7 +7917,7 @@ msgstr "タイムゾーン"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Times follow this Mac's time zone. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived."
-msgstr "時刻はこの Mac のタイムゾーンに従います。スペースのアクティブ時間外は、OpenMail がそのスペースの通知を保留し、未読メールを Dock のバッジに含めません。アクティブ時間が再び始まると、その間に届いた未読メールのまとめが 1 件届きます。"
+msgstr "時刻はこの Mac のタイムゾーンに従います。スペースのアクティブ時間外は、OpenMail がそのスペースの通知を保留し、未開封メールを Dock のバッジに含めません。アクティブ時間が再び始まると、その間に届いた未開封メールのまとめが 1 件届きます。"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 #: src/renderer/src/features/compose/components/AddressFields.tsx
@@ -8165,7 +8165,7 @@ msgstr "未開封"
 
 #: src/renderer/src/features/search/search-suggestions.ts
 msgid "Unread messages"
-msgstr "未読のメッセージ"
+msgstr "未開封のメッセージ"
 
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 #: src/renderer/src/features/organize/ThreadActions.tsx

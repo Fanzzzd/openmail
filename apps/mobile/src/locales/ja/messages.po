@@ -32,7 +32,7 @@ msgstr "{count, plural, other {# 件の送信済みメッセージが送信済�
 #. js-lingui-explicit-id
 #: app/mailboxes.tsx
 msgid "{count} unread"
-msgstr "未読 {count} 件"
+msgstr "未開封 {count} 件"
 
 #. js-lingui-explicit-id
 #: app/settings.tsx
@@ -1095,7 +1095,7 @@ msgstr "送信を取り消す"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
-msgstr "受信トレイの未読バッジ"
+msgstr "受信トレイの未開封バッジ"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx

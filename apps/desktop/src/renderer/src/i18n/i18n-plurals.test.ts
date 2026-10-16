@@ -134,6 +134,6 @@ it("the overview, indexing and recovery counts agree with their numbers", async 
       expect(new Set(forms).size, `${locale} ${source}`).toBeGreaterThan(1);
     }
   expect(await render("ja", OVERVIEW, { accountCount: 2, total: 3 })).toBe(
-    "2個のアカウント, 未読3件",
+    "2個のアカウント、未開封3件",
   );
 });

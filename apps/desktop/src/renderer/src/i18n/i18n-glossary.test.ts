@@ -120,6 +120,17 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
         ))
     )
       failures.push(`${locale}: style: ${source} → ${target}`);
+    // Japanese text lists with 、, not an ASCII comma. ICU heads such as {n, plural, keep theirs.
+    if (
+      locale === "ja" &&
+      /[\u3040-\u30FF\u4E00-\u9FFF]/u.test(target) &&
+      /, /.test(
+        target
+          .replace(/\{\w+, (?:plural|select|selectordinal|number|date|time)(?:, \w+)?,?/g, "{")
+          .replace(/\{\w+\}/g, ""),
+      )
+    )
+      failures.push(`${locale}: comma: ${source} → ${target}`);
     // UI names and settings paths are quoted the local way: “” (nested ‘’) in Chinese,
     // 「」 (nested 『』) in Japanese. A settings path is always quoted.
     if (locale === "zh-CN" && (/[「」『』]/u.test(target) || /(?<![“‘])设置 →/u.test(target)))
