@@ -58,7 +58,7 @@ msgstr "{0, plural, other {埋め込み済み #}} · {1, plural, other {待機�
 #. placeholder {0}: props.moreNotLoaded
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "{0, plural, one {# more not loaded} other {# more not loaded}}"
-msgstr "{0, plural, other {未読み込みのメッセージがあと#件あります}}"
+msgstr "{0, plural, other {あと#件のメッセージが読み込まれていません}}"
 
 #. placeholder {0}: Number(count)
 #: src/renderer/src/features/calendar/InviteBanner.tsx
@@ -4469,7 +4469,7 @@ msgstr "さらに多くの一致が存在します。検索を絞り込みます
 #. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
-msgstr "未読み込みのメッセージがあります"
+msgstr "読み込まれていないメッセージがあります"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "More options"

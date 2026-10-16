@@ -60,7 +60,7 @@ it("selection, unread and preview counts use each plural form", async () => {
       expect(new Set(forms.map((form) => form.replace(/\d+/, "#"))).size, source).toBe(3);
     }
   expect(await render("ja", COUNTED[2][0], { 0: 3 })).toBe(
-    "未読み込みのメッセージがあと3件あります",
+    "あと3件のメッセージが読み込まれていません",
   );
   expect(await render("ru", COUNTED[2][0], { 0: 21 })).toBe("Ещё 21 сообщение не загружено");
   expect(await render("ru", COUNTED[2][0], { 0: 1_000 })).toMatch(
@@ -77,6 +77,10 @@ it("the not-loaded notice says older messages exist, with a note for translators
   expect(entry?.comments?.join(" ")).toContain("Older messages exist on the server");
   expect(entry?.translation).toBe("D’autres messages ne sont pas chargés");
   expect(await render("ru", "More messages not loaded", {})).toBe("Загружены не все сообщения");
+  // 未読み込み reads as 未読 (unread) plus み; the notice must not start with it.
+  expect(await render("ja", "More messages not loaded", {})).toBe(
+    "読み込まれていないメッセージがあります",
+  );
 });
 
 const OVERVIEW =
