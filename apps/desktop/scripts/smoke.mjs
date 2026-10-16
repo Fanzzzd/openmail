@@ -53,7 +53,9 @@ const report = {
   syncHealth: [],
   failure: "",
 };
+const STDERR_TAIL_BYTES = 4096;
 let child, cdp;
+let stderrTail = "";
 let uiReady = false;
 const cleanup = createSmokeCleanup({
   directory,
@@ -136,6 +138,7 @@ try {
   });
   child.stderr.on("data", (data) => {
     process.stderr.write(data);
+    stderrTail = (stderrTail + data.toString()).slice(-STDERR_TAIL_BYTES);
   });
   const target = await until(async () => {
     if (report.failure) throw new Error(report.failure);
@@ -153,7 +156,7 @@ try {
       const exited =
         child && (child.exitCode !== null || child.signalCode !== null)
           ? `preview exited: ${child.exitCode ?? child.signalCode}`
-          : "preview still running";
+          : "preview state unknown";
       return `CDP closed (${crashed ? "renderer crashed, " : ""}${exited})`;
     },
   });
@@ -247,7 +250,24 @@ try {
   });
 } catch (error) {
   report.failure = error instanceof Error ? error.message : String(error);
+  // The socket closes before the pnpm wrapper exits, so give it a moment to report how it ended.
+  if (child && report.failure.startsWith("CDP closed")) {
+    const exited = child.exitCode !== null || child.signalCode !== null;
+    const settled =
+      exited ||
+      (await new Promise((resolve) => {
+        const timer = setTimeout(() => resolve(false), 3000);
+        child.once("exit", () => {
+          clearTimeout(timer);
+          resolve(true);
+        });
+      }));
+    report.failure += settled
+      ? `; preview exited: ${child.exitCode ?? child.signalCode}`
+      : "; preview still running after 3 s";
+  }
 } finally {
+  report.stderrTail = stderrTail;
   await cleanup();
   if (values.keep) process.stderr.write(`Smoke directory kept: ${directory}\n`);
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
