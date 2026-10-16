@@ -9,16 +9,13 @@ import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Schema } from "effect";
-import { afterAll, beforeAll, describe, expect, test, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, test } from "vitest";
 import { scaledMs } from "../../core/test-support/test-time.js";
 import { REMOVE_NEEDS_YES } from "./commands/accounts.js";
 
 const run = promisify(execFile);
 const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
 const demoData = fileURLToPath(new URL("../../../scripts/demo-data.mjs", import.meta.url));
-// Every test starts node and opens the database, about 1 s on a loaded machine and slower on
-// a CI runner, so the budgets scale with testTimeScale.
-vi.setConfig({ testTimeout: scaledMs(20_000), hookTimeout: scaledMs(60_000) });
 
 /**
  * The keys scripts read from each --json output, snake_case at any depth like MCP. When a shape changes on purpose,
