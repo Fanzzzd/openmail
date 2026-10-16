@@ -230,10 +230,14 @@ export const threadListAtom = Atom.writable(
     const invalid = searchInputProblem(query.search ?? "");
     if (invalid) return { ...EMPTY, searchInputInvalid: invalid };
     const result = get(pagedList(local).loaded);
-    const total = AsyncResult.getOrElse(
-      get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
-      () => null,
-    );
+    // A search shows no count, and counting one walks every match (1.7 s on 100k messages).
+    const total =
+      query.search === undefined
+        ? AsyncResult.getOrElse(
+            get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
+            () => null,
+          )
+        : null;
     const mediaCriteria = searchInputError(query.search ?? "")
       ? undefined
       : parseSearchQuery(query).criteria;
