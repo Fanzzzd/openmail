@@ -17,6 +17,7 @@ import {
 } from "../mime/attachments.js";
 import type { Outcome } from "../domain/command.js";
 import type { Provider } from "../domain/account.js";
+import type { AuthError } from "../domain/errors.js";
 import type { SyncResult } from "../domain/sync-status.js";
 import { type parseRawDraft as unboundParseRawDraft } from "../compose/drafts.js";
 import { type ImapIdle } from "../providers/imap/imap-idle.js";
@@ -137,6 +138,7 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
   const inflight = yield* Ref.make(Option.none<InflightSync>());
   const syncLock = yield* Semaphore.make(1);
   const polling = new Map<string, { failures: number; due: number }>();
+  const pendingReauth = new Map<string, AuthError>();
   /** Background work (queue flushes after a draft save) that dies with the layer. */
   const background = yield* FiberSet.make();
   /** One flush at a time in this process; claims keep other processes off the same op. */
@@ -159,6 +161,7 @@ export const makeMailboxRuntimeState = Effect.gen(function* () {
     inflight,
     syncLock,
     polling,
+    pendingReauth,
     background,
     flushLock,
     imapPullLocks,
@@ -189,6 +192,8 @@ export interface MailboxRuntimeState {
   inflight: Ref.Ref<Option.Option<InflightSync>>;
   syncLock: Semaphore.Semaphore;
   polling: Map<string, { failures: number; due: number }>;
+  /** Sign-in failures an inbox poll could not write while another process held the lock. */
+  pendingReauth: Map<string, AuthError>;
   background: FiberSet.FiberSet;
   flushLock: Semaphore.Semaphore;
   imapPullLocks: Map<string, Semaphore.Semaphore>;

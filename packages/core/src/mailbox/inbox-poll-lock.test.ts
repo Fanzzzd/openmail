@@ -8,7 +8,7 @@ import type { ProviderAdapter } from "../providers/adapter.js";
 import { isLockTimeout } from "../store/store-brief-lock.js";
 import { logCodeOf } from "../domain/diagnostic-log.js";
 import { fakeServer, incoming, Store, TestMailbox } from "../platform/node/testing.js";
-import { ProviderError } from "../domain/errors.js";
+import { AuthError, ProviderError } from "../domain/errors.js";
 import { SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
 import { Mailbox } from "./mailbox.js";
 
@@ -242,6 +242,66 @@ it.effect(
             }),
           ),
           Effect.provide(Logger.layer([logger])),
+          Effect.scoped,
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }),
+  30_000,
+);
+
+// failed() wrote markReauth outside the 200 ms wait. A sign-in failure during a poll under a held
+// lock blocked for 5.4 s, and a busy write lost the needsReauth flag.
+it.effect(
+  "a sign-in failure during a poll under a held write lock is recorded by the next poll",
+  () =>
+    Effect.gen(function* () {
+      const dir = mkdtempSync(join(tmpdir(), "openmail-poll-reauth-lock-"));
+      const file = join(dir, "mail.db");
+      const server = fakeServer("me@example.com", [incoming("one")]);
+      // The provider rejects the token once; a lost flag would let the next poll sync normally.
+      let rejectOnce = false;
+      const rejectPull = (base: ProviderAdapter): ProviderAdapter => ({
+        ...base,
+        pull: (...args) => {
+          if (!rejectOnce) return base.pull(...args);
+          rejectOnce = false;
+          return Stream.fail(new AuthError({ message: "revoked", reason: "token_revoked" }));
+        },
+      });
+      try {
+        yield* Effect.gen(function* () {
+          const m = yield* Mailbox;
+          const store = yield* Store;
+          const account = yield* m.accounts.connect({ provider: "gmail" });
+          yield* m.sync.sync();
+          rejectOnce = true;
+          const writer = new DatabaseSync(file);
+          writer.exec("BEGIN IMMEDIATE");
+          try {
+            const started = performance.now();
+            const results = yield* m.sync.pollInbox([account.id]);
+            // Unscaled on purpose: the regression waits out the 5 s busy timeout.
+            assert.isBelow(performance.now() - started, 4000);
+            assert.isTrue(results[0]?.needsReauth);
+          } finally {
+            writer.exec("ROLLBACK");
+            writer.close();
+          }
+          assert.isFalse((yield* store.getAccount(account.id)).needsReauth);
+          const pulls = server.pulls.length;
+          const next = yield* m.sync.pollInbox([account.id]);
+          assert.isTrue(next[0]?.needsReauth);
+          assert.isTrue((yield* store.getAccount(account.id)).needsReauth);
+          assert.strictEqual(server.pulls.length, pulls);
+        }).pipe(
+          Effect.provide(
+            TestMailbox.withAdapter(rejectPull, {
+              servers: { gmail: server },
+              platformOptions: { database: file },
+            }),
+          ),
           Effect.scoped,
         );
       } finally {

@@ -237,6 +237,7 @@ export const makeSyncMailbox = (
     account = yield* store.getAccount(account.id).pipe(Effect.orDie);
     if (account.enabled === false) return { accountId: account.id, ...counts };
     if (account.needsReauth) {
+      runtime.pendingReauth.delete(account.id);
       return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
     }
     // A poll's writes wait 200 ms, not the 5 s busy timeout, for another process's write lock.
@@ -249,14 +250,17 @@ export const makeSyncMailbox = (
         : effect;
     const failed = (text: string, auth: AuthError | undefined) =>
       Effect.gen(function* () {
-        if (auth) yield* store.markReauth(account.id, auth);
+        const reauth = auth ? store.markReauth(account.id, auth) : Effect.void;
         // An inbox poll waits at most 200 ms for the write lock and returns the provider's error
-        // either way; the next poll records it.
-        yield* scope
-          ? store
-              .briefLockWait(store.setInboxError(account.id, text))
-              .pipe(Effect.catchTag("DatabaseBusy", () => Effect.void))
-          : store.setSyncError(account.id, text);
+        // either way. A sign-in failure waits in pendingReauth for the next pull to record it.
+        const recorded = yield* scope
+          ? store.briefLockWait(Effect.andThen(reauth, store.setInboxError(account.id, text))).pipe(
+              Effect.as(true),
+              Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
+            )
+          : Effect.andThen(reauth, store.setSyncError(account.id, text)).pipe(Effect.as(true));
+        if (auth && !recorded) runtime.pendingReauth.set(account.id, auth);
+        else if (recorded) runtime.pendingReauth.delete(account.id);
         return {
           accountId: account.id,
           ...counts,
@@ -264,6 +268,8 @@ export const makeSyncMailbox = (
           ...(auth ? { needsReauth: true } : {}),
         } satisfies SyncResult;
       });
+    const unrecorded = runtime.pendingReauth.get(account.id);
+    if (unrecorded) return yield* failed(syncFailureText(unrecorded), unrecorded);
     if (!scope && account.lastSyncedAt === null) yield* store.beginInitialSync(account.id);
     const notificationsReady = yield* store.notificationsReady(account.id);
     const storedIds = (providerIds: readonly string[]) =>
