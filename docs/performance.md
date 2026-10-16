@@ -18,7 +18,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 大数据套件是 `packages/core/src/platform/node/performance-large.test.ts`，默认 `pnpm test` 排除它。默认套件中的 `performance-plans.test.ts` 集中检查真实 Store 查询。同步健康与分页用例只写 120 封邮件；联系人用例保留原有候选规模。它们检查索引使用、分页回绕、孤立草稿去重和 Unicode ID 顺序。150k 迁移用例仅在 `OPENMAIL_PERF=1` 时执行。MCP 测量调用真实 Toolkit handler 与 Mailbox，provider 使用进程内 fake，不发网络请求。
 
-`pnpm test:perf` 也运行 `visible-text-cost.test.ts`、`performance-plans.test.ts`（含 150k 迁移用例）、`src/domain/cache.test.ts`（含 10 万会话分页用例）和 `recovery-safety.test.ts`（四个进程同时首次打开，每个须在 1 s 内拿到共享锁）。perf.yml 因此也覆盖这些用例。
+`pnpm test:perf` 也运行 `visible-text-cost.test.ts`、`performance-plans.test.ts`（含 150k 迁移用例）、`src/domain/cache.test.ts`（含 10 万会话分页用例）、`recovery-safety.test.ts`（四个进程同时首次打开，每个须在 1 s 内拿到共享锁）和 `migration37-performance.test.ts`（100k 消息上的迁移 37，见下文）。perf.yml 因此也覆盖这些用例。
 
 CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面写入速率预算的增长断言把关。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
 
@@ -347,13 +347,11 @@ AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词�
 
 `platform/node/cache-management.test.ts` 覆盖计量、低磁盘 LRU 与所有豁免、旧库稀疏 rowid 迁移、压缩前后 FTS 搜索与依赖行、同步／flush 互斥、只读和不安全 rowid 拒绝。手机 CacheStorage 默认适配器返回空磁盘统计和零 WAL／恢复副本；不执行低磁盘收紧，详见[手机端说明](../apps/mobile/README.md)。未启动 Electron，未测量实机压缩耗时。整库统计读取 `body_cache_budget.total_bytes`，界面按一分钟或窗口 focus 刷新，线程变更不触发目录扫描。字节数使用各语言的 Intl 长单位复数格式，GB 使用独立单位。
 
-迁移 37 在同一份 100k fixture 上测得 6,124.9 ms，升级前逻辑数据库 568,803,328 字节，Node v24.21.0、8 MiB 页缓存、FULL 同步。该重建也移到 worker；桌面在启动 worker 前绘制“正在升级本地数据库…”窗口，完成或失败后关闭。升级期间的 `window-all-closed` 保活监听器一直保留到 DesktopLive 注册正常关闭逻辑并创建主窗口，手动关闭升级窗口不会退出或取消迁移。已提交升级的 WAL truncate 如因读事务 busy 而延后，只记录警告并继续启动，不重复迁移。预检要求数据卷空闲至少为数据库逻辑大小，不满足时不执行重建并提示释放空间。worker 再检查一次，防止预检后的空间变化。手机的 op-sqlite 使用同一外键包装和原生异步 SQL，但未接入卷空间预检或完整 VACUUM worker；完整压缩明确返回 unavailable。
+迁移 37 的测量先建出 schema 36 的数据库，再用只含 schema 36 列的 SQL 写入 100k fixture 的消息和 10,000 个 OCR chunk。当前 Store 会查询之后才加的列，所以不经过 Store；schema 36 的触发器照常填 FTS、词表、搜索元数据和联系人候选。消息 rowid 为 `3i + 7`，带空隙。测试接着按顺序运行迁移 37 及之后的全部迁移，只计迁移 37 的时间，然后检查 rowid 未变、外键完整、FTS integrity-check 通过，耗时须低于 12,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)。2026-10-16 在 16 核 Mac 上运行两次，一分钟负载 4.7–11：3,407.6 ms（校准比 0.87）和 4,368.7 ms（校准比 0.96），升级前逻辑数据库 580,440,064 字节，Node v24.21.0、8 MiB 页缓存、FULL 同步。给迁移 37 加一段多耗约 12 s 的 SQL 时测试超出预算失败；复制 messages 时不带 rowid 时，rowid 检查失败。该重建也移到 worker；桌面在启动 worker 前绘制“正在升级本地数据库…”窗口，完成或失败后关闭。升级期间的 `window-all-closed` 保活监听器一直保留到 DesktopLive 注册正常关闭逻辑并创建主窗口，手动关闭升级窗口不会退出或取消迁移。已提交升级的 WAL truncate 如因读事务 busy 而延后，只记录警告并继续启动，不重复迁移。预检要求数据卷空闲至少为数据库逻辑大小，不满足时不执行重建并提示释放空间。worker 再检查一次，防止预检后的空间变化。手机的 op-sqlite 使用同一外键包装和原生异步 SQL，但未接入卷空间预检或完整 VACUUM worker；完整压缩明确返回 unavailable。
 
 ```sh
 OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/platform/node/migration37-performance.test.ts
 # 报告默认 /tmp/openmail-migration37-performance.json，可设 OPENMAIL_MIGRATION_REPORT。
 ```
-
-`pnpm test:perf` 不包含这个测量，没有 CI job 运行它。它目前会失败：测试先建出 schema 36 的数据库，再用当前的 `StoreLive` 和 `seedMailbox` 写入 fixture，而当前 Store 会查询迁移 36 之后才加的列（如 `accounts.reauth_reason`），报 `no such column`。上面的 6,124.9 ms 是该测试还能运行时测得的。
 
 修正回归包含 FK-on smoke／手机升级保留依赖表、重复压力检查抵扣空闲页、未开启回收时不继续删除、worker 禁止调用方线程执行 VACUUM、心跳响应、真实子进程 CLI 共享锁、直接 SQLite writer、升级空间不足保留数据库字节，以及十种语言的字节复数。
