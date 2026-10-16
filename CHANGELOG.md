@@ -9,7 +9,7 @@ The first public version.
 ### Accounts and sync
 
 - Gmail and personal Outlook through OAuth, with OpenMail's built-in clients or your own. iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server with an app password. IMAP and SMTP connect only over TLS.
-- Local-first storage in SQLite (`node:sqlite`), shared by the desktop app, the CLI and the MCP server. Refresh tokens and IMAP passwords stay in the macOS keychain, never in the database or logs.
+- Local-first storage in SQLite (`node:sqlite`), shared by the desktop app, the CLI and the MCP server. Refresh tokens and IMAP passwords stay in the macOS keychain, never in the database or logs. While another process holds the write lock, the app waits briefly, backs off and polls again later.
 - Incremental sync, an offline change queue with retries, resumable backfill of older mail, and IMAP IDLE for new-mail signals.
 - A sync health check compares server and local counts per folder. A sync reset deletes only inside the listed window and confirms mass deletions with the server.
 - Local cache rules per folder and label, with an attachment cache and a cache settings page.
