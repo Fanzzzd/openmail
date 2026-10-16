@@ -141,6 +141,9 @@ function HiddenContacts() {
   );
 }
 
+/** Room for the longest translated option ("Использовать адрес, на который…") without truncating. */
+const wideSelect = "max-w-lg min-w-40";
+
 const senderKey = (sender: { accountId: string; address: string }) =>
   JSON.stringify([sender.accountId, sender.address]);
 
@@ -167,7 +170,7 @@ function DefaultFrom() {
       <Select
         aria-label={t`Default From address`}
         variant="field"
-        className="max-w-64 min-w-40"
+        className={wideSelect}
         value={fixed ? senderKey(fixed) : "view"}
         options={[
           { value: "view", label: t`Use the current account` },
@@ -203,7 +206,7 @@ function QuoteSelection() {
       <Select
         aria-label={t`Quote selected text`}
         variant="field"
-        className="max-w-64 min-w-40"
+        className={wideSelect}
         value={prefs.quoteSelection}
         options={[
           { value: "ask", label: t`Ask each time` },
@@ -281,7 +284,7 @@ function ReplyFrom() {
       <Select
         aria-label={t`Reply from`}
         variant="field"
-        className="max-w-64 min-w-40"
+        className={wideSelect}
         value={prefs.replyFrom}
         options={[
           { value: "received", label: t`Use the address the message was sent to` },
