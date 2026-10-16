@@ -82,7 +82,7 @@ export const Search = readOnly(
     parameters: Schema.Struct({
       query: Schema.String.check(Schema.isMinLength(1), Schema.isMaxLength(4096)).annotate({
         description:
-          "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment. A date or size operator without a valid value is listed under ignored.",
+          "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment. from:pri* matches like from:pri. A date or size operator without a valid value, or a label: name ending in *, is listed under ignored.",
       }),
       account_id: Schema.optionalKey(AccountId),
       server: Schema.Boolean.annotate({

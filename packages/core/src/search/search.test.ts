@@ -95,6 +95,16 @@ import { type DerivedChunk } from "../ai/media.js";
     );
     // The app still searches them as words.
     assert.strictEqual(parseSearchQuery({ search: "newer:foo" }).search, "newer:foo");
+    // Label and folder names match whole, so a wildcard on them is listed too.
+    assert.deepStrictEqual(
+      unparsedSearchOperators("label:Label_n* -folder:Wor* in:inbox label:work from:pri*"),
+      ["label:Label_n*", "folder:Wor*"],
+    );
+    assert.strictEqual(parseSearchQuery({ search: "label:Label_n*" }).search, "label:Label_n*");
+    assert.deepStrictEqual(parseSearchQuery({ search: "from:pri* filename:Q4*" }).criteria, {
+      from: "pri",
+      filename: "Q4",
+    });
     assert.deepStrictEqual(
       withUnparsedOperators(
         [{ accountId: "a", operators: ["has:drive"] }],
@@ -450,6 +460,12 @@ import { type DerivedChunk } from "../ai/media.js";
     ["{from:dana bird}", ["b", "c"]],
     ["-has:attachment", ["b"]],
     ["(has:pdf OR report) -from:dana", ["a", "c"]],
+    // A trailing * on a substring operator reads as the prefix it already matches.
+    ["from:ali*", ["a", "c"]],
+    ["to:bo* cc:caro* bcc:hid*", ["a", "b", "c"]],
+    ["filename:budg*", ["a", "c"]],
+    ["-from:dan*", ["a", "c"]],
+    ["from:dan* OR filename:budg*", ["a", "b", "c"]],
   ];
 
   it.effect(

@@ -436,6 +436,24 @@ describe("reading", () => {
     expect(Object.keys(row(JSON.parse(valid.stdout)))).not.toContain("ignored");
   });
 
+  test("a trailing * on from:, to: or filename: reads as the prefix", async () => {
+    const ids = async (query: string) =>
+      rows((await object(["search", query, "--limit", "100"])).threads).map((t) => t.id);
+    for (const [prefix, bare] of [
+      ["from:pri*", "from:pri"],
+      ["to:pri*", "to:pri"],
+      ["filename:Q4*", "filename:Q4"],
+    ]) {
+      const found = await ids(prefix);
+      expect(found.length, prefix).toBeGreaterThan(0);
+      expect(found, prefix).toEqual(await ids(bare));
+    }
+    const label = await openmail(["search", "label:Label_n*", "--json"]);
+    expect(label.code, label.stderr).toBe(0);
+    expect(label.stderr).toMatch(/searched as plain text: label:Label_n\*\./);
+    expect(rows(row(JSON.parse(label.stdout)).ignored)[0]?.operators).toEqual(["label:Label_n*"]);
+  });
+
   test("accounts list --json carries the account fields scripts read", async () => {
     const accounts = await list(["accounts", "list"]);
     expect(accounts.map((account) => account.provider)).toEqual(["gmail", "imap"]);

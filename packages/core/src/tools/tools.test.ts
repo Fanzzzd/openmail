@@ -1208,13 +1208,16 @@ it.effect(
 it.effect("search lists date and size operators without a valid value under ignored", () =>
   Effect.gen(function* () {
     const result = yield* run(
-      call("search", { query: "newer:foo larger:xyz invoice", account_id: "a" }),
+      call("search", {
+        query: "newer:foo larger:xyz invoice from:pri* label:Label_n*",
+        account_id: "a",
+      }),
       stubMailbox({ reading: { threads: () => Effect.succeed([]) } }),
     );
     assert.isFalse(result.isFailure);
     if (!("threads" in result.result)) return;
     assert.deepStrictEqual(result.result.ignored, [
-      { accountId: "a", operators: ["newer:foo", "larger:xyz"] },
+      { accountId: "a", operators: ["newer:foo", "larger:xyz", "label:Label_n*"] },
     ]);
   }),
 );

@@ -70,6 +70,12 @@ export const isSearchOperator = (word: string): boolean =>
 export const searchHasNoWords = (search: string): boolean =>
   search.replace(/[\s"\p{Cf}]/gu, "") === "";
 
+/** Operators whose value matches anywhere in the field. */
+const SUBSTRING_OPERATORS = new Set(["from", "to", "cc", "bcc", "filename", "list", "deliveredto"]);
+/** Label and folder names match whole, so label:Work* has no meaning and stays plain text. */
+const wildcardFolder = (key: string, value: string) =>
+  ["label", "folder", "in", "category"].includes(key) && value.endsWith("*");
+
 /** Invalid/incomplete operators stay searchable text while the person is typing. */
 export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
   const invalid = searchInputError(query.search ?? "");
@@ -107,8 +113,11 @@ export function parseSearchQuery(query: ThreadQuery): ThreadQuery {
     }
     const colon = word.indexOf(":");
     const key = word.slice(0, colon).toLowerCase();
-    const value = unquoteSearchValue(word.slice(colon + 1));
-    if (colon < 1 || !value || !completeQuotes(word)) {
+    const unquoted = unquoteSearchValue(word.slice(colon + 1));
+    // These operators match a substring, which already covers a prefix, so from:pri* reads as
+    // from:pri, the way subject:laun* finds launch.
+    const value = SUBSTRING_OPERATORS.has(key) ? unquoted.replace(/\*+$/, "") : unquoted;
+    if (colon < 1 || !value || !completeQuotes(word) || wildcardFolder(key, value)) {
       words.push(word);
       continue;
     }
@@ -250,12 +259,12 @@ const VALUE_OPERATORS: Record<string, (value: string) => number | null> = {
 
 /** The values date and size operators take, for a note next to `unparsedSearchOperators`. */
 export const SEARCH_VALUE_FORMS =
-  "Dates are YYYY-MM-DD, also for older: and newer:. Periods for older_than: and newer_than: are 7d, 2m or 1y. Sizes are a number with K or M.";
+  "Dates are YYYY-MM-DD, also for older: and newer:. Periods for older_than: and newer_than: are 7d, 2m or 1y. Sizes are a number with K or M. Label and folder names take no * wildcard.";
 
 /**
  * The date and size operators in a query whose value does not parse, such as newer:foo,
- * before:2026-13-45, larger:xyz or older:2d (older: takes a date; older_than: a period).
- * parseSearchQuery searches them as plain words, which usually match nothing, so the CLI
+ * before:2026-13-45, larger:xyz or older:2d (older: takes a date; older_than: a period), and
+ * label or folder names ending in *. parseSearchQuery searches them as plain words, which usually match nothing, so the CLI
  * and MCP list them under `ignored`. The app keeps showing the empty result.
  */
 export function unparsedSearchOperators(search: string): string[] {
@@ -264,9 +273,11 @@ export function unparsedSearchOperators(search: string): string[] {
     const bare = word.replace(/^[-(]+/, "").replace(/\)+$/, "");
     const colon = bare.indexOf(":");
     if (colon < 1) continue;
-    const parse = VALUE_OPERATORS[bare.slice(0, colon).toLowerCase()];
+    const key = bare.slice(0, colon).toLowerCase();
+    const parse = VALUE_OPERATORS[key];
     const value = unquoteSearchValue(bare.slice(colon + 1));
-    if (parse && (!value || parse(value) === null)) found.push(bare);
+    if ((parse && (!value || parse(value) === null)) || wildcardFolder(key, value))
+      found.push(bare);
   }
   return [...new Set(found)];
 }

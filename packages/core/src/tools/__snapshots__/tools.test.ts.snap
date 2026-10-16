@@ -331,7 +331,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "integer",
         },
         "query": {
-          "description": "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment. A date or size operator without a valid value is listed under ignored.",
+          "description": "Words and operators: from:, to:, subject:, after:, before:, is:unread, has:attachment, label:, in:attachment. from:pri* matches like from:pri. A date or size operator without a valid value, or a label: name ending in *, is listed under ignored.",
           "maxLength": 4096,
           "minLength": 1,
           "type": "string",
