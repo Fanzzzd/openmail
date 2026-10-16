@@ -15,7 +15,12 @@ import { logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import type { FlushResult } from "../domain/command.js";
 import type { SyncResult } from "../domain/sync-status.js";
-import { type AuthError, type ProviderError, type ProviderFailure } from "../domain/errors.js";
+import {
+  type AuthError,
+  DatabaseBusy,
+  type ProviderError,
+  type ProviderFailure,
+} from "../domain/errors.js";
 import { runTokenKeepAlive } from "../sync/token-keepalive.js";
 import { backfillCachedHeaders } from "../sync/header-backfill.js";
 import { ImapIdle } from "../providers/imap/imap-idle.js";
@@ -128,7 +133,10 @@ const SYNC_RETRY_MESSAGE = SYNC_FAILURE_TEXT.unknown;
  * Another process kept the write lock past the busy timeout. `sync` dies with the lock timeout
  * instead of returning an error row, so the CLI and MCP say "busy" and the app retries later.
  */
-const heldLock = (cause: Cause.Cause<unknown>) => isLockTimeout(Cause.squash(cause));
+const heldLock = (cause: Cause.Cause<unknown>) => {
+  const defect = Cause.squash(cause);
+  return isLockTimeout(defect) || defect instanceof DatabaseBusy;
+};
 
 export const makeSyncMailbox = (
   deps: MailboxDependencies & {
@@ -231,10 +239,27 @@ export const makeSyncMailbox = (
     if (account.needsReauth) {
       return { accountId: account.id, ...counts, error: "Sign in again", needsReauth: true };
     }
+    // A poll's writes wait 200 ms, not the 5 s busy timeout, for another process's write lock.
+    // A held lock surfaces as a DatabaseBusy defect that the crash handler below reports as busy.
+    const inboxWrite = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+      scope
+        ? store
+            .briefLockWait(effect)
+            .pipe(Effect.catchTag("DatabaseBusy", (busy) => Effect.die(busy)))
+        : effect;
     const failed = (text: string, auth: AuthError | undefined) =>
       Effect.gen(function* () {
         if (auth) yield* store.markReauth(account.id, auth);
-        yield* scope ? store.setInboxError(account.id, text) : store.setSyncError(account.id, text);
+        // An inbox poll waits at most 200 ms for the write lock; the next poll records the error.
+        yield* scope
+          ? inboxWrite(store.setInboxError(account.id, text)).pipe(
+              Effect.catchCause((cause) =>
+                Cause.hasInterruptsOnly(cause) || !heldLock(cause)
+                  ? Effect.failCause(cause)
+                  : Effect.void,
+              ),
+            )
+          : store.setSyncError(account.id, text);
         return {
           accountId: account.id,
           ...counts,
@@ -299,7 +324,7 @@ export const makeSyncMailbox = (
                   splitWriteBatch(changes),
                   (part) =>
                     Effect.andThen(
-                      apply(currentAccount, notificationsReady)(part),
+                      inboxWrite(apply(currentAccount, notificationsReady)(part)),
                       Effect.yieldNow,
                     ),
                   { discard: true },
@@ -324,7 +349,7 @@ export const makeSyncMailbox = (
       ),
       Effect.andThen(
         scope
-          ? store.setInboxError(account.id, null)
+          ? inboxWrite(store.setInboxError(account.id, null))
           : store
               .setSyncError(account.id, null)
               .pipe(Effect.andThen(store.setInboxError(account.id, null))),
@@ -375,8 +400,15 @@ export const makeSyncMailbox = (
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
-          : !scope && heldLock(cause)
-            ? Effect.die(Cause.squash(cause))
+          : heldLock(cause)
+            ? scope
+              ? // The poll found the lock held: no crash log, and the caller backs off.
+                Effect.succeed({
+                  accountId: account.id,
+                  ...counts,
+                  error: SYNC_RETRY_MESSAGE,
+                } satisfies SyncResult)
+              : Effect.die(Cause.squash(cause))
             : logSyncCrash(cause, phase).pipe(
                 Effect.andThen(failed(SYNC_RETRY_MESSAGE, undefined)),
               ),
