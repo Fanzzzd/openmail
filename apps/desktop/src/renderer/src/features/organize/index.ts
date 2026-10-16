@@ -1,5 +1,5 @@
 // Public surface for other features: always-loaded modules only (see tests/layers.test.ts).
-export { MultiOrganization } from "./MultiOrganization";
+export { MultiOrganizationItem } from "./MultiOrganization";
 export {
   decodeDrag,
   DragLabel,

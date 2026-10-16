@@ -16,7 +16,7 @@ interface PopoverProps {
   /** The button that opens it, rendered by Popover.Trigger. */
   trigger: ReactElement | null;
   /** Without a trigger, such as when a menu item opens it: the element it is placed against. */
-  anchor?: Element | null | undefined;
+  anchor?: ComponentProps<typeof Popover.Positioner>["anchor"];
   /** Tooltip on the trigger. */
   tip?: { label: string; shortcut?: string };
   side?: Side;

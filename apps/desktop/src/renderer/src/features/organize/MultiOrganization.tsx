@@ -1,53 +1,118 @@
 import { categoryKey, mergeCategoryNames, providerCapabilities } from "@openmail/core/schema";
+import { useAtom, useAtomSet } from "@effect/atom-react";
 import { cloneElement, type ReactElement, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
-import type { Label, MailOp, Provider } from "../../../../shared/api";
+import type { Provider } from "../../../../shared/api";
+import { MenuItem } from "../../ui/Menu";
 import { PickerPopover } from "../../ui/Picker";
 import { buttonPrimary, formInput } from "../../ui/styles";
+import {
+  multiOrganizationAtom,
+  type OrganizationRequest,
+  type OrganizationTarget,
+} from "./organize-state";
+
+function useTitle(provider: Provider) {
+  const { t } = useLingui();
+  return providerCapabilities(provider).categories ? t`Categories…` : t`Copy to folders…`;
+}
 
 /**
  * Outlook categories stack; IMAP copies create separate messages in each
- * chosen folder. In a menu the form opens in place; with a `trigger`, as in
- * a toolbar, it opens in a popover anchored to that button.
+ * chosen folder. The form opens in a popover anchored to `trigger`, as in a
+ * toolbar.
  */
 export function MultiOrganization({
+  trigger,
+  ...target
+}: OrganizationTarget & {
+  /** The button that opens the popover, without content; the label goes inside. */
+  trigger: ReactElement<{ children?: string }>;
+}) {
+  const title = useTitle(target.provider);
+  const [open, setOpen] = useState(false);
+  return (
+    <PickerPopover
+      aria-label={title}
+      open={open}
+      onOpenChange={setOpen}
+      trigger={cloneElement(trigger, {}, title)}
+      className="w-72 px-3 py-1"
+    >
+      <OrganizationForm {...target} onDone={() => setOpen(false)} />
+    </PickerPopover>
+  );
+}
+
+/** The menu's way in: a menu item that opens the same form once the menu closes. */
+export function MultiOrganizationItem(target: OrganizationTarget) {
+  const title = useTitle(target.provider);
+  const request = useAtomSet(multiOrganizationAtom);
+  return (
+    <MenuItem
+      onClick={() => {
+        // The item goes away with the menu; keep where it was.
+        const item = document.activeElement?.closest('[role^="menuitem"]');
+        const rect = item?.getBoundingClientRect() ?? DOMRect.fromRect();
+        request({ ...target, anchor: { getBoundingClientRect: () => rect } });
+      }}
+    >
+      {title}
+    </MenuItem>
+  );
+}
+
+/** Shows the form a menu item asked for. Mount once per window. */
+export function MultiOrganizationHost() {
+  const [request, setRequest] = useAtom(multiOrganizationAtom);
+  return request && <RequestedForm request={request} onClose={() => setRequest(null)} />;
+}
+
+function RequestedForm({
+  request: { anchor, ...target },
+  onClose,
+}: {
+  request: OrganizationRequest;
+  onClose: () => void;
+}) {
+  const title = useTitle(target.provider);
+  return (
+    <PickerPopover
+      aria-label={title}
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+      trigger={null}
+      anchor={anchor}
+      className="w-72 px-3 py-1"
+    >
+      <OrganizationForm {...target} onDone={onClose} />
+    </PickerPopover>
+  );
+}
+
+/** Starts from the thread's current categories and no new names each time it opens. */
+function OrganizationForm({
   provider,
   labels,
   current,
   onOp,
-  trigger,
-}: {
-  provider: Provider;
-  labels: readonly Label[];
-  current: readonly string[];
-  onOp: (op: MailOp) => void;
-  /** The button that opens the popover, without content; the label goes inside. */
-  trigger?: ReactElement<{ children?: string }>;
-}) {
+  onDone,
+}: OrganizationTarget & { onDone: () => void }) {
   const { t } = useLingui();
   const categories = providerCapabilities(provider).categories;
   const available = labels.filter((label) => categories === label.id.startsWith("category:"));
-  const [selected, setSelected] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>(() =>
+    categories
+      ? available
+          .filter((label) => current.some((id) => categoryKey(id) === categoryKey(label.id)))
+          .map((label) => label.id)
+      : [],
+  );
   const [touched, setTouched] = useState<ReadonlySet<string>>(new Set());
   const [names, setNames] = useState("");
-  const [open, setOpen] = useState(false);
-  const title = categories ? t`Categories…` : t`Copy to folders…`;
-  /** Opening starts from the thread's current categories and no new names. */
-  const toggle = (next: boolean) => {
-    if (next) {
-      setSelected(
-        categories
-          ? available
-              .filter((label) => current.some((id) => categoryKey(id) === categoryKey(label.id)))
-              .map((label) => label.id)
-          : [],
-      );
-      setNames("");
-      setTouched(new Set());
-    }
-    setOpen(next);
-  };
-  const form = (
+  return (
     <fieldset className="space-y-2 py-2">
       <legend className="text-footnote text-a11y-muted">
         {categories
@@ -110,37 +175,11 @@ export function MultiOrganization({
                 .map((id) => id.slice(9)),
             });
           } else onOp({ kind: "copy", labelIds: selected });
-          setOpen(false);
+          onDone();
         }}
       >
         {categories ? t`Apply` : t`Copy`}
       </button>
     </fieldset>
-  );
-  if (trigger)
-    return (
-      <PickerPopover
-        aria-label={title}
-        open={open}
-        onOpenChange={toggle}
-        trigger={cloneElement(trigger, {}, title)}
-        className="w-72 px-3 py-1"
-      >
-        {form}
-      </PickerPopover>
-    );
-  return (
-    <div>
-      {/* Lines up with the menu items around it: their icon column is 32 px wide. */}
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => toggle(!open)}
-        className="flex min-h-[22px] w-full items-center rounded-item pr-2 pl-8 text-left hover:bg-fill-hover"
-      >
-        {title}
-      </button>
-      {open && <div className="px-2">{form}</div>}
-    </div>
   );
 }

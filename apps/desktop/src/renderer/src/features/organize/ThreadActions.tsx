@@ -55,7 +55,7 @@ import { Tip } from "../../ui/Tip";
 
 import { FocusedInboxActions } from "./FocusedInboxActions";
 import type { ThreadState } from "../../lib/focused-inbox";
-import { MultiOrganization } from "./MultiOrganization";
+import { MultiOrganization, MultiOrganizationItem } from "./MultiOrganization";
 
 type Icon = ComponentType<{ className?: string }>;
 type ComposeMode = "reply" | "replyAll" | "forward";
@@ -560,7 +560,7 @@ export function ThreadMenuItems({
         </>
       )}
       {folders && (
-        <MultiOrganization
+        <MultiOrganizationItem
           provider={state.provider}
           labels={labels}
           current={state.labels}

@@ -20,6 +20,7 @@ import { App } from "../app/App";
 import { LocationBridge } from "../app/location-bridge";
 import { canCall } from "../lib/platform";
 import { ThreadWindow } from "../app/ThreadWindow";
+import { MultiOrganizationHost } from "../features/organize/MultiOrganization";
 
 export interface RouterContext {
   /** Where `/` lands: the remembered view, or All inboxes. */
@@ -86,6 +87,7 @@ function Root() {
     <>
       <LocationBridge />
       <Outlet />
+      <MultiOrganizationHost />
     </>
   );
 }

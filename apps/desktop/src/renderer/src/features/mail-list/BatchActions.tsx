@@ -1,4 +1,4 @@
-import { MultiOrganization } from "../organize";
+import { MultiOrganizationItem } from "../organize";
 import { moveSourceLabel, providerCapabilities } from "@openmail/core/schema";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
@@ -102,7 +102,7 @@ export function BatchMenuItems({
                 >{t`Remove current label`}</MenuItem>
               )}
               {folders && (
-                <MultiOrganization
+                <MultiOrganizationItem
                   provider={account.provider}
                   labels={available}
                   current={
