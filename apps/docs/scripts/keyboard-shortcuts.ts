@@ -246,8 +246,10 @@ export function renderShortcutsPage(names: Map<string, string>): string {
     "| Target | Mimestream and Apple Mail | Gmail |",
     "| --- | --- | --- |",
     "| Mailbox 1 to 8 | ⌘1 to ⌘8 | ⌃⌘1 to ⌃⌘8 |",
-    "| Space 1 to 9 | ⌃⌘1 to ⌃⌘9 | ⌘1 to ⌘9 |",
+    "| [Space](/docs/accounts#spaces) 1 to 9 | ⌃⌘1 to ⌃⌘9 | ⌘1 to ⌘9 |",
     "| Favorite 1 to 9 | ⌥⌘1 to ⌥⌘9 | ⌥⌘1 to ⌥⌘9 |",
+    "",
+    "In both sets, ⌃1 opens the Overview, ⌃2 opens All accounts, and ⌃3 to ⌃9 open the first seven spaces. See [Spaces](/docs/accounts#spaces).",
     "",
   );
   return lines.join("\n");
