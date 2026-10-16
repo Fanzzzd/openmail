@@ -110,6 +110,13 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (!match) return sql.literal("1");
     const text = unquoteSearchValue(value.endsWith("*") ? value.slice(0, -1) : value);
     if (ready && !usesSubstringSearch(text)) {
+      // The word index has no prefix index, so a probe for `pe*` expands the prefix over the
+      // whole term list for every row (5.9 s for 200 threads of 100k messages). A prefix reads
+      // its rowids once instead. `+0` keeps the set from driving the row walk.
+      if (rowBound && match.endsWith("*"))
+        return derived
+          ? sql`(d.id+0) IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ${match})`
+          : sql`(m.rowid+0) IN (SELECT rowid FROM messages_words WHERE messages_words MATCH ${subjectOnly ? `subject : ${match}` : match})`;
       if (rowBound)
         return derived
           ? sql`EXISTS (SELECT 1 FROM derived_words WHERE rowid=d.id AND derived_words MATCH ${match})`

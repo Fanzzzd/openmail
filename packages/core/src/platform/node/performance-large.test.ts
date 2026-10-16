@@ -212,6 +212,16 @@ it.effect(
         ["search AROUND 3", "alpha AROUND 3 beta", 475],
       ] as const)
         yield* measure(name, budget, store.listThreads({ search, limit: 50 }));
+      // While the person types, the search field runs the unfinished last word as a prefix.
+      // The word index has no prefix index, so each probe of `pe*` expands it over all terms.
+      for (const search of ["we*", "week*", "person", "pe*"])
+        yield* measure(
+          `search typed ${search}`,
+          150,
+          store
+            .listThreads({ search, limit: 50 })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
       // Ten of 100k messages contain 鲸鱼. One and two CJK characters are too short for trigrams;
       // a sparse lookup gets the has:drive budget, a term in every message the CJK search budget.
       for (const [name, search, budget, threads] of [
@@ -549,3 +559,118 @@ for (const messageCount of [20_000, 100_000]) {
     { timeout: 1_200_000 },
   );
 }
+
+// The 100k fixture repeats a few words. Real mail has a long tail, so a two-letter prefix such
+// as `co*` stands for many terms, and each per-row probe expanded all of them (650 ms).
+it.effect(
+  "typed prefixes over a 100k mailbox with a long-tail vocabulary stay within budget",
+  () => {
+    perfCalibration();
+    return Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      yield* sql`PRAGMA cache_size=-8192`;
+      const account = yield* store.upsertAccount("gmail", "vocabulary-perf@example.com");
+      const syllables = [
+        "co",
+        "re",
+        "an",
+        "pro",
+        "sta",
+        "de",
+        "mi",
+        "lo",
+        "ver",
+        "tin",
+        "ka",
+        "su",
+        "pe",
+        "ri",
+        "on",
+        "ba",
+        "el",
+        "gu",
+        "ny",
+        "or",
+        "the",
+        "in",
+        "mar",
+        "sel",
+        "ex",
+        "ho",
+        "qua",
+        "di",
+        "ten",
+        "ul",
+        "se",
+        "fa",
+        "ge",
+        "po",
+        "wi",
+        "ar",
+        "cu",
+        "ne",
+        "bo",
+        "li",
+      ];
+      let seed = 7;
+      const random = () => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) / 0x7fffffff;
+      // 50,000 made-up words of two to four syllables, drawn with a heavy head and a long tail.
+      const vocabulary = Array.from({ length: 50_000 }, () => {
+        const length = 2 + Math.floor(random() * 3);
+        let text = "";
+        for (let i = 0; i < length; i++)
+          text += syllables[Math.floor(random() * syllables.length)] ?? "";
+        return text;
+      });
+      const word = () => vocabulary[Math.floor(Math.pow(random(), 3) * vocabulary.length)] ?? "";
+      for (let start = 0; start < 100_000; start += 500) {
+        yield* store.transaction(
+          Effect.gen(function* () {
+            for (let i = start; i < start + 500; i++)
+              yield* store.upsertMessage(
+                account.id,
+                incoming(`m${i}`, {
+                  threadId: `t${Math.floor(i / 3)}`,
+                  date: fixtureNow - (100_000 - i) * 60_000,
+                  subject: Array.from({ length: 4 }, word).join(" "),
+                  from: { name: "Sender", address: "sender@example.com" },
+                  bodyText: Array.from({ length: 30 }, word).join(" "),
+                  bodyHtml: "",
+                  labels: ["INBOX"],
+                  attachments: [],
+                  isUnread: i % 3 === 0,
+                  isStarred: false,
+                }),
+              );
+          }),
+        );
+        if (start % 20_000 === 0) process.stdout.write(`Seeded vocabulary ${start + 500}/100000\n`);
+      }
+      while (!(yield* store.backfillWordIndex(2000)).ready) {
+        /* finish the index */
+      }
+      const results: { name: string; medianMs: number; budgetMs: number }[] = [];
+      const rare = vocabulary.at(-1) ?? "";
+      for (const search of ["co*", "re*", "an*", "pro*", "sta*", "the*", rare]) {
+        const run = store.listThreads({ search, limit: 50 });
+        const first = yield* run;
+        if (search !== rare) assert.strictEqual(first.length, 50, search);
+        const samplesMs: number[] = [];
+        for (let i = 0; i < 5; i++) {
+          const start = performance.now();
+          yield* run;
+          samplesMs.push(performance.now() - start);
+        }
+        const medianMs = samplesMs.toSorted((a, b) => a - b)[2] ?? 0;
+        results.push({ name: `search vocabulary ${search}`, medianMs, budgetMs: 150 });
+        process.stdout.write(
+          `search vocabulary ${search}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, budget 150)\n`,
+        );
+      }
+      for (const result of results)
+        assert.isBelow(result.medianMs, perfBudget(result.budgetMs), result.name);
+    }).pipe(Effect.provide(PerformanceMailbox()));
+  },
+  { timeout: 1_200_000 },
+);
