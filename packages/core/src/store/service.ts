@@ -151,6 +151,11 @@ export class Store extends Context.Service<
      * `transaction` it runs `effect` as it is, with the transaction's busy timeout.
      */
     briefLockWait<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseBusy, R>;
+    /**
+     * Takes the write lock and releases it, waiting at most 200 ms. Fails with DatabaseBusy while
+     * another process holds it. Inside `transaction` it does nothing.
+     */
+    readonly probeWriteLock: Effect.Effect<void, DatabaseBusy>;
 
     readonly ai: ReturnType<typeof import("./store-ai.js").makeAiStore>;
     readonly semantics: ReturnType<typeof makeSemanticStore>;

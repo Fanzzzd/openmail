@@ -562,7 +562,16 @@ export const makeSyncMailbox = (
   ) {
     if (runtime.syncPaused) return [];
     const task = Effect.gen(function* () {
-      if (accountIds === undefined) yield* flush(undefined, true);
+      // The flush writes under the 5 s busy timeout. While another process holds the write
+      // lock the poll skips it; each account's 200 ms writes then report busy and back off.
+      if (
+        accountIds === undefined &&
+        (yield* store.probeWriteLock.pipe(
+          Effect.as(true),
+          Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
+        ))
+      )
+        yield* flush(undefined, true);
       const accounts = yield* store.listAccounts;
       const now = yield* Clock.currentTimeMillis;
       const results: SyncResult[] = [];

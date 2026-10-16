@@ -67,3 +67,18 @@ export const makeBriefLockWait = (
       Option.isSome(open) ? effect : brief(effect),
     );
 };
+
+/**
+ * Takes the write lock and gives it back at once, waiting at most BRIEF_BUSY_TIMEOUT_MS for it.
+ * Fails with DatabaseBusy while another process holds it. Inside a transaction, which already
+ * has the lock or waits with its own timeout, it does nothing.
+ */
+export const makeWriteLockProbe = (sql: SqlClient.SqlClient): Effect.Effect<void, DatabaseBusy> => {
+  const take = Effect.acquireRelease(Effect.orDie(sql.unsafe("BEGIN IMMEDIATE")), () =>
+    Effect.orDie(sql.unsafe("ROLLBACK")),
+  );
+  const probe = makeBriefLockWait(sql)(Effect.scoped(take));
+  return Effect.flatMap(Effect.serviceOption(sql.transactionService), (open) =>
+    Option.isSome(open) ? Effect.void : Effect.asVoid(probe),
+  );
+};

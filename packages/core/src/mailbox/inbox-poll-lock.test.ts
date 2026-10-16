@@ -7,7 +7,7 @@ import { Cause, Effect, Exit, Logger, References, Stream } from "effect";
 import type { ProviderAdapter } from "../providers/adapter.js";
 import { isLockTimeout } from "../store/store-brief-lock.js";
 import { logCodeOf } from "../domain/diagnostic-log.js";
-import { fakeServer, incoming, TestMailbox } from "../platform/node/testing.js";
+import { fakeServer, incoming, Store, TestMailbox } from "../platform/node/testing.js";
 import { Mailbox } from "./mailbox.js";
 
 // An inbox poll found another process's write lock held, died with the lock timeout, and wrote its
@@ -132,4 +132,55 @@ it.effect(
       }
     }),
   60_000,
+);
+
+// A scheduled poll flushed the queue before its per-account 200 ms writes. The flush claimed the op
+// under the 5 s busy timeout, failed with a SqlError after 5.4 s and blocked the event loop.
+it.effect(
+  "a scheduled poll with a queued op under a held write lock skips the flush and backs off",
+  () =>
+    Effect.gen(function* () {
+      const dir = mkdtempSync(join(tmpdir(), "openmail-poll-flush-lock-"));
+      const file = join(dir, "mail.db");
+      const server = fakeServer("me@example.com", [incoming("one")]);
+      try {
+        yield* Effect.gen(function* () {
+          const m = yield* Mailbox;
+          const store = yield* Store;
+          const account = yield* m.accounts.connect({ provider: "gmail" });
+          yield* m.sync.sync();
+          yield* store.enqueueOp(account.id, "one", { kind: "star", value: true });
+          const writer = new DatabaseSync(file);
+          writer.exec("BEGIN IMMEDIATE");
+          try {
+            const started = performance.now();
+            const results = yield* m.sync.pollInbox();
+            // Unscaled on purpose: the regression waits out the 5 s busy timeout.
+            assert.isBelow(performance.now() - started, 4000);
+            assert.strictEqual(results.length, 1);
+            assert.isDefined(results[0]?.error);
+            const pulls = server.pulls.length;
+            yield* m.sync.pollInbox();
+            assert.strictEqual(server.pulls.length, pulls);
+          } finally {
+            writer.exec("ROLLBACK");
+            writer.close();
+          }
+          assert.strictEqual((yield* store.listPendingOps).length, 1);
+          // With the lock free, the next scheduled poll flushes the op.
+          yield* m.sync.pollInbox();
+          assert.strictEqual((yield* store.listPendingOps).length, 0);
+        }).pipe(
+          Effect.provide(
+            TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, undefined, {
+              database: file,
+            }),
+          ),
+          Effect.scoped,
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }),
+  30_000,
 );
