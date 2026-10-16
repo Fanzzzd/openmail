@@ -9,6 +9,7 @@ import {
   fail,
   findSpace,
   jsonFlag,
+  noAccount,
   optionalString,
   optionalInt,
   print,
@@ -207,8 +208,7 @@ const accountsRemove = Command.make(
   Effect.fn(function* ({ id, yes }) {
     const mailbox = yield* Mailbox;
     const account = (yield* mailbox.accounts.accounts).find((a) => a.id === id);
-    if (!account)
-      return yield* fail(`No account with id ${id}. Run \`openmail accounts list\` to see them.`);
+    if (!account) return yield* noAccount(id);
     yield* confirmRemoval(
       yes,
       process.stdin.isTTY,
@@ -347,9 +347,7 @@ const profilesAssign = Command.make(
   Effect.fn(function* ({ accountId, space }) {
     const mailbox = yield* Mailbox;
     if (!(yield* mailbox.accounts.accounts).some((a) => a.id === accountId))
-      return yield* fail(
-        `No account with id ${accountId}. Run \`openmail accounts list\` to see them.`,
-      );
+      return yield* noAccount(accountId);
     const found = space === "none" ? null : yield* findSpace(space);
     yield* mailbox.accounts.assignProfile(accountId, found?.id ?? null);
     return yield* Console.log(

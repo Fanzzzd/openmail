@@ -1296,7 +1296,7 @@ test.concurrent("spaces assign fails on unknown ids and takes an unambiguous nam
   ]);
   expect(unknownAccount).toMatchObject({
     code: 1,
-    stderr: "error: No account with id 1. Run `openmail accounts list` to see them.\n",
+    stderr: "error: No account with id 1.\nhint: Run `openmail accounts list` to see them.\n",
   });
   expect(unknownSpace).toMatchObject({
     code: 1,

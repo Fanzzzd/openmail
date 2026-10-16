@@ -320,11 +320,23 @@ describe("accounts remove", () => {
     }
   });
 
+  test("an unknown id is not_found with the command that lists accounts", async () => {
+    const { code, stderr } = await openmail(["accounts", "remove", "gmail:nobody@example.com"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("hint: Run `openmail accounts list`");
+    const listed = await openmail(["list", "--account", "gmail:nobody@example.com", "--json"]);
+    expect(listed.code, listed.stderr).toBe(1);
+    expect(errorObject(listed.stdout)).toMatchObject({
+      code: "not_found",
+      hint: expect.stringContaining("openmail accounts list"),
+    });
+  });
+
   test("an unknown id fails before asking", async () => {
     const { code, stderr } = await openmail(["accounts", "remove", "gmail:nobody@example.com"]);
     expect(code).toBe(1);
     expect(stderr).toBe(
-      "error: No account with id gmail:nobody@example.com. Run `openmail accounts list` to see them.\n",
+      "error: No account with id gmail:nobody@example.com.\nhint: Run `openmail accounts list` to see them.\n",
     );
   });
 

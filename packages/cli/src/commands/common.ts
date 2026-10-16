@@ -33,6 +33,13 @@ export const fail = (
   } = {},
 ) => Effect.fail(new Failed({ message, ...extra }));
 
+/** An account id no account has: not_found, with the command that lists the right ones. */
+export const noAccount = (id: string) =>
+  fail(`No account with id ${id}.`, {
+    code: "not_found",
+    hint: "Run `openmail accounts list` to see them.",
+  });
+
 export const jsonFlag = Flag.Boolean("json").pipe(
   Flag.withDescription("Print machine-readable JSON"),
   Flag.withDefault(false),

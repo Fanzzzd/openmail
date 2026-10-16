@@ -6,7 +6,16 @@
  */
 
 import { Argument, Command, Flag } from "effect/cli";
-import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
+import {
+  Failed,
+  fail,
+  findSpace,
+  jsonFlag,
+  noAccount,
+  optionalInt,
+  optionalString,
+  print,
+} from "./common.js";
 import { Console, Effect, LogLevel, Logger, Option } from "effect";
 import {
   MAILBOXES,
@@ -179,10 +188,7 @@ const accountScope = (account: Option.Option<string>, space: Option.Option<strin
     const inSpace = Option.isSome(space) ? yield* findSpace(space.value) : undefined;
     if (Option.isSome(account)) {
       const found = accounts.find((a) => a.id === account.value);
-      if (!found)
-        return yield* fail(
-          `No account with id ${account.value}. Run \`openmail accounts list\` to see them.`,
-        );
+      if (!found) return yield* noAccount(account.value);
       if (inSpace && found.profileId !== inSpace.id)
         return yield* fail(`Account ${account.value} is not in space ${printable(inSpace.name)}.`);
       return [found.id];
