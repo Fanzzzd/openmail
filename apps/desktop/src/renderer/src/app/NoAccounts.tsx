@@ -7,9 +7,12 @@ import { buttonPrimary, buttonSecondary, titlebarRow } from "../ui/styles";
 
 /** The main pane with no account: a load error with Try again, or Add account. */
 export function NoAccounts({
+  landmark = true,
   adding,
   onAdd,
 }: {
+  /** False inside the layout's main landmark, which a main landmark may not nest in. */
+  landmark?: boolean;
   /** The Add account dialog is open, so the pane stays empty behind it. */
   adding: boolean;
   onAdd: () => void;
@@ -17,8 +20,9 @@ export function NoAccounts({
   const accounts = useAtomValue(accountsAtom);
   const { t, i18n } = useLingui();
   const refresh = useAtomRefresh(accountsAtom);
+  const Root = landmark ? "main" : "div";
   return (
-    <main className="flex h-full w-full flex-col bg-surface">
+    <Root className="flex h-full w-full flex-col bg-surface">
       <div className={titlebarRow} />
       {accounts._tag === "Failure" ? (
         <div
@@ -44,6 +48,6 @@ export function NoAccounts({
           )}
         </div>
       ) : null}
-    </main>
+    </Root>
   );
 }

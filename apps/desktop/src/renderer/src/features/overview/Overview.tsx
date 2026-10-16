@@ -38,6 +38,8 @@ interface Props {
   onEditProfile: (profile: Profile | "new") => void;
   /** Controls before the title when the overview is the leftmost pane. */
   leading?: ReactNode;
+  /** False inside the layout's main landmark, which a main landmark may not nest in. */
+  landmark?: boolean;
 }
 
 /**
@@ -52,6 +54,7 @@ export function Overview({
   onOpen,
   onEditProfile,
   leading,
+  landmark = true,
 }: Props) {
   accounts = accounts.filter((a) => a.enabled !== false);
   const { t, i18n } = useLingui();
@@ -77,8 +80,9 @@ export function Overview({
   const total = i18n.number(accounts.reduce((n, a) => n + (unread[a.id] ?? 0), 0));
   const accountCount = accounts.length;
 
+  const Root = landmark ? "main" : "div";
   return (
-    <main className="flex h-full w-full min-w-0 flex-col bg-surface">
+    <Root className="flex h-full w-full min-w-0 flex-col bg-surface">
       <header className={`${titlebarRow} gap-3 pr-4 pl-4 sm:pr-7 sm:pl-7`}>
         <TrafficLightSpace />
         {leading}
@@ -132,7 +136,7 @@ export function Overview({
           ))}
         </div>
       </div>
-    </main>
+    </Root>
   );
 }
 

@@ -173,7 +173,7 @@ export function Sidebar({
     // labelled region there. The aside still keeps its footer from reading as contentinfo.
     <aside
       role={landmark ? undefined : "region"}
-      aria-label={landmark ? undefined : t`Sidebar`}
+      aria-label={t`Sidebar`}
       onDropCapture={() => setDragAccount(null)}
       onDragEndCapture={() => setDragAccount(null)}
       className="@container/sidebar flex h-full w-full flex-col bg-neutral-100/60 dark:bg-neutral-950/70"

@@ -2,7 +2,9 @@ import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
+import axe from "axe-core";
 import { clickButton, eventually, flow, key, row } from "./harness";
+import { mailHref } from "../../../shared/routes";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 let width = 1200;
@@ -776,4 +778,31 @@ it("with the toolbar hidden, the subject row keeps the thread's menu", async () 
     within(screen.getByRole("document")).getByRole("button", { name: "More actions" }),
   );
   expect(await screen.findByRole("menuitem", { name: /^Larger text/ })).toBeTruthy();
+});
+
+it("the overview beside a docked sidebar keeps every control inside a landmark", async () => {
+  width = 1200;
+  current = await flow({ route: mailHref({ space: "overview", mailbox: "inbox" }) });
+  await eventually(() =>
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("Overview"),
+  );
+  const handle = screen.getByRole("separator", { name: "Resize sidebar" });
+  expect(handle.closest('main, [role="main"]')).not.toBeNull();
+  expect(screen.getByRole("region", { name: "Sidebar" })).toBeTruthy();
+  let violations: axe.Result[] = [];
+  await act(async () => {
+    violations = (
+      await axe.run(document.body, {
+        runOnly: [
+          "region",
+          "landmark-unique",
+          "landmark-one-main",
+          "landmark-no-duplicate-main",
+          "landmark-main-is-top-level",
+          "landmark-complementary-is-top-level",
+        ],
+      })
+    ).violations;
+  });
+  expect(violations.map((issue) => issue.id)).toEqual([]);
 });

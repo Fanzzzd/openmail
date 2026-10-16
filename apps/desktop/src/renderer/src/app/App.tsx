@@ -313,8 +313,9 @@ export function App({ composeId }: { composeId?: string }) {
     onPermanentDelete: deleteBatch,
     onCreate: createBatchLabel,
   };
-  // The docked mail layout is one main landmark, so its resize handles sit inside a landmark.
-  const layoutIsMain = !narrow && paneMode === "mail";
+  // A layout with a docked sidebar or the mail panes is one main landmark, so its resize
+  // handles sit inside a landmark.
+  const layoutIsMain = !narrow && (paneMode === "mail" || docked);
   const sidebar = (
     <Sidebar
       landmark={!(docked && layoutIsMain)}
@@ -341,9 +342,10 @@ export function App({ composeId }: { composeId?: string }) {
   const sidebarToggle =
     docked || rail ? undefined : <SidebarToggle onClick={paneNav.toggleSidebar} />;
   const mainPane = !hasAccounts ? (
-    <NoAccounts adding={dialog === "add"} onAdd={() => setDialog("add")} />
+    <NoAccounts landmark={!layoutIsMain} adding={dialog === "add"} onAdd={() => setDialog("add")} />
   ) : (
     <Overview
+      landmark={!layoutIsMain}
       leading={sidebarToggle}
       accounts={accountList}
       profiles={profileList}
