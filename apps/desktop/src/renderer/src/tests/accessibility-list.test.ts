@@ -722,3 +722,32 @@ it("the overview keeps each failed account's name readable and moves the status 
   }
   await audit();
 });
+
+// In Russian the one card's title read "Все учётные зап…" with ~900 px empty beside the card.
+it("the overview gives a lone space the row's width and its title room to wrap", async () => {
+  const { i18n } = await catalogI18n("ru");
+  render(
+    h(
+      I18nProvider,
+      { i18n },
+      h(Overview, {
+        accounts: [account],
+        profiles: [],
+        unread: { [account.id]: 1234 },
+        syncState: { running: false, lastFinishedAt: null, errors: [] },
+        onOpen: vi.fn(),
+        onEditProfile: vi.fn(),
+      }),
+    ),
+  );
+  const title = screen.getByRole("button", { name: "Все учётные записи" });
+  expect(title.getAttribute("title")).toBe("Все учётные записи");
+  expect(title.className).not.toContain("truncate");
+  expect(title.className).toContain("line-clamp-2");
+  const grid = title.closest("section")!.parentElement!;
+  expect(grid.className).toContain("repeat(auto-fit,");
+  expect(grid.className).not.toContain("auto-fill");
+  const count = within(title.closest("header")!).getByText(/1\s?234/);
+  expect(count.closest("span.shrink-0")).toBeTruthy();
+  await audit();
+});

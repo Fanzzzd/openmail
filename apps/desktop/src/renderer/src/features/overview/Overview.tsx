@@ -124,7 +124,9 @@ export function Overview({
             </button>
           </div>
         )}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(min(320px,100%),1fr))] gap-4">
+        {/* auto-fit, so one or two spaces share the row instead of sitting in a 320 px column
+            beside empty tracks; a long title then has the room. */}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-4">
           {groups.map((g) => (
             <GroupCard
               key={g.profile?.id ?? "ungrouped"}
@@ -173,12 +175,14 @@ function GroupCard({
         <button
           type="button"
           onClick={() => onOpen(group.space)}
-          className="min-w-0 flex-1 truncate text-left text-headline font-semibold hover:underline"
+          title={group.title}
+          // Wraps to a second line before it truncates: "Все учётные записи" has no room to spare.
+          className="line-clamp-2 min-w-0 flex-1 text-left text-headline font-semibold break-words hover:underline"
         >
           {group.title}
         </button>
         {unreadCount > 0 && (
-          <span className="text-body text-a11y-muted tabular-nums">
+          <span className="shrink-0 text-body whitespace-nowrap text-a11y-muted tabular-nums">
             <Plural
               value={unreadCount}
               one="# unread"
