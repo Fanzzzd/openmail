@@ -116,16 +116,16 @@ export default function PrivacyPage() {
               request and whether it failed, was a defect or was interrupted, the phase and counts
               of a sync reset, crash and abnormal-exit entries with an exit code, the SQLite result
               code of a skipped database statistics refresh, and hashes of the account and folder.
-              The hashes are keyed with a random secret that stays on your Mac. The log contains no
-              message content, addresses, full URLs or tokens. The secret is in{" "}
-              <code>diagnostics.key</code> in the same folder. An export replaces every hash with a
-              number that is valid for that export only. It starts with a summary line: the OpenMail
-              version and build, whether the app is packaged, the macOS, Electron and Node versions,
-              the CPU architecture, the database version, and whether search statistics exist. For
-              each numbered account it lists the provider, sync state, time since the last
-              successful sync, how many changes and outbox messages are waiting, the reason sign-in
-              is needed again and the stored failure category. It is never uploaded. The Feedback
-              window lets you attach it to an email that you send yourself.
+              The hashes are keyed with a random secret that stays on your Mac. The log never
+              records message content, addresses, full URLs, tokens or stack traces. The secret is
+              in <code>diagnostics.key</code> in the same folder. An export replaces every hash with
+              a number that is valid for that export only. It starts with a summary line: the
+              OpenMail version and build, whether the app is packaged, the macOS, Electron and Node
+              versions, the CPU architecture, the database version, and whether search statistics
+              exist. For each numbered account it lists the provider, sync state, time since the
+              last successful sync, how many changes and outbox messages are waiting, the reason
+              sign-in is needed again and the stored failure category. It is never uploaded. The
+              Feedback window lets you attach it to an email that you send yourself.
             </td>
           </tr>
           <tr>
