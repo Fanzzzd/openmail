@@ -8,6 +8,8 @@ import type { ProviderAdapter } from "../providers/adapter.js";
 import { isLockTimeout } from "../store/store-brief-lock.js";
 import { logCodeOf } from "../domain/diagnostic-log.js";
 import { fakeServer, incoming, Store, TestMailbox } from "../platform/node/testing.js";
+import { ProviderError } from "../domain/errors.js";
+import { SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
 import { Mailbox } from "./mailbox.js";
 
 // An inbox poll found another process's write lock held, died with the lock timeout, and wrote its
@@ -176,6 +178,70 @@ it.effect(
               database: file,
             }),
           ),
+          Effect.scoped,
+        );
+      } finally {
+        rmSync(dir, { recursive: true, force: true });
+      }
+    }),
+  30_000,
+);
+
+// The poll wrote the provider's failure under the 200 ms wait. A held lock there must not turn the
+// result into the generic retry text, and the crash handler must not see it.
+it.effect(
+  "a provider failure during a poll under a held write lock surfaces the provider's error",
+  () =>
+    Effect.gen(function* () {
+      const dir = mkdtempSync(join(tmpdir(), "openmail-poll-fail-lock-"));
+      const file = join(dir, "mail.db");
+      const server = fakeServer("me@example.com", [incoming("one")]);
+      const codes: unknown[] = [];
+      const logger = Logger.make((options) => {
+        codes.push(logCodeOf(options.fiber.getRef(References.CurrentLogAnnotations)));
+      });
+      const failure = new ProviderError({ message: "unavailable", status: 503 });
+      let failing: "no" | "error" | "defect" = "no";
+      const failPull = (base: ProviderAdapter): ProviderAdapter => ({
+        ...base,
+        pull: (...args) =>
+          failing === "error"
+            ? Stream.fail(failure)
+            : failing === "defect"
+              ? Stream.die(new Error("provider bug"))
+              : base.pull(...args),
+      });
+      try {
+        yield* Effect.gen(function* () {
+          const m = yield* Mailbox;
+          const account = yield* m.accounts.connect({ provider: "gmail" });
+          yield* m.sync.sync();
+          failing = "error";
+          const writer = new DatabaseSync(file);
+          writer.exec("BEGIN IMMEDIATE");
+          try {
+            const results = yield* m.sync.pollInbox([account.id]);
+            assert.strictEqual(results[0]?.error, syncFailureText(failure));
+            assert.notStrictEqual(results[0]?.error, SYNC_FAILURE_TEXT.unknown);
+            assert.notInclude(codes, "sync-crashed");
+            // A provider bug goes through the crash handler, whose error write also finds the
+            // lock held. The poll still returns a result instead of dying.
+            failing = "defect";
+            const crashed = yield* m.sync.pollInbox([account.id]);
+            assert.strictEqual(crashed[0]?.error, SYNC_FAILURE_TEXT.unknown);
+            assert.include(codes, "sync-crashed");
+          } finally {
+            writer.exec("ROLLBACK");
+            writer.close();
+          }
+        }).pipe(
+          Effect.provide(
+            TestMailbox.withAdapter(failPull, {
+              servers: { gmail: server },
+              platformOptions: { database: file },
+            }),
+          ),
+          Effect.provide(Logger.layer([logger])),
           Effect.scoped,
         );
       } finally {

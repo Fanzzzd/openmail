@@ -250,15 +250,12 @@ export const makeSyncMailbox = (
     const failed = (text: string, auth: AuthError | undefined) =>
       Effect.gen(function* () {
         if (auth) yield* store.markReauth(account.id, auth);
-        // An inbox poll waits at most 200 ms for the write lock; the next poll records the error.
+        // An inbox poll waits at most 200 ms for the write lock and returns the provider's error
+        // either way; the next poll records it.
         yield* scope
-          ? inboxWrite(store.setInboxError(account.id, text)).pipe(
-              Effect.catchCause((cause) =>
-                Cause.hasInterruptsOnly(cause) || !heldLock(cause)
-                  ? Effect.failCause(cause)
-                  : Effect.void,
-              ),
-            )
+          ? store
+              .briefLockWait(store.setInboxError(account.id, text))
+              .pipe(Effect.catchTag("DatabaseBusy", () => Effect.void))
           : store.setSyncError(account.id, text);
         return {
           accountId: account.id,
