@@ -558,6 +558,39 @@ function sharedHome() {
   return directory;
 }
 
+// search --cursor kept an offset, so a thread that went away between pages (archived
+// elsewhere, then synced) shifted the rest and the next page skipped one.
+describe("search pages after a thread disappears", () => {
+  const home = sharedHome();
+  test("the next page continues after the last thread shown", async () => {
+    const page = (cursor?: string) =>
+      object(["search", "the", "--limit", "3", ...(cursor ? ["--cursor", cursor] : [])], home.path);
+    const all = rows((await object(["search", "the", "--limit", "100"], home.path)).threads);
+    expect(all.length).toBeGreaterThan(6);
+    const first = await page();
+    const shown = rows(first.threads);
+    const gone = shown[1];
+    expect(gone).toBeDefined();
+    const db = new DatabaseSync(join(home.path, "mail.db"));
+    try {
+      db.prepare("DELETE FROM messages WHERE account_id=? AND thread_id=?").run(
+        String(gone.account_id),
+        String(gone.thread_id),
+      );
+    } finally {
+      db.close();
+    }
+    const ids = shown.map((thread) => thread.id);
+    let cursor = first[CURSOR];
+    while (typeof cursor === "string") {
+      const next = await page(cursor);
+      ids.push(...rows(next.threads).map((thread) => thread.id));
+      cursor = next[CURSOR];
+    }
+    expect(ids).toEqual(all.map((thread) => thread.id));
+  });
+});
+
 // A failed sync logged a multi-line SyncFailedDiagnostic per account on stderr, and health
 // over a hundred lines, on top of the one-line outcome. OPENMAIL_OFFLINE fails every provider
 // call without the network or the keychain.

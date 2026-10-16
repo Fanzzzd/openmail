@@ -28,6 +28,7 @@ import {
   logWarning,
   printable,
   redactSyncHealth,
+  searchRest,
   threadsWithLabel,
 } from "@openmail/core";
 import {
@@ -304,19 +305,17 @@ const search = Command.make(
     const accountIds = yield* accountScope(o.account, Option.none());
     const query = { search: o.query.join(" "), accountIds, limit: SEARCH_CAP + 1 };
     const scope = cursorScope("search", [query.search, accountIds, o.server]);
-    const { offset } = yield* decodePageCursor(o.cursor, scope);
+    const cursor = yield* decodePageCursor(o.cursor, scope);
     if (accountIds.length && !(yield* finishSearchIndex)) yield* Console.error(SEARCH_INDEX_NOTE);
     const found: SearchResult = !accountIds.length
       ? { threads: [], truncated: false, errors: [] }
       : o.server
         ? yield* mailbox.reading.searchServer(query)
         : { threads: yield* mailbox.reading.threads(query), truncated: false, errors: [] };
-    const all = found.threads.slice(0, SEARCH_CAP);
-    const threads = all.slice(offset, offset + o.limit);
-    const next =
-      offset + threads.length < all.length
-        ? encodeCursor({ scope, offset: offset + threads.length })
-        : undefined;
+    const rest = searchRest(found.threads.slice(0, SEARCH_CAP), cursor);
+    const threads = rest.rows.slice(0, o.limit);
+    const after = rest.next(threads.length);
+    const next = after === null ? undefined : encodeCursor({ scope, offset: 0, ...after });
     const truncated = found.truncated || found.threads.length > SEARCH_CAP;
     // newer:foo or larger:xyz matches nothing; say so on stderr, keeping stdout for results.
     const unparsed = unparsedSearchOperators(query.search);

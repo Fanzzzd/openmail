@@ -33,6 +33,7 @@ import {
 } from "./tool-pages.js";
 import { SearchResult } from "../domain/organization.js";
 import { withUnparsedOperators } from "../search/search.js";
+import { searchRest } from "../search/search-page.js";
 import { ModelThread } from "../ai/model-thread.js";
 import { threadsWithLabel } from "../mailbox/label-filter.js";
 import { SyncResult } from "../domain/sync-status.js";
@@ -235,7 +236,8 @@ export const threadHandlers = ({
           "Server search is not available to the in-app assistant.",
           "Search the local copy: leave out server.",
         );
-      yield* cursorFor(p.cursor, pageScope("search", p));
+      const scope = pageScope("search", p);
+      const cursor = yield* cursorFor(p.cursor, scope);
       // After an upgrade the word index is rebuilt; finish it so AROUND and whole words work.
       const indexed =
         (yield* mailbox.reading.searchIndexReady) || (yield* mailbox.reading.finishSearchIndex);
@@ -254,11 +256,17 @@ export const threadHandlers = ({
             truncated: false,
             errors: [],
           };
-      const result = yield* page(
-        "search",
-        p,
-        Effect.succeed(found.threads.slice(0, 200).map(compactThread(timeZone()))),
-      ).pipe(Effect.map(({ items, ...rest }) => ({ ...rest, threads: items })));
+      const rest = searchRest(found.threads.slice(0, 200), cursor);
+      const threads = yield* bounded(
+        rest.rows.map(compactThread(timeZone())),
+        p.limit,
+        p.token_budget,
+      );
+      const after = rest.next(threads.length);
+      const result = {
+        threads,
+        ...(after ? { next_cursor: encodeCursor({ scope, offset: 0, ...after }) } : {}),
+      };
       const ignored = withUnparsedOperators(found.ignored ?? [], q.accountIds, p.query);
       const notices = {
         ...notice,

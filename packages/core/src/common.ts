@@ -54,6 +54,7 @@ export * from "./search/provider-search.js";
 export * from "./search/search-match.js";
 export * from "./search/fts.js";
 export * from "./search/ranking.js";
+export { type SearchCursor, type SearchRest, searchRest } from "./search/search-page.js";
 
 export * from "./ai/media.js";
 

@@ -1547,6 +1547,49 @@ it.effect(
   },
 );
 
+it.effect("search pages continue after the last thread shown when one disappears", () => {
+  const server = fakeServer(
+    "me@gmail.com",
+    Array.from({ length: 10 }, (_, i) => ({ ...toolMail(`m${i}`), date: 1000 + i })),
+  );
+  const mailboxLayer = TestMailbox({ gmail: server });
+  const handlers = MailToolkitLayer.pipe(
+    Layer.provide(mailboxLayer),
+    Layer.provide(AgentIdentity.fixed("mcp", "claude-code")),
+  );
+  return Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const store = yield* Store;
+    const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+    yield* mailbox.ai.setAiAccount({ accountId: account.id, allowed: true, autoSummaries: false });
+    yield* mailbox.sync.sync();
+    const ids: string[] = [];
+    let cursor: string | undefined;
+    for (let page = 0; page < 10; page++) {
+      const result = yield* call("search", {
+        query: "hello",
+        limit: 3,
+        ...(cursor ? { cursor } : {}),
+      });
+      assert.isFalse(result.isFailure);
+      if (!("threads" in result.result)) return;
+      ids.push(...result.result.threads.map((row) => row.id));
+      // A thread on the first page goes away before the second, as after a sync.
+      if (page === 0) yield* store.deleteMessage(account.id, "m8");
+      cursor = result.result.next_cursor;
+      if (!cursor) break;
+    }
+    assert.deepStrictEqual(
+      ids,
+      Array.from({ length: 10 }, (_, i) => `${account.id}/m${9 - i}`),
+    );
+  }).pipe(
+    Effect.provide(
+      Layer.mergeAll(handlers, mailboxLayer, AgentIdentity.fixed("mcp", "claude-code")),
+    ),
+  );
+});
+
 it("calendar times keep the sender's wall time and zone and show the instant in local time", () => {
   const zoned = {
     kind: "zoned",

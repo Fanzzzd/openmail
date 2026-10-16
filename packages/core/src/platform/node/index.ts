@@ -75,6 +75,7 @@ export {
   encodeCursor,
   redactSyncHealth,
   resolveUpdateFeed,
+  searchRest,
   senderSearchQuery,
   spaceAccountIds,
   unavailableVision,
