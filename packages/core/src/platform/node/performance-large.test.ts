@@ -256,6 +256,21 @@ it.effect(
               Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, threads))),
             ),
         );
+      // A count reads Spam/Trash eligibility from message_search_meta. Reading labels_json, after
+      // the body columns, took 0.4 s warm and 3.4 s cold for `weekly OR alpha` on fixture R.
+      // These run warm: the suite cannot clear the system page cache.
+      for (const [name, search, threads] of [
+        ["count OR", "weekly OR alpha", 20_000],
+        ["count operator OR common word", "to:nobody OR weekly", 20_000],
+        ["count -to: and common word", "-to:nobody weekly", 20_000],
+      ] as const)
+        yield* measure(
+          name,
+          250,
+          store
+            .countThreads({ search })
+            .pipe(Effect.tap((n) => Effect.sync(() => assert.strictEqual(n, threads)))),
+        );
       // The sidebar's label view lists one label id, across accounts or in one account.
       for (const [name, accountIds] of [
         ["list label view", undefined],

@@ -422,6 +422,17 @@ it.effect(
       );
       assert.isAbove(pageChunks.length, 0);
       for (const query of pageChunks) assert.include(query.sql, "AND +m.id IN (", query.sql);
+      // A count reads Spam/Trash eligibility from message_search_meta: labels_json sits after
+      // the body columns, so testing it read every counted row's overflow pages.
+      const counts = queries.filter(
+        (query) =>
+          query.sql.startsWith("SELECT COUNT(*) AS n") && query.sql.includes("FROM messages m"),
+      );
+      assert.isAbove(counts.length, 0);
+      for (const count of counts) {
+        assert.include(count.sql, "s.row_id=m.rowid AND s.eligible=1", count.sql);
+        assert.notInclude(count.sql, "json_each(m.labels_json)", count.sql);
+      }
     }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
   },
   scaledMs(180_000),
@@ -491,10 +502,16 @@ it.effect(
         const queries = trace.stop();
         assert.isTrue(datePageWalks(queries), entry[0]);
         // The meta table's count has no sender, flags or recipients: these count the messages.
-        const counts = queries.filter((query) => query.sql.startsWith("SELECT COUNT(*) AS n"));
+        const counts = queries.filter(
+          (query) =>
+            query.sql.startsWith("SELECT COUNT(*) AS n") && query.sql.includes("FROM messages m"),
+        );
         assert.isAbove(counts.length, 0);
+        for (const query of queries)
+          assert.notInclude(query.sql, "INDEXED BY message_search_meta_threads", entry[0]);
         for (const count of counts) {
-          assert.notInclude(count.sql, "INDEXED BY message_search_meta_threads", entry[0]);
+          assert.include(count.sql, "s.row_id=m.rowid AND s.eligible=1", entry[0]);
+          assert.notInclude(count.sql, "json_each(m.labels_json)", entry[0]);
         }
       }
       // Before the operator text backfill is done, to: tests json_each on each row and starts

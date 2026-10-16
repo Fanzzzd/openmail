@@ -306,9 +306,7 @@ search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小�
 
 36 种查询形状的结果页、第二页、标志、会话数和计数在两份数据库上都逐项相同。
 
-还慢的有一类：
-
-- OR 搜索的计数逐行读 `labels_json` 排除垃圾邮件和废纸篓，fixture R 上热缓存 0.4 s，页缓存被挤掉时 4–15 s，改动前后相同。普通词搜索的计数用 `message_search_meta.eligible`，OR 计数还没有改。
+带否定的常见词搜索和 OR 计数后来也改了，见下面两节。
 
 ### 运算符加常见词
 
@@ -348,6 +346,29 @@ fixture R，无统计，修复前后（ms，三次热运行中位数；计数各
 28 种搜索各取会话、单账户、平铺三种形状，共 84 例，结果页、第二页、标志、会话数和计数逐项相同。
 
 search-operator-plans.test.ts 的“operators with a common word”对 13 种搜索（含否定、无命中的发件人、`has:attachment` 和多个否定）对照参考结果，并检查每种的 `recent` 窗口走 `messages_list_date_id`、计数不走 `message_search_meta_threads`；回填未完成时 `to:r3 weekly` 不走日期遍历。operator-text-diff.test.ts 把评审者的随机差分测试移进默认套件：每轮 40 次随机写入（新邮件、改写、标志、本地操作、删除、改 provider id、补头部、淘汰消息文本、删 Spam、删账户），之后把副表和重新计算的结果逐行比较，并对 25 个运算符搜索在用副表和逐行判断两种状态下比较结果页和计数。默认 10 轮，`OPENMAIL_PERF=1` 跑 50 轮，`OPENMAIL_DIFF_SEED` 换随机序列。`performance-large.test.ts` 新增 `search -to: and common word`、`search from: and common word`、`search has:attachment and common word` 预算 200 ms，`search from: no match and common word` 预算 350 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 72、30、33、155 ms。
+
+### 计数排除 Spam 和 Trash
+
+OR 和运算符搜索的计数用 `NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) …)` 排除垃圾邮件和废纸篓。`labels_json` 在 `body_text`、`body_html` 后面，每个计数的行都要读溢出页链。评审者在 fixture R 上冷读 `weekly OR alpha` 计数 3.4 s，41 万次缺页，读 1.6 GB。
+
+`countThreads` 现在给计数设 `metaEligible`，`listFilter` 改用文字页已经在用的 `EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`。`eligible` 由迁移 30 的触发器按同样的 SPAM/TRASH 规则维护，结果不变。
+
+fixture R，无统计，热缓存，计数各跑一次（ms）：
+
+| 测量                             | 修复前 | 修复后 |
+| -------------------------------- | -----: | -----: |
+| `weekly OR alpha`                |    442 |     68 |
+| `weekly OR alpha`，平铺          |     73 |     43 |
+| `to:nobody OR weekly`            |    438 |     64 |
+| `to:nobody OR weekly`，平铺      |     80 |     51 |
+| `(weekly OR delivery) is:unread` |     43 |     33 |
+| `is:important weekly`            |    401 |    361 |
+
+84 例的结果页、第二页和计数仍逐项相同。这台机器不能清空系统页缓存，所以没有冷读数字；评审者在冷缓存下测得 `weekly OR alpha` 计数 3412 ms 到 54 ms，`to:nobody OR weekly` 426 ms 到 61 ms。
+
+`has:attachment` 的计数没有改，fixture R 上仍约 340 ms：它读 `attachments_json`，同样在消息文本后面。现有列都不能代替它：`search_flags` 只有按类型的位，没有“有附件”；`message_operator_text.file_text` 对只有一个无文件名附件的邮件是空串，和没有附件分不开。要快需要新迁移加一个标志位并回填。`is:important weekly` 的计数也仍约 360 ms，`IMPORTANT` 标签要读 `labels_json`。
+
+search-operator-plans.test.ts 的 OR 部分和“operators with a common word”检查每条按行计数的语句含 `s.row_id=m.rowid AND s.eligible=1`、不含 `json_each(m.labels_json)`。`performance-large.test.ts` 新增 `count OR`、`count operator OR common word`、`count -to: and common word` 三项，预算 250 ms，热缓存。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 55、64、110 ms。
 
 ### performance-large.test.ts
 

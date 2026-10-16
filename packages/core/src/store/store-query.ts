@@ -28,6 +28,12 @@ export type LocalQuery = ThreadQuery & {
   textPage?: { index: "messages_words" | "messages_fts" | "messages_bigrams"; match: string };
   /** message_operator_text has a row for every message (migration 57's backfill is done). */
   operatorTextReady?: boolean;
+  /**
+   * Read Spam/Trash eligibility from message_search_meta, as text pages do. A count sets it:
+   * labels_json sits after the body columns, so `NOT label SPAM` read each counted row's
+   * overflow pages (cold `weekly OR alpha` count 3.4 s, 1.6 GB read).
+   */
+  metaEligible?: boolean;
 };
 
 export const expressionMedia = (text: string) =>
@@ -548,7 +554,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (mailbox === "all") {
       if (q.messageIds === undefined && !searchIncludesSpecialFolders(q))
         where.push(
-          q.textPage || q.proximityPage || q.search === ""
+          q.textPage || q.proximityPage || q.search === "" || q.metaEligible
             ? sql`EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`
             : sql`NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}`,
         );

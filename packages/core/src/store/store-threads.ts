@@ -209,7 +209,8 @@ export const makeThreadsStore = ({
     }
     // A count reads every match, so the text index's rowids drive it; the row-bound probe that
     // suits a page's date walk ran once per message (303 ms for `subject:weekly is:unread`).
-    const counted = { ...query, rowBoundText: false };
+    // Eligibility comes from message_search_meta, away from the MIME bodies.
+    const counted = { ...query, rowBoundText: false, metaEligible: true };
     return yield* all(Schema.Struct({ n: Schema.Number }))(
       query.flat
         ? sql`SELECT COUNT(*) AS n FROM messages m WHERE ${listFilter(counted)}`
