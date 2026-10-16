@@ -8,6 +8,8 @@ import { MessageList } from "../features/mail-list/MessageList";
 import { Sidebar } from "../features/sidebar/Sidebar";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { BatchActions } from "../features/mail-list/BatchActions";
+import { I18nProvider } from "@lingui/react";
+import { catalogI18n } from "../test-support/catalog-i18n";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import {
   fixture,
@@ -346,6 +348,41 @@ it("the batch bar says more messages are not loaded when the local count has non
   );
   expect(screen.getByText("More messages not loaded")).toBeTruthy();
   expect(screen.queryByText(/more not loaded/)).toBeNull();
+});
+
+// In Russian the note ran on after the count in one truncated line and was cut to "…За…".
+it("the batch bar puts the not-loaded note on its own line with the full text in a title", async () => {
+  const { i18n } = await catalogI18n("ru");
+  render(
+    h(
+      I18nProvider,
+      { i18n },
+      h(BatchActions, {
+        rows: [thread, { ...thread, id: "second" }],
+        accounts: [account],
+        labels: [],
+        mailbox: "inbox",
+        onOp: vi.fn(),
+        labelPicker: false,
+        onLabelPicker: vi.fn(),
+        canLoadMore: true,
+        moreNotLoaded: 0,
+        everyLoaded: true,
+      }),
+    ),
+  );
+  const note = screen.getByText("Загружены не все сообщения");
+  const summary = note.parentElement;
+  const count = summary?.firstElementChild;
+  // Two lines, each truncating on its own.
+  expect(count).not.toBe(note);
+  expect(count?.contains(note)).toBe(false);
+  expect(summary?.className).toContain("flex-col");
+  expect(note.className).toContain("truncate");
+  expect(count?.className).toContain("truncate");
+  expect(summary?.getAttribute("title")).toBe(
+    `${count?.textContent ?? ""}\nЗагружены не все сообщения`,
+  );
 });
 
 // A hand-picked selection said "(loaded)" and listed the messages not loaded, as if every

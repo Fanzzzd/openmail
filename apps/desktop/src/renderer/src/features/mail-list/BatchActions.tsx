@@ -2,6 +2,7 @@ import { MultiOrganizationItem } from "../organize";
 import { moveSourceLabel, providerCapabilities } from "@openmail/core/schema";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { Archive, Mail, MailOpen, Star, Tag, Trash2 } from "lucide-react";
+import { useLayoutEffect, useRef } from "react";
 import type { Account, Label, MailOp, Mailbox, ThreadSummary } from "../../../../shared/api";
 import {
   ContextSubmenu,
@@ -172,6 +173,14 @@ export function BatchActions(
   ] satisfies { icon: typeof Archive; label: string; op: MailOp }[];
   const button =
     "rounded-control p-1.5 text-a11y-muted hover:bg-fill-hover focus-visible:outline-a11y-focus";
+  const loadedNote = props.everyLoaded && props.canLoadMore;
+  // A line can still truncate in a long language; the title shows each line in full.
+  const summary = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const element = summary.current;
+    if (element)
+      element.title = Array.from(element.children, (line) => line.textContent).join("\n");
+  });
   return (
     // Below 300 px the five buttons (150 px) leave the count text too little room, so the
     // count stands alone as a number and the actions keep their buttons.
@@ -182,24 +191,31 @@ export function BatchActions(
       >
         {count}
       </span>
-      <span className="mr-2 min-w-0 truncate text-callout text-a11y-muted @max-[300px]/batch:sr-only">
-        {props.everyLoaded ? (
-          <Plural
-            value={rows.length}
-            one="# selected (loaded)"
-            other="# selected (loaded)"
-            comment="Every conversation loaded in the list is selected. Older ones on the server are not."
-          />
-        ) : (
-          <Plural
-            value={rows.length}
-            one="# selected"
-            other="# selected"
-            comment="Conversations picked in the list."
-          />
-        )}
-        {props.everyLoaded && props.canLoadMore && (
-          <span className="ml-2">
+      {/* The not-loaded note gets its own line, so neither part cuts the other off. Two 14 px
+          lines keep the bar as tall as its 28 px buttons. */}
+      <span
+        ref={summary}
+        className="mr-2 flex min-w-0 flex-col text-callout text-a11y-muted @max-[300px]/batch:sr-only"
+      >
+        <span className={`truncate ${loadedNote ? "leading-[14px]" : ""}`}>
+          {props.everyLoaded ? (
+            <Plural
+              value={rows.length}
+              one="# selected (loaded)"
+              other="# selected (loaded)"
+              comment="Every conversation loaded in the list is selected. Older ones on the server are not."
+            />
+          ) : (
+            <Plural
+              value={rows.length}
+              one="# selected"
+              other="# selected"
+              comment="Conversations picked in the list."
+            />
+          )}
+        </span>
+        {loadedNote && (
+          <span className="truncate text-footnote leading-[14px]">
             {/* No count, or 0 while the server still has older mail: the number is unknown. */}
             {!props.moreNotLoaded ? (
               <Trans comment="Older messages exist on the server but are not in the list yet. Their number is unknown.">
