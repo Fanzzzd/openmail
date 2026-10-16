@@ -99,3 +99,16 @@ it("an account with no folders offers no Copy to folders… in the row or batch 
   expect(within(batch).getByRole("menuitem", { name: /^Star/ })).toBeTruthy();
   expect(within(batch).queryByRole("menuitem", { name: "Copy to folders…" })).toBeNull();
 });
+
+it("Copy to folders… in the conversation toolbar is an icon button with its name as tooltip", async () => {
+  current = await flow({ provider: "imap" });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  const copy = await screen.findByRole("button", { name: "Copy to folders…" });
+  expect(copy.textContent).toBe("");
+  expect(copy.querySelector("svg")).toBeTruthy();
+  fireEvent.click(copy);
+  const form = await screen.findByRole("dialog", { name: "Copy to folders…" });
+  expect(within(form).getByRole("checkbox", { name: "Work" })).toBeTruthy();
+});

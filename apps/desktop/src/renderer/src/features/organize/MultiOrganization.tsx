@@ -1,6 +1,7 @@
 import { categoryKey, mergeCategoryNames, providerCapabilities } from "@openmail/core/schema";
 import { useAtom, useAtomSet } from "@effect/atom-react";
-import { cloneElement, type ReactElement, useState } from "react";
+import { FolderPlus, Tags } from "lucide-react";
+import { cloneElement, type ReactElement, type ReactNode, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
 import type { Label, Provider } from "../../../../shared/api";
 import { MenuItem } from "../../ui/Menu";
@@ -46,17 +47,19 @@ export function MultiOrganization({
   trigger,
   ...target
 }: OrganizationTarget & {
-  /** The button that opens the popover, without content; the label goes inside. */
-  trigger: ReactElement<{ children?: string }>;
+  /** The toolbar button that opens the popover, without content; its icon and name go on it. */
+  trigger: ReactElement<{ children?: ReactNode; "aria-label"?: string }>;
 }) {
   const title = useTitle(target.provider);
+  const Icon = providerCapabilities(target.provider).categories ? Tags : FolderPlus;
   const [open, setOpen] = useState(false);
   return (
     <PickerPopover
       aria-label={title}
       open={open}
       onOpenChange={setOpen}
-      trigger={cloneElement(trigger, {}, title)}
+      tip={{ label: title }}
+      trigger={cloneElement(trigger, { "aria-label": title }, <Icon className="size-4" />)}
       className="w-72 px-3 py-1"
     >
       <OrganizationForm {...target} onDone={() => setOpen(false)} />

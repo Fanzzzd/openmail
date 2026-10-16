@@ -197,7 +197,7 @@ export function ThreadActions({
         labels={labels}
         current={state.labels}
         onOp={onOp}
-        trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
+        trigger={<Toolbar.Button className={button} />}
       />
     )
   );
