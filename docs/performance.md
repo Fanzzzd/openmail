@@ -18,7 +18,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 大数据套件是 `packages/core/src/platform/node/performance-large.test.ts`，默认 `pnpm test` 排除它。默认套件中的 `performance-plans.test.ts` 集中检查真实 Store 查询。同步健康与分页用例只写 120 封邮件；联系人用例保留原有候选规模。它们检查索引使用、分页回绕、孤立草稿去重和 Unicode ID 顺序。150k 迁移用例仅在 `OPENMAIL_PERF=1` 时执行。MCP 测量调用真实 Toolkit handler 与 Mailbox，provider 使用进程内 fake，不发网络请求。
 
-`pnpm test:perf` 也运行 `visible-text-cost.test.ts`。
+`pnpm test:perf` 也运行 `visible-text-cost.test.ts`、`performance-plans.test.ts`（含 150k 迁移用例）和 `src/domain/cache.test.ts`（含 10 万会话分页用例）。perf.yml 因此也覆盖这两个大规模用例。
 
 CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面写入速率预算的增长断言把关。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
 
