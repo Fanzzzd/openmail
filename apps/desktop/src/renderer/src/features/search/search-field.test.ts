@@ -441,6 +441,37 @@ it("an empty field offers recent searches only, or one hint and search help", ()
   }
 });
 
+it("Enter keeps an unfinished word a prefix and turns a finished operator into a chip", () => {
+  const dom = testDom();
+  vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn(), removeItem: vi.fn() });
+  const enter = () => {
+    const input = dom.element.querySelector<HTMLInputElement>('input[aria-label="Search mail"]');
+    if (!input) throw new Error("Missing search input");
+    Object.defineProperty(input, "attachEvent", { configurable: true, value: vi.fn() });
+    Object.defineProperty(input, "detachEvent", { configurable: true, value: vi.fn() });
+    act(() => {
+      input.dispatchEvent(new dom.window.Event("focusin", { bubbles: true }));
+    });
+    const event = Object.assign(new dom.window.Event("keydown", { bubbles: true }), {
+      key: "Enter",
+    });
+    act(() => {
+      input.dispatchEvent(event);
+    });
+  };
+  try {
+    const changed = renderField(dom, "northw");
+    enter();
+    expect(changed).toHaveBeenLastCalledWith("northw");
+    act(() => controls.type("from:alice"));
+    enter();
+    expect(changed).toHaveBeenLastCalledWith("from:alice ");
+  } finally {
+    dom.dispose();
+    vi.unstubAllGlobals();
+  }
+});
+
 it("typing a filter name offers those filters with what they do", () => {
   const dom = testDom();
   try {

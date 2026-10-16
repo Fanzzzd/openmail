@@ -42,9 +42,9 @@ export function searchFieldParts(value: string): {
   };
 }
 /**
- * The search the local list runs while the field is typed in. The last word is unfinished until a
- * space or Enter ends it, so a plain word of two or more characters matches as a prefix: `asy`
- * finds "async". Operators,
+ * The search the local list runs while the field is typed in. The last word stays unfinished
+ * until a typed space ends it, so a plain word of two or more characters matches as a prefix:
+ * `asy` finds "async". Enter keeps the word a prefix (see `submittedSearchText`). Operators,
  * quotes, exclusions and expressions run as typed, as do server, saved and CLI searches.
  */
 export function liveSearchText(value: string): string {
@@ -58,6 +58,15 @@ export function liveSearchText(value: string): string {
   )
     return search;
   return `${search}*`;
+}
+/**
+ * The field's text after Enter runs it. A finished operator gets a space so it becomes a chip;
+ * an unfinished plain word keeps no space, so the local list still matches it as a prefix and
+ * `northw` keeps finding "Northwind". A word the person ended with a space stays ended.
+ */
+export function submittedSearchText(value: string): string {
+  const text = value.trimEnd();
+  return text === value && liveSearchText(text) === `${text.trim()}*` ? text : `${text} `;
 }
 export function serializeSearchField(chips: readonly string[], text: string): string {
   const value = [...chips, text].filter(Boolean).join(" ");

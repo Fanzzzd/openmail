@@ -13,6 +13,7 @@ import {
   selectSearchOperator,
   selectSearchDate,
   serializeSearchField,
+  submittedSearchText,
 } from "@openmail/core/schema";
 import { Clock, Folder, Mails, Search, X } from "lucide-react";
 import { AsyncResult, Atom } from "effect/reactivity";
@@ -242,7 +243,8 @@ export function SearchField({
               e.preventDefault();
               if (action.kind === "submit") {
                 recentSearches.add(value);
-                const ran = `${value.trimEnd()} `;
+                // An unfinished word stays a prefix, as while typing.
+                const ran = submittedSearchText(value);
                 onChange(ran);
                 setSubmitted(ran);
                 setOpen(false);

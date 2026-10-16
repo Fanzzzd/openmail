@@ -17,6 +17,7 @@ import { attachmentHasType } from "./attachment-types.js";
 import {
   editSearchToken,
   liveSearchText,
+  submittedSearchText,
   modifySearchToken,
   negateSearchToken,
   searchDateSuggestions,
@@ -347,10 +348,26 @@ it("runs the unfinished last plain word of a typed search as a prefix", () => {
   assert.strictEqual(liveSearchText("board asy"), "board asy*");
   assert.strictEqual(liveSearchText("is:unread asy"), "is:unread asy*");
   assert.strictEqual(liveSearchText("会议"), "会议*");
-  // A space or Enter finishes the word.
+  // A typed space finishes the word.
   assert.strictEqual(liveSearchText("async "), "async");
   for (const typed of ["a", "from:ali", '"async re', '"async"', "-asy", "asy*", "a OR asy", "(asy"])
     assert.strictEqual(liveSearchText(typed), typed);
+});
+
+it("keeps an unfinished word a prefix after Enter, and chips a finished operator", () => {
+  // `northw` found 3 conversations while typed; Enter must not turn it into "No matching messages".
+  assert.strictEqual(submittedSearchText("northw"), "northw");
+  assert.strictEqual(liveSearchText(submittedSearchText("northw")), "northw*");
+  assert.strictEqual(submittedSearchText("board northw"), "board northw");
+  assert.strictEqual(submittedSearchText("from:alice"), "from:alice ");
+  assert.deepStrictEqual(searchFieldParts(submittedSearchText("from:alice")).chips, ["from:alice"]);
+  assert.deepStrictEqual(searchFieldParts(submittedSearchText("from:alice northw")), {
+    chips: ["from:alice"],
+    text: "northw",
+    pending: "northw",
+  });
+  for (const typed of ["a", '"async re', "-asy", "a OR asy", "northwind ", "board northw  "])
+    assert.strictEqual(submittedSearchText(typed), `${typed.trimEnd()} `);
 });
 
 it("treats a colon outside a known operator as text", () => {
