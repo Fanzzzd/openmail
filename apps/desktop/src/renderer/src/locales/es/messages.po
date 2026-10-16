@@ -3282,7 +3282,7 @@ msgstr "Gmail bloquea {filename}. Elimina este archivo adjunto antes de enviar."
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Gmail copy"
-msgstr "Copia de gmail"
+msgstr "Copia de Gmail"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

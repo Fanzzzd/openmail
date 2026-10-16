@@ -3282,7 +3282,7 @@ msgstr "Gmail блокирует {filename}. Удалите это вложен�
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Gmail copy"
-msgstr "копия Gmail"
+msgstr "Копия Gmail"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx

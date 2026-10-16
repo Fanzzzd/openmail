@@ -514,7 +514,7 @@ msgstr "iOS rozhoduje, kdy obnovit poštu. Aktualizace neprobíhají v reálném
 #. js-lingui-explicit-id
 #: app/compose.tsx
 msgid "Italic"
-msgstr "kurzíva"
+msgstr "Kurzíva"
 
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx

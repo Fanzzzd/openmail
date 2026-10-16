@@ -3487,7 +3487,7 @@ msgstr "Port IMAP"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "IMAP server"
-msgstr "serveur IMAP"
+msgstr "Serveur IMAP"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/compose/hooks/use-compose-editor.ts

@@ -2339,7 +2339,7 @@ msgstr "Denně"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Dark background"
-msgstr "tmavé pozadí"
+msgstr "Tmavé pozadí"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -3282,7 +3282,7 @@ msgstr "Gmail blokuje {filename}. Před odesláním tuto přílohu odstraňte."
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Gmail copy"
-msgstr "kopie Gmailu"
+msgstr "Kopie Gmailu"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
@@ -3663,7 +3663,7 @@ msgstr "Spouští <0><1/> <2>{0}</2></0>. Aplikaci připojte znovu, abyste ji mo
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Italic"
-msgstr "kurzíva"
+msgstr "Kurzíva"
 
 #: src/renderer/src/features/calendar/MeetingLinks.tsx
 msgid "Join meeting"
@@ -3839,7 +3839,7 @@ msgstr "Zleva doprava"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Light background"
-msgstr "světlé pozadí"
+msgstr "Světlé pozadí"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Link URL"
