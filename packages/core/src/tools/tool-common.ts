@@ -20,6 +20,7 @@ import type { PerformError } from "../mailbox/mailbox.js";
 import { type Address, ThreadSummary } from "../domain/message.js";
 import { parseAddressList } from "../mime/mime.js";
 import { splitAddresses } from "../compose/recipients.js";
+import { cleanDisplayName } from "../reader/message-security.js";
 import type { ModelThread } from "../ai/model-thread.js";
 import { localIso } from "../platform/host.js";
 import type { CalendarTime } from "../calendar/calendar-time.js";
@@ -402,6 +403,18 @@ export function addresses(
   }
   return Effect.succeed(list);
 }
+
+/**
+ * The recipient as an agent's draft may carry it. The composer shows a recipient by name only, so
+ * a name with an @ could pass "CFO jane@corp.com" off as a different address. Such names are
+ * dropped. Format and bidi characters go, and control characters collapse to one space.
+ */
+export const agentRecipient = ({ name, address }: Address): Address => {
+  const clean = cleanDisplayName(name)
+    .replace(/[\p{Cc}\s]+/gu, " ")
+    .trim();
+  return { name: /[@\uFE6B\uFF20]/u.test(clean) ? "" : clean, address };
+};
 
 const approvalAddress = ({ name, address }: Address) => ({ name, address });
 

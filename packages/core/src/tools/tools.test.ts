@@ -574,6 +574,35 @@ it.effect("draft_message only ever performs a draft command as the agent", () =>
   }),
 );
 
+it.effect("an agent draft drops recipient names that carry an address or hidden characters", () =>
+  Effect.gen(function* () {
+    const { calls, layer } = recordingMailbox({ status: "proposed", proposalId: 4 });
+    const result = yield* run(
+      call("draft_message", {
+        account_id: "gmail:me@example.com",
+        to: ['"CFO jane@corp.com" <attacker@evil.example>'],
+        cc: ['"Jane\uFF20corp.com" <b@evil.example>'],
+        bcc: ['"\u202EAlice\u2066 \t Smith" <alice@example.com>'],
+        subject: "s",
+        body: "b",
+        rationale: "r",
+      }),
+      layer,
+    );
+    assert.isFalse(result.isFailure);
+    const command = calls[0]?.command;
+    assert.ok(command?.kind === "draft");
+    assert.deepStrictEqual(
+      [command.message.to, command.message.cc, command.message.bcc],
+      [
+        [{ name: "", address: "attacker@evil.example" }],
+        [{ name: "", address: "b@evil.example" }],
+        [{ name: "Alice Smith", address: "alice@example.com" }],
+      ],
+    );
+  }),
+);
+
 it.effect("a draft reply defaults its recipients and subject from the original", () =>
   Effect.gen(function* () {
     const calls: Command[] = [];
