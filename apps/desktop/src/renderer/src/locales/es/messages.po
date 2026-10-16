@@ -1432,7 +1432,7 @@ msgstr "Buscar actualizaciones"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Check for updates…"
-msgstr "Buscar actualizaciones..."
+msgstr "Buscar actualizaciones…"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
@@ -3972,7 +3972,7 @@ msgstr "Cargando mensaje adjunto…"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "Loading attachments…"
-msgstr "Cargando archivos adjuntos..."
+msgstr "Cargando archivos adjuntos…"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Loading calendar…"
@@ -8389,7 +8389,7 @@ msgstr "Esperando permiso para acceder a los contactos. Responde a la solicitud 
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Waiting for sign-in…"
-msgstr "Esperando iniciar sesión..."
+msgstr "Esperando iniciar sesión…"
 
 #: src/renderer/src/features/settings/sections/CacheSettings.tsx
 msgid "WAL"

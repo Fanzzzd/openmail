@@ -550,7 +550,7 @@ msgstr "Als je externe afbeeldingen laadt, ziet de afzender wanneer je een beric
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
 msgid "Loading…"
-msgstr "Laden..."
+msgstr "Laden…"
 
 #. Message text means the body of an email.
 #. js-lingui-explicit-id

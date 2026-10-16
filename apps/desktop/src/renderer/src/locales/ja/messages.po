@@ -2172,7 +2172,7 @@ msgstr "再送信用の下書きを準備できませんでした。もう一度
 
 #: src/renderer/src/features/reader/use-thread-print.ts
 msgid "Couldn't print: {reason}"
-msgstr "印刷できませんでした：{reason}"
+msgstr "プリントできませんでした：{reason}"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Couldn't read attached message."
@@ -5649,11 +5649,11 @@ msgstr "プリント"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
-msgstr "メッセージを印刷…"
+msgstr "メッセージをプリント…"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Print…"
-msgstr "印刷…"
+msgstr "プリント…"
 
 #: src/renderer/src/features/settings/sections/OutlookPredicatesEditor.tsx
 msgid "Private"

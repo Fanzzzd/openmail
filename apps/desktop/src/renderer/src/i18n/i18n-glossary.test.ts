@@ -252,6 +252,12 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       failures.push(`${locale}: infinitive: ${source} → ${target}`);
     if (commandAsRequest[locale]?.test(target) && isCommand(source, message))
       failures.push(`${locale}: command as request: ${source} → ${target}`);
+    // Every locale writes the ellipsis as …, never three dots.
+    if (/\.\.\./.test(target) && !/\.\.\./.test(source))
+      failures.push(`${locale}: ellipsis: ${source} → ${target}`);
+    // macOS calls printing プリント; 印刷 would make Print と Print… disagree.
+    if (locale === "ja" && /印刷/u.test(target))
+      failures.push(`${locale}: term: ${source} → ${target}`);
     // Spanish text starts with a capital, unless it starts with a name such as iOS.
     if (
       locale === "es" &&
