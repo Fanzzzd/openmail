@@ -58,7 +58,7 @@ export function SidebarFooter({
             {failed ? (
               // The failure opens the same lines the list shows when the sidebar is not docked.
               <Popover.Root open={open} onOpenChange={setOpen}>
-                <Popover.Trigger className="rounded-item text-left text-red-700 outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2 dark:text-red-300">
+                <Popover.Trigger className="min-w-0 rounded-item text-left break-words text-red-700 outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2 dark:text-red-300">
                   {syncStatus()}
                 </Popover.Trigger>
                 <Popover.Portal>
@@ -82,7 +82,7 @@ export function SidebarFooter({
                 </Popover.Portal>
               </Popover.Root>
             ) : (
-              <span>{syncStatus()}</span>
+              <span className="break-words">{syncStatus()}</span>
             )}
             <SyncStatusAnnouncement failed={failures.length > 0} />
           </>

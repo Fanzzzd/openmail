@@ -7311,7 +7311,7 @@ msgstr "Не удалось синхронизировать"
 
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 msgid "Sync failed ({count})"
-msgstr "Не удалось синхронизировать ({count})"
+msgstr "Ошибка синхронизации ({count})"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync health"
