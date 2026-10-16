@@ -98,3 +98,24 @@ it.effect("search index steps read first and wait only briefly for a held write 
     }).pipe(Effect.provide(layer));
   }).pipe(Effect.scoped),
 );
+
+// briefLockWait reserves the connection, and an open transaction already holds the only one, so
+// a briefLockWait inside a transaction waited for itself and never finished.
+it.effect("briefLockWait inside a transaction runs on the transaction's connection", () =>
+  Effect.gen(function* () {
+    const file = join(yield* temp, "mail.db");
+    const layer = StoreLive.pipe(
+      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(MemoryPlatform()),
+    );
+    yield* Effect.gen(function* () {
+      const store = yield* Store;
+      const account = yield* store.upsertAccount("gmail", "me@example.com");
+      yield* store.upsertMessage(account.id, incoming("one", { subject: "Hello" }));
+      assert.deepStrictEqual(yield* store.transaction(store.briefLockWait(store.indexBigrams())), {
+        processed: 1,
+        ready: true,
+      });
+    }).pipe(Effect.provide(layer));
+  }).pipe(Effect.scoped),
+);

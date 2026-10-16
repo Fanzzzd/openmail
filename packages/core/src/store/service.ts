@@ -147,7 +147,8 @@ export class Store extends Context.Service<
     transaction<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
     /**
      * Runs `effect` waiting at most 200 ms, not 5 s, for another process's write lock, and
-     * fails with DatabaseBusy past it. For background writes that can retry later.
+     * fails with DatabaseBusy past it. For background writes that can retry later. Inside
+     * `transaction` it runs `effect` as it is, with the transaction's busy timeout.
      */
     briefLockWait<A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseBusy, R>;
 

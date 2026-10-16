@@ -14,6 +14,9 @@ const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
  * loop and every request of that process with it. The connection is reserved while its timeout
  * is lowered, so no other statement runs with the short one. A lock timeout, failed or died,
  * becomes DatabaseBusy.
+ *
+ * Inside an open transaction `effect` runs as it is, on the transaction's connection and with its
+ * busy timeout. The transaction holds the only connection, so reserving it would wait forever.
  */
 export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
   const reserve = Effect.gen(function* () {
@@ -27,7 +30,7 @@ export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
     );
     return { conn, previous };
   });
-  return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseBusy, R> =>
+  const brief = <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseBusy, R> =>
     Effect.scoped(
       Effect.flatMap(reserve, ({ conn, previous }) =>
         effect.pipe(
@@ -51,5 +54,9 @@ export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
             )
           : Effect.failCause(cause);
       }),
+    );
+  return <A, E, R>(effect: Effect.Effect<A, E, R>): Effect.Effect<A, E | DatabaseBusy, R> =>
+    Effect.flatMap(Effect.serviceOption(sql.transactionService), (open) =>
+      Option.isSome(open) ? effect : brief(effect),
     );
 };
