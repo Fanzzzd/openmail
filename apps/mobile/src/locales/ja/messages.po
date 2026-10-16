@@ -627,7 +627,7 @@ msgstr "ゴミ箱に移動"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "New Inbox mail notifications"
-msgstr "受信トレイの新着メール通知"
+msgstr "受信の新着メール通知"
 
 #. js-lingui-explicit-id
 #: src/background.ts
@@ -729,7 +729,7 @@ msgstr "送信待ちに追加しました"
 #. js-lingui-explicit-id
 #: src/failed-op-notice.tsx
 msgid "Read status"
-msgstr "既読状態"
+msgstr "開封状態"
 
 #. js-lingui-explicit-id
 #: src/mailbox.tsx
@@ -1095,7 +1095,7 @@ msgstr "送信を取り消す"
 #. js-lingui-explicit-id
 #: src/background-settings.tsx
 msgid "Unread Inbox badge"
-msgstr "受信トレイの未開封バッジ"
+msgstr "受信の未開封バッジ"
 
 #. js-lingui-explicit-id
 #: src/thread-actions.tsx

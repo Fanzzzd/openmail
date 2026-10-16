@@ -21,6 +21,9 @@ const selectors: Record<string, string> = {
   "AI app": "\\bAI apps?\\b",
   "Remote images": "\\bremote images?\\b",
   "AI Access": "\\bAI Access\\b",
+  // Read as a message state, not the verb (read the accounts, read only). Japanese says 開封済み,
+  // paired with 未開封, and never 既読.
+  Read: "\\bmark(?:ed)?\\b.*\\bas read\\b|\\bmark read\\b|\\bread (?:mail|status)\\b",
   // A space groups accounts; disk space is a different word.
   Space: "(?<!disk )\\bspaces?\\b",
   // Save is Speichern in German, never Sichern; daylight saving is a different word.
@@ -116,6 +119,10 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       )
     )
       expect(target, source).not.toMatch(/\bSie\b/);
+    // Japanese has one word for the Inbox (受信, as in the sidebar) and one for read mail
+    // (開封済み, paired with 未開封), whatever the English around them says.
+    if (locale === "ja" && /既読|受信(?:トレイ|ボックス|箱)/u.test(target))
+      failures.push(`${locale}: term: ${source} → ${target}`);
     // Japanese says 読み込み (not ロード) and メール (not 電子メール), puts no space after 。,
     // and puts a space between a Latin word and Japanese text, as in AI アプリ.
     if (

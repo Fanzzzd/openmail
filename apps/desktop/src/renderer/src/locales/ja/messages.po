@@ -165,7 +165,7 @@ msgstr "{count, plural, other {ローカルのプレビュー：#件のメッセ
 
 #: src/renderer/src/features/organize/FolderActions.tsx
 msgid "{count, plural, one {Marked # message as read} other {Marked # messages as read}}"
-msgstr "{count, plural, other {#件のメッセージを既読にしました}}"
+msgstr "{count, plural, other {#件のメッセージを開封済みにしました}}"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "{count, plural, one {More than # result} other {More than # results}}"
@@ -3121,7 +3121,7 @@ msgstr "優先"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Focused Inbox is only available for Outlook accounts."
-msgstr "優先受信トレイは Outlook アカウントでのみ利用できます。"
+msgstr "優先受信は Outlook アカウントでのみ利用できます。"
 
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
@@ -3393,7 +3393,7 @@ msgstr "アカウントをスペースにまとめ、サイドバーの下部で
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "Group accounts into spaces, like “Work” and “Personal”. Each space has its own inbox. Switch with {firstSpaceKey} to {lastSpaceKey}."
-msgstr "アカウントを「仕事」や「個人」などのスペースにまとめます。スペースごとに受信トレイがあります。{firstSpaceKey}〜{lastSpaceKey} で切り替えられます。"
+msgstr "アカウントを「仕事」や「個人」などのスペースにまとめます。スペースごとに受信があります。{firstSpaceKey}〜{lastSpaceKey} で切り替えられます。"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
@@ -3477,7 +3477,7 @@ msgstr "高"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "How long a conversation stays open before it is marked as read. Manually: use {readShortcut} or the toolbar."
-msgstr "スレッドを開いてから既読になるまでの時間です。手動で既読にするには {readShortcut} またはツールバーを使います。"
+msgstr "スレッドを開いてから開封済みになるまでの時間です。手動で開封済みにするには {readShortcut} またはツールバーを使います。"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "How to register a Google OAuth client"
@@ -4623,7 +4623,7 @@ msgstr "優先へ移動しました"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Moved to Inbox"
-msgstr "受信箱に移動しました"
+msgstr "受信に移動しました"
 
 #: src/renderer/src/app/ThreadWindow.tsx
 #: src/renderer/src/app/use-app-messages.ts
@@ -4902,7 +4902,7 @@ msgstr "一致するショートカットはありません。"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No snoozed messages. A snoozed message leaves the Inbox and comes back at the time you pick."
-msgstr "スヌーズ中のメッセージはありません。スヌーズしたメッセージは受信ボックスから外れ、選んだ時刻に戻ってきます。"
+msgstr "スヌーズ中のメッセージはありません。スヌーズしたメッセージは受信から外れ、選んだ時刻に戻ってきます。"
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "No starred messages. Star a message to find it here."
@@ -4934,7 +4934,7 @@ msgstr "未開封メールはありません"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "No unread mail in the inbox"
-msgstr "受信箱に未開封メールがない"
+msgstr "受信に未開封メールがない"
 
 #: src/renderer/src/features/settings/sections/RemoteAccessSettings.tsx
 msgid "Nobody can sign in. Add a tailnet login below."
@@ -5076,7 +5076,7 @@ msgstr "完全に削除するために追加の権限が必要なのは Gmail �
 
 #: src/renderer/src/lib/errors.ts
 msgid "Only Inbox messages can be snoozed. Move the message to the Inbox first."
-msgstr "スヌーズできるのは受信トレイのメッセージだけです。先にメッセージを受信トレイに移動してください。"
+msgstr "スヌーズできるのは受信のメッセージだけです。先にメッセージを受信に移動してください。"
 
 #: src/renderer/src/app/MailAlerts.tsx
 msgid "Only messages in this Trash or Spam folder from the selected conversations will be permanently deleted. Inbox and Sent copies will remain. This cannot be undone."
@@ -5640,7 +5640,7 @@ msgstr "メイン"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Primary excludes Gmail's other categories and includes only Outlook Focused mail. For IMAP, it includes all Inbox mail. Read mail and the first sync stay silent."
-msgstr "「メイン」は Gmail のほかのカテゴリを除外し、Outlook では優先メールだけを対象にします。IMAP では受信トレイのすべてのメールが対象です。既読メールと初回同期では通知しません。"
+msgstr "「メイン」は Gmail のほかのカテゴリを除外し、Outlook では優先メールだけを対象にします。IMAP では受信のすべてのメールが対象です。開封済みメールと初回同期では通知しません。"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Print"
@@ -5779,7 +5779,7 @@ msgstr "読み取り専用"
 
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Read status"
-msgstr "既読状態"
+msgstr "開封状態"
 
 #. Keyboard shortcuts section: actions on the open message, such as text size.
 #: src/renderer/src/features/settings/Settings.tsx
@@ -6804,7 +6804,7 @@ msgstr "Finder に表示"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Show Inbox"
-msgstr "受信箱を表示"
+msgstr "受信を表示"
 
 #: src/renderer/src/features/mail-list/MessageList.tsx
 msgid "Show messages also in Inbox"
@@ -7254,7 +7254,7 @@ msgstr "スレッドのスヌーズを提案"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Suggest triage for new inbox mail"
-msgstr "受信トレイの新着メールの整理方法を提案"
+msgstr "受信の新着メールの整理方法を提案"
 
 #: src/renderer/src/features/settings/sections/audit-actions.ts
 msgid "Suggested"
@@ -8420,7 +8420,7 @@ msgstr "AI アプリでできること"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "When an AI app wants to archive, label, mark as read, snooze or draft, it adds an AI suggestion. Nothing changes until you approve it, and sending always needs your confirmation."
-msgstr "AI アプリがアーカイブ、ラベル付け、既読にする、スヌーズ、下書き作成をしようとすると、AI の提案が追加されます。あなたが承認するまで何も変わらず、送信には必ずあなたの確認が必要です。"
+msgstr "AI アプリがアーカイブ、ラベル付け、開封済みにする、スヌーズ、下書き作成をしようとすると、AI の提案が追加されます。あなたが承認するまで何も変わらず、送信には必ずあなたの確認が必要です。"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "When you allow an account, questions and selected mail text, subjects, sender and recipient addresses are sent to Anthropic using your API key. Images, attachments and media stay on this device. Requests may incur API charges. Automatic summaries run only when you enable them for an account."
@@ -8521,7 +8521,7 @@ msgstr "{signedInAs} でサインインしました。続行するには {expect
 
 #: src/renderer/src/features/mail-list/EmptyList.tsx
 msgid "You're all caught up. Your Inbox is empty."
-msgstr "すべて確認済みです。受信ボックスは空です。"
+msgstr "すべて確認済みです。受信は空です。"
 
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "You're offline. Mail syncs again when you reconnect."

@@ -6,7 +6,7 @@
     "fr": "boîte de réception",
     "de": "posteingang",
     "it": "posta in arrivo",
-    "ja": "受信",
+    "ja": "^(?!.*受信(?:トレイ|ボックス|箱)).*受信",
     "ru": "входящ",
     "es": "bandeja de entrada"
   },
@@ -298,6 +298,9 @@
   },
   "Unread": {
     "ja": "未開封"
+  },
+  "Read": {
+    "ja": "^(?!.*既読).*開封"
   },
   "Swipe": {
     "zh-CN": "滑",
