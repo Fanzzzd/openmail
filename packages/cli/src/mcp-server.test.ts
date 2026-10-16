@@ -277,18 +277,27 @@ test.concurrent(
     });
     // Includes the process start; a blocked backfill adds the 5 s busy timeout.
     expect(performance.now() - started).toBeLessThan(scaledMs(4000));
-    // The backfill retried every 5 s, so calls over 6 s cover one retry.
+    // The backfill retried every 5 s, so calls over 6 s cover one retry. A call may still wait
+    // out a few 200 ms brief lock waits, and under load that adds up to seconds. The regression
+    // is one 5 s busy timeout per blocked call, so the default bound sits under it, unscaled.
+    // Only OPENMAIL_PERF=1 asserts how fast a typical call is.
     const until = performance.now() + 6000;
+    const durations: number[] = [];
     while (performance.now() < until) {
       const before = performance.now();
       const called = Schema.decodeUnknownSync(CallResult)(
         await request("tools/call", { name: "list_accounts", arguments: {} }),
       );
       expect(called.isError ?? false, called.content[0]?.text).toBe(false);
-      expect(performance.now() - before).toBeLessThan(scaledMs(1000));
+      durations.push(performance.now() - before);
+      expect(durations.at(-1)).toBeLessThan(4000);
       await new Promise((resolve) => {
         setTimeout(resolve, 250);
       });
+    }
+    if (process.env.OPENMAIL_PERF === "1") {
+      const sorted = durations.toSorted((a, b) => a - b);
+      expect(sorted[Math.floor(sorted.length / 2)]).toBeLessThan(500);
     }
     const { stderr } = await close();
     expect(stderr).not.toMatch(/search index|search-index/i);
