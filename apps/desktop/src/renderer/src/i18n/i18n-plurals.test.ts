@@ -66,3 +66,14 @@ it("selection, unread and preview counts use each plural form", async () => {
     /^Ещё 1\s000 сообщений не загружено$/,
   );
 });
+
+// French and Russian read "More messages not loaded" as "no more messages loaded".
+it("the not-loaded notice says older messages exist, with a note for translators", async () => {
+  const { catalog } = await catalogI18n("fr");
+  const entry = Object.values(catalog).find(
+    (message) => message.message === "More messages not loaded",
+  );
+  expect(entry?.comments.join(" ")).toContain("Older messages exist on the server");
+  expect(entry?.translation).toBe("D’autres messages ne sont pas chargés");
+  expect(await render("ru", "More messages not loaded", {})).toBe("Загружены не все сообщения");
+});

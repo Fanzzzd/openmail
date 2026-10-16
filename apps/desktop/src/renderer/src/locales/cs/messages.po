@@ -4452,6 +4452,7 @@ msgstr "Další akce se štítky"
 msgid "More matches exist. Narrow your search."
 msgstr "Existuje více shod. Zužte vyhledávání."
 
+#. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "Další zprávy nebyly načteny"

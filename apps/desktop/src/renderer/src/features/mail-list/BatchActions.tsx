@@ -193,7 +193,9 @@ export function BatchActions(
           <span className="ml-2">
             {/* No count, or 0 while the server still has older mail: the number is unknown. */}
             {!props.moreNotLoaded ? (
-              <Trans>More messages not loaded</Trans>
+              <Trans comment="Older messages exist on the server but are not in the list yet. Their number is unknown.">
+                More messages not loaded
+              </Trans>
             ) : (
               <Plural
                 value={props.moreNotLoaded}

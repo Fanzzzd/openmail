@@ -4456,6 +4456,7 @@ msgstr "More label actions"
 msgid "More matches exist. Narrow your search."
 msgstr "More matches exist. Narrow your search."
 
+#. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "More messages not loaded"

@@ -4452,9 +4452,10 @@ msgstr "その他のラベル操作"
 msgid "More matches exist. Narrow your search."
 msgstr "さらに多くの一致が存在します。検索を絞り込みます。"
 
+#. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
-msgstr "さらにメッセージが読み込まれていません"
+msgstr "未読み込みのメッセージがあります"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "More options"

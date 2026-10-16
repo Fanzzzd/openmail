@@ -4452,9 +4452,10 @@ msgstr "Autres actions sur les libellés"
 msgid "More matches exist. Narrow your search."
 msgstr "D’autres correspondances existent. Affinez votre recherche."
 
+#. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
-msgstr "Plus de messages non chargés"
+msgstr "D’autres messages ne sont pas chargés"
 
 #: src/renderer/src/features/compose/components/Composer.tsx
 msgid "More options"

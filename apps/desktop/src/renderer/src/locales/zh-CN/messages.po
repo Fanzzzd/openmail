@@ -4462,6 +4462,7 @@ msgstr "更多标签动作"
 msgid "More matches exist. Narrow your search."
 msgstr "还有更多结果，请缩小搜索范围。"
 
+#. Older messages exist on the server but are not in the list yet. Their number is unknown.
 #: src/renderer/src/features/mail-list/BatchActions.tsx
 msgid "More messages not loaded"
 msgstr "还有未加载的邮件"
