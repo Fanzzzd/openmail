@@ -395,10 +395,18 @@ export const makeOutboxMailbox = (
       yield* recordSendFailure(item, "The send window expired. Open the draft and send it again.");
     });
 
+  /**
+   * Claims and sends a waiting intent. `expires` applies the two-minute wall-clock
+   * expiry to desktop intents; the in-process undo worker turns it off, since its
+   * timer stops while the machine sleeps and the user already let the undo window pass.
+   */
   const deliverQueuedSend = (
     id: string,
-    deliveryId?: string,
-    canSend: () => boolean = () => true,
+    {
+      deliveryId,
+      canSend = () => true,
+      expires = true,
+    }: { deliveryId?: string | undefined; canSend?: () => boolean; expires?: boolean } = {},
   ) =>
     Effect.gen(function* () {
       if (!canSend()) return yield* new InvalidInput({ message: "Queued delivery is paused" });
@@ -414,6 +422,7 @@ export const makeOutboxMailbox = (
                 message: "The queued send was cancelled or already started",
               });
             if (
+              expires &&
               queued.desktopUndo &&
               (yield* Clock.currentTimeMillis) - queued.due > WRITE_RECOVERY_WINDOW_MS
             ) {
@@ -503,7 +512,9 @@ export const makeOutboxMailbox = (
         yield* Deferred.await(registered);
         const now = yield* Clock.currentTimeMillis;
         yield* Effect.sleep(Math.max(0, due - now));
-        return yield* deliverQueuedSend(id, deliveryId);
+        // The timer pauses during system sleep, so wall time may be far past `due`
+        // here. The intent was scheduled in this process, so it still sends.
+        return yield* deliverQueuedSend(id, { deliveryId, expires: false });
       }).pipe(
         Effect.ensuring(
           Effect.sync(() => {
@@ -569,7 +580,9 @@ export const makeOutboxMailbox = (
           yield* changed;
           continue;
         }
-        yield* deliverQueuedSend(item.id, item.deliveryId, canSend).pipe(Effect.result);
+        yield* deliverQueuedSend(item.id, { deliveryId: item.deliveryId, canSend }).pipe(
+          Effect.result,
+        );
         yield* changed;
       }
     });

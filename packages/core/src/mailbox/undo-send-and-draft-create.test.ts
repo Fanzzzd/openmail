@@ -813,28 +813,76 @@ it.effect("a stalled provider send does not block queuing or undoing another dra
   }),
 );
 
-it.effect(
-  "an expired deadline is rechecked when a scheduled desktop worker claims its send",
-  () => {
-    let sends = 0;
-    return core(
+it.effect("a scheduled desktop worker sends when its timer fires past the recovery window", () => {
+  let sends = 0;
+  return core(
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const store = yield* Store;
+      const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+      yield* mailbox.outbox.queueUndoSend(
+        { id: "paused-window", accountId: account.id, message: outgoing },
+        5000,
+      );
+      const intent = (yield* store.queuedSends)[0];
+      if (!intent) throw new Error("Missing intent");
+      // Wall time is now far past the stored deadline, as after a long sleep.
+      yield* store.putQueuedSend({ ...intent, due: -120001 });
+      yield* TestClock.adjust("5 seconds");
+      assert.strictEqual(sends, 1);
+      assert.deepStrictEqual(yield* mailbox.outbox.queuedSends, []);
+      assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
+    }),
+    {
+      send: () =>
+        Effect.sync(() => {
+          sends++;
+        }),
+    },
+  );
+});
+
+/** A clock whose wall time runs `offset()` ms ahead while its timers keep their own time, as across system sleep. */
+const skewedClock = (offset: () => number) =>
+  Effect.map(Effect.clockWith(Effect.succeed), (base): Clock.Clock => ({
+    currentTimeMillisUnsafe: () => base.currentTimeMillisUnsafe() + offset(),
+    currentTimeMillis: Effect.sync(() => base.currentTimeMillisUnsafe() + offset()),
+    currentTimeNanosUnsafe: () => base.currentTimeNanosUnsafe() + BigInt(offset()) * 1_000_000n,
+    currentTimeNanos: Effect.sync(
+      () => base.currentTimeNanosUnsafe() + BigInt(offset()) * 1_000_000n,
+    ),
+    monotonicTimeNanosUnsafe: () => base.monotonicTimeNanosUnsafe(),
+    monotonicTimeNanos: base.monotonicTimeNanos,
+    sleep: (duration) => base.sleep(duration),
+  }));
+
+it.effect("an undo send scheduled before system sleep sends once when its timer fires", () => {
+  let sends = 0;
+  let slept = 0;
+  return Effect.gen(function* () {
+    const clock = yield* skewedClock(() => slept);
+    yield* core(
       Effect.gen(function* () {
         const mailbox = yield* Mailbox;
-        const store = yield* Store;
         const account = yield* mailbox.accounts.connect({ provider: "gmail" });
-        yield* mailbox.outbox.queueUndoSend(
-          { id: "paused-window", accountId: account.id, message: outgoing },
-          5000,
-        );
-        const intent = (yield* store.queuedSends)[0];
-        if (!intent) throw new Error("Missing intent");
-        yield* store.putQueuedSend({ ...intent, due: -120001 });
-        yield* TestClock.adjust("5 seconds");
-        assert.strictEqual(sends, 0);
-        assert.strictEqual((yield* mailbox.outbox.queuedSends)[0]?.status, "retryable");
-        assert.isFalse(yield* store.sendUncertain(intent.id));
-        assert.strictEqual((yield* mailbox.proposals.listFailedOps)[0]?.kind, "send");
-        assert.isTrue(Option.isSome(yield* store.getDraft(intent.id)));
+        // The undo workers fork from here and keep the skewed clock.
+        for (const id of ["slept-send", "slept-undo"])
+          yield* mailbox.outbox
+            .queueUndoSend({ id, accountId: account.id, message: outgoing }, 5000)
+            .pipe(Effect.provideService(Clock.Clock, clock));
+        yield* TestClock.adjust("2 seconds");
+        // The lid closes: wall time jumps ten minutes, the undo timers do not move.
+        slept = 10 * 60_000;
+        // Undo still works until the timer fires.
+        assert.isTrue(yield* mailbox.outbox.cancelWaitingSend("slept-undo"));
+        yield* TestClock.adjust("3 seconds");
+        assert.strictEqual(sends, 1);
+        assert.deepStrictEqual(yield* mailbox.outbox.queuedSends, []);
+        assert.deepStrictEqual(yield* mailbox.proposals.listFailedOps, []);
+        // A later flush or timer finds nothing left to send.
+        yield* mailbox.outbox.flushQueuedSends();
+        yield* TestClock.adjust("1 minute");
+        assert.strictEqual(sends, 1);
       }),
       {
         send: () =>
@@ -843,8 +891,63 @@ it.effect(
           }),
       },
     );
-  },
-);
+  });
+});
+
+it("an undo send recovered at startup past the recovery window expires with a notice", async () => {
+  const { mkdtempSync, rmSync } = await import("node:fs");
+  const { tmpdir } = await import("node:os");
+  const nodePath = await import("node:path");
+  const { Layer } = await import("effect");
+  const directory = mkdtempSync(nodePath.join(tmpdir(), "openmail-expired-undo-"));
+  const server = fakeServer("me@example.test");
+  const layer = () =>
+    TestMailbox(
+      { gmail: server },
+      { backgroundFlush: false, localDraftQueue: true, resumeDesktopSends: true },
+      {},
+      Layer.empty,
+      { database: nodePath.join(directory, "mail.db") },
+    );
+  const first = ManagedRuntime.make(layer());
+  try {
+    await first.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const store = yield* Store;
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.outbox.queueUndoSend(
+          { id: "quit-before-due", accountId: account.id, message: outgoing },
+          Date.now() + 5000,
+        );
+        const intent = (yield* store.queuedSends)[0];
+        if (!intent) throw new Error("Missing send intent");
+        // The app quits inside the window and reopens ten minutes after the deadline.
+        yield* store.putQueuedSend({ ...intent, due: Date.now() - 10 * 60_000 });
+      }),
+    );
+  } finally {
+    await first.dispose();
+  }
+  const reopened = ManagedRuntime.make(layer());
+  try {
+    await reopened.runPromise(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const store = yield* Store;
+        expect((yield* mailbox.outbox.queuedSends)[0]?.status).toBe("retryable");
+        expect(server.sent).toHaveLength(0);
+        const notices = yield* mailbox.proposals.listFailedOps;
+        expect(notices).toHaveLength(1);
+        expect(notices[0]?.reason).toContain("send window expired");
+        expect(Option.isSome(yield* store.getDraft("quit-before-due"))).toBe(true);
+      }),
+    );
+  } finally {
+    await reopened.dispose();
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
 
 it.effect(
   "draft version preferences contain only version metadata and deletion clears an orphaned journal",
