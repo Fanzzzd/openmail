@@ -2,7 +2,7 @@
 // OPENMAIL_HOME seeded by scripts/demo-data.mjs. Flag names, --json shapes and exit codes
 // are a contract for scripts and agents, so these tests read stdout, stderr and the code.
 import { execFile, spawn } from "node:child_process";
-import { cp, mkdtemp, readFile, rm } from "node:fs/promises";
+import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
@@ -187,6 +187,55 @@ describe("help", () => {
     ])
       expect(stdout).toContain(flag);
   });
+});
+
+describe("accounts add", () => {
+  // The fake opener exits 1, as on a machine with no browser. Nothing reaches Google: the
+  // client is fake and the test stops the process once the URL is on stderr.
+  test.skipIf(process.platform === "win32")(
+    "prints the consent URL on stderr even when no browser opens",
+    async () => {
+      const dir = await mkdtemp(join(tmpdir(), "openmail-cli-browser-"));
+      try {
+        const bin = join(dir, "bin");
+        await mkdir(bin);
+        for (const name of ["open", "xdg-open"]) {
+          await writeFile(join(bin, name), "#!/bin/sh\nexit 1\n");
+          await chmod(join(bin, name), 0o755);
+        }
+        const child = spawn(
+          process.execPath,
+          ["--disable-warning=ExperimentalWarning", cli, "accounts", "add", "gmail"],
+          {
+            env: {
+              ...process.env,
+              HOME: dir,
+              OPENMAIL_HOME: join(dir, "home"),
+              OPENMAIL_GOOGLE_CLIENT_ID: "fake-client",
+              OPENMAIL_GOOGLE_CLIENT_SECRET: "fake-secret",
+              PATH: `${bin}:${process.env.PATH ?? ""}`,
+            },
+          },
+        );
+        const stderr = await new Promise<string>((done, failed) => {
+          let text = "";
+          child.stderr.setEncoding("utf8").on("data", (chunk: string) => {
+            text += chunk;
+            if (/^https:\/\/accounts\.google\.com\/\S+$/m.test(text)) done(text);
+          });
+          child.once("error", failed);
+          child.once("close", () => done(text));
+        });
+        child.kill();
+        expect(stderr).toContain("If nothing opens, visit:");
+        const url = new URL(/^https:\/\/accounts\.google\.com\/\S+$/m.exec(stderr)?.[0] ?? "");
+        expect(url.searchParams.get("client_id")).toBe("fake-client");
+        expect(url.searchParams.get("code_challenge_method")).toBe("S256");
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
 });
 
 describe("accounts remove", () => {

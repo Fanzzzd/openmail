@@ -30,8 +30,9 @@ import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { CLI_VERSION } from "./version.js";
 
 /**
- * The CLI's browser: prints the consent URL on stderr, in case no browser can
- * be launched (SSH, headless), then hands it to the OS opener.
+ * The CLI's browser: prints the consent URL on stderr first, because the OS opener
+ * reports no failure (SSH, headless, an opener that exits 1) and errors are the only
+ * log level shown, then hands it to the opener.
  */
 const CliBrowser: Layer.Layer<Browser, never, ChildProcessSpawner.ChildProcessSpawner> =
   Layer.effect(
@@ -40,7 +41,7 @@ const CliBrowser: Layer.Layer<Browser, never, ChildProcessSpawner.ChildProcessSp
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       return Browser.of({
         open: (url) =>
-          Console.error(`Opening browser for sign-in:\n${url}`).pipe(
+          Console.error(`Opening your browser to sign in. If nothing opens, visit:\n${url}`).pipe(
             Effect.andThen(openInSystemBrowser(url)),
             Effect.provideService(ChildProcessSpawner.ChildProcessSpawner, spawner),
           ),
