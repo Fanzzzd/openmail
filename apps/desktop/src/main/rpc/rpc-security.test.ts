@@ -607,6 +607,71 @@ it("times only local read RPCs: never streams, undo-send waits, sign-in or model
   ]);
 });
 
+it("a slow Threads round trip logs one rpc-slow line and a slow AwaitUndoSend none", async () => {
+  const { stringRpcServer } = await import("./rpc-security");
+  const { LOG_CODE_ANNOTATION } = await import("@openmail/core/schema");
+  const { Rpc } = await import("effect/rpc");
+  const Group = RpcGroup.make(
+    Rpc.make("Threads", { payload: {}, success: Schema.String }),
+    Rpc.make("AwaitUndoSend", { payload: {}, success: Schema.String }),
+    Rpc.make("AskAi", { payload: {}, success: Schema.String }),
+  );
+  let clock = 0;
+  // Each handler takes 5.5 s on the fake clock, as an undo-send wait does.
+  const slowly = Effect.sync(() => {
+    clock += 5500;
+    return "done";
+  });
+  const handlers = Group.toLayer({
+    Threads: () => slowly,
+    AwaitUndoSend: () => slowly,
+    AskAi: () => slowly,
+  });
+  const lines: { message: unknown; code: unknown }[] = [];
+  const capture = Logger.make((options) =>
+    lines.push({
+      message: options.message,
+      code: options.fiber.getRef(References.CurrentLogAnnotations)[LOG_CODE_ANNOTATION],
+    }),
+  );
+  const answered = new Set<unknown>();
+  let input: StringProtocolInput | undefined;
+  const layer = stringRpcServer(
+    Group,
+    {
+      attach: (next) => {
+        input = next;
+        return () => null;
+      },
+      send: (_client, frame) => {
+        for (const message of [JSON.parse(frame)].flat())
+          if (message._tag === "Exit") answered.add(message.requestId);
+      },
+      failure: () => null,
+    },
+    () => clock,
+  ).pipe(Layer.provide(handlers));
+  const request = (id: string, tag: string) =>
+    JSON.stringify({ _tag: "Request", id, tag, payload: {}, headers: [] });
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* Layer.build(layer);
+        yield* waitUntil(() => input !== undefined);
+        input?.frame(1, request("1", "AwaitUndoSend"));
+        yield* waitUntil(() => answered.has("1"));
+        input?.frame(1, request("2", "AskAi"));
+        yield* waitUntil(() => answered.has("2"));
+        input?.frame(1, request("3", "Threads"));
+        yield* waitUntil(() => answered.has("3"));
+      }),
+    ).pipe(Effect.provide(Logger.layer([capture]))),
+  );
+  expect(lines.filter((line) => line.code === "rpc-slow")).toEqual([
+    { message: ["RPC Threads took 5500 ms"], code: "rpc-slow" },
+  ]);
+});
+
 it("logs rpc-slow at most once a minute per RPC, without arguments", async () => {
   const { slowRpcWarning } = await import("./rpc-security");
   const { LOG_CODE_ANNOTATION } = await import("@openmail/core/schema");

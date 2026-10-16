@@ -257,7 +257,11 @@ export interface StringTransport {
  * WebSockets: envelope checks on the way in, scrubbed errors and the failure
  * tracker on the way out.
  */
-export const makeStringProtocol = (transport: StringTransport) =>
+export const makeStringProtocol = (
+  transport: StringTransport,
+  /** The clock that times requests for `rpc-slow`; tests pass a fake one. */
+  now?: () => number,
+) =>
   Layer.effect(
     RpcServer.Protocol,
     Effect.gen(function* () {
@@ -266,7 +270,7 @@ export const makeStringProtocol = (transport: StringTransport) =>
         Effect.fnUntraced(function* (writeRequest) {
           const disconnects = yield* Queue.make<number>();
           const clients = new Set<number>();
-          const failures = createRpcFailureTracker((failure) => transport.failure(failure));
+          const failures = createRpcFailureTracker((failure) => transport.failure(failure), now);
           const slow = slowRpcWarning();
           const parser = serialization.makeUnsafe();
           const run = yield* FiberSet.makeRuntime();
@@ -322,9 +326,10 @@ export const makeStringProtocol = (transport: StringTransport) =>
 export const stringRpcServer = <Rpcs extends Rpc.Any>(
   group: RpcGroup.RpcGroup<Rpcs>,
   transport: StringTransport,
+  now?: () => number,
 ) =>
   RpcServer.layer(group, { disableFatalDefects: true }).pipe(
-    Layer.provide(makeStringProtocol(transport)),
+    Layer.provide(makeStringProtocol(transport, now)),
     Layer.provide(RpcSerialization.layerJson),
   );
 
