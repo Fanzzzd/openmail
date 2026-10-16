@@ -735,7 +735,6 @@ msgstr "Uitlijning"
 msgid "All"
 msgstr "Alle"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5407,7 +5406,6 @@ msgstr "Outlook.com-berichten zijn beperkt tot 25 MB, inclusief berichttekst en 
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "Uitvoer is afgekapt bij de tokenlimiet en is niet in de cache opgeslagen."
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7032,7 +7030,6 @@ msgstr "Er ging iets mis. Probeer het opnieuw."
 msgid "Source {n}: {name}"
 msgstr "Bron {n}: {name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Ruimte"

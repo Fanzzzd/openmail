@@ -739,7 +739,6 @@ msgstr "Alignment"
 msgid "All"
 msgstr "All"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5411,7 +5410,6 @@ msgstr "Outlook.com messages are limited to 25 MB, including message text and at
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "Output truncated at the token limit. It was not cached."
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7036,7 +7034,6 @@ msgstr "Something went wrong. Try again."
 msgid "Source {n}: {name}"
 msgstr "Source {n}: {name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Space"

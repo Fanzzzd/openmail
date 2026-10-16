@@ -735,7 +735,6 @@ msgstr "Zarovnání"
 msgid "All"
 msgstr "Vše"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5407,7 +5406,6 @@ msgstr "Zprávy Outlook.com jsou omezeny na 25 MB včetně textu zprávy a pří
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "Výstup byl zkrácen kvůli limitu tokenů. Nebyl uložen do mezipaměti."
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7032,7 +7030,6 @@ msgstr "Něco se pokazilo. Zkuste to znovu."
 msgid "Source {n}: {name}"
 msgstr "Zdroj {n}: {name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Prostor"

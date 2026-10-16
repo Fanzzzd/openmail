@@ -5,7 +5,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import { ProfileEditor } from "../features/accounts/ProfileEditor";
-import { ProfileSwitcher } from "../features/accounts/ProfileSettings";
 import { TextContextMenu } from "../app/WindowUi";
 import { RecipientField } from "../features/compose/components/RecipientField";
 import { SearchField } from "../features/search/SearchField";
@@ -229,12 +228,5 @@ it("marks the space name invalid and points it at the error while one shows", as
   expect(input.getAttribute("aria-invalid")).toBe("true");
   expect(input.getAttribute("aria-describedby")).toBe(alert.id);
   expect(alert.id).not.toBe("");
-  await audit();
-});
-
-it("puts the space picker in the banner landmark with two spaces", async () => {
-  render(localized(h(ProfileSwitcher, { profiles: spaces, value: "work", onChange: vi.fn() })));
-  const banner = screen.getByRole("banner");
-  expect(banner.contains(screen.getByRole("combobox", { name: "Space" }))).toBe(true);
   await audit();
 });

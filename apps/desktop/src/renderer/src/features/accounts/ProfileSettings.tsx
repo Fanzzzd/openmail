@@ -9,38 +9,9 @@ import { Keys } from "../../state/keys";
 import { useRunMail, withMail } from "../../state/mail";
 import { ProfileEditor } from "./lazy";
 import { Dialog } from "../../ui/Dialog";
-import { Select } from "../../ui/Select";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import { buttonPrimary, buttonSecondary, settingsHint } from "../../ui/styles";
 
-export function ProfileSwitcher({
-  profiles,
-  value,
-  onChange,
-}: {
-  profiles: readonly Profile[];
-  value: string;
-  onChange: (id: string) => void;
-}) {
-  const { t } = useLingui();
-  if (!profiles.length) return null;
-  return (
-    // A header outside any section is the page's banner landmark, so the picker sits in one.
-    <header className="drag flex h-9 shrink-0 items-center justify-end border-b border-edge px-4">
-      <Select
-        className="no-drag"
-        aria-label={t`Space`}
-        value={value}
-        onValueChange={onChange}
-        options={[
-          { value: "overview", label: t`Overview` },
-          { value: "all", label: t`All accounts` },
-          ...profiles.map((p) => ({ value: p.id, label: `${p.icon} ${p.name}` })),
-        ]}
-      />
-    </header>
-  );
-}
 export function DefaultProfilesPrompt({
   accounts,
   profiles,

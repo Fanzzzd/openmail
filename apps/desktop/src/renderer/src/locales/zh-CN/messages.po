@@ -745,7 +745,6 @@ msgstr "对齐"
 msgid "All"
 msgstr "全部"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5417,7 +5416,6 @@ msgstr "Outlook.com 消息上限为 25 MB，包含消息文本和附件。请移
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "输出已达到 token 上限，内容被截断，未缓存。"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7042,7 +7040,6 @@ msgstr "出错了，请重试。"
 msgid "Source {n}: {name}"
 msgstr "来源 {n}：{name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "空间"

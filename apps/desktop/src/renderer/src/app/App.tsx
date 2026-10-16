@@ -57,7 +57,7 @@ import { MailListPane } from "./MailListPane";
 import { drawerActions } from "./drawer-actions";
 import { Reader } from "../features/reader/Reader";
 import { canCall, isDesktop } from "../lib/platform";
-import { DefaultProfilesPrompt, ProfileSwitcher } from "../features/accounts/ProfileSettings";
+import { DefaultProfilesPrompt } from "../features/accounts/ProfileSettings";
 import { FocusedInboxPermission } from "../features/organize/FocusedInboxActions";
 import { FailedOpNotice } from "../features/sync-status/FailedOpNotice";
 import { UpdateNotice } from "../features/updates/UpdateNotice";
@@ -468,7 +468,6 @@ export function App({ composeId }: { composeId?: string }) {
           busy={Boolean(dialog || compose)}
         />
       )}
-      <ProfileSwitcher profiles={profileList} value={view.space} onChange={switchSpace} />
       <FocusedInboxPermission />
       <FailedOpNotice onOpenDraft={openSavedDraft} />
       <UpdateNotice onSettings={() => setDialog("settings")} />

@@ -735,7 +735,6 @@ msgstr "Alignement"
 msgid "All"
 msgstr "Tous"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5407,7 +5406,6 @@ msgstr "Les messages Outlook.com sont limités à 25 Mo, texte du message et pi�
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "La sortie a été tronquée à la limite de jetons. Elle n’a pas été mise en cache."
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7032,7 +7030,6 @@ msgstr "Une erreur s’est produite. Réessayez."
 msgid "Source {n}: {name}"
 msgstr "Source {n} : {name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Espace"

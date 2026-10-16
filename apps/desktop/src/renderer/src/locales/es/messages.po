@@ -735,7 +735,6 @@ msgstr "Alineación"
 msgid "All"
 msgstr "Todo"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5407,7 +5406,6 @@ msgstr "Los mensajes de Outlook.com están limitados a 25 MB, incluidos el texto
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "La respuesta se truncó al alcanzar el límite de tokens. No se guardó en la caché."
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7032,7 +7030,6 @@ msgstr "Algo salió mal. Inténtalo de nuevo."
 msgid "Source {n}: {name}"
 msgstr "Fuente {n}: {name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "Espacio"

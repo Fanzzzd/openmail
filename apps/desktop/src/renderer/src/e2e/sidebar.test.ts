@@ -1,5 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
+import { Effect } from "effect";
 import { flow, eventually, key } from "./harness";
 import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -164,4 +165,20 @@ it("account tiles are named by the account before the count and mark the current
   fireEvent.click(tile(/^me@gmail\.com/));
   await eventually(() => expect(tile(/^me@gmail\.com/).getAttribute("aria-current")).toBe("page"));
   expect(tile(/^All ?\d+$/).getAttribute("aria-current")).toBeNull();
+});
+
+it("spaces switch from the sidebar alone, with no second picker above the panes", async () => {
+  current = await flow({
+    handlers: {
+      Profiles: () =>
+        Effect.succeed([{ id: "work", name: "Work", icon: "W", color: "blue", position: 0 }]),
+    },
+  });
+  const spaces = await screen.findByRole(
+    "toolbar",
+    { name: "Spaces" },
+    { timeout: scaledMs(5000) },
+  );
+  await eventually(() => expect(within(spaces).getByRole("button", { name: /Work/ })).toBeTruthy());
+  expect(screen.queryByRole("combobox", { name: "Space" })).toBeNull();
 });

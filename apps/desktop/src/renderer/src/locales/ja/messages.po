@@ -735,7 +735,6 @@ msgstr "配置"
 msgid "All"
 msgstr "全て"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
@@ -5407,7 +5406,6 @@ msgstr "Outlook.com メッセージの上限は、メッセージ本文と添付
 msgid "Output truncated at the token limit. It was not cached."
 msgstr "トークン上限に達したため出力が切り詰められました。キャッシュには保存されていません。"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/overview/Overview.tsx
 #: src/renderer/src/features/sidebar/SidebarRail.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
@@ -7032,7 +7030,6 @@ msgstr "問題が発生しました。もう一度お試しください。"
 msgid "Source {n}: {name}"
 msgstr "出典 {n}：{name}"
 
-#: src/renderer/src/features/accounts/ProfileSettings.tsx
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Space"
 msgstr "スペース"
