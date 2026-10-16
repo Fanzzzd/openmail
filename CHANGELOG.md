@@ -31,6 +31,10 @@ The first public version. Everything below is new.
 - Inline images show when the message's raw source is 8 MB or less. Above that they show as broken, and OpenMail does not download the whole message to find them. Attachments download normally. An Outlook message with a 4 MB PDF next to a logo shows its images.
 - A space typed after plain words stays in the search field, and the field keeps focus when results replace the list, as in the narrow layout or with the reading pane hidden. A word typed after an operator chip starts a new word, so `board notes is:unread next` searches for `board notes` and `next`.
 - A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation that was open before it, scrolls the list back to where it was and puts focus on that row.
+- The open conversation stays open while a search is being typed, and stays selected when the results the search settles on include it.
+- While a search is typed, its last word matches as a prefix, so `asy` finds "async". A space or Enter ends the word. Server search, saved searches, the CLI and MCP run the words as typed.
+- Only known operators become chips or reach the note about operators a server can't search. `design 10:00 review`, `re:` and URLs search as text.
+- After a failed server search, the end of the list says "No more messages on this Mac".
 
 ### Writing and organizing
 
@@ -42,7 +46,8 @@ The first public version. Everything below is new.
 - Calendar invites with RSVP and recurrence, and contact suggestions from the server and, optionally, Apple Contacts.
 - Copy to folders is a menu item in the conversation and batch menus, so the arrow keys reach it. Enter opens its form after the menu closes, at the row or the Batch actions button whose menu opened it. The item is hidden when the account has no folders to copy to.
 - The delete confirmation for a label or folder names it, for example: Delete the folder “Projects”?
-- The batch bar says "More messages not loaded" while the server still has older mail.
+- After Select all, the batch bar says "More messages not loaded" while the server still has older mail.
+- Copy to folders and Categories are icon buttons in the conversation toolbar, named in their tooltip.
 - A draft saved on this Mac that is only waiting to sync closes without a prompt. The prompt reads "This draft has unsaved changes or couldn't sync." and appears for unsaved changes or a sync that stopped.
 
 ### Desktop
@@ -51,6 +56,8 @@ The first public version. Everything below is new.
 - `openmail list --space` takes a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none`, cannot equal another space's id and cannot be blank once control and format characters are removed. Names are compared after NFKC normalization. A name with a line break or tab says "A space name can't contain line breaks or tabs." A name that equals another space's id says "That is another space's id. Choose another name."
 - The space editor rings the selected icon in dark mode, clears a save error once you edit the name, and names each color in words for screen readers.
 - Switch spaces from the sidebar, the icon rail or the space shortcuts.
+- The Go menu lists Overview (⌃1), All accounts (⌃2) and each space (⌃⌘1 to ⌃⌘9, or ⌘1 to ⌘9 with Gmail keys), and follows changes to the spaces.
+- Beside the overview, the docked sidebar is labelled Sidebar and its resize handle sits inside the main landmark.
 - The sidebar titles an Outlook or IMAP account's own mailboxes Folders. Gmail keeps Labels.
 - Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
