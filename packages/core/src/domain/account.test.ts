@@ -13,6 +13,11 @@ describe("profileNameKey", () => {
     expect(profileNameKey("Café")).toBe(profileNameKey("Café"));
     expect(profileNameKey("  Deep    work ")).toBe("deep work");
   });
+
+  it("collapses blanks around a soft hyphen or zero-width space to one space", () => {
+    expect(profileNameKey("Work \u00ad Home")).toBe("work home");
+    expect(profileNameKey("Work \u200b Home")).toBe("work home");
+  });
 });
 
 describe("profileNameError", () => {
@@ -20,6 +25,9 @@ describe("profileNameError", () => {
     expect(profileNameError("W­ork", spaces)).toBe("taken");
     expect(profileNameError("Café", spaces)).toBe("taken");
     expect(profileNameError("ＷＯＲＫ", spaces)).toBe("taken");
+    const homes = [{ id: "p-wh", name: "Work Home" }];
+    expect(profileNameError("Work \u00ad Home", homes)).toBe("taken");
+    expect(profileNameError("Work \u200b Home", homes)).toBe("taken");
   });
 
   it("refuses none in any disguise", () => {

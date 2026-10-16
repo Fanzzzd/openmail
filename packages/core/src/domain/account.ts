@@ -120,14 +120,16 @@ export const PROFILE_NAME_ERRORS = {
 
 /**
  * The form two space names are compared in: NFKC (so fullwidth NONE is none and an NFD Café is
- * the NFC one), without format and control characters such as a soft hyphen, with each run of
- * blanks as one space, trimmed, in any letter case.
+ * the NFC one), without format characters such as a soft hyphen, with each run of blanks as one
+ * space, without control characters, trimmed, in any letter case. Format characters go before
+ * blanks collapse, so a soft hyphen or zero-width space between two blanks leaves one space.
  */
 export const profileNameKey = (name: string) =>
   name
     .normalize("NFKC")
+    .replace(/\p{Cf}/gu, "")
     .replace(/\s+/gu, " ")
-    .replace(/[\p{Cf}\p{Cc}]/gu, "")
+    .replace(/\p{Cc}/gu, "")
     .trim()
     .toLowerCase();
 
