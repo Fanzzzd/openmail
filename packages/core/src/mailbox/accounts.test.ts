@@ -503,6 +503,62 @@ it.effect(
     }).pipe(Effect.provide(StoreLive.pipe(Layer.provide(MemoryPlatform())))),
 );
 
+// `openmail accounts add imap` is how an IMAP account signs in again. It kept the sender name
+// but dropped the authentication service trust set in Settings.
+it.effect("adding an IMAP address again replaces its login and keeps its settings", () => {
+  const server = fakeServer("me@fastmail.com", []);
+  const imap = (imapHost: string) => ({
+    preset: "custom",
+    username: server.email,
+    imapHost,
+    imapPort: 993,
+    smtpHost: "smtp.fastmail.com",
+    smtpPort: 465,
+    smtpSecure: true,
+  });
+  let host = "imap.fastmail.com";
+  const fake = makeFakeProvider(server);
+  const providers = Layer.succeed(Providers, {
+    get: () => ({
+      ...fake,
+      connect: () =>
+        Effect.succeed({ email: server.email, secret: "new-password", imap: imap(host) }),
+    }),
+  });
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    const store = yield* Store;
+    const input = { preset: "custom", email: server.email, password: "old" };
+    const account = yield* m.accounts.connect({ provider: "imap", input });
+    yield* store.setAccountSettings(account.id, {
+      enabled: true,
+      description: "",
+      color: null,
+      imapSenderName: "Jane Doe",
+      imapAuthservId: "mx1.messagingengine.com",
+    });
+    yield* m.accounts.connect({ provider: "imap", input: { ...input, password: "new" } });
+    const again = yield* store.getAccount(account.id);
+    assert.strictEqual(again.imap?.senderName, "Jane Doe");
+    assert.strictEqual(again.imap?.authservId, "mx1.messagingengine.com");
+    // Trust names one server's results; another server starts without it.
+    host = "imap.example.com";
+    yield* m.accounts.connect({ provider: "imap", input: { ...input, password: "newer" } });
+    const moved = yield* store.getAccount(account.id);
+    assert.strictEqual(moved.imap?.imapHost, "imap.example.com");
+    assert.strictEqual(moved.imap?.authservId, undefined);
+    assert.strictEqual(moved.imap?.senderName, "Jane Doe");
+  }).pipe(
+    Effect.provide(
+      MailboxLive({ backgroundFlush: false }).pipe(
+        Layer.provideMerge(StoreLive),
+        Layer.provide(providers),
+        Layer.provide(MemoryPlatform()),
+      ),
+    ),
+  );
+});
+
 it.effect("space names are stored trimmed and an empty name is refused", () =>
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;

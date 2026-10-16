@@ -10,7 +10,7 @@ import {
   printable,
   printableLines,
 } from "@openmail/core";
-import { SYNC_FAILURE_TEXT, type ThreadSummary } from "@openmail/core/schema";
+import { type ImapSettings, SYNC_FAILURE_TEXT, type ThreadSummary } from "@openmail/core/schema";
 
 const two = (n: number) => String(n).padStart(2, "0");
 /**
@@ -22,6 +22,29 @@ export const stamp = (ms: number) => {
   return `${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())} ${two(d.getHours())}:${two(d.getMinutes())}`;
 };
 
+const IMAP_ID = "imap:";
+const shellWord = (word: string) =>
+  /^[\w@.+:/-]+$/.test(word) ? word : `'${word.replaceAll("'", "'\\''")}'`;
+
+/**
+ * The command that signs an account in again. IMAP has no OAuth grant to renew, so it signs
+ * in again by adding the address again: that replaces the password and keeps the sender name
+ * and the rest of the account. The flags repeat the stored server settings.
+ */
+export function signInCommand(accountId: string, imap?: ImapSettings): string {
+  if (!accountId.startsWith(IMAP_ID)) return `openmail accounts reauth ${accountId}`;
+  const email = accountId.slice(IMAP_ID.length);
+  const flags = [`--preset ${imap ? shellWord(imap.preset) : "<preset>"}`, `--email ${email}`];
+  if (imap && imap.username !== email) flags.push(`--username ${shellWord(imap.username)}`);
+  if (imap?.preset === "custom")
+    flags.push(
+      `--imap-host ${imap.imapHost} --imap-port ${imap.imapPort}`,
+      `--smtp-host ${imap.smtpHost} --smtp-port ${imap.smtpPort}`,
+      imap.smtpSecure ? "--smtp-secure" : "--no-smtp-secure",
+    );
+  return `openmail accounts add imap ${flags.join(" ")}`;
+}
+
 export function accountTable(rows: readonly Account[]): string {
   if (rows.length === 0) return "(no accounts; run `openmail accounts add gmail`)";
   return rows
@@ -29,7 +52,7 @@ export function accountTable(rows: readonly Account[]): string {
       const synced = a.lastSyncedAt ? stamp(a.lastSyncedAt) : "never";
       const reason = a.reauthReason ? ` (${a.reauthReason})` : "";
       const reauth = a.needsReauth
-        ? `  needs sign-in${reason}: openmail accounts reauth ${a.id}`
+        ? `  needs sign-in${reason}: ${signInCommand(a.id, a.imap)}`
         : "";
       const error = a.lastSyncError ? `  error: ${a.lastSyncError}` : "";
       return `${a.id}  last sync: ${synced}${reauth}${error}`;
@@ -103,10 +126,16 @@ export function syncFailedHint(
   { json, verbose }: { readonly json: boolean; readonly verbose: boolean },
 ): string {
   const failed = results.filter((r) => r.error);
-  const signIns = failed.filter((r) => r.needsReauth).length;
-  const signIn = json
-    ? "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth."
-    : "Sign in again with the commands above.";
+  const needSignIn = failed.filter((r) => r.needsReauth);
+  const signIns = needSignIn.length;
+  const imap = needSignIn.filter((r) => r.accountId.startsWith(IMAP_ID)).length;
+  const signIn = !json
+    ? "Sign in again with the commands above."
+    : imap === 0
+      ? "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth."
+      : imap === signIns
+        ? "Sign in again with `openmail accounts add imap --preset <preset> --email <address>` for each result with needs_reauth."
+        : "Sign in again for each result with needs_reauth: `openmail accounts reauth <account_id>`, or for an imap account `openmail accounts add imap --preset <preset> --email <address>`.";
   if (signIns === 0) return rerunHint(verbose);
   if (signIns === failed.length) return signIn;
   return verbose
@@ -131,12 +160,18 @@ export const cliSyncResult = (result: SyncResult, verbose = false): SyncResult =
   return error ? { ...result, error } : result;
 };
 
-export function syncTable(results: readonly SyncResult[]): string {
+export function syncTable(
+  results: readonly SyncResult[],
+  accounts: readonly Account[] = [],
+): string {
   if (results.length === 0) return "(no accounts)";
   return results
     .map((r) => {
       if (r.needsReauth)
-        return `${r.accountId}  needs sign-in: openmail accounts reauth ${r.accountId}`;
+        return `${r.accountId}  needs sign-in: ${signInCommand(
+          r.accountId,
+          accounts.find((a) => a.id === r.accountId)?.imap,
+        )}`;
       if (r.error) return `${r.accountId}  error: ${r.error}`;
       return `${r.accountId}  ${r.changed} changed, ${r.deleted} deleted`;
     })

@@ -13,7 +13,7 @@ import {
   optionalInt,
   print,
 } from "./common.js";
-import { accountTable, outcomeText } from "../format.js";
+import { accountTable, outcomeText, signInCommand } from "../format.js";
 import { withProgress } from "../sync-progress.js";
 
 const configGoogle = Command.make(
@@ -216,8 +216,16 @@ const accountsReauth = Command.make(
   { id: accountIdArgument },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
+    const imap = (yield* mailbox.accounts.accounts).find(
+      (a) => a.id === id && a.provider === "imap",
+    );
+    if (imap)
+      return yield* fail("IMAP accounts sign in again by adding the address with a new password.", {
+        code: "invalid_input",
+        hint: `Run \`${signInCommand(imap.id, imap.imap)}\`.`,
+      });
     const account = yield* mailbox.accounts.reauth(id);
-    yield* Console.log(`Signed in ${account.id} again.`);
+    return yield* Console.log(`Signed in ${account.id} again.`);
   }),
 ).pipe(Command.withDescription("Sign an account in again after its credentials stopped working"));
 

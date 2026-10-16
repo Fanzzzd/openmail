@@ -7,7 +7,9 @@ import {
   messageText,
   proposalTable,
   stamp,
+  signInCommand,
   syncFailedHint,
+  syncTable,
   threadTable,
 } from "./format.js";
 
@@ -159,6 +161,57 @@ describe("syncFailedHint", () => {
   it("covers both when some need sign-in and others failed", () => {
     expect(syncFailedHint([signIn, broken], terminal)).toBe(
       "Sign in again with the commands above. Run sync again for the other accounts, or add --log-level warn to see why.",
+    );
+  });
+});
+
+// Every sign-in line said `openmail accounts reauth <id>`, which refuses IMAP accounts.
+describe("sign-in commands", () => {
+  const imap = {
+    preset: "custom",
+    username: "login name",
+    imapHost: "mail.example.org",
+    imapPort: 993,
+    smtpHost: "smtp.example.org",
+    smtpPort: 587,
+    smtpSecure: false,
+  };
+  const account: Account = {
+    id: "imap:c@example.org",
+    provider: "imap",
+    email: "c@example.org",
+    createdAt: 0,
+    lastSyncedAt: null,
+    lastSyncError: null,
+    profileId: null,
+    needsReauth: true,
+    imap,
+  };
+
+  it("adds an IMAP address again with its stored server settings", () => {
+    expect(signInCommand("gmail:a@example.com")).toBe(
+      "openmail accounts reauth gmail:a@example.com",
+    );
+    expect(
+      signInCommand(account.id, { ...imap, preset: "icloud", username: "c@example.org" }),
+    ).toBe("openmail accounts add imap --preset icloud --email c@example.org");
+    expect(signInCommand(account.id)).toBe(
+      "openmail accounts add imap --preset <preset> --email c@example.org",
+    );
+    const custom =
+      "openmail accounts add imap --preset custom --email c@example.org --username 'login name' --imap-host mail.example.org --imap-port 993 --smtp-host smtp.example.org --smtp-port 587 --no-smtp-secure";
+    expect(signInCommand(account.id, imap)).toBe(custom);
+    expect(accountTable([account])).toBe(
+      `imap:c@example.org  last sync: never  needs sign-in: ${custom}`,
+    );
+    const result = { accountId: account.id, changed: 0, deleted: 0, error: "x", needsReauth: true };
+    expect(syncTable([result], [account])).toBe(`imap:c@example.org  needs sign-in: ${custom}`);
+    expect(syncFailedHint([result], { json: true, verbose: false })).toBe(
+      "Sign in again with `openmail accounts add imap --preset <preset> --email <address>` for each result with needs_reauth.",
+    );
+    const gmail = { ...result, accountId: "gmail:a@example.com" };
+    expect(syncFailedHint([result, gmail], { json: true, verbose: false })).toContain(
+      "`openmail accounts reauth <account_id>`, or for an imap account `openmail accounts add imap",
     );
   });
 });

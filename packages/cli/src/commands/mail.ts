@@ -80,9 +80,6 @@ const logSyncFailure = (detail: SyncFailureDetail) => {
   return detail.failure === "unknown" ? logWarning("sync-failed", line) : Effect.logDebug(line);
 };
 
-const syncTableOf = (value: { readonly results: readonly SyncResult[] }) =>
-  syncTable(value.results);
-
 /** Accepted and ignored: list, search and sync used to run as agent tools with a byte budget. */
 const legacyBudget = Flag.Int("token-budget").pipe(Flag.withHidden, Flag.optional);
 
@@ -111,6 +108,10 @@ const sync = Command.make(
     yield* finishSearchIndex;
     // A refresh the app's writer keeps busy is skipped quietly; the app refreshes hourly.
     yield* mailbox.sync.refreshPlannerStats.pipe(Effect.provide(Logger.layer([])));
+    // A sign-in command for IMAP repeats the account's server settings.
+    const accounts = yield* mailbox.accounts.accounts;
+    const syncTableOf = (value: { readonly results: readonly SyncResult[] }) =>
+      syncTable(value.results, accounts);
     if (!results.some((r) => r.error)) return yield* print({ results }, json, syncTableOf);
     const error = {
       message: "Some accounts did not sync.",

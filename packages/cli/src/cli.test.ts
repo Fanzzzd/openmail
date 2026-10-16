@@ -932,3 +932,12 @@ test("sync under a write lock another process keeps stops at the first busy acco
     await rm(home, { recursive: true, force: true });
   }
 });
+
+// reauth refused an IMAP account with no next step; IMAP signs in again through `accounts add`.
+test("accounts reauth names the add command for an IMAP account", async () => {
+  const { code, stderr } = await openmail(["accounts", "reauth", "imap:alex.rivera@example.org"]);
+  expect(code).toBe(1);
+  expect(stderr).toBe(
+    "error: IMAP accounts sign in again by adding the address with a new password.\nhint: Run `openmail accounts add imap --preset <preset> --email alex.rivera@example.org`.\n",
+  );
+});
