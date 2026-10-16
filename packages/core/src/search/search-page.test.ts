@@ -43,6 +43,20 @@ describe("searchRest", () => {
     );
   });
 
+  it("continues a tied date by id when the row shown last disappears between pages", () => {
+    const tied = [row("b", 5), row("a", 5), row("Z", 5), row("c", 4)];
+    // b ends the first page and is gone for the second: a position would skip a.
+    assert.deepStrictEqual(
+      pages((page) => (page === 0 ? tied : tied.filter((r) => r.id !== "b")), 1),
+      ["b", "a", "Z", "c"],
+    );
+    // A tied row that has not been shown yet disappears: the others keep their order.
+    assert.deepStrictEqual(
+      pages((page) => (page === 0 ? tied : tied.filter((r) => r.id !== "a")), 1),
+      ["b", "Z", "c"],
+    );
+  });
+
   it("pages a relevance-ordered result by position", () => {
     const ranked = [row("x", 1), row("y", 3), row("z", 2)];
     const first = searchRest(ranked, {});
