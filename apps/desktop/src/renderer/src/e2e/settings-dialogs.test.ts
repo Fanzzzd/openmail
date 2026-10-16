@@ -120,3 +120,21 @@ it("names each space color in words, not by its key", async () => {
     "Gray",
   ]);
 });
+
+for (const kind of ["label", "folder"] as const)
+  it(`deleting a ${kind} names it in the confirmation`, async () => {
+    current = await flow({
+      route: "/mail/all/inbox?dialog=settings",
+      provider: kind === "label" ? "gmail" : "imap",
+    });
+    const settings = await screen.findByRole(
+      "dialog",
+      { name: "Settings" },
+      { timeout: scaledMs(5000) },
+    );
+    fireEvent.click(within(settings).getByRole("tab", { name: "Organize" }));
+    fireEvent.click(await within(settings).findByRole("button", { name: "Delete Work" }));
+    expect(
+      await screen.findByRole("alertdialog", { name: `Delete the ${kind} “Work”?` }),
+    ).toBeTruthy();
+  });

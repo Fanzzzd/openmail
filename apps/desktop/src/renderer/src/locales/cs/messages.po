@@ -2472,10 +2472,6 @@ msgstr "Smazat filtr?"
 msgid "Delete key action"
 msgstr "Akce klávesy Delete"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Delete label or folder?"
-msgstr "Smazat štítek nebo složku?"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
 msgstr "Trvale smazat"
@@ -2483,6 +2479,16 @@ msgstr "Trvale smazat"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
 msgstr "Smazat prostor"
+
+#. Confirmation title. The quoted text is the folder's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the folder “{deletingName}”?"
+msgstr "Smazat složku „{deletingName}“?"
+
+#. Confirmation title. The quoted text is the label's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the label “{deletingName}”?"
+msgstr "Smazat štítek „{deletingName}“?"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"

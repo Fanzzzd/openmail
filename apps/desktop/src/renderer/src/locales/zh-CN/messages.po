@@ -2482,10 +2482,6 @@ msgstr "删除过滤器？"
 msgid "Delete key action"
 msgstr "删除键动作"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Delete label or folder?"
-msgstr "删除标签或文件夹？"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
 msgstr "永久删除"
@@ -2493,6 +2489,16 @@ msgstr "永久删除"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
 msgstr "删除空间"
+
+#. Confirmation title. The quoted text is the folder's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the folder “{deletingName}”?"
+msgstr "删除文件夹“{deletingName}”？"
+
+#. Confirmation title. The quoted text is the label's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the label “{deletingName}”?"
+msgstr "删除标签“{deletingName}”？"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"

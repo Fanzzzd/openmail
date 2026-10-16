@@ -2472,10 +2472,6 @@ msgstr "Filter verwijderen?"
 msgid "Delete key action"
 msgstr "Actie van Delete-toets"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Delete label or folder?"
-msgstr "Label of map verwijderen?"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
 msgstr "Permanent verwijderen"
@@ -2483,6 +2479,16 @@ msgstr "Permanent verwijderen"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
 msgstr "Verwijder ruimte"
+
+#. Confirmation title. The quoted text is the folder's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the folder “{deletingName}”?"
+msgstr "Map “{deletingName}” verwijderen?"
+
+#. Confirmation title. The quoted text is the label's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the label “{deletingName}”?"
+msgstr "Label “{deletingName}” verwijderen?"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"

@@ -2472,10 +2472,6 @@ msgstr "Supprimer le filtre ?"
 msgid "Delete key action"
 msgstr "Action de la touche Suppr"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Delete label or folder?"
-msgstr "Supprimer le libellé ou le dossier ?"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
 msgstr "Supprimer définitivement"
@@ -2483,6 +2479,16 @@ msgstr "Supprimer définitivement"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
 msgstr "Supprimer l’espace"
+
+#. Confirmation title. The quoted text is the folder's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the folder “{deletingName}”?"
+msgstr "Supprimer le dossier « {deletingName} » ?"
+
+#. Confirmation title. The quoted text is the label's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the label “{deletingName}”?"
+msgstr "Supprimer le libellé « {deletingName} » ?"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"

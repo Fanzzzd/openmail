@@ -83,6 +83,7 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
       setDeleting(null);
     }
   };
+  const deletingName = deleting?.name ?? "";
   return (
     <section className="space-y-6">
       <SettingsGroup>
@@ -372,7 +373,17 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
         onOpenChange={(open) => {
           if (!open) setDeleting(null);
         }}
-        title={t`Delete label or folder?`}
+        title={
+          caps?.organization === "labels"
+            ? t({
+                message: `Delete the label “${deletingName}”?`,
+                comment: "Confirmation title. The quoted text is the label's name.",
+              })
+            : t({
+                message: `Delete the folder “${deletingName}”?`,
+                comment: "Confirmation title. The quoted text is the folder's name.",
+              })
+        }
         description={
           caps?.organization === "labels"
             ? t`Messages keep their other labels.`

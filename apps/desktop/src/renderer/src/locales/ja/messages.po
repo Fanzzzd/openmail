@@ -2472,10 +2472,6 @@ msgstr "フィルターを削除しますか？"
 msgid "Delete key action"
 msgstr "Delete キーの操作"
 
-#: src/renderer/src/features/organize/OrganizationSettings.tsx
-msgid "Delete label or folder?"
-msgstr "ラベルまたはフォルダを削除しますか？"
-
 #: src/renderer/src/features/sync-status/FailedOpNotice.tsx
 msgid "Delete permanently"
 msgstr "完全に削除"
@@ -2483,6 +2479,16 @@ msgstr "完全に削除"
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Delete space"
 msgstr "スペースを削除"
+
+#. Confirmation title. The quoted text is the folder's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the folder “{deletingName}”?"
+msgstr "フォルダ「{deletingName}」を削除しますか？"
+
+#. Confirmation title. The quoted text is the label's name.
+#: src/renderer/src/features/organize/OrganizationSettings.tsx
+msgid "Delete the label “{deletingName}”?"
+msgstr "ラベル「{deletingName}」を削除しますか？"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Deleted"
