@@ -139,12 +139,37 @@ export const SyncFailureDetailLog = Context.Reference<
   (detail: SyncFailureDetail) => Effect.Effect<void>
 >("openmail/SyncFailureDetailLog", { defaultValue: () => () => Effect.void });
 
-/** An error message without addresses, URL queries or anything as long as a token. */
-export const redactErrorMessage = (message: string): string =>
-  message
+/** The longest message a sync failure detail keeps. */
+export const DETAIL_MESSAGE_MAX = 300;
+
+/**
+ * An error message on one line, without control or bidi characters, addresses (also
+ * %40-encoded, with a display name before them), URL queries and fragments, or anything as
+ * long as a token, cut to DETAIL_MESSAGE_MAX characters. It works on a slice of the message,
+ * so a provider body of any size costs the same.
+ */
+export const redactErrorMessage = (message: string): string => {
+  const slice = message.slice(0, DETAIL_MESSAGE_MAX * 2);
+  const redacted = slice
+    // C0 and C1 controls end the line or drive the terminal; bidi marks reorder it.
+    .replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069]+/gu, " ")
+    .replace(/%40/gi, "@")
+    .replace(
+      /(?:"[^"<>]*"|[^\s<>()"',;:@]+(?:[ \t]+[^\s<>()"',;:@]+){0,2})?[ \t]*<[^<>\s]*@[^<>\s]*>/g,
+      "<address>",
+    )
     .replace(/[^\s<>()"',;:]+@[^\s<>()"',;:]+/g, "<address>")
-    .replace(/\?[^\s)]*/g, "")
-    .replace(/[A-Za-z0-9+/=_.-]{40,}/g, "<redacted>");
+    .replace(/[?#][^\s)]*/g, (match, at: number, text: string) =>
+      // A query or fragment follows a URL or path, never a space.
+      at > 0 && !/\s/.test(text[at - 1] ?? " ") ? "" : match,
+    )
+    .replace(/[A-Za-z0-9+/=_.-]{40,}/g, "<redacted>")
+    .replace(/ {2,}/g, " ")
+    .trim();
+  if (message.length <= slice.length && redacted.length <= DETAIL_MESSAGE_MAX) return redacted;
+  // A token cut at the end could show its first characters, so the cut drops the last run.
+  return `${redacted.slice(0, DETAIL_MESSAGE_MAX).replace(/[A-Za-z0-9+/=_.-]+$/, "")}…`;
+};
 
 export function syncFailureDetail(
   account: Pick<Account, "provider">,

@@ -8,6 +8,8 @@ import { TestMailbox } from "../platform/node/testing.js";
 import { Store } from "../store/service.js";
 import {
   classifySyncFailure,
+  DETAIL_MESSAGE_MAX,
+  redactErrorMessage,
   storedSyncFailureReason,
   SYNC_FAILURE_TEXT,
   syncFailureDetail,
@@ -111,4 +113,34 @@ it("names the error and redacts what could identify the person", () => {
     status: 400,
     message: "Bad request for <address> (/gmail/v1/users/me/messages) <redacted>",
   });
+});
+
+// A provider message with escape codes and a line break printed raw on stderr under
+// `openmail sync --log-level warn`, so it could set the terminal title, clear the screen and
+// forge a line. Encoded addresses, display names and URL fragments came through as well.
+it("keeps a failure detail on one line and redacts encoded addresses, names and fragments", () => {
+  const forged = redactErrorMessage(
+    "bad\u001b]0;pwned\u0007\u001b[2J\r\nFAKE: sync ok\u009b\u202e",
+  );
+  assert.notMatch(forged, /[\p{Cc}\u202e]/u);
+  assert.strictEqual(forged, "bad ]0;pwned [2J FAKE: sync ok");
+  assert.strictEqual(
+    redactErrorMessage("No mailbox user%40example.com, owner Jane Doe <jane@example.com>"),
+    "No mailbox <address>, <address>",
+  );
+  assert.strictEqual(
+    redactErrorMessage('From "Doe, Jane" <jane@example.com>: rejected'),
+    "From <address>: rejected",
+  );
+  assert.strictEqual(
+    redactErrorMessage("Redirected to https://login.example.com/cb#code=s3cr3t&state=1 (302)"),
+    "Redirected to https://login.example.com/cb (302)",
+  );
+  assert.strictEqual(redactErrorMessage("error #5"), "error #5");
+  const long = redactErrorMessage(`${"word ".repeat(100)}tail`);
+  assert.isAtMost(long.length, DETAIL_MESSAGE_MAX + 1);
+  assert.isTrue(long.endsWith("…"));
+  // A token the cut splits leaves none of its characters.
+  const cut = redactErrorMessage(`${"a ".repeat(140)}${"k".repeat(39)} end ${"x".repeat(400)}`);
+  assert.notInclude(cut, "kkk");
 });
