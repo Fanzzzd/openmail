@@ -249,6 +249,29 @@ const profilesList = Command.make(
   }),
 ).pipe(Command.withDescription("List spaces and their accounts"));
 
+/**
+ * The words the app's space editor shows for each color, then the stored keys, which older
+ * scripts pass. Help lists only the app's words.
+ */
+type ProfileColor = (typeof PROFILE_COLORS)[number];
+const COLOR_ALIASES: Readonly<Record<string, ProfileColor>> = {
+  blue: "blue",
+  purple: "violet",
+  red: "rose",
+  orange: "orange",
+  brown: "amber",
+  green: "emerald",
+  teal: "teal",
+  gray: "slate",
+  grey: "slate",
+  ...Object.fromEntries(PROFILE_COLORS.map((key) => [key, key])),
+};
+const COLOR_WORDS = ["blue", "purple", "red", "orange", "brown", "green", "teal", "gray"];
+const profileColor = (word: string): ProfileColor | undefined => {
+  const key = word.toLowerCase();
+  return Object.hasOwn(COLOR_ALIASES, key) ? COLOR_ALIASES[key] : undefined;
+};
+
 const profilesAdd = Command.make(
   "add",
   {
@@ -257,9 +280,13 @@ const profilesAdd = Command.make(
       Flag.withDescription("Icon on the switcher"),
       Flag.withDefault("📁"),
     ),
-    color: Flag.Literals("color", PROFILE_COLORS).pipe(
-      Flag.withDescription("Color on the switcher"),
+    color: Flag.String("color").pipe(
+      Flag.withDescription(`Color on the switcher: ${COLOR_WORDS.join(", ")}`),
       Flag.withDefault("blue"),
+      Flag.filterMap(
+        (word) => Option.fromNullishOr(profileColor(word)),
+        () => `must be one of ${COLOR_WORDS.join(", ")}`,
+      ),
     ),
   },
   Effect.fn(function* ({ name, icon, color }) {

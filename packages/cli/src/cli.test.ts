@@ -546,6 +546,39 @@ describe("spaces", () => {
       expect(removed.code, removed.stderr).toBe(0);
     });
 
+    // The app names the swatches Purple, Red, Brown, Green and Gray, but --color took only the
+    // stored keys, so `--color brown` was a usage error.
+    test("add takes the app's color words and the stored keys", async () => {
+      const colors = [
+        ["Purple", "purple", "violet"],
+        ["Red", "Red", "rose"],
+        ["Brown", "brown", "amber"],
+        ["Green", "green", "emerald"],
+        ["Gray", "gray", "slate"],
+        ["Grey", "grey", "slate"],
+        ["Old", "violet", "violet"],
+      ] as const;
+      for (const [name, color] of colors) {
+        const added = await openmail(["spaces", "add", name, "--color", color], home.path);
+        expect(added.code, added.stderr).toBe(0);
+      }
+      const stored = Object.fromEntries(
+        (await list(["spaces", "list"], home.path)).map((s) => [s.name, s.color]),
+      );
+      for (const [name, , key] of colors) expect(stored[name], name).toBe(key);
+      for (const [name] of colors)
+        expect((await openmail(["spaces", "remove", name], home.path)).code).toBe(0);
+      const pink = await openmail(["spaces", "add", "Pink", "--color", "pink"], home.path);
+      expect(pink.code).toBe(2);
+      expect(pink.stderr).toContain(
+        "must be one of blue, purple, red, orange, brown, green, teal, gray",
+      );
+      const help = await openmail(["spaces", "add", "--help"], home.path);
+      expect(help.stdout).toContain(
+        "Color on the switcher: blue, purple, red, orange, brown, green, teal, gray",
+      );
+    });
+
     test("assign puts an account in it", async () => {
       expect(assigned.code, assigned.stderr).toBe(0);
       const after = (await list(["spaces", "list"], home.path))[0] ?? {};
