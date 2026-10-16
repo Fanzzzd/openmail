@@ -56,6 +56,24 @@ function lightSpaceAt(row: Element | null | undefined, left: number, top = 0) {
 }
 const rail = () => document.querySelector<HTMLElement>("[data-sidebar-rail]");
 
+it("typing in a narrow window's search keeps the field and its focus while results replace the list", async () => {
+  width = 569;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByRole<HTMLInputElement>("combobox", { name: "Search mail" });
+  field.focus();
+  fireEvent.change(field, { target: { value: "L" } });
+  await eventually(() =>
+    expect(screen.getByRole("heading", { name: "Search results" })).toBeTruthy(),
+  );
+  expect(field.isConnected).toBe(true);
+  expect(document.activeElement).toBe(field);
+  fireEvent.change(field, { target: { value: "Lu" } });
+  await eventually(() => expect(field.value).toBe("Lu"));
+  expect(document.activeElement).toBe(field);
+});
+
 it("a narrow window shows the list or the reader, and goes back with the button, Escape and Cmd+[", async () => {
   width = 520;
   current = await flow();

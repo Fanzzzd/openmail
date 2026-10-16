@@ -44,6 +44,8 @@ import { useScrollFade } from "../../lib/scroll-fade";
 export type SelectionSource = "keyboard" | "mouse";
 
 interface Props {
+  /** A new key starts the rows over: scroll position, viewport and open menu. */
+  resetKey?: string;
   /** The search field, when the list has the window's search instead of the reader. */
   searchBar?: ReactNode;
   /** Actions for the selected rows, shown in place of the filter chips. */
@@ -89,9 +91,31 @@ interface Props {
   rowActions: RowActions;
 }
 
-export function MessageList({
+/**
+ * The search row sits outside the keyed body, so a search that replaces the rows never remounts
+ * the field being typed in.
+ */
+export function MessageList({ resetKey, searchBar, leading, ...body }: Props) {
+  const { t } = useLingui();
+  return (
+    <section
+      aria-label={body.searching ? t`Search results` : body.title}
+      className="flex h-full w-full flex-col bg-surface"
+    >
+      {searchBar && (
+        <div className={`${titlebarRow} gap-2 pr-4 pl-4`}>
+          <TrafficLightSpace />
+          {leading}
+          {searchBar}
+        </div>
+      )}
+      <MessageListBody key={resetKey} {...body} leading={searchBar ? undefined : leading} />
+    </section>
+  );
+}
+
+function MessageListBody({
   title,
-  searchBar,
   selectionBar,
   leading,
   notice,
@@ -124,7 +148,7 @@ export function MessageList({
   onSelect,
   onEndReached,
   rowActions,
-}: Props) {
+}: Omit<Props, "resetKey" | "searchBar">) {
   const { t, i18n } = useLingui();
   const shortcutText = useShortcutText();
   const { ref: chipsRef, mask: chipsMask } = useScrollFade();
@@ -262,20 +286,10 @@ export function MessageList({
   }, [loading, viewport.top, viewport.height, window.total]);
 
   return (
-    <section
-      aria-label={searching ? t`Search results` : title}
-      className="flex h-full w-full flex-col bg-surface"
-    >
-      {searchBar && (
-        <div className={`${titlebarRow} gap-2 pr-4 pl-4`}>
-          <TrafficLightSpace />
-          {leading}
-          {searchBar}
-        </div>
-      )}
+    <>
       <header className={`${titlebarRow} gap-2 pr-3 pl-5`}>
         <TrafficLightSpace />
-        {!searchBar && leading}
+        {leading}
         <h1 className="min-w-0 flex-1 truncate text-title font-bold">
           {searching ? <Trans>Search results</Trans> : title}
         </h1>
@@ -514,7 +528,7 @@ export function MessageList({
             <RowMenu thread={menuThread} actions={rowActions} />
           ))}
       </ContextMenuRoot>
-    </section>
+    </>
   );
 }
 

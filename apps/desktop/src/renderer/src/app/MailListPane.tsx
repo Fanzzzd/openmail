@@ -144,7 +144,7 @@ export function MailListPane({
           <BatchActions {...batchToolbar} />
         ) : undefined
       }
-      key={JSON.stringify([view, search, filters])}
+      resetKey={JSON.stringify([view, search, filters])}
       title={title}
       threads={list}
       loading={threads.loading}
