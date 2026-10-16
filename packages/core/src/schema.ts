@@ -19,7 +19,6 @@ export {
   storedSyncFailureReason,
   SYNC_FAILURE_TEXT,
   type SyncFailureDetail,
-  SyncFailureDetailLog,
   SyncFailureReason,
 } from "./sync/sync-failure.js";
 export { IMAP_PRESETS, ImapConnectInput, ImapPreset } from "./providers/imap/imap-presets.js";

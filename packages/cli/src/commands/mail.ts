@@ -12,6 +12,7 @@ import { Buffer } from "node:buffer";
 import {
   MAILBOXES,
   Mailbox,
+  SyncFailureDetailLog,
   type SyncResult,
   logWarning,
   printable,
@@ -21,7 +22,6 @@ import {
   SEARCH_VALUE_FORMS,
   type SearchResult,
   type SyncFailureDetail,
-  SyncFailureDetailLog,
   type ThreadSummary,
   unparsedSearchOperators,
   withUnparsedOperators,

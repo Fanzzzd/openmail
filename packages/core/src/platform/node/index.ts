@@ -40,6 +40,7 @@ export {
   ProposalMailToolkit,
   ProviderDiagnostic,
   ReadMailToolkit,
+  SyncFailureDetailLog,
   SyncResetDiagnostic,
   SyncResult,
   type UpdateClient,

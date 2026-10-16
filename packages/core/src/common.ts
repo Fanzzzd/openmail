@@ -110,6 +110,7 @@ export { FolderStatus, HealthCounts } from "./sync/sync-records.js";
 
 export { ProviderDiagnostic } from "./providers/provider-diagnostics.js";
 export { SyncResetDiagnostic } from "./sync/sync-reset.js";
+export { SyncFailureDetailLog } from "./sync/sync-failure.js";
 
 export * from "./search/search-snippets.js";
 export * from "./app/remote-access.js";
