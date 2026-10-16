@@ -158,6 +158,10 @@ export function Feedback({
           </div>
         ) : (
           <pre
+            // A scrolling region must take focus so the keyboard can scroll it (axe
+            // scrollable-region-focusable); a read-only preview has no interactive role to give it.
+            // oxlint-disable-next-line jsx-a11y/no-noninteractive-tabindex
+            tabIndex={0}
             aria-label={t`Diagnostics preview`}
             aria-busy={preview === null}
             className="my-3 max-h-48 overflow-auto rounded bg-neutral-100 p-2 text-footnote dark:bg-neutral-900"

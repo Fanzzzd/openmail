@@ -1,4 +1,5 @@
-import { fireEvent, screen } from "@testing-library/react/pure";
+import axe from "axe-core";
+import { act, fireEvent, screen } from "@testing-library/react/pure";
 import { Effect } from "effect";
 import { afterEach, expect, it, vi } from "vitest";
 import { advance, eventually, flow } from "./harness";
@@ -96,4 +97,44 @@ it("without a feedback address, the diagnostics can be copied for a GitHub issue
   expect(screen.getByRole("button", { name: "Copy diagnostics" })).toBeTruthy();
   fireEvent.click(screen.getByRole("button", { name: "Open GitHub issues" }));
   await eventually(() => expect(opened).toEqual(["https://github.com/Fanzzzd/openmail/issues"]));
+});
+
+it("the diagnostics preview scrolls from the keyboard", async () => {
+  current = await flow({
+    handlers: {
+      CrashReportPending: () => Effect.succeed(true),
+      FeedbackAddress: () => Effect.succeed("feedback@example.com"),
+      Diagnostics: () =>
+        Effect.succeed(Array.from({ length: 80 }, (_, i) => `line ${i}`).join("\n")),
+    },
+  });
+  await eventually(() =>
+    expect(screen.getByLabelText("Diagnostics preview").textContent).toContain("line 79"),
+  );
+  const preview = screen.getByLabelText("Diagnostics preview");
+  // jsdom has no layout: give the preview the overflow it has in the app (max-h-48, 80 lines).
+  preview.style.overflowY = "auto";
+  Object.defineProperty(preview, "clientHeight", { configurable: true, value: 192 });
+  Object.defineProperty(preview, "scrollHeight", { configurable: true, value: 1200 });
+  const box = (top: number, bottom: number) =>
+    DOMRect.fromRect({ x: 0, y: top, width: 400, height: bottom - top });
+  vi.spyOn(preview, "getBoundingClientRect").mockReturnValue(box(0, 192));
+  // The text runs past the preview's bottom edge.
+  Object.defineProperty(Range.prototype, "getClientRects", {
+    configurable: true,
+    value: () => [box(0, 1200)],
+  });
+  let result: axe.AxeResults | undefined;
+  try {
+    await act(async () => {
+      result = await axe.run(preview, {
+        runOnly: { type: "rule", values: ["scrollable-region-focusable"] },
+      });
+    });
+  } finally {
+    Reflect.deleteProperty(Range.prototype, "getClientRects");
+  }
+  // The rule applied to the preview, and passed.
+  expect(result?.passes.map((issue) => issue.id)).toEqual(["scrollable-region-focusable"]);
+  expect(result?.violations.map((issue) => issue.id)).toEqual([]);
 });
