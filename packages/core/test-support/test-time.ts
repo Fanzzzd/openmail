@@ -40,3 +40,17 @@ export const pollDefaults = { poll: waitLimit };
  * shorter than `waitLimit` and fail tests that only ran slowly on a loaded machine.
  */
 export const testTimeouts = { testTimeout: scaledMs(30_000), hookTimeout: scaledMs(60_000) };
+
+/**
+ * The busy timeout lock tests open the database with (`busyTimeoutMs`, or
+ * OPENMAIL_TEST_BUSY_TIMEOUT_MS for a CLI process). A regression that waits for another process's
+ * write lock then costs 30 s instead of 5 s, far above a loaded runner's noise: a CLI start
+ * took 5.1 s on CI.
+ */
+export const LONG_BUSY_TIMEOUT_MS = 30_000;
+
+/**
+ * The bound for work under a held lock that must not wait for it. Half of LONG_BUSY_TIMEOUT_MS
+ * and unscaled, so a scale of 3 cannot lift it past the wait it catches.
+ */
+export const LOCK_WAIT_BOUND_MS = 15_000;

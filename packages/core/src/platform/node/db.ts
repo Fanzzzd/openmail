@@ -7,7 +7,12 @@ import { Effect, FileSystem, Layer, Path } from "effect";
 import { constVoid } from "effect/Function";
 import { SqlClient } from "effect/sql";
 import { DatabaseCapabilities } from "../../db/capabilities.js";
-import { DatabaseTooNewError, migrateTo, optimizeOnOpen } from "../../db/migrate.js";
+import {
+  BUSY_TIMEOUT_MS,
+  DatabaseTooNewError,
+  migrateTo,
+  optimizeOnOpen,
+} from "../../db/migrate.js";
 import { MIGRATIONS, ROWID_REBUILD_MIGRATION } from "../../db/migrations.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { registerDatabaseLease } from "./database-access.js";
@@ -81,6 +86,12 @@ export interface DatabaseOptions {
   readonly plannerStatsOwner?: boolean;
   /** Resolve the local extension. Passing null intentionally disables vectors. */
   readonly vectorExtension?: (() => string) | null;
+  /**
+   * How long a statement waits for another process's write lock, from the end of the migrations
+   * on. Defaults to BUSY_TIMEOUT_MS. Lock tests lengthen it so a regression that waits it out
+   * stands far above the time a process takes to start.
+   */
+  readonly busyTimeoutMs?: number;
 }
 
 export function databaseLayer(
@@ -122,6 +133,11 @@ export function databaseLayer(
       }).pipe(Effect.scoped, Effect.ensuring(Effect.sync(dismiss)));
     }
     yield* Effect.orDie(migrateTo(MIGRATIONS.length));
+    // migrateTo sets BUSY_TIMEOUT_MS; the refresh below restores whatever is set here.
+    if (options.busyTimeoutMs !== undefined && options.busyTimeoutMs !== BUSY_TIMEOUT_MS)
+      yield* Effect.orDie(
+        before.unsafe(`PRAGMA busy_timeout = ${Math.trunc(options.busyTimeoutMs)}`).unprepared,
+      );
     yield* optimizeOnOpen({
       owner: options.plannerStatsOwner === true,
       migrated: opened < MIGRATIONS.length,
@@ -204,7 +220,11 @@ export function databaseLayer(
       // Since 4.0.1 a failed open is a typed SqlError. Opening the local
       // database has no recovery path here, so it stays a defect as before.
       return Layer.effect(DatabaseCapabilities, initialize.pipe(Effect.orDie)).pipe(
-        Layer.provideMerge(Layer.orDie(SqliteClient.layer({ filename, busyTimeout: 5000 }))),
+        Layer.provideMerge(
+          Layer.orDie(
+            SqliteClient.layer({ filename, busyTimeout: options.busyTimeoutMs ?? BUSY_TIMEOUT_MS }),
+          ),
+        ),
       );
     }),
   );

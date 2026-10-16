@@ -10,6 +10,7 @@ import { logCodeOf } from "../domain/diagnostic-log.js";
 import { fakeServer, incoming, Store, TestMailbox } from "../platform/node/testing.js";
 import { AuthError, ProviderError } from "../domain/errors.js";
 import { SYNC_FAILURE_TEXT, syncFailureText } from "../sync/sync-failure.js";
+import { LOCK_WAIT_BOUND_MS, LONG_BUSY_TIMEOUT_MS } from "../../test-support/test-time.js";
 import { Mailbox } from "./mailbox.js";
 
 // An inbox poll found another process's write lock held, died with the lock timeout, and wrote its
@@ -36,8 +37,8 @@ it.effect(
           try {
             const started = performance.now();
             const results = yield* m.sync.pollInbox([account.id]);
-            // Unscaled on purpose: the regression waits out the 5 s busy timeout twice.
-            assert.isBelow(performance.now() - started, 4000);
+            // The regression waits out the busy timeout twice.
+            assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
             assert.strictEqual(results.length, 1);
             assert.isDefined(results[0]?.error);
             assert.notInclude(codes, "sync-crashed");
@@ -53,6 +54,7 @@ it.effect(
           Effect.provide(
             TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, undefined, {
               database: file,
+              busyTimeoutMs: LONG_BUSY_TIMEOUT_MS,
             }),
           ),
           Effect.provide(Logger.layer([logger])),
@@ -157,8 +159,8 @@ it.effect(
           try {
             const started = performance.now();
             const results = yield* m.sync.pollInbox();
-            // Unscaled on purpose: the regression waits out the 5 s busy timeout.
-            assert.isBelow(performance.now() - started, 4000);
+            // The regression waits out the busy timeout.
+            assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
             assert.strictEqual(results.length, 1);
             assert.isDefined(results[0]?.error);
             const pulls = server.pulls.length;
@@ -176,6 +178,7 @@ it.effect(
           Effect.provide(
             TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, undefined, {
               database: file,
+              busyTimeoutMs: LONG_BUSY_TIMEOUT_MS,
             }),
           ),
           Effect.scoped,
@@ -282,8 +285,8 @@ it.effect(
           try {
             const started = performance.now();
             const results = yield* m.sync.pollInbox([account.id]);
-            // Unscaled on purpose: the regression waits out the 5 s busy timeout.
-            assert.isBelow(performance.now() - started, 4000);
+            // The regression waits out the busy timeout.
+            assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
             assert.isTrue(results[0]?.needsReauth);
           } finally {
             writer.exec("ROLLBACK");
@@ -299,7 +302,7 @@ it.effect(
           Effect.provide(
             TestMailbox.withAdapter(rejectPull, {
               servers: { gmail: server },
-              platformOptions: { database: file },
+              platformOptions: { database: file, busyTimeoutMs: LONG_BUSY_TIMEOUT_MS },
             }),
           ),
           Effect.scoped,

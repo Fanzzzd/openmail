@@ -70,6 +70,7 @@ export function withMigrationForeignKeys<A, E, E2, R>(
 export const BUSY_TIMEOUT_MS = 5000;
 
 const UserVersion = Schema.Struct({ user_version: Schema.Number });
+const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
 
 /**
  * The database has migrations this build does not know: a newer OpenMail opened it. Running
@@ -187,6 +188,10 @@ export const optimizeQueryPlanner = (options: {
     const sql = yield* SqlClient.SqlClient;
     const connection = yield* sql.reserve;
     const run = (statement: string) => connection.executeUnprepared(statement, [], undefined);
+    const previous = yield* Schema.decodeUnknownEffect(Schema.Array(BusyTimeout))(
+      yield* run("PRAGMA busy_timeout"),
+    );
+    const restore = previous[0]?.timeout ?? BUSY_TIMEOUT_MS;
     yield* run(`PRAGMA busy_timeout = ${options.busyTimeoutMs}`);
     yield* Effect.gen(function* () {
       yield* run("PRAGMA analysis_limit=400");
@@ -217,7 +222,7 @@ export const optimizeQueryPlanner = (options: {
         yield* run(
           `DELETE FROM sqlite_stat1 WHERE tbl IN (SELECT value FROM json_each('${JSON.stringify([...internal]).replaceAll("'", "''")}'))`,
         );
-    }).pipe(Effect.ensuring(run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`).pipe(Effect.ignore)));
+    }).pipe(Effect.ensuring(run(`PRAGMA busy_timeout = ${restore}`).pipe(Effect.ignore)));
   }).pipe(
     Effect.scoped,
     Effect.catchCause((cause) =>

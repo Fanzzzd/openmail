@@ -115,6 +115,8 @@ const MEMORY_DATA_DIR = "/openmail";
 export interface MemoryPlatformOptions {
   /** Isolated on-disk SQLite for integration tests; defaults to an ephemeral database. */
   database?: string;
+  /** The database's busy timeout (DatabaseOptions.busyTimeoutMs). Lock tests lengthen it. */
+  busyTimeoutMs?: number;
   secrets?: Record<string, string>;
   /** Replaces Secrets methods, e.g. a keychain that refuses to delete an item. */
   secretMethods?: Partial<Secrets["Service"]>;
@@ -211,7 +213,14 @@ export function MemoryPlatform(
 
   const browserWithUrls = browser.pipe(Layer.provideMerge(opened));
   return Layer.mergeAll(
-    OAuthIssuersSql.pipe(Layer.provideMerge(databaseLayer(opts.database ?? ":memory:"))),
+    OAuthIssuersSql.pipe(
+      Layer.provideMerge(
+        databaseLayer(
+          opts.database ?? ":memory:",
+          opts.busyTimeoutMs === undefined ? {} : { busyTimeoutMs: opts.busyTimeoutMs },
+        ),
+      ),
+    ),
     NodeRuntime,
     opts.host ? Layer.succeed(PlatformHost, opts.host) : Layer.empty,
     secrets,

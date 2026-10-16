@@ -5,7 +5,7 @@ import * as NodeChildProcessSpawner from "@effect/platform-node/NodeChildProcess
 import * as NodeCrypto from "@effect/platform-node/NodeCrypto";
 import * as NodeFileSystem from "@effect/platform-node/NodeFileSystem";
 import * as NodePath from "@effect/platform-node/NodePath";
-import { Crypto, Effect, FileSystem, Layer, Path } from "effect";
+import { Config, Crypto, Effect, FileSystem, Layer, Option, Path } from "effect";
 import { FetchHttpClient, type HttpClient } from "effect/http";
 import { ChildProcess, ChildProcessSpawner } from "effect/process";
 import type { SqlClient } from "effect/sql";
@@ -16,6 +16,7 @@ import { NodeHost, NodeRuntime, NodePaths } from "./runtime.js";
 import { appConfigFile, readClientsFile } from "../../providers/config.js";
 import { firstClients } from "../../providers/oauth-clients.js";
 import { databaseLayer } from "./db.js";
+import { BUSY_TIMEOUT_MS } from "../../db/migrate.js";
 import { NodeHtmlText } from "./html-text.js";
 import { OAuthLoopback, withAuthorizePage } from "./oauth.js";
 import { dataDir } from "./paths.js";
@@ -142,10 +143,19 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
     Effect.gen(function* () {
       const dir = opts.dataDir ?? (yield* dataDir);
       const path = yield* Path.Path;
+      // Test only: lock tests lengthen the busy timeout so a 5 s wait they guard against stands
+      // far above a loaded runner's process start. It can only grow.
+      const busyTimeout = yield* Config.Int("OPENMAIL_TEST_BUSY_TIMEOUT_MS").pipe(
+        Config.option,
+        Effect.orDie,
+      );
       return Layer.mergeAll(
         databaseLayer(path.join(dir, "mail.db"), {
           ...(opts.onDatabaseUpgrade ? { onDatabaseUpgrade: opts.onDatabaseUpgrade } : {}),
           plannerStatsOwner: opts.plannerStatsOwner === true,
+          ...(Option.isSome(busyTimeout) && busyTimeout.value > BUSY_TIMEOUT_MS
+            ? { busyTimeoutMs: busyTimeout.value }
+            : {}),
         }),
         appConfigFile(
           dir,

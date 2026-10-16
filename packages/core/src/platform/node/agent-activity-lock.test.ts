@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
+import { LOCK_WAIT_BOUND_MS, LONG_BUSY_TIMEOUT_MS } from "../../../test-support/test-time.js";
 import { databaseLayer } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
 import { MemoryPlatform } from "./platform-memory.js";
@@ -23,7 +24,11 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
   Effect.gen(function* () {
     const file = join(yield* temp, "mail.db");
     const layer = StoreLive.pipe(
-      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(
+        databaseLayer(file, { busyTimeoutMs: LONG_BUSY_TIMEOUT_MS }).pipe(
+          Layer.provide(NodeSystem),
+        ),
+      ),
       Layer.provideMerge(MemoryPlatform()),
     );
     yield* Effect.gen(function* () {
@@ -37,15 +42,18 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
         const started = performance.now();
         const failed = yield* Effect.flip(store.appendAgentActivity(entry));
         assert.strictEqual(failed._tag, "DatabaseBusy");
-        // Unscaled on purpose: the regression waits out the 5 s busy timeout, so the bound
-        // must stay under it on every machine.
-        assert.isBelow(performance.now() - started, 4000);
+        // The regression waits out the busy timeout.
+        assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
       } finally {
         writer.exec("ROLLBACK");
         writer.close();
       }
       const rows = yield* sql<{ timeout: number }>`PRAGMA busy_timeout`;
-      assert.strictEqual(rows[0]?.timeout, 5000, "other statements keep the 5 s busy timeout");
+      assert.strictEqual(
+        rows[0]?.timeout,
+        LONG_BUSY_TIMEOUT_MS,
+        "other statements keep the busy timeout",
+      );
       yield* store.appendAgentActivity(entry);
       const activity = yield* store.listAgentActivity(10);
       assert.deepStrictEqual(
@@ -63,7 +71,11 @@ it.effect("an agent_activity row without waitForLock fails at once on a held wri
   Effect.gen(function* () {
     const file = join(yield* temp, "mail.db");
     const layer = StoreLive.pipe(
-      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(
+        databaseLayer(file, { busyTimeoutMs: LONG_BUSY_TIMEOUT_MS }).pipe(
+          Layer.provide(NodeSystem),
+        ),
+      ),
       Layer.provideMerge(MemoryPlatform()),
     );
     yield* Effect.gen(function* () {
@@ -98,7 +110,11 @@ it.effect("search index steps read first and wait only briefly for a held write 
   Effect.gen(function* () {
     const file = join(yield* temp, "mail.db");
     const layer = StoreLive.pipe(
-      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(
+        databaseLayer(file, { busyTimeoutMs: LONG_BUSY_TIMEOUT_MS }).pipe(
+          Layer.provide(NodeSystem),
+        ),
+      ),
       Layer.provideMerge(MemoryPlatform()),
     );
     yield* Effect.gen(function* () {
@@ -115,20 +131,23 @@ it.effect("search index steps read first and wait only briefly for a held write 
         // Nothing pending: no write transaction, so no wait at all.
         assert.deepStrictEqual(yield* store.backfillWordIndex(), { processed: 0, ready: true });
         assert.deepStrictEqual(yield* store.backfillSearchFlags(), { processed: 0, ready: true });
-        // The regression waits out the 5 s busy timeout; a loaded runner can take a second or more.
-        // Unscaled on purpose, so the bound stays under the busy timeout on every machine.
-        assert.isBelow(performance.now() - started, 4000);
+        // The regression waits out the busy timeout; a loaded runner can take a second or more.
+        assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
         // The new message's bigrams are pending, so this step has to write.
         started = performance.now();
         const failed = yield* Effect.flip(store.briefLockWait(store.indexBigrams()));
         assert.strictEqual(failed._tag, "DatabaseBusy");
-        assert.isBelow(performance.now() - started, 4000);
+        assert.isBelow(performance.now() - started, LOCK_WAIT_BOUND_MS);
       } finally {
         writer.exec("ROLLBACK");
         writer.close();
       }
       const rows = yield* sql<{ timeout: number }>`PRAGMA busy_timeout`;
-      assert.strictEqual(rows[0]?.timeout, 5000, "other statements keep the 5 s busy timeout");
+      assert.strictEqual(
+        rows[0]?.timeout,
+        LONG_BUSY_TIMEOUT_MS,
+        "other statements keep the busy timeout",
+      );
       assert.deepStrictEqual(yield* store.briefLockWait(store.indexBigrams()), {
         processed: 1,
         ready: true,
@@ -144,7 +163,11 @@ it.effect("briefLockWait inside a transaction runs on the transaction's connecti
   Effect.gen(function* () {
     const file = join(yield* temp, "mail.db");
     const layer = StoreLive.pipe(
-      Layer.provideMerge(databaseLayer(file, {}).pipe(Layer.provide(NodeSystem))),
+      Layer.provideMerge(
+        databaseLayer(file, { busyTimeoutMs: LONG_BUSY_TIMEOUT_MS }).pipe(
+          Layer.provide(NodeSystem),
+        ),
+      ),
       Layer.provideMerge(MemoryPlatform()),
     );
     yield* Effect.gen(function* () {

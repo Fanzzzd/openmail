@@ -7,6 +7,7 @@ import { Effect, Layer, Logger, References } from "effect";
 import { TestClock } from "effect/testing";
 import { logCodeOf } from "../../domain/diagnostic-log.js";
 import { SqlClient } from "effect/sql";
+import { LOCK_WAIT_BOUND_MS, LONG_BUSY_TIMEOUT_MS } from "../../../test-support/test-time.js";
 import { databaseLayer, type DatabaseOptions } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
 import { MemoryPlatform } from "./platform-memory.js";
@@ -48,16 +49,39 @@ it.effect("opening does not wait for a write lock another process holds", () =>
     try {
       for (const plannerStatsOwner of [true, false]) {
         const started = performance.now();
-        const timeout = yield* open(file, { plannerStatsOwner });
-        // Unscaled on purpose: the regression waits out the 5 s busy timeout, so the bound
-        // stays under it on every machine.
-        assert.isBelow(performance.now() - started, 4000, `owner: ${plannerStatsOwner}`);
-        assert.strictEqual(timeout, 5000, "the on-open refresh restores the busy timeout");
+        const timeout = yield* open(file, {
+          plannerStatsOwner,
+          busyTimeoutMs: LONG_BUSY_TIMEOUT_MS,
+        });
+        // The regression waits out the busy timeout.
+        assert.isBelow(
+          performance.now() - started,
+          LOCK_WAIT_BOUND_MS,
+          `owner: ${plannerStatsOwner}`,
+        );
+        assert.strictEqual(
+          timeout,
+          LONG_BUSY_TIMEOUT_MS,
+          "the on-open refresh restores the busy timeout",
+        );
       }
     } finally {
       writer.exec("ROLLBACK");
       writer.close();
     }
+  }).pipe(Effect.scoped),
+);
+
+// Lock tests open with a 30 s busy timeout. The on-open refresh restored the 5 s constant
+// instead of the timeout the connection had, so the longer wait was gone after open.
+it.effect("the on-open refresh restores a lengthened busy timeout", () =>
+  Effect.gen(function* () {
+    const file = join(yield* temp, "mail.db");
+    assert.strictEqual(
+      yield* open(file, { plannerStatsOwner: true, busyTimeoutMs: LONG_BUSY_TIMEOUT_MS }),
+      LONG_BUSY_TIMEOUT_MS,
+    );
+    assert.strictEqual(yield* open(file, { plannerStatsOwner: true }), 5000);
   }).pipe(Effect.scoped),
 );
 

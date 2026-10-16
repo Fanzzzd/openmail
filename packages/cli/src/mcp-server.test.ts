@@ -9,7 +9,11 @@ import { Effect, Option, Schema } from "effect";
 import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
 import { writeMigratedDatabase } from "../../core/test-support/migrated-database.js";
 import { perfBudget } from "../../core/test-support/perf-budget.js";
-import { scaledMs } from "../../core/test-support/test-time.js";
+import {
+  LOCK_WAIT_BOUND_MS,
+  LONG_BUSY_TIMEOUT_MS,
+  scaledMs,
+} from "../../core/test-support/test-time.js";
 import { splitMcpLogLevel } from "./mcp-server.js";
 
 const Frame = Schema.Struct({
@@ -346,15 +350,19 @@ test.concurrent(
           holder.close();
         });
       },
+      undefined,
+      [],
+      { OPENMAIL_TEST_BUSY_TIMEOUT_MS: String(LONG_BUSY_TIMEOUT_MS) },
     );
-    // Includes the process start but not the seeding. A blocked backfill adds the 5 s busy
-    // timeout, so the bound stays under it on every machine, unscaled.
-    expect(initializeMs).toBeLessThan(4500);
+    // Includes the process start but not the seeding. A start on a loaded runner took 5.1 s, so
+    // a bound under the default 5 s busy timeout failed without the regression. The server waits
+    // LONG_BUSY_TIMEOUT_MS for a lock instead, and a blocked backfill now adds 30 s.
+    expect(initializeMs).toBeLessThan(LOCK_WAIT_BOUND_MS);
     // The backfill retried every 5 s, so calls over 6 s cover one retry. A call may still wait
     // out a few 200 ms brief lock waits, and under load that adds up to seconds. The regression
-    // is one 5 s busy timeout per blocked call, so the default bound sits under it, unscaled.
-    // Only OPENMAIL_PERF=1 (`pnpm --filter @openmail/cli test:perf`, run by perf.yml) asserts
-    // how fast a typical call is.
+    // is one 30 s busy timeout per blocked call. Only OPENMAIL_PERF=1
+    // (`pnpm --filter @openmail/cli test:perf`, run by perf.yml) asserts how fast a typical
+    // call is.
     const until = performance.now() + 6000;
     const durations: number[] = [];
     while (performance.now() < until) {
@@ -364,7 +372,7 @@ test.concurrent(
       );
       expect(called.isError ?? false, called.content[0]?.text).toBe(false);
       durations.push(performance.now() - before);
-      expect(durations.at(-1)).toBeLessThan(4000);
+      expect(durations.at(-1)).toBeLessThan(LOCK_WAIT_BOUND_MS);
       await new Promise((resolve) => {
         setTimeout(resolve, 250);
       });
