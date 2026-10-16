@@ -128,7 +128,7 @@ it("keeps a failure detail on one line and redacts encoded addresses, names and 
   assert.strictEqual(forged, "bad ]0;pwned [2J FAKE: sync ok");
   assert.strictEqual(
     redactErrorMessage("No mailbox user%40example.com, owner Jane Doe <jane@example.com>"),
-    "No mailbox <address>, <address>",
+    "No mailbox <address>, owner <address>",
   );
   assert.strictEqual(
     redactErrorMessage('From "Doe, Jane" <jane@example.com>: rejected'),
@@ -145,6 +145,39 @@ it("keeps a failure detail on one line and redacts encoded addresses, names and 
   // A token the cut splits leaves none of its characters.
   const cut = redactErrorMessage(`${"a ".repeat(140)}${"k".repeat(39)} end ${"x".repeat(400)}`);
   assert.notInclude(cut, "kkk");
+});
+
+// The 40-character token rule ate whole URL paths and the display-name rule ate reply text.
+it("keeps URL paths, dotted hostnames and reply text, and still redacts tokens", () => {
+  assert.strictEqual(
+    redactErrorMessage(
+      "Application-specific password required: https://support.google.com/mail/accounts/answer/78754",
+    ),
+    "Application-specific password required: https://support.google.com/mail/accounts/answer/78754",
+  );
+  assert.strictEqual(
+    redactErrorMessage("https://support.google.com/mail/accounts/answer/78754?hl=en#top"),
+    "https://support.google.com/mail/accounts/answer/78754",
+  );
+  const token = "A1b2C3d4".repeat(6);
+  assert.strictEqual(
+    redactErrorMessage(`see https://example.com/reset/${token}/done`),
+    "see https://example.com/reset/<redacted>/done",
+  );
+  assert.strictEqual(
+    redactErrorMessage(`connect imap.eu-central-1.mail.provider-hosting.example.com failed`),
+    "connect imap.eu-central-1.mail.provider-hosting.example.com failed",
+  );
+  assert.strictEqual(redactErrorMessage(`bearer ${token}`), "bearer <redacted>");
+  assert.strictEqual(redactErrorMessage(`jwt ${token}.${token}.${token}`), "jwt <redacted>");
+  assert.strictEqual(
+    redactErrorMessage("550 5.1.1 User unknown <bob@example.com>"),
+    "550 5.1.1 User unknown <address>",
+  );
+  assert.strictEqual(
+    redactErrorMessage("rejected for Jane Doe <jane@example.com>"),
+    "rejected for <address>",
+  );
 });
 
 // The redaction regexes were quadratic on a long unbroken run (200k characters took 31 s with

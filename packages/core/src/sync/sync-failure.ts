@@ -156,6 +156,22 @@ export const logSyncFailureDetail = (
 /** The longest message a sync failure detail keeps. */
 export const DETAIL_MESSAGE_MAX = 300;
 
+const TOKEN_MIN = 40;
+const HOSTNAME = /^(?:[A-Za-z0-9-]{1,30}\.)+[A-Za-z]{2,24}$/;
+
+/**
+ * A run of token characters at least TOKEN_MIN long. A URL (`scheme://host/path`) keeps its host
+ * and every path segment shorter than a token. A dotted hostname is not a token.
+ */
+const redactRun = (run: string, at: number, text: string): string => {
+  if (run.startsWith("//") && /[A-Za-z][A-Za-z0-9+.-]*:$/.test(text.slice(0, at))) {
+    const [, , host = "", ...path] = run.split("/");
+    const segment = (part: string) => (part.length >= TOKEN_MIN ? "<redacted>" : part);
+    return `//${HOSTNAME.test(host) ? host : segment(host)}${path.map((part) => `/${segment(part)}`).join("")}`;
+  }
+  return HOSTNAME.test(run) ? run : "<redacted>";
+};
+
 /**
  * An error message on one line, without control or bidi characters, addresses (also
  * %40-encoded, with a display name before them), URL queries and fragments, or anything as
@@ -169,7 +185,9 @@ export const redactErrorMessage = (message: string): string => {
     .replace(/[\p{Cc}\u202a-\u202e\u2066-\u2069]+/gu, " ")
     .replace(/%40/gi, "@")
     .replace(
-      /(?:"[^"<>]*"|[^\s<>()"',;:@]+(?:[ \t]+[^\s<>()"',;:@]+){0,2})?[ \t]*<[^<>\s]*@[^<>\s]*>/g,
+      // Only a quoted name or one or two capitalised words directly before the address are a
+      // display name; reply text before it ("User unknown") stays.
+      /(?:(?:"[^"<>]*"|(?<!\S)\p{Lu}[^\s<>()"',;:@]*(?:[ \t]+\p{Lu}[^\s<>()"',;:@]*)?)[ \t]*)?<[^<>\s]*@[^<>\s]*>/gu,
       "<address>",
     )
     .replace(/[^\s<>()"',;:]+@[^\s<>()"',;:]+/g, "<address>")
@@ -177,7 +195,7 @@ export const redactErrorMessage = (message: string): string => {
       // A query or fragment follows a URL or path, never a space.
       at > 0 && !/\s/.test(text[at - 1] ?? " ") ? "" : match,
     )
-    .replace(/[A-Za-z0-9+/=_.-]{40,}/g, "<redacted>")
+    .replace(/[A-Za-z0-9+/=_.-]{40,}/g, redactRun)
     .replace(/ {2,}/g, " ")
     .trim();
   if (message.length <= slice.length && redacted.length <= DETAIL_MESSAGE_MAX) return redacted;
