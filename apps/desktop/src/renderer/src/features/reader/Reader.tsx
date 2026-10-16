@@ -19,6 +19,7 @@ import { BACK_SHORTCUT } from "../../lib/responsive-layout";
 import { ChevronLeft, Mail } from "lucide-react";
 import { TOOLBAR_MIN_WIDTH } from "../../lib/toolbar-fit";
 import { SearchField } from "../search";
+import { searchSlotClass } from "./search-slot";
 import { isDesktop } from "../../lib/platform";
 
 interface Props {
@@ -119,14 +120,8 @@ export function Reader({
             {renderToolbar?.(threadMenu)}
           </div>
         )}
-        {/* Beside the toolbar, search starts at 14rem: room for a query with the scope as an
-            icon. A header of 960 px leaves every default action room beside 20rem of search.
-            While focused or holding a query it takes 20rem anyway; the toolbar folds actions. */}
         {!onBack && (
-          <div
-            data-search-slot
-            className={`flex min-w-0 ${prefs.toolbarVisible ? `flex-[0_1_14rem] focus-within:basis-80 @min-[960px]/bar:basis-80 ${query ? "basis-80" : ""}` : "flex-1"}`}
-          >
+          <div data-search-slot className={searchSlotClass(prefs.toolbarVisible, query)}>
             <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
           </div>
         )}

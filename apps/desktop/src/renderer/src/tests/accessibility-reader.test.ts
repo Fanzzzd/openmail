@@ -448,3 +448,29 @@ it("opens the dates found menu by keyboard, audits it and returns focus", async 
   await user.keyboard("{Escape}");
   await waitFor(() => expect(document.activeElement).toBe(trigger));
 });
+
+// Chips truncated to "from:NO…" in a 320 px field while the header had room to spare.
+it("lets reader search with a query grow toward 520 px beside the toolbar", () => {
+  render(
+    localized(
+      h(Reader, {
+        renderToolbar: () => null,
+        messageId: null,
+        threadKey: null,
+        query: "from:nora label:travel",
+        onQuery: vi.fn(),
+        searchRef: createRef<HTMLInputElement>(),
+        onEditDraft: vi.fn(),
+        notify: vi.fn(),
+        onSelectMessage: vi.fn(),
+        onMarkUnread: vi.fn(),
+        onActionDone: vi.fn(),
+        onComposeMessage: vi.fn(),
+      }),
+    ),
+  );
+  const slot = document.querySelector("[data-search-slot]");
+  expect(slot?.closest("header")?.className).toContain("@container/bar");
+  expect(slot?.className).toContain("basis-[clamp(20rem,100cqw_-_40rem,32.5rem)]!");
+  expect(slot?.className).toContain("flex-[0_1_14rem]");
+});
