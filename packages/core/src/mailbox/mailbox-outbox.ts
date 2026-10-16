@@ -396,17 +396,18 @@ export const makeOutboxMailbox = (
     });
 
   /**
-   * Claims and sends a waiting intent. `expires` applies the two-minute wall-clock
-   * expiry to desktop intents; the in-process undo worker turns it off, since its
-   * timer stops while the machine sleeps and the user already let the undo window pass.
+   * Claims and sends a waiting intent. `expires` has no default, so each caller states it. It
+   * applies the two-minute wall-clock expiry to desktop intents; the in-process undo worker
+   * turns it off, since its timer stops while the machine sleeps and the user already let the
+   * undo window pass.
    */
   const deliverQueuedSend = (
     id: string,
     {
       deliveryId,
       canSend = () => true,
-      expires = true,
-    }: { deliveryId?: string | undefined; canSend?: () => boolean; expires?: boolean } = {},
+      expires,
+    }: { deliveryId?: string | undefined; canSend?: () => boolean; expires: boolean },
   ) =>
     Effect.gen(function* () {
       if (!canSend()) return yield* new InvalidInput({ message: "Queued delivery is paused" });
@@ -580,9 +581,11 @@ export const makeOutboxMailbox = (
           yield* changed;
           continue;
         }
-        yield* deliverQueuedSend(item.id, { deliveryId: item.deliveryId, canSend }).pipe(
-          Effect.result,
-        );
+        yield* deliverQueuedSend(item.id, {
+          deliveryId: item.deliveryId,
+          canSend,
+          expires: true,
+        }).pipe(Effect.result);
         yield* changed;
       }
     });
