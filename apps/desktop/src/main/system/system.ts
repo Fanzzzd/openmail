@@ -3,7 +3,12 @@ import { validOpenFile } from "../security/security-policy";
 import { nativeTabMenu } from "../windows/window-keys";
 import { readDockFiles, dockFileReason } from "../files/dock-files";
 import { NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-actions";
-import { applicationMenuTemplate, closeWindowTarget } from "./app-menu";
+import {
+  applicationMenuTemplate,
+  closeWindowTarget,
+  goesToMainWindow,
+  unfocusedMenuState,
+} from "./app-menu";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { configureSpelling, installSpellingMenu } from "../windows/spellcheck";
 import { approveUpdateQuit } from "../updates/update-install";
@@ -267,6 +272,8 @@ export const DesktopLive = Layer.effect(
     let menuKey = "";
     /** The window focused last, which Close window acts on while the app is in the background. */
     let lastUsedWindow: BrowserWindow | undefined;
+    /** The spaces the Go menu listed last, kept while no main window reports them. */
+    let lastMenuSpaces: readonly string[] | undefined;
     const refreshLock = yield* Semaphore.make(1);
     const refresh = refreshLock.withPermits(1)(
       Effect.gen(function* () {
@@ -356,9 +363,19 @@ export const DesktopLive = Layer.effect(
         const undoAvailable = focused
           ? (sendStates.get(focused.webContents.id)?.undoAvailable ?? false)
           : false;
+        const lastUsed =
+          lastUsedWindow && !lastUsedWindow.isDestroyed() && isMainWindow(lastUsedWindow)
+            ? [lastUsedWindow]
+            : [];
         const menuState = focused
           ? (menuStates.get(focused.webContents.id) ?? NO_MENU_SELECTION)
-          : NO_MENU_SELECTION;
+          : unfocusedMenuState(
+              [...lastUsed, ...BrowserWindow.getAllWindows().filter(isMainWindow)].map((win) =>
+                menuStates.get(win.webContents.id),
+              ),
+              lastMenuSpaces,
+            );
+        if (menuState.spaces) lastMenuSpaces = menuState.spaces;
         const nextMenuKey = JSON.stringify([labels, prefs.shortcutSet, undoAvailable, menuState]);
         if (menuKey !== nextMenuKey) {
           menuKey = nextMenuKey;
@@ -413,7 +430,9 @@ export const DesktopLive = Layer.effect(
                     deliver({ _tag: "UndoSend" }, target);
                 },
                 nativeAction: (action, triggeredByAccelerator) => {
-                  const target = BrowserWindow.getFocusedWindow();
+                  const target =
+                    BrowserWindow.getFocusedWindow() ??
+                    (goesToMainWindow(action) ? focusMainWindow() : null);
                   if (target)
                     deliver({ _tag: "NativeAction", action, triggeredByAccelerator }, target);
                 },

@@ -6,7 +6,9 @@ import {
   isGoMailbox,
   isGoSpace,
   NATIVE_MENUS,
+  NO_MENU_SELECTION,
   nativeActionEnabled,
+  nativeMenuActions,
   nativeActionLabelKey,
   type NativeAction,
   type NativeMenuEntry,
@@ -86,6 +88,25 @@ export type CloseWindowTarget<W> =
   | { readonly _tag: "Sheet" | "Window"; readonly window: W }
   | { readonly _tag: "FirstResponder" }
   | { readonly _tag: "None" };
+
+const GO_ACTIONS: ReadonlySet<NativeAction> = new Set(
+  NATIVE_MENUS.filter((menu) => menu.name === "go").flatMap(nativeMenuActions),
+);
+/** Go menu items act on the main window, so they still work with no window focused. */
+export const goesToMainWindow = (action: NativeAction): boolean => GO_ACTIONS.has(action);
+
+/**
+ * The menu state with no focused window: the app is in the background, or its windows opened
+ * without focus (OPENMAIL_BACKGROUND_WINDOWS). Nothing is selected. The Go menu lists the spaces
+ * of the first main window state that has them, else the spaces it listed last.
+ */
+export function unfocusedMenuState(
+  mainWindowStates: readonly (NativeMenuState | undefined)[],
+  lastSpaces: readonly string[] | undefined,
+): NativeMenuState {
+  const spaces = mainWindowStates.find((state) => state?.spaces)?.spaces ?? lastSpaces;
+  return spaces ? { ...NO_MENU_SELECTION, spaces } : NO_MENU_SELECTION;
+}
 
 /**
  * What Close window acts on. The menu item decides when it is chosen, from the window's latest

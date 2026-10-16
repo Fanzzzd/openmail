@@ -16,7 +16,13 @@ import {
   type MenuShortcut,
   type ShortcutSet,
 } from "../../shared/shortcuts";
-import { applicationMenuTemplate, closeWindowTarget, nativeActionAccelerator } from "./app-menu";
+import {
+  applicationMenuTemplate,
+  closeWindowTarget,
+  goesToMainWindow,
+  nativeActionAccelerator,
+  unfocusedMenuState,
+} from "./app-menu";
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { externalUrl } from "../../shared/external-url";
@@ -99,6 +105,28 @@ it("menu actions keep the keymap's accelerators; Go adds the folder keys", () =>
   expect(nativeActionAccelerator("mimestream", "zoomIn")).toBe("CommandOrControl+Plus");
   expect(nativeActionAccelerator("mimestream", "reply")).toBe("CommandOrControl+r");
   expect(nativeActionAccelerator("mimestream", "alignLeft")).toBe("CommandOrControl+{");
+});
+
+it("Go keeps its spaces with no focused window, and its items reach the main window", () => {
+  const spacesOf = (state: NativeMenuState) =>
+    labels(submenu(template("darwin", "mimestream", state).menu, "Go")).slice(0, 4);
+  const work = { ...NO_MENU_SELECTION, selected: true, spaces: ["Work", "Home"] };
+  // In the background: the main window's state, but nothing selected.
+  const background = unfocusedMenuState([undefined, work], undefined);
+  expect(background).toEqual({ ...NO_MENU_SELECTION, spaces: ["Work", "Home"] });
+  expect(spacesOf(background)).toEqual(["Overview", "All accounts", "Work", "Home"]);
+  // No main window reports spaces: the ones listed last stay.
+  expect(spacesOf(unfocusedMenuState([], ["Work"]))).toEqual([
+    "Overview",
+    "All accounts",
+    "Work",
+    "---",
+  ]);
+  expect(unfocusedMenuState([], undefined)).toBe(NO_MENU_SELECTION);
+  for (const action of ["goSpace1", "goOverview", "goAllAccounts", "goInbox"] as const)
+    expect(goesToMainWindow(action)).toBe(true);
+  for (const action of ["reply", "archive", "zoomIn"] as const)
+    expect(goesToMainWindow(action)).toBe(false);
 });
 
 it("Go lists Overview, All accounts and each space with the keys that open them", () => {
