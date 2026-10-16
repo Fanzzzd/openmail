@@ -409,11 +409,24 @@ describe("expected sync failures", () => {
     expect(sync.stderr.split("\n").filter((line) => line.trim() !== "")).toEqual([
       "Syncing mail…",
       "error: Some accounts did not sync.",
+      "hint: Run it again, or add --log-level warn to see why.",
     ]);
-    expect(sync.stdout).toContain("error: Sync could not finish.");
+    // openmail sync runs once, so nothing retries, and errors are all it logs by default.
+    expect(sync.stdout).toContain(
+      "error: Sync could not finish. Run it again, or add --log-level warn to see why.",
+    );
+    expect(sync.stdout).not.toContain("retry");
     const health = await openmail(["health"], home.path, offline);
     expect(health.code, health.stderr).toBe(0);
     expect(health.stderr).toBe("");
+  });
+
+  test("--json names the same next step and promises no retry", async () => {
+    const sync = await openmail(["sync", "--json"], home.path, offline);
+    expect(sync.code).toBe(1);
+    expect(sync.stdout).not.toContain("retry");
+    expect(sync.stdout).not.toContain("openmail --help");
+    expect(sync.stdout).toContain('"hint": "Run it again, or add --log-level warn to see why."');
   });
 
   test("--log-level warn still shows them", async () => {

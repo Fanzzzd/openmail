@@ -10,7 +10,7 @@ import {
   printable,
   printableLines,
 } from "@openmail/core";
-import type { ThreadSummary } from "@openmail/core/schema";
+import { SYNC_FAILURE_TEXT, type ThreadSummary } from "@openmail/core/schema";
 
 const two = (n: number) => String(n).padStart(2, "0");
 /**
@@ -84,6 +84,28 @@ export function threadTable(rows: readonly ThreadSummary[]): string {
     })
     .join("\n");
 }
+
+/** The next step after a failed `openmail sync`. Errors are all it logs by default. */
+export const SYNC_FAILED_HINT = "Run it again, or add --log-level warn to see why.";
+
+/**
+ * The app retries a failed sync on its own and says so. `openmail sync` runs once, so these
+ * failures say what to do instead.
+ */
+const CLI_SYNC_FAILURE_TEXT = new Map([
+  [SYNC_FAILURE_TEXT.unknown, `Sync could not finish. ${SYNC_FAILED_HINT}`],
+  [SYNC_FAILURE_TEXT.quota, "The mail provider is limiting requests. Run sync again later."],
+  [
+    SYNC_FAILURE_TEXT.server,
+    "The mail server had a problem. Run sync again later, or add --log-level warn to see why.",
+  ],
+]);
+
+/** A sync result as `openmail sync` reports it. */
+export const cliSyncResult = (result: SyncResult): SyncResult => {
+  const error = result.error && CLI_SYNC_FAILURE_TEXT.get(result.error);
+  return error ? { ...result, error } : result;
+};
 
 export function syncTable(results: readonly SyncResult[]): string {
   if (results.length === 0) return "(no accounts)";

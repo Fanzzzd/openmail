@@ -17,7 +17,7 @@ import {
 } from "@openmail/core/schema";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
-import { messageText, syncTable, threadTable } from "../format.js";
+import { SYNC_FAILED_HINT, cliSyncResult, messageText, syncTable, threadTable } from "../format.js";
 
 const health = Command.make(
   "health",
@@ -73,7 +73,9 @@ const sync = Command.make(
     const mailbox = yield* Mailbox;
     const ids = yield* accountScope(account, Option.none());
     const results = yield* withProgress(
-      Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(Effect.map((rows) => rows.flat())),
+      Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(
+        Effect.map((rows) => rows.flat().map(cliSyncResult)),
+      ),
       !json,
     );
     // The app does both in the background; a CLI-only mailbox gets them here.
@@ -81,7 +83,9 @@ const sync = Command.make(
     // A refresh the app's writer keeps busy is skipped quietly; the app refreshes hourly.
     yield* mailbox.sync.refreshPlannerStats.pipe(Effect.provide(Logger.layer([])));
     yield* print({ results }, json, (value) => syncTable(value.results));
-    return yield* results.some((r) => r.error) ? fail("Some accounts did not sync.") : Effect.void;
+    return yield* results.some((r) => r.error)
+      ? fail("Some accounts did not sync.", { hint: SYNC_FAILED_HINT })
+      : Effect.void;
   }),
 ).pipe(Command.withDescription("Push queued changes, then fetch changes into the local database"));
 
