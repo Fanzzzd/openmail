@@ -2,7 +2,7 @@ import { ContextMenu } from "@base-ui/react/context-menu";
 import { Menu } from "@base-ui/react/menu";
 import { Check, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import type { ComponentProps, ComponentType, ReactElement, ReactNode } from "react";
+import type { ComponentProps, ComponentType, MouseEvent, ReactElement, ReactNode } from "react";
 
 import { useOpenSurface } from "./open-surfaces";
 import { itemClass, kbdClass, popupMotion, popupSurface, separatorClass } from "./styles";
@@ -79,7 +79,8 @@ interface ItemProps {
   icon?: Icon | undefined;
   /** Shown right-aligned, for example "E". Not translated. */
   shortcut?: string | undefined;
-  onClick: () => void;
+  /** The event's currentTarget is the item, while the menu is still open. */
+  onClick: (event: MouseEvent<HTMLElement>) => void;
   disabled?: boolean;
   children: ReactNode;
 }

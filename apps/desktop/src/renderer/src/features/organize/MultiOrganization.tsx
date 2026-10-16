@@ -20,6 +20,18 @@ export const offersOrganization = (provider: Provider, labels: readonly Label[])
   providerCapabilities(provider).categories ||
   labels.some((label) => !label.id.startsWith("category:"));
 
+/**
+ * What opened a menu, for a form that outlives it: the row whose context menu it is, else the
+ * button whose menu it is, else the item itself.
+ */
+export function menuOpener(item: Element | null): Element | null {
+  const menu = item?.closest('[role="menu"]');
+  const button = menu?.id
+    ? document.querySelector(`[aria-controls="${CSS.escape(menu.id)}"]`)
+    : null;
+  return document.querySelector("[data-menu-open]") ?? button ?? item ?? null;
+}
+
 function useTitle(provider: Provider) {
   const { t } = useLingui();
   return providerCapabilities(provider).categories ? t`Categories…` : t`Copy to folders…`;
@@ -59,11 +71,17 @@ export function MultiOrganizationItem(target: OrganizationTarget) {
   if (!offersOrganization(target.provider, target.labels)) return null;
   return (
     <MenuItem
-      onClick={() => {
-        // The item goes away with the menu; keep where it was.
-        const item = document.activeElement?.closest('[role^="menuitem"]');
-        const rect = item?.getBoundingClientRect() ?? DOMRect.fromRect();
-        request({ ...target, anchor: { getBoundingClientRect: () => rect } });
+      onClick={(event) => {
+        // The item goes away with the menu; the form opens at what opened the menu.
+        const opener = menuOpener(event.currentTarget);
+        const rect = opener?.getBoundingClientRect() ?? DOMRect.fromRect();
+        request({
+          ...target,
+          anchor: {
+            getBoundingClientRect: () =>
+              opener?.isConnected ? opener.getBoundingClientRect() : rect,
+          },
+        });
       }}
     >
       {title}

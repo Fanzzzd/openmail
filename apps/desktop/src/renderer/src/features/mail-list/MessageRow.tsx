@@ -198,6 +198,8 @@ export const Row = memo(function Row({
         tabIndex={tabbable ? 0 : -1}
         aria-describedby={describedBy || undefined}
         aria-selected={selected}
+        // A form a row's menu opens anchors here after the menu closes.
+        data-menu-open={menuOpen || undefined}
         aria-setsize={total}
         aria-posinset={position}
         onClick={(event) =>
