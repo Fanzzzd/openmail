@@ -366,7 +366,11 @@ describe("accounts add", () => {
         // The child owns its database files, so wait for it to exit before the directory goes.
         const exited =
           child.exitCode === null && child.signalCode === null
-            ? new Promise<void>((done) => child.once("close", () => done()))
+            ? new Promise<void>((done) => {
+                child.once("close", () => {
+                  done();
+                });
+              })
             : Promise.resolve();
         child.kill();
         await exited;
@@ -707,7 +711,7 @@ describe("list pages through threads that share a date", () => {
         "UPDATE messages SET date=?1, list_date=?1 WHERE account_id=?2 AND thread_id=?3",
       );
       for (const thread of [first, second])
-        move.run(Number(newest), String(thread?.account_id), String(thread?.thread_id));
+        move.run(Number(newest), String(thread.account_id), String(thread.thread_id));
     } finally {
       db.close();
     }

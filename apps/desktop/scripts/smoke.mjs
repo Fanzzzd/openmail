@@ -54,7 +54,9 @@ const report = {
   failure: "",
 };
 const STDERR_TAIL_BYTES = 4096;
-let child, cdp;
+/** @type {import("node:child_process").ChildProcess | undefined} */
+let child;
+let cdp;
 let stderrTail = "";
 let uiReady = false;
 const cleanup = createSmokeCleanup({
