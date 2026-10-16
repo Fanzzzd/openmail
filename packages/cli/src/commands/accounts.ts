@@ -68,6 +68,33 @@ const accountsList = Command.make(
 
 const presetNames = [...Object.keys(IMAP_PRESETS), "custom"];
 
+const validPort = (port: number) => Number.isInteger(port) && port >= 1 && port <= 65535;
+const validEmail = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+/** The first imap flag that can be checked without the network, as a message; undefined if all pass. */
+const badImapFlag = (o: {
+  readonly email: Option.Option<string>;
+  readonly imapPort: Option.Option<number>;
+  readonly smtpPort: Option.Option<number>;
+  readonly imapHost: Option.Option<string>;
+  readonly smtpHost: Option.Option<string>;
+}): string | undefined => {
+  if (Option.isSome(o.email) && !validEmail(o.email.value))
+    return `--email ${o.email.value} is not an email address.`;
+  for (const [flag, port] of [
+    ["--imap-port", o.imapPort],
+    ["--smtp-port", o.smtpPort],
+  ] as const)
+    if (Option.isSome(port) && !validPort(port.value))
+      return `${flag} ${port.value} is not a port between 1 and 65535.`;
+  for (const [flag, host] of [
+    ["--imap-host", o.imapHost],
+    ["--smtp-host", o.smtpHost],
+  ] as const)
+    if (Option.isSome(host) && host.value.trim() === "") return `${flag} is empty.`;
+  return undefined;
+};
+
 const accountsAdd = Command.make(
   "add",
   {
@@ -97,7 +124,11 @@ const accountsAdd = Command.make(
     let account;
     if (!oauthProvider(o.provider)) {
       const preset = Option.getOrUndefined(o.preset);
-      if (!preset) return yield* fail(`--preset is required for imap: ${presetNames.join(", ")}`);
+      if (!preset)
+        return yield* fail(`--preset is required for imap: ${presetNames.join(", ")}`, {
+          code: "invalid_input",
+          hint: `Use one of ${presetNames.join(", ")}.`,
+        });
       if (!presetNames.includes(preset)) {
         return yield* fail(`Unknown preset ${preset}.`, {
           code: "invalid_input",
@@ -116,6 +147,18 @@ const accountsAdd = Command.make(
           });
         }
       }
+      const badFlag = badImapFlag(o);
+      if (badFlag)
+        return yield* fail(badFlag, {
+          code: "invalid_input",
+          hint: "Fix the flag and run the command again.",
+        });
+      if (Option.isNone(o.email) && !process.stdin.isTTY) {
+        return yield* fail("No --email and stdin is not a terminal, so there is nothing to ask.", {
+          code: "invalid_input",
+          hint: "Pass --email or run in a terminal.",
+        });
+      }
       const email = Option.isSome(o.email)
         ? o.email.value
         : yield* Prompt.run(Prompt.String({ message: "Email address" }));
@@ -126,7 +169,7 @@ const accountsAdd = Command.make(
       if (Option.isNone(o.password) && Option.isNone(fromEnv) && !process.stdin.isTTY) {
         return yield* fail("No app password to use and stdin is not a terminal.", {
           code: "invalid_input",
-          hint: "Set OPENMAIL_IMAP_PASSWORD or run in a terminal.",
+          hint: "Set OPENMAIL_IMAP_PASSWORD, pass --password or run in a terminal.",
         });
       }
       const password = Option.isSome(o.password)

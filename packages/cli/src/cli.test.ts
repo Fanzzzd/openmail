@@ -230,9 +230,33 @@ describe("accounts add", () => {
     );
     expect(code, stderr).toBe(1);
     expect(stdout).toBe("");
-    expect(stderr).toContain("hint: Set OPENMAIL_IMAP_PASSWORD or run in a terminal.");
+    expect(stderr).toContain(
+      "hint: Set OPENMAIL_IMAP_PASSWORD, pass --password or run in a terminal.",
+    );
     expect(stderr).not.toContain("\u001b");
     expect(stderr).not.toMatch(/App password/);
+  });
+
+  test("bad --email and ports fail with invalid_input before any prompt", async () => {
+    const base = ["accounts", "add", "imap", "--preset", "icloud"];
+    for (const [flags, message] of [
+      [["--email", "nobody"], "--email nobody is not an email address."],
+      [["--email", "a@b.c", "--imap-port", "70000"], "--imap-port 70000 is not a port"],
+      [["--email", "a@b.c", "--smtp-port", "0"], "--smtp-port 0 is not a port"],
+    ] as const) {
+      const { code, stdout, stderr } = await openmail([...base, ...flags]);
+      expect(code, stderr).toBe(1);
+      expect(stdout).toBe("");
+      expect(stderr).toContain(message);
+      expect(stderr).not.toContain("Create an app-specific password");
+      expect(stderr).not.toMatch(/App password/);
+    }
+  });
+
+  test("without --email or a terminal, fails instead of asking", async () => {
+    const { code, stderr } = await openmail(["accounts", "add", "imap", "--preset", "icloud"]);
+    expect(code, stderr).toBe(1);
+    expect(stderr).toContain("hint: Pass --email or run in a terminal.");
   });
 
   test("custom without hosts fails before any password prompt, even with stdin closed", async () => {
