@@ -206,13 +206,16 @@ function MessageListBody({
     ...(reauthSearch ? [t`${reauthSearch} must sign in again to search the server.`] : []),
   ].join(" ");
   // Server results skip these operators; the list then applies the whole query to them locally.
-  const searchIgnoredMessages = searchIgnored.map(({ accountId, operators }) => {
-    const account = accountLabel(accountId);
-    const names = operators.join(", ");
-    return operators.length === 1
-      ? t`${account}: the server can't search with ${names}. OpenMail searched the server without it and applied it to the results here.`
-      : t`${account}: the server can't search with ${names}. OpenMail searched the server without them and applied them to the results here.`;
-  });
+  // An account whose server search failed has no server results, so only the failure shows.
+  const searchIgnoredMessages = searchIgnored
+    .filter(({ accountId }) => !searchErrorAccounts.includes(accountId))
+    .map(({ accountId, operators }) => {
+      const account = accountLabel(accountId);
+      const names = operators.join(", ");
+      return operators.length === 1
+        ? t`${account}: the server can't search with ${names}. OpenMail searched the server without it and applied it to the results here.`
+        : t`${account}: the server can't search with ${names}. OpenMail searched the server without them and applied them to the results here.`;
+    });
   /** The row under the pointer at the right-click, set before the menu opens. */
   const pressed = useRef<string | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
@@ -408,7 +411,7 @@ function MessageListBody({
           <Trans>More matches exist. Narrow your search.</Trans>
         </p>
       )}
-      {searchIgnored.length > 0 && (
+      {searchIgnoredMessages.length > 0 && (
         <output className="px-5 pb-2 text-footnote text-orange-700 dark:text-orange-400">
           {searchIgnoredMessages.join(" ")}
         </output>
