@@ -45,6 +45,16 @@ export function signInCommand(accountId: string, imap?: ImapSettings): string {
   return `openmail accounts add imap ${flags.join(" ")}`;
 }
 
+/**
+ * A stored sync error that promises a retry the CLI does not make. The app retries while it
+ * runs; from the CLI the next step is `openmail sync`.
+ */
+const STORED_ERROR_TEXT = new Map([
+  [SYNC_FAILURE_TEXT.unknown, "Sync could not finish. Run `openmail sync` to try again."],
+  [SYNC_FAILURE_TEXT.quota, "The mail provider is limiting requests. Run `openmail sync` later."],
+  [SYNC_FAILURE_TEXT.server, "The mail server had a problem. Run `openmail sync` later."],
+]);
+
 export function accountTable(rows: readonly Account[]): string {
   if (rows.length === 0) return "(no accounts; run `openmail accounts add gmail`)";
   return rows
@@ -54,7 +64,9 @@ export function accountTable(rows: readonly Account[]): string {
       const reauth = a.needsReauth
         ? `  needs sign-in${reason}: ${signInCommand(a.id, a.imap)}`
         : "";
-      const error = a.lastSyncError ? `  error: ${a.lastSyncError}` : "";
+      const error = a.lastSyncError
+        ? `  error: ${STORED_ERROR_TEXT.get(a.lastSyncError) ?? a.lastSyncError}`
+        : "";
       return `${a.id}  last sync: ${synced}${reauth}${error}`;
     })
     .join("\n");

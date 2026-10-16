@@ -12,6 +12,7 @@ import {
   syncTable,
   threadTable,
 } from "./format.js";
+import { SYNC_FAILURE_TEXT } from "@openmail/core/schema";
 
 const ESC = "\u001b";
 
@@ -214,4 +215,24 @@ describe("sign-in commands", () => {
       "`openmail accounts reauth <account_id>`, or for an imap account `openmail accounts add imap",
     );
   });
+});
+
+// accounts list printed the app's "It will retry automatically.", which the CLI never does.
+it("accounts list names openmail sync for a stored error that promises a retry", () => {
+  const account: Account = {
+    id: "gmail:a@example.com",
+    provider: "gmail",
+    email: "a@example.com",
+    createdAt: 0,
+    lastSyncedAt: null,
+    lastSyncError: SYNC_FAILURE_TEXT.unknown,
+    profileId: null,
+    needsReauth: false,
+  };
+  expect(accountTable([account])).toBe(
+    "gmail:a@example.com  last sync: never  error: Sync could not finish. Run `openmail sync` to try again.",
+  );
+  expect(accountTable([{ ...account, lastSyncError: SYNC_FAILURE_TEXT.dns }])).toContain(
+    SYNC_FAILURE_TEXT.dns,
+  );
 });
