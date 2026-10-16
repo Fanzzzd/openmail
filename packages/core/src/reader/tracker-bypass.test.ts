@@ -21,7 +21,7 @@ import { trackerFor } from "./trackers.js";
 const T = "https://mandrillapp.com/track/open.php?u=1";
 const PIXEL = "https://unlisted.example/p.gif";
 
-/** The judge's payloads (t2.mjs and t3.mjs), minus one that names a tracker only in another host's query. */
+/** Payloads a review used to slip a tracker past the sanitizer, minus one that names a tracker only in another host's query. */
 const JUDGE = [
   `<img src="${T}">`,
   `<IMG\nSRC="${T}">`,
