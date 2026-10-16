@@ -328,3 +328,15 @@ it("the mobile catalogs use the same glossary, quote styles and register", async
     );
   expect(failures).toEqual([]);
 });
+
+it("every COMMAND_LABELS entry is still an English source in the desktop or mobile catalog", async () => {
+  const sources = new Set<string>();
+  for (const url of [
+    new URL("../locales/en/messages.po", import.meta.url),
+    new URL("../../../../../mobile/src/locales/en/messages.po", import.meta.url),
+  ])
+    for (const [id, message] of Object.entries(await parseCatalog(url, "en")))
+      sources.add(message.message ?? id);
+  // A renamed source would silently stop being checked as a command.
+  expect([...COMMAND_LABELS].filter((label) => !sources.has(label))).toEqual([]);
+});
