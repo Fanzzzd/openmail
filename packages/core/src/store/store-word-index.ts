@@ -209,7 +209,7 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
    * ranges. Rows inserted or changed since then have theirs from the triggers; rewriting one
    * gives the same text.
    */
-  const backfillOperatorText = (requested = 500) =>
+  const backfillOperatorText = (requested = 200) =>
     Effect.gen(function* () {
       if (yield* operatorTextReady) return { processed: 0, ready: true };
       return yield* backfillOperatorTextBatch(requested);

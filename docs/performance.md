@@ -254,9 +254,17 @@ fixture P，修复前后：
 
 - 每列用 char(30) 连接多个值，姓名和地址之间用 char(31)。不含这两个字符的 LIKE 模式只能在一个值内命中，和原来逐个 `json_each` 值判断相同。搜索值含这两个字符或为空时仍用原来的逐行判断。
 - `messages` 上的 INSERT、UPDATE、DELETE 触发器维护这张表，先删后插。UPDATE 触发器只在四个 JSON 列真的变了时执行，只改标签的同步不写副表。`json_valid` 和 `type='object'` 跳过坏 JSON，写入不会因此失败。
-- 迁移本身不回填：在 2.3 GB 上一次回填要 13.7 s，而迁移在启动窗口里同步运行。`message_operator_text_backfill` 记下迁移时的最大 rowid，后台循环（`mailbox-live.ts`，在词索引和 has: 标志之后）每批 500 行提交一次，可中断、可续。回填完成前，这几个运算符继续用原来的逐行判断，结果不变；完成后改成 `(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE to_text LIKE ? ESCAPE '\')`，`+0` 不让集合驱动遍历。新安装时迁移看到空表，直接标记完成。
+- 迁移本身不回填：在 2.3 GB 上一次回填要 13.7 s，而迁移在启动窗口里同步运行。`message_operator_text_backfill` 记下迁移时的最大 rowid，后台循环（`mailbox-live.ts`，在词索引和 has: 标志之后）每批 200 行提交一次，可中断、可续。回填完成前，这几个运算符继续用原来的逐行判断，结果不变；完成后改成 `(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE to_text LIKE ? ESCAPE '\')`，`+0` 不让集合驱动遍历。新安装时迁移看到空表，直接标记完成。
 
-写入成本：1 万封带收件人、附件和 List-Id 的邮件，插入从 2.75 s 到 2.84 s（+3%），只改标签的再次写入从 2.15 s 到 2.17 s。fixture P 的回填 100k 行共 1.7 s，200 批，最慢一批 54 ms。
+写入成本：1 万封带收件人、附件和 List-Id 的邮件，插入从 2.75 s 到 2.84 s（+3%），只改标签的再次写入从 2.15 s 到 2.17 s。回填每批 200 行，和词索引的默认批量相同：
+
+| 数据                   | 总时间 | 批数 | 每批 p50 | 每批 p95 | 最慢一批 |
+| ---------------------- | -----: | ---: | -------: | -------: | -------: |
+| fixture P（600 MB）    |  1.9 s |  500 |     3 ms |     5 ms |    38 ms |
+| fixture R（2.3 GB）    | 17.2 s |  510 |    27 ms |    35 ms |   402 ms |
+| fixture R，每批 500 行 | 14.4 s |  204 |    63 ms |   100 ms |   249 ms |
+
+每批 500 行时 p95 到 100 ms，写锁占得更久，所以用 200。两种批量的最慢一批都是零星的 250–400 ms，出现在中途，和批量无关。
 
 fixture P，修复前后：
 
