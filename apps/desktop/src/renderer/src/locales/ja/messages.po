@@ -7751,8 +7751,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "この下書きには、このエディタで保持できない書式または画像が含まれています。本文を編集するまで元のメッセージは保持されます。"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "この下書きには未保存の変更が含まれているか、同期を待機しています。"
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "この下書きには未保存の変更が含まれているか、同期できませんでした。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

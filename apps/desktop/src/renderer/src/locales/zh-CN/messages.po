@@ -7761,8 +7761,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "草稿含有编辑器不支持的格式或图片。编辑正文前会保留原文。"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "草稿有未保存的修改或正在等待同步。"
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "草稿有未保存的修改或无法同步。"
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

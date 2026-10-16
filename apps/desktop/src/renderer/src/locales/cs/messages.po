@@ -7751,8 +7751,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "Tento koncept obsahuje formátování nebo obrázky, které editor nedokáže zachovat. Originál zůstane zachován, dokud neupravíte text zprávy."
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "Tento koncept obsahuje neuložené změny nebo čeká na synchronizaci."
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "Tento koncept obsahuje neuložené změny nebo se jeho synchronizace nezdařila."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

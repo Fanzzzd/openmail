@@ -180,3 +180,27 @@ it("discarding in a compose window holds the draft and asks the main window to o
     typeof discard === "object" && discard !== null && "id" in discard ? String(discard.id) : "";
   expect((await h.run(h.m.compose.restoreDraft(id))).message.subject).toBe("Window draft");
 });
+
+it("closing a draft saved on this Mac that waits to sync closes quietly; an unsaved edit still asks", async () => {
+  current = await flow();
+  const h = current;
+  await newDraft(h, "Waiting to sync");
+  h.server.failNext = new ProviderError({ message: "down", status: 503 });
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] });
+  writeBody("Saved here");
+  await advance(2000);
+  await eventually(() =>
+    expect(screen.getByText("Saved on this Mac. Retrying sync automatically.")).toBeTruthy(),
+  );
+  clickButton("Close");
+  await eventually(() => expect(document.querySelector("[data-compose]")).toBeNull());
+  expect(screen.queryByRole("alertdialog")).toBeNull();
+  await eventually(async () =>
+    expect(await h.run(h.m.reading.threads({ mailbox: "drafts" }))).toHaveLength(1),
+  );
+
+  await newDraft(h, "Not saved yet");
+  clickButton("Close");
+  await eventually(() => expect(screen.getByRole("alertdialog")).toBeTruthy());
+  expect(screen.getByText("This draft has unsaved changes or couldn't sync.")).toBeTruthy();
+});

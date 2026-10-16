@@ -406,7 +406,7 @@ it("switching Reply / Reply All / Forward preserves typed rich body, identity an
   ).toBe("Edited subject");
 });
 
-it("closing asks only for nonempty, unsaved or remotely unsynced versions", () => {
+it("closing asks only for nonempty, unsaved versions or a sync that stopped", () => {
   const draft = {
     ...emptyDraft(account.id),
     to: "bob@example.com",
@@ -417,7 +417,12 @@ it("closing asks only for nonempty, unsaved or remotely unsynced versions", () =
   expect(needsClosePrompt(emptyDraft(account.id), null)).toBe(false);
   expect(needsClosePrompt(draft, null)).toBe(true);
   expect(needsClosePrompt(draft, stored)).toBe(false);
-  expect(needsClosePrompt(draft, { ...stored, synced: false })).toBe(true);
+  // Saved on this Mac and waiting to sync: the queue keeps syncing it after the composer closes.
+  expect(needsClosePrompt(draft, { ...stored, synced: false })).toBe(false);
+  expect(
+    needsClosePrompt(draft, { ...stored, synced: false, syncError: "Offline", syncRetrying: true }),
+  ).toBe(false);
+  expect(needsClosePrompt(draft, { ...stored, synced: false, syncError: "Rejected" })).toBe(true);
   expect(needsClosePrompt({ ...draft, subject: "Edited" }, stored)).toBe(true);
   expect(needsClosePrompt({ ...draft, cc: "unfinished" }, stored)).toBe(true);
   expect(needsClosePrompt({ ...draft, accountId: "another" }, stored)).toBe(true);

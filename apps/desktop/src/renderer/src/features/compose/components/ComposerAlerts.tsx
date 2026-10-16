@@ -33,7 +33,7 @@ export function ComposerAlerts({
         open={closing}
         onOpenChange={setClosing}
         title={t`Save this draft before closing?`}
-        description={t`This draft has unsaved changes or is waiting to sync.`}
+        description={t`This draft has unsaved changes or couldn't sync.`}
       >
         <AlertCancel>
           <Trans>Cancel</Trans>

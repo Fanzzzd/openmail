@@ -7755,8 +7755,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "This draft contains formatting or images this editor cannot keep. The original is preserved until you edit the body."
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "This draft has unsaved changes or is waiting to sync."
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "This draft has unsaved changes or couldn't sync."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

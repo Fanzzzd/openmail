@@ -7751,8 +7751,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "Dit concept bevat opmaak of afbeeldingen die deze editor niet kan behouden. Het origineel blijft bewaard totdat je de berichttekst bewerkt."
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "Dit concept bevat niet-opgeslagen wijzigingen of wacht op synchronisatie."
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "Dit concept bevat niet-opgeslagen wijzigingen of kon niet worden gesynchroniseerd."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

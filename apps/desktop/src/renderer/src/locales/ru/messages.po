@@ -7751,8 +7751,8 @@ msgid "This draft contains formatting or images this editor cannot keep. The ori
 msgstr "Этот черновик содержит форматирование или изображения, которые редактор не может сохранить. Оригинал сохраняется до изменения текста сообщения."
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
-msgid "This draft has unsaved changes or is waiting to sync."
-msgstr "В этом черновике есть несохранённые изменения или он ожидает синхронизации."
+msgid "This draft has unsaved changes or couldn't sync."
+msgstr "В этом черновике есть несохранённые изменения или его не удалось синхронизировать."
 
 #: src/renderer/src/lib/errors.ts
 msgid "This draft was already discarded."

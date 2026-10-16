@@ -391,7 +391,11 @@ export function switchReplyMode(
   };
 }
 
-/** Autosaved, remotely synced versions close quietly; incomplete recipient text still needs a choice. */
+/**
+ * A version saved on this Mac closes quietly while its sync is pending or retrying, since the
+ * queue keeps syncing it. Unsaved changes, a sync that stopped and incomplete recipient text
+ * still need a choice.
+ */
 export function needsClosePrompt(
   draft: Draft,
   stored: StoredDraft | null,
@@ -401,7 +405,8 @@ export function needsClosePrompt(
   if (stored === null && draft === options.initial) return false;
   const { message, invalid } = toMessage(draft);
   return (
-    (!stored?.synced && !stored?.localOnly) ||
+    stored === null ||
+    (!stored.synced && !stored.localOnly && !!stored.syncError && !stored.syncRetrying) ||
     stored.accountId !== draft.accountId ||
     invalid.length > 0 ||
     JSON.stringify(message) !== JSON.stringify(toMessage(fromStored(stored)).message)
