@@ -658,6 +658,9 @@ describe("search after an upgrade rebuilds the word index", () => {
     exec(
       "UPDATE search_word_index SET ready=0, cursor=0, end_rowid=(SELECT COALESCE(MAX(rowid),0) FROM messages) WHERE kind='messages'",
     );
+  // demo-data leaves mail.db in rollback-journal mode, and the first open switches it to WAL.
+  // Run alone, the lock test below would block that switch, so the copy starts in WAL mode.
+  beforeAll(() => exec("PRAGMA journal_mode=WAL"));
 
   test("search finishes the index before it searches", async () => {
     rebuild();
