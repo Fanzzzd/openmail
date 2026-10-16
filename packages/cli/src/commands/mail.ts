@@ -237,7 +237,14 @@ const list = Command.make(
       o.account,
       Option.orElse(o.space, () => o.profile),
     );
-    const scope = cursorScope("list", [o.mailbox, accountIds, Option.getOrNull(o.label), o.unread]);
+    // Label names match in any case and without surrounding spaces, so the cursor scope must too.
+    const label = Option.getOrUndefined(Option.map(o.label, (text) => text.trim()));
+    const scope = cursorScope("list", [
+      o.mailbox,
+      accountIds,
+      label === undefined ? null : label.toLocaleLowerCase(),
+      o.unread,
+    ]);
     const cursor = yield* decodePageCursor(o.cursor, scope);
     const before =
       cursor.date !== undefined
@@ -252,7 +259,6 @@ const list = Command.make(
       ...before,
       limit: o.limit + 1,
     };
-    const label = Option.getOrUndefined(o.label);
     const rows = !accountIds.length
       ? []
       : label === undefined

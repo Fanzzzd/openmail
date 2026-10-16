@@ -471,6 +471,24 @@ describe("reading", () => {
     }
   });
 
+  test("a list cursor works with the label in another case or with spaces", async () => {
+    const first = await object(["list", "--label", "inbox", "--limit", "1"]);
+    const cursor = String(first[CURSOR]);
+    for (const label of ["INBOX", " inbox "]) {
+      const next = await openmail([
+        "list",
+        "--label",
+        label,
+        "--limit",
+        "1",
+        "--cursor",
+        cursor,
+        "--json",
+      ]);
+      expect(next.code, `${label}: ${next.stderr}`).toBe(0);
+    }
+  });
+
   test("list refuses --before together with --cursor", async () => {
     const page = await object(["list", "--limit", "2"]);
     const { code, stdout } = await openmail([
