@@ -367,6 +367,11 @@ it.effect(
           query.sql.includes("messages_words WHERE rowid=m.rowid AND messages_words MATCH"),
         ),
       );
+      // A count reads every match, so it starts from the word index's rowids instead of
+      // probing the index once per message.
+      const counts = queries.filter((query) => query.sql.startsWith("SELECT COUNT(*) AS n FROM"));
+      assert.isAbove(counts.length, 0);
+      for (const count of counts) assert.notInclude(count.sql, "rowid=m.rowid", count.sql);
     }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
   },
   scaledMs(180_000),

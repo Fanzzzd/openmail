@@ -204,10 +204,13 @@ export const makeThreadsStore = ({
           ))),0) AS n FROM accounts a WHERE ${scope}`,
       ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
     }
+    // A count reads every match, so the text index's rowids drive it; the row-bound probe that
+    // suits a page's date walk ran once per message (303 ms for `subject:weekly is:unread`).
+    const counted = { ...query, rowBoundText: false };
     return yield* all(Schema.Struct({ n: Schema.Number }))(
       query.flat
-        ? sql`SELECT COUNT(*) AS n FROM messages m WHERE ${listFilter(query)}`
-        : sql`SELECT COUNT(*) AS n FROM (SELECT m.account_id,m.thread_id FROM messages m WHERE ${listFilter(query)} GROUP BY m.account_id,m.thread_id)`,
+        ? sql`SELECT COUNT(*) AS n FROM messages m WHERE ${listFilter(counted)}`
+        : sql`SELECT COUNT(*) AS n FROM (SELECT m.account_id,m.thread_id FROM messages m WHERE ${listFilter(counted)} GROUP BY m.account_id,m.thread_id)`,
     ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
   });
 

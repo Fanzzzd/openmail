@@ -219,7 +219,9 @@ fixture P，修复前后（未运行 ANALYZE）：
 
 `-to:nobody weekly` 也从 rowid 出发，同样只受益于第一项。
 
-[search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) 在默认套件里用 3,000 封邮件（含一个 60 封的长会话）对照按存储的字段直接计算的参考结果，覆盖单词、短语、大小写、前缀、与普通词和 `is:` 组合、否定、会话与平铺、单账户、第二页和计数。它还检查 `page` CTE 里没有 `flag_candidates`，常见 `subject:` 词的 `recent` 窗口走日期索引且不含 `messages_words`。`performance-large.test.ts` 的 `search subject: common` 和 `search subject: phrase` 预算 200 ms。
+计数不能用文字索引时（带 `is:unread` 等条件）按行计数。原来它沿用页面的逐行 MATCH 探测，对 100k 封邮件每封探测一次；现在计数改用文字索引的 rowid 集合，每个匹配都要读，集合更省。fixture P 上 `subject:weekly is:unread` 的计数 288 ms 到 77 ms，`weekly is:unread` 288 ms 到 76 ms，`weekly delivery is:unread` 559 ms 到 89 ms，数值不变。
+
+[search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) 在默认套件里用 3,000 封邮件（含一个 60 封的长会话）对照按存储的字段直接计算的参考结果，覆盖单词、短语、大小写、前缀、与普通词和 `is:` 组合、否定、会话与平铺、单账户、第二页和计数。它还检查 `page` CTE 里没有 `flag_candidates`，常见 `subject:` 词的 `recent` 窗口走日期索引且不含 `messages_words`，按行计数的语句不按 rowid 逐行探测。`performance-large.test.ts` 的 `search subject: common` 和 `search subject: phrase` 预算 200 ms。
 
 ### OR 与附件文字
 
