@@ -2,6 +2,8 @@
 
 The automated tests cover the core, CLI, desktop and mobile mail flows. They use a fake provider and Model, temporary SQLite or in-memory databases, the DOM and mocks of native services. The full mail flow tests also run in jsdom. They do not start Electron and do not read a real mailbox or address book. Acceptance with real accounts, system permissions and signed builds is in the [roadmap](roadmap.md#待用户完成).
 
+To run one test file, use `pnpm --filter @openmail/core exec vitest run src/domain/cache.test.ts`. The desktop end-to-end tests use their own config: `pnpm --filter @openmail/desktop exec vitest run --config vitest.e2e.config.ts src/renderer/src/e2e/calendar.test.ts`.
+
 ## Repository checks
 
 Run from the repo root:
@@ -13,7 +15,7 @@ pnpm exec oxlint
 pnpm exec oxfmt --check .
 ```
 
-`pnpm build` builds core, the CLI, the desktop app and the docs site, compiles the mobile locale catalogs and type-checks the mobile app. To skip the docs site and mobile, run `pnpm build --filter=@openmail/desktop...`, which builds the desktop app and the packages it depends on. `pnpm test` includes the desktop full mail flows, the desktop and mobile Lingui catalog sync and missing-translation checks, and the desktop glossary and ICU checks. Run `pnpm check-types` for the remaining type checks. The commit requirements are in [AGENTS.md](../AGENTS.md).
+`pnpm build` builds core, the CLI, the desktop app and the docs site, compiles the mobile locale catalogs and type-checks the mobile app. To skip the docs site and mobile, run `pnpm build --filter=@openmail/desktop...`, which builds the desktop app and the packages it depends on. `pnpm test` includes the desktop full mail flows, the desktop and mobile Lingui catalog sync and missing-translation checks, and the desktop glossary and ICU checks. Run `pnpm check-types` for the remaining type checks. The pull request checklist is in [CONTRIBUTING.md](../CONTRIBUTING.md#before-you-open-a-pull-request).
 
 [repo-paths.test.ts](../apps/docs/scripts/repo-paths.test.ts) checks that every repo path named in the links, code spans and commands of `docs/` and `CONTRIBUTING.md` exists. Local files that git ignores are exempt. The result depends on files outside apps/docs, so `@openmail/docs#test` skips the turbo cache.
 
