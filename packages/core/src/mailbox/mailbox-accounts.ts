@@ -41,8 +41,10 @@ const checkProfileNameIn = (store: MailboxDependencies["store"]) =>
         message: PROFILE_NAME_ERRORS[problem],
         hint: {
           empty: "Use a name such as Work.",
+          control: "Use a name on one line, such as Work.",
           reserved: "`openmail spaces assign <account> none` takes an account out of its space.",
           taken: "`openmail spaces list` shows the spaces.",
+          id: "`--space` takes a name or an id, so a name can't be another space's id.",
         }[problem],
       });
   });

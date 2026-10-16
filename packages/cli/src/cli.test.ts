@@ -484,6 +484,14 @@ describe("spaces", () => {
         expect(empty.code).toBe(1);
         expect(empty.stderr).toMatch(/^error: Enter a space name with letters or other visible/);
       }
+      const control = await openmail(["spaces", "add", "Deep\twork"], home.path);
+      expect(control.code).toBe(1);
+      expect(control.stderr).toMatch(/^error: A space name can't contain line breaks or tabs\./);
+      // `--space` takes a name or an id, so a name can't be another space's id.
+      const [work] = await list(["spaces", "list"], home.path);
+      const id = await openmail(["spaces", "add", String(work.id)], home.path);
+      expect(id.code).toBe(1);
+      expect(id.stderr).toMatch(/^error: That is another space's id\. Choose another name\./);
       // `spaces assign <account> none` ungroups, so no space can be found by that name.
       const none = await openmail(["spaces", "add", "None"], home.path);
       expect(none.code).toBe(1);

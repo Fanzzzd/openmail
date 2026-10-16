@@ -30,6 +30,8 @@ export const PUBLIC_ERROR_MESSAGES = new Set([
   "Enter a space name with letters or other visible characters.",
   "The name none is reserved. Choose another name.",
   "A space with this name already exists. Choose another name.",
+  "A space name can't contain line breaks or tabs.",
+  "That is another space's id. Choose another name.",
   "A message needs at least one recipient.",
   "A signature needs a name and sending address",
   "AI input budget exceeded. Ask about fewer messages.",

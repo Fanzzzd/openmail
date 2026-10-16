@@ -38,7 +38,7 @@ A date or size operator without a valid value, such as `newer:foo` or `larger:xy
 
 A failed command prints `error: …` on stderr, with a `hint: …` line when there is a next step, and exits with code 1, or 2 for a usage error. With `--json`, stdout also gets `{"message": "...", "code": "...", "hint": "..."}`, so a script can read every failure the same way.
 
-Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list` and takes a space name or an id. `search` takes no `--space`. `openmail search -newsletter` reads `-newsletter` as query text, not as a flag. `--` before the query also works, as in `openmail search -- -newsletter`. A name cannot repeat another space's name, cannot be `none` and cannot be blank. The older `openmail profiles` and `--profile` still work.
+Spaces group accounts, such as Work and Personal. `openmail spaces` manages them and `--space` filters `list` and takes a space name or an id. `search` takes no `--space`. `openmail search -newsletter` reads `-newsletter` as query text, not as a flag. `--` before the query also works, as in `openmail search -- -newsletter`. A name cannot repeat another space's name or id, cannot be `none`, cannot be blank and cannot contain line breaks or tabs. The older `openmail profiles` and `--profile` still work.
 
 The CLI has no send command. Sending happens in the app.
 

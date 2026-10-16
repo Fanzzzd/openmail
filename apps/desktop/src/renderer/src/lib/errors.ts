@@ -45,6 +45,8 @@ export const INPUT_ERRORS: Record<string, MessageDescriptor> = {
   "Enter a space name with letters or other visible characters.": msg`Enter a space name with letters or other visible characters.`,
   "The name none is reserved. Choose another name.": msg`The name “none” is reserved. Choose another name.`,
   "A space with this name already exists. Choose another name.": msg`A space with this name already exists. Choose another name.`,
+  "A space name can't contain line breaks or tabs.": msg`A space name can't contain line breaks or tabs.`,
+  "That is another space's id. Choose another name.": msg`That is another space's ID. Choose another name.`,
   "Outlook attachment upload failed. Try saving or sending again.": OUTLOOK_UPLOAD_FAILED,
   "Filter update failed. The previous filter was restored; reload the filter list before editing again.": msg`Couldn't update the filter, so OpenMail put the previous version back. Open Server filters again before you edit it.`,
   "Filter update failed and automatic recovery failed. Use Restore filter to recover the saved original filter.": msg`Couldn't update the filter or put the previous version back. Choose Restore filter in Server filters to recover it.`,

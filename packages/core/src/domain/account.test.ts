@@ -27,16 +27,17 @@ describe("profileNameError", () => {
     expect(profileNameError("ＮＯＮＥ", spaces)).toBe("reserved");
   });
 
-  it("refuses control characters such as a line break inside a name", () => {
-    expect(profileNameError("a\nb", spaces)).toBe("empty");
-    expect(profileNameError("a\tb", spaces)).toBe("empty");
-    expect(profileNameError("a\u0007b", spaces)).toBe("empty");
+  it("refuses control characters such as a line break inside a name as control, not empty", () => {
+    expect(profileNameError("a\nb", spaces)).toBe("control");
+    expect(profileNameError("a\tb", spaces)).toBe("control");
+    expect(profileNameError("a\u0007b", spaces)).toBe("control");
+    expect(profileNameError("\t\n", spaces)).toBe("empty");
     expect(profileNameError("a b", spaces)).toBeUndefined();
   });
 
-  it("refuses another space's id as a name, but a space may keep its own", () => {
-    expect(profileNameError("p-home", spaces)).toBe("taken");
-    expect(profileNameError("P-HOME", spaces)).toBe("taken");
+  it("refuses another space's id as a name as id, not taken, but a space may keep its own", () => {
+    expect(profileNameError("p-home", spaces)).toBe("id");
+    expect(profileNameError("P-HOME", spaces)).toBe("id");
     expect(profileNameError("p-home", spaces, "p-home")).toBeUndefined();
     expect(profileNameError("Work", spaces, "p-work")).toBeUndefined();
   });

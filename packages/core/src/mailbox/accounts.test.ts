@@ -597,6 +597,14 @@ it.effect(
           yield* refusal(accounts.createProfile(space(name))),
           PROFILE_NAME_ERRORS.empty,
         );
+      assert.strictEqual(
+        yield* refusal(accounts.createProfile(space("Deep\nwork"))),
+        PROFILE_NAME_ERRORS.control,
+      );
+      assert.strictEqual(
+        yield* refusal(accounts.createProfile(space(home.id))),
+        PROFILE_NAME_ERRORS.id,
+      );
       assert.deepStrictEqual(
         (yield* accounts.profiles).map((profile) => profile.name),
         ["WORK", "Home"],

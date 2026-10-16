@@ -112,8 +112,10 @@ export type ProfileInput = typeof ProfileInput.Type;
 /** Why a space can't take this name, or undefined when it can. */
 export const PROFILE_NAME_ERRORS = {
   empty: "Enter a space name with letters or other visible characters.",
+  control: "A space name can't contain line breaks or tabs.",
   reserved: "The name none is reserved. Choose another name.",
   taken: "A space with this name already exists. Choose another name.",
+  id: "That is another space's id. Choose another name.",
 } as const;
 
 /**
@@ -132,10 +134,10 @@ export const profileNameKey = (name: string) =>
 /**
  * Checks a new name for a space. Spaces are found by name in any letter case, so two with one
  * name could not be told apart, and `none` means "no space" when assigning one. A name of only
- * control, format and blank characters shows as nothing, and a control character such as a
- * line break has no visible form, so both are refused as empty. `--space` takes a name or an
- * id, so a name may not be another space's id either. `id` is the space being edited; its own
- * stored name always passes.
+ * control, format and blank characters shows as nothing, so it is refused as empty. A control
+ * character such as a line break inside a name has no visible form, so it is refused too.
+ * `--space` takes a name or an id, so a name may not be another space's id either. `id` is the
+ * space being edited; its own stored name always passes.
  */
 export const profileNameError = (
   name: string,
@@ -148,14 +150,13 @@ export const profileNameError = (
     spaces.some((space) => space.id === id && space.name.trim() === name.trim())
   )
     return undefined;
-  if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "" || /\p{Cc}/u.test(name.trim())) return "empty";
+  if (name.replace(/[\p{Cc}\p{Cf}\s]/gu, "") === "") return "empty";
+  if (/\p{Cc}/u.test(name.trim())) return "control";
   const key = profileNameKey(name);
   if (key === "none") return "reserved";
   const others = spaces.filter((space) => space.id !== id);
-  if (
-    others.some((space) => profileNameKey(space.name) === key || profileNameKey(space.id) === key)
-  )
-    return "taken";
+  if (others.some((space) => profileNameKey(space.name) === key)) return "taken";
+  if (others.some((space) => profileNameKey(space.id) === key)) return "id";
   return undefined;
 };
 

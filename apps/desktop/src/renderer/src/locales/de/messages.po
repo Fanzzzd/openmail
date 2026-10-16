@@ -367,6 +367,10 @@ msgid "A signature needs a name and a sending address."
 msgstr "Eine Signatur braucht einen Namen und eine Absendeadresse."
 
 #: src/renderer/src/lib/errors.ts
+msgid "A space name can't contain line breaks or tabs."
+msgstr "Ein Bereichsname darf keine Zeilenumbrüche oder Tabulatoren enthalten."
+
+#: src/renderer/src/lib/errors.ts
 msgid "A space with this name already exists. Choose another name."
 msgstr "Es gibt bereits einen Bereich mit diesem Namen. Wähle einen anderen Namen."
 
@@ -7377,6 +7381,10 @@ msgstr "Textgröße"
 #: src/renderer/src/state/desktop.ts
 msgid "Text style"
 msgstr "Textstil"
+
+#: src/renderer/src/lib/errors.ts
+msgid "That is another space's ID. Choose another name."
+msgstr "Das ist die ID eines anderen Bereichs. Wähle einen anderen Namen."
 
 #: src/renderer/src/lib/errors.ts
 msgid "The {client} OAuth client is not set up yet."
