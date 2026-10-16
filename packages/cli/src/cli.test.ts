@@ -87,7 +87,7 @@ afterAll(() => rm(seeded, { recursive: true, force: true }));
 function openmail(args: string[], home = join(seeded, "home"), env: NodeJS.ProcessEnv = {}) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((done, failed) => {
     const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", cli, ...args], {
-      env: { ...process.env, ...env, OPENMAIL_HOME: home },
+      env: { ...process.env, OPENMAIL_OFFLINE: "1", ...env, OPENMAIL_HOME: home },
     });
     let stdout = "";
     let stderr = "";
@@ -1008,13 +1008,23 @@ describe("errors", () => {
     const { code, stdout, stderr } = await openmail(["show", "gmail:alex@example.com/nope"]);
     expect(code).toBe(1);
     expect(stdout).toBe("");
-    expect(stderr).toBe("error: No message with id gmail:alex@example.com/nope.\n");
+    expect(stderr).toBe(
+      "error: No message with id gmail:alex@example.com/nope.\nhint: `openmail list` and `openmail search` print message ids.\n",
+    );
   });
 
   test("a missing proposal is exit 1", async () => {
     const { code, stderr } = await openmail(["proposals", "reject", "99"]);
     expect(code).toBe(1);
-    expect(stderr).toBe("error: No proposal with id 99.\n");
+    expect(stderr).toBe(
+      "error: No proposal with id 99.\nhint: Run `openmail proposals` to see the pending ones.\n",
+    );
+  });
+
+  test("a missing account on health prints the hint on stderr", async () => {
+    const { code, stderr } = await openmail(["health", "--account", "nobody"]);
+    expect(code).toBe(1);
+    expect(stderr).toContain("hint: Run `openmail accounts list` to see them.");
   });
 
   test("--input-json that is not JSON names the flag", async () => {

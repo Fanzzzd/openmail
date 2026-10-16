@@ -92,11 +92,15 @@ export function explainError(error: unknown, home: string | undefined): Explaine
     case "NotFound": {
       const what = field(error, "what");
       const id = field(error, "id");
-      return plain(
-        what !== undefined && id !== undefined ? `No ${what} with id ${id}.` : error.message,
-        "not_found",
-        (what && NOT_FOUND_HINTS[what]) ?? "Check the id.",
-      );
+      const known = what === undefined ? undefined : NOT_FOUND_HINTS[what];
+      return {
+        ...plain(
+          what !== undefined && id !== undefined ? `No ${what} with id ${id}.` : error.message,
+          "not_found",
+          known ?? "Check the id.",
+        ),
+        showHint: known !== undefined,
+      };
     }
     case "ClientNotConfigured":
       return plain(
