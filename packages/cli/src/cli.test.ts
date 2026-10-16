@@ -692,6 +692,41 @@ describe("search pages after a thread disappears", () => {
   });
 });
 
+// list --cursor carries the last thread's date and id, so threads that share a date stay apart
+// across a page boundary. A cursor with only the date skipped the rest of the tie.
+describe("list pages through threads that share a date", () => {
+  const home = sharedHome();
+  test("a page boundary inside a tie loses and repeats nothing", async () => {
+    const all = rows((await object(["list", "--limit", "100"], home.path)).threads);
+    const [first, second] = all;
+    expect(second).toBeDefined();
+    const db = new DatabaseSync(join(home.path, "mail.db"));
+    try {
+      const newest = db.prepare("SELECT MAX(date) AS date FROM messages").get()?.["date"];
+      const move = db.prepare(
+        "UPDATE messages SET date=?1, list_date=?1 WHERE account_id=?2 AND thread_id=?3",
+      );
+      for (const thread of [first, second])
+        move.run(Number(newest), String(thread?.account_id), String(thread?.thread_id));
+    } finally {
+      db.close();
+    }
+    const expected = rows((await object(["list", "--limit", "100"], home.path)).threads);
+    expect(expected.filter((thread) => thread.date === expected[0]?.date).length).toBe(2);
+    const ids: unknown[] = [];
+    let cursor: unknown;
+    do {
+      const page = await object(
+        ["list", "--limit", "1", ...(typeof cursor === "string" ? ["--cursor", cursor] : [])],
+        home.path,
+      );
+      ids.push(...rows(page.threads).map((thread) => thread.id));
+      cursor = page[CURSOR];
+    } while (typeof cursor === "string");
+    expect(ids).toEqual(expected.map((thread) => thread.id));
+  });
+});
+
 // A failed sync logged a multi-line SyncFailedDiagnostic per account on stderr, and health
 // over a hundred lines, on top of the one-line outcome. OPENMAIL_OFFLINE fails every provider
 // call without the network or the keychain.
