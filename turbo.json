@@ -58,7 +58,8 @@
         "OPENMAIL_SEARCH_PROFILE",
         "OPENMAIL_PROFILE_DATABASE",
         "OPENMAIL_PROFILE_REPORT",
-        "OPENMAIL_TEST_MODELS"
+        "OPENMAIL_TEST_MODELS",
+        "OPENMAIL_DIFF_SEED"
       ]
     },
     "@openmail/repo-checks#test": {

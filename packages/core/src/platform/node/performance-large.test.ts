@@ -239,6 +239,13 @@ it.effect(
         ["search cc: no match", "cc:nobody", 200, 0],
         ["search filename: no match", "filename:none.pdf", 200, 0],
         ["search list: no match", "list:nolist", 200, 0],
+        // from:, has:attachment and to: with a common word walk the date index. Starting from
+        // the 100k rowids of `weekly` took 0.4-0.8 s on fixture R. A sender with no match walks
+        // the whole date index once.
+        ["search -to: and common word", "-to:nobody weekly", 200, 50],
+        ["search from: and common word", "from:person1 weekly", 200, 50],
+        ["search has:attachment and common word", "has:attachment weekly", 200, 50],
+        ["search from: no match and common word", "from:nobody weekly", 350, 0],
       ] as const)
         yield* measure(
           name,

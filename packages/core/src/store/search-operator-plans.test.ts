@@ -142,6 +142,8 @@ function matcher(search: string) {
           });
       case "is":
         return value === "unread" ? (row) => row.is_unread === 1 : (row) => row.is_starred === 1;
+      case "has":
+        return (row) => row.attachments_json.length > 0;
       default:
         return (row) =>
           [row.subject, row.from_name, row.from_addr, row.body_text].some((text) =>
@@ -450,6 +452,61 @@ const operatorSearches = [
   "(to:r2 OR list:news) is:unread",
   "subject:report to:lead",
 ].map((search) => [search, true] as const);
+
+// from:, is:, has:attachment and the side table operators test the walked row, so with a common
+// word they walk the date index (planTextPage) instead of starting from the word's rowids.
+const walkedSearches = [
+  "-to:nobody weekly",
+  "to:r3 weekly",
+  "cc:team2 weekly",
+  "filename:report1 weekly",
+  "list:news@example.com weekly",
+  "from:s3 weekly",
+  "-from:s3 weekly",
+  "from:nobody weekly",
+  "has:attachment weekly",
+  "-has:attachment weekly",
+  "is:starred weekly",
+  "-filename:report -cc:team2 weekly",
+  "from:s3 subject:report",
+].map((search) => [search, true] as const);
+
+const datePageWalks = (queries: readonly QueryPlan[]) =>
+  queries.some((query) => {
+    const walk = cte(query.sql, "recent AS MATERIALIZED (");
+    return walk !== undefined && /INDEXED BY messages_(account_)?list_date_id/.test(walk);
+  });
+
+it.effect(
+  "operators with a common word walk the date index and count from the messages",
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
+      const sql = yield* SqlClient.SqlClient;
+      const { a } = yield* seed;
+      const rows = yield* loadRows;
+      for (const entry of walkedSearches) {
+        trace.start();
+        yield* checkAll(rows, [entry], a);
+        const queries = trace.stop();
+        assert.isTrue(datePageWalks(queries), entry[0]);
+        // The meta table's count has no sender, flags or recipients: these count the messages.
+        const counts = queries.filter((query) => query.sql.startsWith("SELECT COUNT(*) AS n"));
+        assert.isAbove(counts.length, 0);
+        for (const count of counts) {
+          assert.notInclude(count.sql, "INDEXED BY message_search_meta_threads", entry[0]);
+        }
+      }
+      // Before the operator text backfill is done, to: tests json_each on each row and starts
+      // from the word's rowids.
+      yield* sql`UPDATE message_operator_text_backfill SET ready=0`;
+      trace.start();
+      yield* checkAll(rows, [["to:r3 weekly", true]], a);
+      assert.isFalse(datePageWalks(trace.stop()));
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
+  scaledMs(180_000),
+);
 
 const OperatorRow = Schema.Struct({
   row_id: Schema.Number,

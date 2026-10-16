@@ -306,10 +306,48 @@ search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小�
 
 36 种查询形状的结果页、第二页、标志、会话数和计数在两份数据库上都逐项相同。
 
-还慢的有两类：
+还慢的有一类：
 
-- `-to:nobody weekly` 这类带否定的常见词搜索仍从 rowid 出发，fixture R 上约 1 s。否定让 `planTextPage` 不走日期遍历。
 - OR 搜索的计数逐行读 `labels_json` 排除垃圾邮件和废纸篓，fixture R 上热缓存 0.4 s，页缓存被挤掉时 4–15 s，改动前后相同。普通词搜索的计数用 `message_search_meta.eligible`，OR 计数还没有改。
+
+### 运算符加常见词
+
+`planTextPage` 原先只让带 `label:`、`subject:` 的搜索走日期遍历，其他运算符一出现就从常见词的全部 rowid 出发。`-to:nobody weekly`、`from:person1 weekly`、`has:attachment weekly` 在 fixture R 上要读 `weekly` 的约 10 万行再排序，0.4–0.8 s，而只搜 `weekly` 是 128 ms。
+
+现在只要每个运算符都能在遍历到的行上判断，就走日期遍历：
+
+- `from:`、`is:unread`、`is:starred`、`is:important`、`has:attachment`，以及原有的 `label:` 和 `subject:`。`is_unread`、`is_starred`、`labels_json` 在 `messages_list_date_id` 里；`from_name`、`from_addr` 在消息文本前面；`has:attachment` 读 `attachments_json`，在消息文本后面，但遍历在页填满时就停。
+- `to:`、`cc:`、`filename:`、`list:` 只在 `message_operator_text` 回填完成后加入，这时它们每条语句只读一次副表。回填完成前它们逐行跑 `json_each`，仍从 rowid 出发。
+- 否定（`-to:`、`-from:` 等）用同样的列表，但不含 `subject:` 和 `label:`。
+
+`countThreads` 的 `message_search_meta` 捷径只按文字索引的 MATCH 计数，不看 criteria。原来走到这里的只有 `subject:`（它在 MATCH 里），现在 `planTextPage` 对 `from:` 等也设 `textPage`，所以捷径限定为 criteria 只有 `subject:` 或为空，其余按行计数。没有这个限制时 `to:r3 weekly` 计数为 1542，正确值是 350。
+
+最坏的情况是没有命中的发件人：`from:nobody weekly` 要把日期索引走完一遍。
+
+fixture R，无统计，修复前后（ms，三次热运行中位数；计数各跑一次）：
+
+| 测量                           | 修复前 | 修复后 |
+| ------------------------------ | -----: | -----: |
+| `-to:nobody weekly`            |    829 |    148 |
+| `-to:nobody weekly`，单账户    |    431 |    165 |
+| `-from:nobody weekly`          |    823 |    129 |
+| `from:person1 weekly`          |    443 |    130 |
+| `has:attachment weekly`        |    618 |    130 |
+| `-has:attachment weekly`       |    791 |    128 |
+| `is:important weekly`          |    871 |    137 |
+| `to:me3@example.com weekly`    |    406 |    150 |
+| `-filename:report weekly`      |    770 |    139 |
+| `-cc:nobody -to:nobody weekly` |    840 |    172 |
+| `-from:person1 subject:weekly` |    725 |    139 |
+| `-to:nobody alpha`             |    842 |    140 |
+| `to:nobody weekly`             |    118 |     74 |
+| `from:nobody weekly`（最坏）   |    125 |    247 |
+| `-to:nobody weekly` 计数       |    424 |    175 |
+| `-from:nobody weekly` 计数     |    420 |    177 |
+
+28 种搜索各取会话、单账户、平铺三种形状，共 84 例，结果页、第二页、标志、会话数和计数逐项相同。
+
+search-operator-plans.test.ts 的“operators with a common word”对 13 种搜索（含否定、无命中的发件人、`has:attachment` 和多个否定）对照参考结果，并检查每种的 `recent` 窗口走 `messages_list_date_id`、计数不走 `message_search_meta_threads`；回填未完成时 `to:r3 weekly` 不走日期遍历。operator-text-diff.test.ts 把评审者的随机差分测试移进默认套件：每轮 40 次随机写入（新邮件、改写、标志、本地操作、删除、改 provider id、补头部、淘汰消息文本、删 Spam、删账户），之后把副表和重新计算的结果逐行比较，并对 25 个运算符搜索在用副表和逐行判断两种状态下比较结果页和计数。默认 10 轮，`OPENMAIL_PERF=1` 跑 50 轮，`OPENMAIL_DIFF_SEED` 换随机序列。`performance-large.test.ts` 新增 `search -to: and common word`、`search from: and common word`、`search has:attachment and common word` 预算 200 ms，`search from: no match and common word` 预算 350 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 72、30、33、155 ms。
 
 ### performance-large.test.ts
 

@@ -38,6 +38,36 @@ export const EFFECTIVE_DATE = "m.list_date";
 /** A search term in more messages than this walks the date index (planTextPage). */
 export const COMMON_TERM_ROWS = 2048;
 
+const ROW_WALK_KEYS: ReadonlySet<string> = new Set([
+  "from",
+  "unread",
+  "starred",
+  "important",
+  "attachment",
+]);
+const OPERATOR_TEXT_KEYS: ReadonlySet<string> = new Set(["to", "cc", "filename", "mailingList"]);
+
+/**
+ * Operators a date walk tests on the walked row, so a common word with them walks the date
+ * index instead of starting from the word's rowids. `-to:nobody weekly` started from the 100k
+ * rowids of `weekly` and took 0.8 s for a page. labels_json, is_unread and is_starred are in
+ * messages_list_date_id; from: reads the row's from columns, before the body; has:attachment
+ * reads attachments_json once per walked row until the page fills. subject: probes the word
+ * index by rowid like a plain word. to:, cc:, filename: and list: read message_operator_text
+ * once per statement, so they walk only once its backfill is done. An excluded subject: or
+ * label: keeps the rowid start.
+ */
+const walkableCriteria = (q: LocalQuery) => {
+  const sideTable = q.operatorTextReady === true;
+  const walkable = (key: string) =>
+    ROW_WALK_KEYS.has(key) || (sideTable && OPERATOR_TEXT_KEYS.has(key));
+  const { excluded = [], ...criteria } = q.criteria ?? {};
+  return (
+    Object.keys(criteria).every((key) => walkable(key) || key === "subject" || key === "labels") &&
+    excluded.every((condition) => Object.keys(condition).every(walkable))
+  );
+};
+
 export const SUMMARY_COLUMNS = `m.id, m.account_id, m.thread_id, m.subject, m.from_name, m.from_addr,
   ${EFFECTIVE_DATE} AS date,
   m.snippet, m.labels_json, m.attachments_json, m.is_unread, m.is_starred`;
@@ -604,10 +634,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       (words.length === 0 && subject === undefined) ||
       expressionMedia(q.search ?? "") ||
       hasSearchExpression(q.search ?? "") ||
-      // label: is the one operator a date walk tests cheaply: across accounts it reads labels_json
-      // from messages_list_date_id. `label:Folder_5 weekly` started from the 100k rowids of
-      // `weekly` and took 1.5 s. subject: probes the word index by rowid like a plain word.
-      Object.keys(q.criteria ?? {}).some((key) => key !== "labels" && key !== "subject") ||
+      !walkableCriteria(q) ||
       q.messageIds ||
       (q.label && q.searchScope === "folder")
     )

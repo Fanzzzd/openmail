@@ -183,6 +183,9 @@ export const makeThreadsStore = ({
     const query = parsed.criteria?.labels?.length ? parsed : yield* planTextPage(parsed);
     if (
       query.textPage &&
+      // The meta table has no sender, flags or recipients: only subject:, which is part of the
+      // MATCH, counts from it. planTextPage also walks for from:, is: and has:attachment.
+      Object.keys(query.criteria ?? {}).every((key) => key === "subject") &&
       // Rows still queued for the bigram index are only found by LIKE.
       query.textPage.index !== "messages_bigrams" &&
       query.searchScope !== "folder" &&
