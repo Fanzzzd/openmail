@@ -440,6 +440,26 @@ describe("expected sync failures", () => {
     });
   });
 
+  test("say to sign in again when every failed account needs it", async () => {
+    const signIn = await mkdtemp(join(tmpdir(), "openmail-cli-reauth-"));
+    try {
+      await cp(join(seeded, "home"), signIn, { recursive: true });
+      const db = new DatabaseSync(join(signIn, "mail.db"));
+      db.exec("UPDATE accounts SET needs_reauth = 1");
+      db.close();
+      const sync = await openmail(["sync"], signIn, offline);
+      expect(sync.code).toBe(1);
+      expect(sync.stdout).toContain(
+        "gmail:alex@example.com  needs sign-in: openmail accounts reauth gmail:alex@example.com",
+      );
+      expect(sync.stderr).toContain(
+        "error: Some accounts did not sync.\nhint: Sign in again with the commands above.\n",
+      );
+    } finally {
+      await rm(signIn, { recursive: true, force: true });
+    }
+  });
+
   test("--log-level warn still shows them", async () => {
     const sync = await openmail(["--log-level", "warn", "sync"], home.path, offline);
     expect(sync.code).toBe(1);

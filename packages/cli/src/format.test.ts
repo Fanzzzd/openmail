@@ -7,6 +7,7 @@ import {
   messageText,
   proposalTable,
   stamp,
+  syncFailedHint,
   threadTable,
 } from "./format.js";
 
@@ -126,5 +127,37 @@ describe("CLI dates", () => {
     expect(text).toContain("Attach:  a\\u{1b}[0m.pdf");
     expect(text).toContain("Hello\n\t\\u{1b}]8;;https://evil.example\\u{1b}\\click");
     expect(text).toContain("\\u{2067}hidden\\u{2069} \\u{1b}[1A\\u{7}end 👩‍💻");
+  });
+});
+
+// The hint said to run sync again with --log-level warn even when every failed account only
+// needed a new sign-in, which a rerun never fixes.
+describe("syncFailedHint", () => {
+  const ok = { accountId: "gmail:a@example.com", changed: 0, deleted: 0 };
+  const signIn = {
+    ...ok,
+    accountId: "gmail:b@example.com",
+    error: "Sign in again",
+    needsReauth: true,
+  };
+  const broken = { ...ok, accountId: "imap:c@example.org", error: "Sync could not finish." };
+
+  it("names sign-in when every failed account needs it", () => {
+    expect(syncFailedHint([ok, signIn], false)).toBe("Sign in again with the commands above.");
+    expect(syncFailedHint([signIn], true)).toBe(
+      "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth.",
+    );
+  });
+
+  it("keeps the rerun hint when no failed account needs sign-in", () => {
+    expect(syncFailedHint([ok, broken], false)).toBe(
+      "Run it again, or add --log-level warn to see why.",
+    );
+  });
+
+  it("covers both when some need sign-in and others failed", () => {
+    expect(syncFailedHint([signIn, broken], false)).toBe(
+      "Sign in again with the commands above. Run sync again for the other accounts, or add --log-level warn to see why.",
+    );
   });
 });

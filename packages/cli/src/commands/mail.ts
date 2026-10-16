@@ -17,7 +17,7 @@ import {
 } from "@openmail/core/schema";
 import type { SearchResult, ThreadSummary } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
-import { SYNC_FAILED_HINT, cliSyncResult, messageText, syncTable, threadTable } from "../format.js";
+import { cliSyncResult, syncFailedHint, messageText, syncTable, threadTable } from "../format.js";
 
 const health = Command.make(
   "health",
@@ -89,7 +89,7 @@ const sync = Command.make(
     const error = {
       message: "Some accounts did not sync.",
       code: "failed",
-      hint: SYNC_FAILED_HINT,
+      hint: syncFailedHint(results, json),
     };
     // With --json, stdout stays one document: the results and the error object together.
     yield* print(json ? { results, error } : { results }, json, syncTableOf);

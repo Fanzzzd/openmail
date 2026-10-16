@@ -89,6 +89,21 @@ export function threadTable(rows: readonly ThreadSummary[]): string {
 export const SYNC_FAILED_HINT = "Run it again, or add --log-level warn to see why.";
 
 /**
+ * The hint for a failed `openmail sync`. An account that needs sign-in has its reauth command
+ * on its own line, or `needs_reauth` in --json; signing in again is the fix for it, not a rerun.
+ */
+export function syncFailedHint(results: readonly SyncResult[], json: boolean): string {
+  const failed = results.filter((r) => r.error);
+  const signIns = failed.filter((r) => r.needsReauth).length;
+  const signIn = json
+    ? "Sign in again with `openmail accounts reauth <account_id>` for each result with needs_reauth."
+    : "Sign in again with the commands above.";
+  if (signIns === 0) return SYNC_FAILED_HINT;
+  if (signIns === failed.length) return signIn;
+  return `${signIn} Run sync again for the other accounts, or add --log-level warn to see why.`;
+}
+
+/**
  * The app retries a failed sync on its own and says so. `openmail sync` runs once, so these
  * failures say what to do instead.
  */
