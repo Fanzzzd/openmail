@@ -68,6 +68,8 @@ The search field suggests the common filters when you start typing their name, f
 | `newer_than:7d`, `older_than:1y`        | Messages newer or older than a period: `d` days, `m` months, `y` years.   |
 | `larger:5M`, `smaller:100K`             | Messages larger or smaller than a size. `size:` is the same as `larger:`. |
 
+A date or size filter without a valid value, such as `newer:foo`, is searched as plain text. The CLI and MCP list it under `ignored`. See [CLI and MCP](/docs/cli-and-mcp).
+
 ## In the app
 
 Click the empty search field to see your recent searches. A search is saved when you press Return or open one of its results. Remove one with the × on its row or by pressing Delete while it is highlighted. Recent searches stay on this Mac and are cleared when you remove an account.

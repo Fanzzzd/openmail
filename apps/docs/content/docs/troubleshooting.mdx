@@ -46,6 +46,16 @@ To report on GitHub instead, click **Copy diagnostics** in the same dialog, chec
 
 **Settings → Activity** lists the actions that you, the command line and AI took on your mail. It does not contain the diagnostics log.
 
+## A CLI command or the MCP server fails
+
+The CLI logs only errors by default, and `openmail mcp` also logs warnings. To see more, run the command again with `--log-level warn`, or `--log-level debug` for everything:
+
+```sh
+openmail --log-level warn sync
+```
+
+The log goes to stderr. Paste it into the GitHub issue. `openmail mcp` writes its log to stderr too, and your AI app keeps that as the server's log.
+
 ## Mail stopped syncing
 
 The bottom of the sidebar shows the sync state: **Syncing…**, **Synced** with a time, or **Sync failed** with the number of failed accounts. Hover over it to see which accounts failed. Click **Sync now**, or press ⌃⌘R (⌘R with the Gmail shortcut set).
