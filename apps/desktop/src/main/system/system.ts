@@ -6,6 +6,7 @@ import { NO_MENU_SELECTION, type NativeMenuState } from "../../shared/native-act
 import {
   applicationMenuTemplate,
   closeWindowTarget,
+  goActionHref,
   goesToMainWindow,
   unfocusedMenuState,
 } from "./app-menu";
@@ -127,12 +128,23 @@ export const DesktopLive = Layer.effect(
     let activeSpace = "all";
     let labelsReady = false;
     let labels: DesktopLabels = DEFAULT_DESKTOP_LABELS;
+    /** The spaces in the order of their Go menu keys, as the last refresh read them. */
+    let profileIds: readonly string[] = [];
     const deliver = (event: DesktopEvent, target = focusMainWindow()) => {
       const id = target.webContents.id;
       const listener = listeners.get(id);
-      if (listener) listener(event);
-      else if (shouldBufferDesktopEvent(event))
-        pending.set(id, [...(pending.get(id) ?? []), event]);
+      if (listener) return listener(event);
+      // A Go menu item can create the window it acts on. Its renderer gets the screen as a link.
+      const href =
+        event._tag === "NativeAction" && goesToMainWindow(event.action)
+          ? goActionHref(event.action, profileIds)
+          : undefined;
+      const kept: DesktopEvent | undefined = href
+        ? { _tag: "Navigate", href }
+        : shouldBufferDesktopEvent(event)
+          ? event
+          : undefined;
+      if (kept) pending.set(id, [...(pending.get(id) ?? []), kept]);
     };
     let fileTimer: ReturnType<typeof setTimeout> | undefined;
     const files: string[] = [];
@@ -286,6 +298,7 @@ export const DesktopLive = Layer.effect(
           }
         }
         const profiles = yield* mailbox.accounts.profiles;
+        profileIds = profiles.map((profile) => profile.id);
         if (
           activeSpace !== "all" &&
           activeSpace !== "overview" &&
@@ -430,9 +443,16 @@ export const DesktopLive = Layer.effect(
                     deliver({ _tag: "UndoSend" }, target);
                 },
                 nativeAction: (action, triggeredByAccelerator) => {
+                  // With no window focused the Go menu shows the state of the window used last.
                   const target =
                     BrowserWindow.getFocusedWindow() ??
-                    (goesToMainWindow(action) ? focusMainWindow() : null);
+                    (goesToMainWindow(action)
+                      ? focusMainWindow(
+                          lastUsedWindow && !lastUsedWindow.isDestroyed()
+                            ? lastUsedWindow
+                            : undefined,
+                        )
+                      : null);
                   if (target)
                     deliver({ _tag: "NativeAction", action, triggeredByAccelerator }, target);
                 },

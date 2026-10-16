@@ -357,10 +357,18 @@ export function isMainWindow(win: BrowserWindow): boolean {
   return mainWindows.has(win);
 }
 
-export function focusMainWindow(): BrowserWindow {
+/**
+ * Shows and focuses the focused main window, else `preferred` when it is a main window, else the
+ * newest one. With no main window open it creates one.
+ */
+export function focusMainWindow(preferred?: BrowserWindow): BrowserWindow {
   const focused = BrowserWindow.getFocusedWindow();
   const win =
-    focused && mainWindows.has(focused) ? focused : ([...mainWindows].at(-1) ?? createMainWindow());
+    focused && mainWindows.has(focused)
+      ? focused
+      : preferred && mainWindows.has(preferred)
+        ? preferred
+        : ([...mainWindows].at(-1) ?? createMainWindow());
   if (win.isMinimized()) win.restore();
   revealAndFocus(win);
   return win;

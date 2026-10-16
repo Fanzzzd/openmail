@@ -1,4 +1,5 @@
 import { mailHref } from "../../shared/routes";
+import { NO_MENU_SELECTION } from "../../shared/native-actions";
 import { Deferred, Effect, Fiber, Layer, Logger, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
@@ -149,6 +150,10 @@ vi.mock("electron", async () => {
       windows,
       notifications,
       trays: FakeTray.instances,
+      /** No app window has focus: the app is in the background. */
+      blur: () => {
+        focusedId = null;
+      },
       reset: () => {
         app.isPackaged = false;
         windows.length = 0;
@@ -188,6 +193,7 @@ const observations = await vi.importMock<{
       emit(event: string, data?: unknown): void;
     }[];
     reset(): void;
+    blur(): void;
     trays: { title: string; menu: unknown }[];
   };
 }>("electron");
@@ -1480,5 +1486,90 @@ it("cold launch retains a 257th Dock file so the reader reports tooMany", async 
         value: { _tag: "FileError", reason: "tooMany" },
       });
     }).pipe(Effect.scoped, Effect.provide(desktopLayer(fakeServer("me@gmail.com", [])))),
+  );
+});
+
+/** Clicks an item of the Go menu the app built last, by its label. */
+function clickGoItem(label: string) {
+  const menu = observations.testState.menu.mock.calls.at(-1)?.[0];
+  const items = menu?.find((m) => m.label === "Go")?.submenu;
+  if (!Array.isArray(items)) throw new Error("Missing Go menu");
+  const click = items.find((item) => item.label === label)?.click;
+  if (!click) throw new Error(`Missing Go item ${label}`);
+  Reflect.apply(click, undefined, [null, undefined, { triggeredByAccelerator: false }]);
+}
+
+// With every window closed, Go > Work created a main window and sent it the action before its
+// renderer listened. The action was dropped and the window opened the default space.
+it("a Go menu item with no window open opens its space in the window it creates", async () => {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const m = yield* Mailbox;
+        yield* m.accounts.connect({ provider: "gmail" });
+        const work = yield* m.accounts.createProfile({
+          name: "Work",
+          color: "blue",
+          icon: "briefcase",
+        });
+        const first = observations.testState.windows[0];
+        if (!first) throw new Error("Missing main window");
+        first.focus();
+        yield* desktop.setMenuState(first.webContents.id, {
+          ...NO_MENU_SELECTION,
+          spaces: ["Work"],
+        });
+        first.close();
+        yield* settle();
+        expect(observations.testState.windows).toHaveLength(0);
+        clickGoItem("Work");
+        const created = observations.testState.windows[0];
+        if (!created) throw new Error("The Go item created no window");
+        const events: unknown[] = [];
+        yield* desktop.events(created.webContents.id).pipe(
+          Stream.runForEach((event) => Effect.sync(() => events.push(event))),
+          Effect.forkScoped,
+        );
+        yield* settle();
+        expect(events).toEqual([
+          { _tag: "Navigate", href: mailHref({ space: work.id, mailbox: "inbox" }) },
+        ]);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+// The Go menu shows the state of the window used last, but the action went to the newest one.
+it("a Go menu item with no focused window reaches the main window used last", async () => {
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const first = observations.testState.windows[0];
+        if (!first) throw new Error("Missing main window");
+        const second = createMainWindow();
+        const received = (win: { webContents: { id: number } }) =>
+          Effect.gen(function* () {
+            const events: unknown[] = [];
+            yield* desktop.events(win.webContents.id).pipe(
+              Stream.runForEach((event) => Effect.sync(() => events.push(event))),
+              Effect.forkScoped,
+            );
+            return events;
+          });
+        const toFirst = yield* received(first);
+        const toSecond = yield* received(second);
+        yield* settle();
+        first.focus();
+        observations.testState.blur();
+        clickGoItem("Inbox");
+        yield* settle();
+        expect(toFirst).toEqual([
+          { _tag: "NativeAction", action: "goInbox", triggeredByAccelerator: false },
+        ]);
+        expect(toSecond).toEqual([]);
+      }),
+    ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
   );
 });

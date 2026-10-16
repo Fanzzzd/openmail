@@ -1,6 +1,8 @@
 import type { MenuItemConstructorOptions } from "electron";
 import type { DesktopLabels } from "../../shared/desktop-labels";
+import { DEFAULT_VIEW, mailHref } from "../../shared/routes";
 import {
+  GO_MAILBOXES,
   goMailboxDigit,
   goSpaceIndex,
   isGoMailbox,
@@ -94,6 +96,27 @@ const GO_ACTIONS: ReadonlySet<NativeAction> = new Set(
 );
 /** Go menu items act on the main window, so they still work with no window focused. */
 export const goesToMainWindow = (action: NativeAction): boolean => GO_ACTIONS.has(action);
+
+/**
+ * The screen a Go menu item opens in a main window whose renderer is not listening yet, such as
+ * the window the item just created. `profileIds` are the spaces in the order of their keys. Back
+ * and Forward have no history there and open nothing.
+ */
+export function goActionHref(
+  action: NativeAction,
+  profileIds: readonly string[],
+): string | undefined {
+  if (action === "goOverview") return mailHref({ space: "overview", mailbox: "inbox" });
+  if (action === "goAllAccounts") return mailHref({ space: "all", mailbox: "inbox" });
+  const space = goSpaceIndex(action);
+  if (space !== undefined) {
+    const id = profileIds[space];
+    return id === undefined ? undefined : mailHref({ space: id, mailbox: "inbox" });
+  }
+  return isGoMailbox(action)
+    ? mailHref({ space: DEFAULT_VIEW.space, mailbox: GO_MAILBOXES[action] })
+    : undefined;
+}
 
 /**
  * The menu state with no focused window: the app is in the background, or its windows opened

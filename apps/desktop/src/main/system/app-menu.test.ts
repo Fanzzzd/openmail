@@ -19,6 +19,7 @@ import {
 import {
   applicationMenuTemplate,
   closeWindowTarget,
+  goActionHref,
   goesToMainWindow,
   nativeActionAccelerator,
   unfocusedMenuState,
@@ -26,6 +27,7 @@ import {
 import { DEFAULT_DESKTOP_LABELS } from "./default-labels";
 import { OPENMAIL_DOCS_URL } from "../../shared/docs";
 import { externalUrl } from "../../shared/external-url";
+import { mailHref } from "../../shared/routes";
 
 const template = (
   platform: NodeJS.Platform,
@@ -485,4 +487,15 @@ it("standard menu items carry the fixed accelerators the docs page lists", () =>
   expect(items(menu).find((item) => item.label === "Close window")?.accelerator).toBe(
     menuAccelerator("close"),
   );
+});
+
+it("a Go item for a window that is not listening yet becomes the link of its screen", () => {
+  const ids = ["profile-work", "profile-home"];
+  expect(goActionHref("goSpace2", ids)).toBe(mailHref({ space: "profile-home", mailbox: "inbox" }));
+  expect(goActionHref("goSpace3", ids)).toBeUndefined();
+  expect(goActionHref("goOverview", ids)).toBe(mailHref({ space: "overview", mailbox: "inbox" }));
+  expect(goActionHref("goAllAccounts", ids)).toBe(mailHref({ space: "all", mailbox: "inbox" }));
+  expect(goActionHref("goSent", ids)).toBe(mailHref({ space: "all", mailbox: "sent" }));
+  expect(goActionHref("goBack", ids)).toBeUndefined();
+  expect(goActionHref("reply", ids)).toBeUndefined();
 });
