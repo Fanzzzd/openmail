@@ -426,6 +426,24 @@ describe("reading", () => {
     expect(second.map((thread) => thread.id)).not.toContain(threads[0]?.id);
   });
 
+  test("list --label and label: take a label name in any case; a typo is not_found", async () => {
+    const ids = async (args: string[]) =>
+      rows((await object([...args, "--limit", "100"])).threads).map((thread) => thread.id);
+    const byId = await ids(["list", "--label", "Label_projects"]);
+    expect(byId.length).toBeGreaterThan(0);
+    expect(await ids(["list", "--label", "Projects"])).toEqual(byId);
+    expect(await ids(["list", "--label", "projects"])).toEqual(byId);
+    const search = await ids(["search", "label:Projects"]);
+    expect(search.length).toBeGreaterThan(0);
+    expect(await ids(["search", "label:projects"])).toEqual(search);
+    const typo = await openmail(["list", "--label", "nope", "--json"]);
+    expect(typo.code, typo.stderr).toBe(1);
+    expect(errorObject(typo.stdout)).toMatchObject({
+      code: "not_found",
+      hint: expect.stringContaining("list_labels"),
+    });
+  });
+
   test("list --unread --mailbox inbox returns only unread inbox threads", async () => {
     const threads = rows((await object(["list", "--unread", "--mailbox", "inbox"])).threads);
     expect(threads.length).toBeGreaterThan(0);

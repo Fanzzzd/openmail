@@ -63,6 +63,7 @@ export {
   type ProviderCapabilities,
   providerCapabilities,
   supportsOp,
+  threadsWithLabel,
   notificationButtonActions,
   parseAppLink,
   printable,

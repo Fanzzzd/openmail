@@ -34,6 +34,7 @@ import {
 import { SearchResult } from "../domain/organization.js";
 import { withUnparsedOperators } from "../search/search.js";
 import { ModelThread } from "../ai/model-thread.js";
+import { threadsWithLabel } from "../mailbox/label-filter.js";
 import { SyncResult } from "../domain/sync-status.js";
 import { Tool } from "effect/ai";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
@@ -56,7 +57,7 @@ export const ListThreads = readOnly(
       label: Schema.optionalKey(
         Schema.String.annotate({
           description:
-            "A label or folder id from list_labels, or a Gmail category such as CATEGORY_PROMOTIONS.",
+            "A label or folder id or name from list_labels, or a Gmail category such as CATEGORY_PROMOTIONS. Names ignore case; an unknown label fails with not_found.",
         }),
       ),
       unread_only: Schema.optionalKey(
@@ -192,16 +193,24 @@ export const threadHandlers = ({
         accountIds = accountIds.filter((id) => inProfile.has(id));
         if (!accountIds.length) return { threads: [] };
       }
-      const rows = yield* mailbox.reading
-        .threads({
-          mailbox: p.mailbox,
-          accountIds,
-          ...(p.label ? { label: p.label } : {}),
-          ...(p.unread_only ? { unreadOnly: true } : {}),
-          ...(cursor.date === undefined ? {} : { before: cursor.date, beforeId: cursor.id }),
-          limit: p.limit + 1,
-        })
-        .pipe(Effect.mapError(toToolError));
+      const q = {
+        mailbox: p.mailbox,
+        accountIds,
+        ...(p.unread_only ? { unreadOnly: true } : {}),
+        ...(cursor.date === undefined ? {} : { before: cursor.date, beforeId: cursor.id }),
+        limit: p.limit + 1,
+      };
+      const rows = yield* (
+        p.label === undefined
+          ? mailbox.reading.threads(q)
+          : threadsWithLabel(mailbox.reading, { ...q, label: p.label })
+      ).pipe(Effect.mapError(toToolError));
+      if (rows === null)
+        return yield* toolError(
+          "not_found",
+          `No label or folder with id or name ${shortText(p.label ?? "", 64)}.`,
+          "Get label ids and names from list_labels, or use a Gmail category such as CATEGORY_UPDATES.",
+        );
       const threads = yield* bounded(rows.map(compactThread(timeZone())), p.limit, p.token_budget);
       // The cursor keeps the row's epoch milliseconds; only the result shows local time.
       const last = rows[threads.length - 1];

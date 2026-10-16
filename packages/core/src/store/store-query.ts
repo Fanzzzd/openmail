@@ -331,9 +331,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     // correlated subqueries, which turns every page into an O(n^2) scan.
     if (c.dateBefore !== undefined) where.push(sql`+m.date < ${c.dateBefore}`);
     if (c.dateAfter !== undefined) where.push(sql`+m.date >= ${c.dateAfter}`);
+    // Names match without regard to case, like Gmail's label:. NOCASE folds ASCII only.
     for (const label of c.labels ?? [])
       where.push(
-        sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label})))`,
+        sql`(${hasLabel(label)} OR EXISTS (SELECT 1 FROM json_each(m.labels_json) j WHERE j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=${label} COLLATE NOCASE)))`,
       );
     return sql.and(where);
   };

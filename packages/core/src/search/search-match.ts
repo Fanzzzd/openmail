@@ -184,7 +184,10 @@ export function matchesSearchCondition(
     c.labels?.some(
       (value) =>
         !message.labels.includes(
-          labels.find((l) => l.id === value || l.name === value)?.id ?? value,
+          (
+            labels.find((l) => l.id === value) ??
+            labels.find((l) => l.name.toLowerCase() === value.toLowerCase())
+          )?.id ?? value,
         ),
     )
   )

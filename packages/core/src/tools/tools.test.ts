@@ -1508,6 +1508,45 @@ it.effect("thread cursor preserves every conversation sharing a timestamp", () =
   );
 });
 
+it.effect(
+  "label: and list_threads label take a label name in any case; a typo is not_found",
+  () => {
+    const server = fakeServer("me@gmail.com", [
+      { ...toolMail("m1"), labels: ["INBOX", "Label_1"] },
+      { ...toolMail("m2"), labels: ["INBOX", "Label_1"], date: 2000 },
+      toolMail("m3"),
+    ]);
+    server.labels = [{ id: "Label_1", name: "Projects", color: null }];
+    return run(
+      Effect.gen(function* () {
+        const mailbox = yield* Mailbox;
+        const account = yield* mailbox.accounts.connect({ provider: "gmail" });
+        yield* mailbox.ai.setAiAccount({
+          accountId: account.id,
+          allowed: true,
+          autoSummaries: false,
+        });
+        yield* mailbox.sync.sync();
+        const ids = (result: { readonly result: object }) =>
+          "threads" in result.result && Array.isArray(result.result.threads)
+            ? result.result.threads.map((row: { readonly id: string }) => row.id)
+            : [JSON.stringify(result.result)];
+        const expected = [`${account.id}/m2`, `${account.id}/m1`];
+        for (const query of ["label:Projects", "label:projects", "label:Label_1"])
+          assert.deepStrictEqual(ids(yield* call("search", { query })), expected, query);
+        for (const label of ["Label_1", "Projects", "projects"])
+          assert.deepStrictEqual(ids(yield* call("list_threads", { label })), expected, label);
+        assert.strictEqual(ids(yield* call("list_threads", { label: "inbox" })).length, 3);
+        const typo = yield* call("list_threads", { label: "nope" });
+        assert.isTrue(typo.isFailure);
+        assert.include(typo.encodedResult, { code: "not_found" });
+        assert.match(JSON.stringify(typo.encodedResult), /list_labels/);
+      }),
+      TestMailbox({ gmail: server }),
+    );
+  },
+);
+
 it("calendar times keep the sender's wall time and zone and show the instant in local time", () => {
   const zoned = {
     kind: "zoned",

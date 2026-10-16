@@ -28,6 +28,7 @@ import {
   logWarning,
   printable,
   redactSyncHealth,
+  threadsWithLabel,
 } from "@openmail/core";
 import {
   SEARCH_VALUE_FORMS,
@@ -216,7 +217,10 @@ const list = Command.make(
     ),
     account: optionalString("account", "Only this account"),
     ...spaceFlags,
-    label: optionalString("label", "Only threads with this label or folder id"),
+    label: optionalString(
+      "label",
+      "Only threads with this label or folder, by id or name (any case)",
+    ),
     unread: Flag.Boolean("unread").pipe(
       Flag.withDescription("Unread only"),
       Flag.withDefault(false),
@@ -241,24 +245,34 @@ const list = Command.make(
         : Option.isSome(o.before)
           ? { before: o.before.value }
           : {};
-    const rows = accountIds.length
-      ? yield* mailbox.reading.threads({
-          mailbox: o.mailbox,
-          accountIds,
-          ...(Option.isSome(o.label) ? { label: o.label.value } : {}),
-          ...(o.unread ? { unreadOnly: true } : {}),
-          ...before,
-          limit: o.limit + 1,
-        })
-      : [];
+    const q = {
+      mailbox: o.mailbox,
+      accountIds,
+      ...(o.unread ? { unreadOnly: true } : {}),
+      ...before,
+      limit: o.limit + 1,
+    };
+    const label = Option.getOrUndefined(o.label);
+    const rows = !accountIds.length
+      ? []
+      : label === undefined
+        ? yield* mailbox.reading.threads(q)
+        : yield* threadsWithLabel(mailbox.reading, { ...q, label });
+    if (rows === null)
+      return yield* fail(`No label or folder with id or name ${printable(label ?? "")}.`, {
+        code: "not_found",
+        hint: "Run `openmail tool list_labels` to see label ids and names.",
+      });
     const threads = rows.slice(0, o.limit);
     const last = threads.at(-1);
     const next =
       last && rows.length > threads.length
         ? encodeCursor({ scope, offset: 0, date: last.date, id: last.id })
         : undefined;
-    yield* print({ threads, ...(next === undefined ? {} : { next_cursor: next }) }, o.json, () =>
-      pageText(threads, next, []),
+    return yield* print(
+      { threads, ...(next === undefined ? {} : { next_cursor: next }) },
+      o.json,
+      () => pageText(threads, next, []),
     );
   }),
 ).pipe(Command.withDescription("List conversations in a mailbox, newest first"));

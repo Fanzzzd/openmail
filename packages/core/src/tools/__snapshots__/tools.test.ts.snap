@@ -243,7 +243,7 @@ exports[`tool input and output schemas are stable 1`] = `
           "type": "string",
         },
         "label": {
-          "description": "A label or folder id from list_labels, or a Gmail category such as CATEGORY_PROMOTIONS.",
+          "description": "A label or folder id or name from list_labels, or a Gmail category such as CATEGORY_PROMOTIONS. Names ignore case; an unknown label fails with not_found.",
           "type": "string",
         },
         "limit": {

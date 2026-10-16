@@ -37,6 +37,7 @@ export { READ_ONLY_CONNECTION } from "./tools/account-tools.js";
 export { cursorScope, decodeCursor, encodeCursor, type PageCursor } from "./tools/tool-pages.js";
 export { MailToolError, isLockTimeout, unknownArguments } from "./tools/tool-common.js";
 export { APPROVE_IN_APP } from "./mailbox/mailbox-apply.js";
+export { resolveLabelFilter, threadsWithLabel } from "./mailbox/label-filter.js";
 
 export * from "./domain/organization.js";
 export * from "./search/search.js";

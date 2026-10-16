@@ -152,6 +152,8 @@ import { type DerivedChunk } from "../ai/media.js";
         { id: "Label_1", name: "Work" },
       ]),
     );
+    // Label names match without regard to case, as in the local index.
+    assert.ok(matchesSearch(message, { search: "label:work" }, [{ id: "Label_1", name: "Work" }]));
     assert.ok(
       !matchesSearch(message, { search: "report", searchScope: "folder", mailbox: "sent" }),
     );
