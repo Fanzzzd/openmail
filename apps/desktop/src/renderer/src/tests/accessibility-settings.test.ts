@@ -315,6 +315,64 @@ it("Other IMAP fills empty server names from the email address on blur, without 
   await audit();
 });
 
+it("Sign in again on an IMAP row opens on that account with its servers filled in and the password focused", async () => {
+  const imapAccount = {
+    ...account,
+    id: "imap:me",
+    provider: "imap" as const,
+    email: "me@example.com",
+    needsReauth: true,
+    imap: {
+      preset: "custom",
+      username: "login-me",
+      imapHost: "imap.example.com",
+      imapPort: 143,
+      smtpHost: "smtp.example.com",
+      smtpPort: 587,
+      smtpSecure: false,
+    },
+  };
+  const onAddAccount = vi.fn();
+  render(
+    localized(
+      h(Settings, {
+        initialTab: "accounts",
+        accounts: [imapAccount],
+        onClose: vi.fn(),
+        onAddAccount,
+      }),
+    ),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Sign in again me@example.com" }));
+  expect(onAddAccount).toHaveBeenCalledWith(imapAccount);
+  cleanup();
+
+  fixture.values.set("clientSetupAtom", NO_CLIENTS);
+  render(
+    localized(
+      h(AddAccountDialog, { onClose: vi.fn(), onAdded: vi.fn(), signInAgain: imapAccount }),
+    ),
+  );
+  const dialog = screen.getByRole("dialog", { name: "Sign in to me@example.com again" });
+  expect(within(dialog).queryByRole("button", { name: "Gmail" })).toBeNull();
+  const field = (name: string) => within(dialog).getByRole("textbox", { name });
+  expect(field("Email address")).toHaveProperty("value", "me@example.com");
+  expect(field("Username (defaults to the email address)")).toHaveProperty("value", "login-me");
+  expect(field("IMAP server")).toHaveProperty("value", "imap.example.com");
+  expect(field("IMAP port")).toHaveProperty("value", "143");
+  expect(field("SMTP server")).toHaveProperty("value", "smtp.example.com");
+  expect(field("SMTP port")).toHaveProperty("value", "587");
+  expect(
+    within(dialog)
+      .getByRole("radio", { name: "STARTTLS (usually 587)" })
+      .getAttribute("aria-checked"),
+  ).toBe("true");
+  const password = dialog.querySelector('input[type="password"]');
+  expect(password).toHaveProperty("value", "");
+  await waitFor(() => expect(document.activeElement).toBe(password));
+  await audit();
+});
+
 it("after the first account, a short skippable step lists three shortcuts", async () => {
   const onClose = vi.fn();
   const onAiAccess = vi.fn();

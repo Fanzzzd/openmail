@@ -6871,7 +6871,6 @@ msgstr "Toont datums en uitnodigingen uit een bericht erboven, zodat je ze na co
 msgid "Sidebar"
 msgstr "Zijbalk"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6907,6 +6906,12 @@ msgstr "Meld je opnieuw aan om filters en automatische antwoorden in te schakele
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "Meld je opnieuw aan om servercontacten te synchroniseren."
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "Opnieuw aanmelden bij {againEmail}"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"

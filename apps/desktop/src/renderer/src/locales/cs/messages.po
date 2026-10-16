@@ -6871,7 +6871,6 @@ msgstr "Nad zprávou zobrazí nalezená data a pozvánky, abyste je po kontrole 
 msgid "Sidebar"
 msgstr "Postranní panel"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6907,6 +6906,12 @@ msgstr "Chcete-li povolit filtry a automatické odpovědi, přihlaste se znovu."
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "Pro synchronizaci kontaktů serveru se znovu přihlaste."
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "Znovu se přihlásit k {againEmail}"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"

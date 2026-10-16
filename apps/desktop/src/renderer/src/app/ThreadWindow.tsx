@@ -20,7 +20,7 @@ import { AsyncResult } from "effect/reactivity";
 import { Mail } from "lucide-react";
 import { useCallback, useEffect, useEffectEvent, useState } from "react";
 
-import type { MailOp } from "../../../shared/api";
+import type { Account, MailOp } from "../../../shared/api";
 import { ThreadView } from "../features/reader/ThreadView";
 import { useThreadPrint } from "../features/reader/use-thread-print";
 import { OPEN_SETTINGS_EVENT } from "../features/ai/open-ai-settings";
@@ -89,6 +89,8 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
   const [labelPicker, setLabelPicker] = useState(false);
   const [pickerMode, setPickerMode] = useState<"label" | "move">("label");
   const [dialog, setDialog] = useState<"settings" | "help" | "add" | null>(null);
+  /** The IMAP account Settings asked to sign in again, if any. */
+  const [signInAgain, setSignInAgain] = useState<Account | null>(null);
   const [settingsTab, setSettingsTab] = useState<"ai" | null>(null);
   useEffect(() => {
     const open = () => {
@@ -401,12 +403,19 @@ export function ThreadWindow({ id, single = false }: { id: string; single?: bool
             setDialog(null);
             setSettingsTab(null);
           }}
-          onAddAccount={() => setDialog("add")}
+          onAddAccount={(again) => {
+            setSignInAgain(again ?? null);
+            setDialog("add");
+          }}
         />
       )}
       {dialog === "help" && <ShortcutHelp onClose={() => setDialog(null)} />}
       {dialog === "add" && (
-        <AddAccountDialog onClose={() => setDialog(null)} onAdded={() => setDialog("settings")} />
+        <AddAccountDialog
+          {...(signInAgain ? { signInAgain } : {})}
+          onClose={() => setDialog(null)}
+          onAdded={() => setDialog("settings")}
+        />
       )}
       <Alert
         open={deleteKeyPrompt}

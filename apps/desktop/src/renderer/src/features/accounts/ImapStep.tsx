@@ -5,7 +5,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { Cause, Exit } from "effect";
 import { AsyncResult } from "effect/reactivity";
 import { ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { type Ref, useState } from "react";
 
 import type { Account, ImapConnectInput } from "../../../../shared/api";
 import { type AppError, causeText } from "../../lib/errors";
@@ -62,10 +62,13 @@ export function ImapStep({
   preset,
   onAdded,
   signInAgain,
+  secretRef,
 }: {
   preset: ImapChoice;
   onAdded: (account: Account) => void;
   signInAgain?: Account;
+  /** The password field, so Sign in again can start there. */
+  secretRef?: Ref<HTMLInputElement>;
 }) {
   const { t, i18n } = useLingui();
   const presets = AsyncResult.getOrElse(useAtomValue(imapPresetsAtom), () => null);
@@ -174,6 +177,7 @@ export function ImapStep({
         onChange={setPassword}
         password
         autoFocus={!!signInAgain}
+        inputRef={secretRef}
       />
       {info?.appPasswordUrl && (
         <a

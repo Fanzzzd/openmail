@@ -1,4 +1,4 @@
-import { useId, type ReactNode } from "react";
+import { useId, type ReactNode, type Ref } from "react";
 
 import { formInput } from "../../ui/styles";
 
@@ -16,6 +16,7 @@ export function Field({
   onBlur,
   hint,
   accessibleName,
+  inputRef,
 }: {
   label: string;
   value: string;
@@ -33,12 +34,14 @@ export function Field({
    * "Port". It must contain the visible label.
    */
   accessibleName?: string;
+  inputRef?: Ref<HTMLInputElement>;
 }) {
   const hintId = useId();
   const field = (
     <label className="mt-3 block text-footnote font-medium text-a11y-muted">
       {label}
       <input
+        ref={inputRef}
         type={password ? "password" : (type ?? "text")}
         value={value}
         autoFocus={autoFocus}

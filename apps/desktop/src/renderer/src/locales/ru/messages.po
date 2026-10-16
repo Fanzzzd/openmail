@@ -6871,7 +6871,6 @@ msgstr "Показывает над сообщением найденные в �
 msgid "Sidebar"
 msgstr "Боковая панель"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6907,6 +6906,12 @@ msgstr "Войдите ещё раз, чтобы включить фильтры
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "Войдите ещё раз, чтобы синхронизировать контакты сервера."
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "Повторный вход в {againEmail}"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"

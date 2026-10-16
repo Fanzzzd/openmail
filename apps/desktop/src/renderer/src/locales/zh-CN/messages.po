@@ -6881,7 +6881,6 @@ msgstr "在邮件上方显示从中找到的日期和邀请，核对后可以加
 msgid "Sidebar"
 msgstr "侧栏"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6917,6 +6916,12 @@ msgstr "重新登录以启用过滤器和自动回复。"
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "请重新登录以同步服务器联系人。"
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "重新登录 {againEmail}"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"

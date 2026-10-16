@@ -70,10 +70,18 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
   const tile = TILES.find((item) => item.id === choice);
   // Focus starts on the first provider, the step's first choice, not on Close.
   const firstTile = useRef<HTMLButtonElement>(null);
+  // Signing in again only needs the password; everything else is filled in.
+  const secretField = useRef<HTMLInputElement>(null);
 
   const provider = tile ? tileLabel(i18n, tile.label) : "";
+  const againEmail = signInAgain?.email ?? "";
   const title = signInAgain
-    ? t`Sign in again`
+    ? t({
+        message: `Sign in to ${againEmail} again`,
+        context: "dialog title",
+        comment:
+          "Opens to re-enter the password of an IMAP account. The value is an email address.",
+      })
     : tile
       ? t`Add ${provider}`
       : firstRun
@@ -85,7 +93,7 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
       aria-label={title}
       onClose={onClose}
       ownClose
-      initialFocus={choice === null ? firstTile : undefined}
+      initialFocus={choice === null ? firstTile : signInAgain ? secretField : undefined}
       className="w-[min(460px,calc(100vw-48px))] p-6"
       backdropClassName="bg-black/30 backdrop-blur-[2px]"
     >
@@ -152,7 +160,7 @@ export function AddAccountDialog({ onClose, onAdded, firstRun, signInAgain }: Pr
           key={choice}
           preset={choice}
           onAdded={onAdded}
-          {...(signInAgain ? { signInAgain } : {})}
+          {...(signInAgain ? { signInAgain, secretRef: secretField } : {})}
         />
       )}
     </Dialog>

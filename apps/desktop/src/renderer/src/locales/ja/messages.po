@@ -6871,7 +6871,6 @@ msgstr "メッセージ内で見つかった日付や招待をその上に表示
 msgid "Sidebar"
 msgstr "サイドバー"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6907,6 +6906,12 @@ msgstr "フィルターと自動返信を有効にするには、再度サイン
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "サーバーの連絡先を同期するには、再度サインインします。"
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "{againEmail} に再度サインイン"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"

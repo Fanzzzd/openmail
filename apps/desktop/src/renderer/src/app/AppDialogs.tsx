@@ -176,7 +176,10 @@ export function AppDialogs({
             settingsRequest.setOptionalAccountId(null);
             settingsRequest.setSettingsTab(null);
           }}
-          onAddAccount={() => setDialog("add")}
+          onAddAccount={(account) => {
+            setSignInAgain(account?.id ?? null);
+            setDialog("add");
+          }}
         />
       )}
       {dialog === "proposals" && (

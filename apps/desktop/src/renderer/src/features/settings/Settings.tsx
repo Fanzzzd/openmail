@@ -172,7 +172,8 @@ interface Props {
   initialTab?: Tab;
   optionalAccountId?: string | null;
   onClose: () => void;
-  onAddAccount: () => void;
+  /** Opens Add account; with an IMAP account, on that account to sign in again. */
+  onAddAccount: (signInAgain?: Account) => void;
 }
 
 export function Settings({
@@ -301,7 +302,7 @@ function Accounts({
 }: {
   optionalAccountId?: string | null;
   accounts: readonly Account[];
-  onAddAccount: () => void;
+  onAddAccount: (signInAgain?: Account) => void;
 }) {
   const { t, i18n } = useLingui();
   const profiles = AsyncResult.getOrElse(useAtomValue(profilesAtom), () => []);
@@ -387,7 +388,7 @@ function Accounts({
         </output>
       )}
       <div>
-        <button type="button" onClick={onAddAccount} className={buttonSecondary}>
+        <button type="button" onClick={() => onAddAccount()} className={buttonSecondary}>
           <Trans>Add email account</Trans>
         </button>
       </div>
@@ -412,7 +413,7 @@ function AccountRow({
   account: Account;
   moving: boolean;
   accounts: readonly Account[];
-  onAddAccount: () => void;
+  onAddAccount: (signInAgain?: Account) => void;
   move: (id: string, profileId: string | null, beforeId: string | null) => void;
   onDragStart: React.DragEventHandler<HTMLLIElement>;
   onDragEnd: React.DragEventHandler<HTMLLIElement>;
@@ -471,10 +472,11 @@ function AccountRow({
             <button
               type="button"
               disabled={reauth.waiting}
-              // IMAP signs in again by adding the same address with a new password.
+              // IMAP signs in again by adding the same address with a new password; the
+              // dialog opens on this account with its stored settings.
               onClick={() =>
                 providerCapabilities(a.provider).signIn === "password"
-                  ? onAddAccount()
+                  ? onAddAccount(a)
                   : runReauth(undefined)
               }
               className={buttonLink}

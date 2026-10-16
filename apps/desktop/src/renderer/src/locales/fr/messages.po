@@ -6871,7 +6871,6 @@ msgstr "Affiche au-dessus d’un message les dates et invitations qu’il contie
 msgid "Sidebar"
 msgstr "Barre latérale"
 
-#: src/renderer/src/features/accounts/AddAccountDialog.tsx
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 #: src/renderer/src/features/organize/FocusedInboxActions.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
@@ -6907,6 +6906,12 @@ msgstr "Connectez-vous à nouveau pour activer les filtres et les réponses auto
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to sync server contacts."
 msgstr "Connectez-vous à nouveau pour synchroniser les contacts du serveur."
+
+#. Opens to re-enter the password of an IMAP account. The value is an email address.
+#: src/renderer/src/features/accounts/AddAccountDialog.tsx
+msgctxt "dialog title"
+msgid "Sign in to {againEmail} again"
+msgstr "Se reconnecter à {againEmail}"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Sign in with {name}"
