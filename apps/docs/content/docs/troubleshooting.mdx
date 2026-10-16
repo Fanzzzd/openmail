@@ -92,6 +92,10 @@ OpenMail keeps sign-ins in the macOS keychain. When it cannot read them, the not
 
 Unlock your Mac. If macOS asks whether OpenMail may use the keychain item, click **Always Allow**. If you clicked **Deny**, OpenMail shows the same notice and tries again on the next sync. A locked keychain never signs you out. If the keychain item itself is gone, OpenMail asks you to sign in again instead.
 
+## Inline images show as broken
+
+OpenMail shows inline images, such as a logo in a signature, from the message's raw source. When that source is over 8 MB, usually because a large attachment sits next to the images, OpenMail does not download it to show them. The images show as broken. Attachments in the same message still download normally when you open or save them.
+
 ## Google says the app is unverified
 
 During Gmail sign-in, Google can show **Google hasn't verified this app**. In a release build this comes from OpenMail's Google project. A build from source has no built-in client and signs in with [your own OAuth client](/docs/own-oauth-client). Click **Advanced**, then **Go to OpenMail (unsafe)**. The FAQ explains [why the warning appears](/docs/faq#why-does-google-show-an-unverified-app-warning). To avoid it, [register your own OAuth client](/docs/own-oauth-client).
