@@ -57,7 +57,7 @@ export function Overview({
   landmark = true,
 }: Props) {
   accounts = accounts.filter((a) => a.enabled !== false);
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const run = useRunMail();
   const shortcutSet =
     AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null)?.shortcutSet ?? "mimestream";

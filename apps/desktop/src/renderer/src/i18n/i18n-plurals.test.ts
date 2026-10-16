@@ -5,7 +5,7 @@ const DELETED =
   "{count, plural, one {Permanently deleted # message} other {Permanently deleted # messages}}";
 const EVERY_DAY = "{interval, plural, one {Every # day} other {Every # days}}";
 
-async function render(locale: string, source: string, values: Record<string, number>) {
+async function render(locale: string, source: string, values: Record<string, number | string>) {
   const { i18n, catalog } = await catalogI18n(locale);
   const id = Object.entries(catalog).find(([, message]) => message.message === source)?.[0];
   if (!id) throw new Error(`Missing ${source}`);
@@ -116,7 +116,6 @@ it("the overview, indexing and recovery counts agree with their numbers", async 
   );
   for (const source of [OVERVIEW, INDEXING, EMBEDDING, RECOVERED])
     for (const locale of ["ru", "cs"]) {
-      const names = source === OVERVIEW ? ["total"] : source === RECOVERED ? ["copied"] : ["0"];
       const forms = await Promise.all(
         [1, 3, 5].map((n) =>
           render(locale, source, {
@@ -132,7 +131,7 @@ it("the overview, indexing and recovery counts agree with their numbers", async 
           }),
         ),
       );
-      expect(new Set(forms).size, `${locale} ${names[0]}`).toBeGreaterThan(1);
+      expect(new Set(forms).size, `${locale} ${source}`).toBeGreaterThan(1);
     }
   expect(await render("ja", OVERVIEW, { accountCount: 2, total: 3 })).toBe(
     "2個のアカウント, 未読3件",
