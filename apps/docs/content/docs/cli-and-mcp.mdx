@@ -202,7 +202,7 @@ By default the server offers 20 tools:
 | `list_attachments` | List a message's attachments: name, type and size.                                                   | Yes       |
 | `attachment_text`  | Read text that on-device OCR or PDF extraction already produced.                                     | Yes       |
 | `list_proposals`   | List AI suggestions that wait for your approval in the app.                                          | Yes       |
-| `read_proposal`    | Read one pending AI suggestion. Takes `id` or the `proposal_id` that `draft_message` returns.        | Yes       |
+| `read_proposal`    | Read one pending AI suggestion.                                                                      | Yes       |
 
 With write access turned on, the server adds 3 write tools:
 
@@ -220,7 +220,7 @@ Tool results put all mail content in an `untrusted_mail` field with a notice, so
 
 Tools take conversations by the id of one of their messages, and the parameter says so: `read_thread`, `list_attachments` and `list_invites` take `message_id`, and `modify_threads` and `snooze_threads` take `message_ids`, where each id stands for its conversation.
 
-Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the AI suggestion as a `command` object.
+Every key in a result is snake_case, at any depth, like the tool parameters: `account_id`, `is_unread`, `next_cursor`, `needs_reauth`. Fields that would always be empty are left out. `read_proposal` returns the AI suggestion as a `command` object. It takes `id`, or the `proposal_id` that `draft_message` returns.
 
 A failed call returns `isError` with a `message`, a `code` and a `hint` that names the next step. The codes are `not_found`, `invalid_input`, `no_ai_consent`, `denied`, `not_ready`, `reauth_required`, `provider_rejected`, `provider_unavailable`, `too_many_proposals` and `busy`. A call fails with `busy` when another OpenMail process, such as the app writing a large sync batch, held the write lock past the timeout. Its hint says: OpenMail is writing to the mailbox; retry in a few seconds. An `account_id`, `profile_id` or other id the client cannot read fails with `not_found`, so a typo never looks like an empty mailbox. `semantic_search` fails with `not_ready` while the on-device index has nothing for the account. Arguments that don't match a tool's input schema come back the same way, with code `invalid_input`, so the model can fix them; they are not JSON-RPC protocol errors. A key the tool does not declare, such as `acount_id`, fails the call and names the closest valid key. A `cursor` that is not the tool's own `next_cursor` fails too; omit `cursor` to start from the first page.
 
