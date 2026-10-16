@@ -122,21 +122,24 @@ export const MailToolkitLayer = MailToolkit.toLayer(
     });
 
     /**
-     * agent_activity rows that met another process's write lock, oldest first. The tool's
-     * result does not wait for them: a background fiber retries them, and closing the server
-     * tries once more and logs the rows it drops.
+     * agent_activity rows not written yet, oldest first. The tool's result does not wait for
+     * them: a forked fiber writes each one, a background fiber retries rows that met another
+     * process's write lock, and closing the server tries once more and logs the rows it drops.
      */
     const unrecorded: ActivityEntry[] = [];
     /** Writes the waiting rows in order; false when the lock is still held. One at a time. */
     const writing = yield* Semaphore.make(1);
     const writeUnrecorded = Effect.gen(function* () {
       for (let entry = unrecorded[0]; entry; entry = unrecorded[0]) {
+        // Uninterruptible, so a row the database took always leaves the queue: closing the
+        // server must not write it twice.
         const written = yield* mailbox.proposals.recordAgentActivity(entry).pipe(
+          Effect.tap(() => Effect.sync(() => unrecorded.shift())),
           Effect.as(true),
           Effect.catchTag("DatabaseBusy", () => Effect.succeed(false)),
+          Effect.uninterruptible,
         );
         if (!written) return false;
-        unrecorded.shift();
       }
       return true;
     }).pipe(writing.withPermits(1));
@@ -169,10 +172,19 @@ export const MailToolkitLayer = MailToolkit.toLayer(
         Effect.asVoid,
       );
     });
-    const record = (entry: ActivityEntry) => {
-      unrecorded.push(entry);
-      return Effect.flatMap(writeUnrecorded, (done) => (done ? Effect.void : retryLater));
-    };
+    /**
+     * Queues the row and writes it in a forked fiber, so the result never waits for the write
+     * lock. The queue and the semaphore keep rows in call order.
+     */
+    const record = (entry: ActivityEntry) =>
+      Effect.suspend(() => {
+        unrecorded.push(entry);
+        return Effect.flatMap(writeUnrecorded, (done) => (done ? Effect.void : retryLater)).pipe(
+          Effect.ignoreCause,
+          Effect.forkIn(scope),
+          Effect.asVoid,
+        );
+      });
 
     /** MCP calls leave a row in agent_activity, so Settings can show what each AI app did. */
     const tracked = <A, E, R>(tool: string, effect: Effect.Effect<A, E, R>) =>

@@ -2,7 +2,7 @@ import { Store } from "../store/service.js";
 import { expect } from "vitest";
 import { assert, it } from "@effect/vitest";
 
-import { Clock, Context, Effect, Layer, Option, Stream, Schema } from "effect";
+import { Clock, Context, Deferred, Effect, Layer, Option, Stream, Schema } from "effect";
 import { TestClock } from "effect/testing";
 import { Tool } from "effect/ai";
 
@@ -1117,6 +1117,33 @@ it.effect("an activity row that meets the write lock is written later, in order"
   }),
 );
 
+// The result waited for the activity write, up to the 200 ms brief busy timeout, and twice
+// that when a retry was due, on every call while another process held the write lock.
+it.effect("a tool result does not wait for its activity row", () =>
+  Effect.gen(function* () {
+    const written: string[] = [];
+    const lock = yield* Deferred.make<void>();
+    const mailbox = stubMailbox({
+      accounts: { accounts: Effect.succeed([]) },
+      proposals: {
+        recordAgentActivity: (entry) =>
+          Deferred.await(lock).pipe(Effect.andThen(Effect.sync(() => written.push(entry.tool)))),
+      },
+    });
+    const identity = AgentIdentity.fixed("mcp", "claude-code", { recordsActivity: true });
+    yield* Effect.gen(function* () {
+      for (const tool of ["list_accounts", "list_labels"] as const) {
+        const result = yield* call(tool, {});
+        assert.isFalse(result.isFailure, tool);
+      }
+      assert.deepStrictEqual(written, []);
+      yield* Deferred.succeed(lock, undefined);
+      yield* TestClock.adjust(0);
+      assert.deepStrictEqual(written, ["list_accounts", "list_labels"]);
+    }).pipe(Effect.provide(MailToolkitLayer.pipe(Layer.provide(mailbox), Layer.provide(identity))));
+  }),
+);
+
 it.effect("search lists date and size operators without a valid value under ignored", () =>
   Effect.gen(function* () {
     const result = yield* run(
@@ -2181,6 +2208,8 @@ it.effect("MCP thread listings and searches omit untrusted provider snippets", (
         assert.match(after.next_steps.join(" "), /wait for the person to approve/);
 
         yield* Stream.runCollect(yield* toolkit.handle("read_thread", { message_id: "missing" }));
+        // The rows are written in a forked fiber after each result.
+        yield* Effect.yieldNow;
         const activity = yield* mailbox.proposals.agentActivity(10);
         assert.deepStrictEqual(
           activity.map(({ client, tool, ok }) => ({ client, tool, ok })),
