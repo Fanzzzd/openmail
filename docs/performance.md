@@ -286,6 +286,35 @@ fixture P，修复前后：
 
 search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小写、`_` 转义、空收件人和 NULL 头部、否定、OR、组合、会话与平铺、单账户、第二页和计数，并在四种状态下对照参考结果：新库（无需回填）、模拟的旧库（三分之一的行没有副表行，回填未开始）、回填一半、回填完成，以及通过 `upsertMessage` 改收件人、附件和头部、只改标志、`deleteMessage` 删除和新写入之后。每种状态都检查查询用的是副表还是逐行判断，并把副表和按 `operatorTextValues("m")` 重新计算的结果逐行比较。另一个测试从 user_version 56 的库升级，确认迁移不回填、搜索在回填前后结果相同。`performance-large.test.ts` 的四个 `no match` 测量预算 200 ms。
 
+### fixture R
+
+2.3 GB 的 fixture R 没有 OCR chunk，所以 OR 本来就快。“单账户”是 2k 封的 Outlook 账户。数据库文件是复制的新副本，但系统页缓存没有清空，表里“修复前”的运算符数字比评审者冷读的 6 s 低。修复后的数据库先跑完回填再计时。
+
+| 测量                             | 无统计 修复前 | 无统计 修复后 | 有统计 修复前 | 有统计 修复后 |
+| -------------------------------- | ------------: | ------------: | ------------: | ------------: |
+| `subject:report`                 |         99271 |           126 |        102633 |           131 |
+| `subject:report`，单账户         |          2450 |           134 |          2610 |           146 |
+| `subject:"weekly report"`        |         93070 |           122 |         96238 |           128 |
+| `-to:nobody weekly`              |         92186 |           925 |         94752 |          1184 |
+| `weekly OR alpha`                |           154 |           145 |           147 |           149 |
+| `to:nobody@example.com`          |           354 |            18 |           362 |            19 |
+| `cc:nobody`                      |           282 |            17 |           284 |            18 |
+| `filename:none.pdf`              |           480 |            17 |           493 |            17 |
+| `list:nolist`                    |           227 |            21 |           244 |            21 |
+| `to:me3@example.com`（2% 命中）  |            10 |            24 |            11 |            23 |
+| `filename:report3.pdf`（无命中） |           469 |            18 |           835 |            17 |
+
+36 种查询形状的结果页、第二页、标志、会话数和计数在两份数据库上都逐项相同。
+
+还慢的有两类：
+
+- `-to:nobody weekly` 这类带否定的常见词搜索仍从 rowid 出发，fixture R 上约 1 s。否定让 `planTextPage` 不走日期遍历。
+- OR 搜索的计数逐行读 `labels_json` 排除垃圾邮件和废纸篓，fixture R 上热缓存 0.4 s，页缓存被挤掉时 4–15 s，改动前后相同。普通词搜索的计数用 `message_search_meta.eligible`，OR 计数还没有改。
+
+### performance-large.test.ts
+
+新加的九项测量都设 200 ms，和 `label:` 搜索一致。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数（ms）：`search subject: common` 15、`search subject: phrase` 18、`search OR` 94、`search OR is:unread` 85、`search attachment word OR common` 108、`search to: no match` 24、`search cc: no match` 20、`search filename: no match` 20、`search list: no match` 26。OR 三项离预算只有约 2 倍，它们每次都要建附件文字的邮件 id 集合并给页补附件命中，所以没有收紧到 150 ms；其余各项远低于预算，200 ms 是回归线而不是目标。
+
 ### 慢 RPC
 
 桌面主进程的 RPC 协议（`apps/desktop/src/main/rpc/rpc-security.ts`，本机窗口和远程访问共用）记下每个请求的开始时间。请求在 1 s 或更久后才返回时，用 `logWarning` 写一条 `rpc-slow`：只有 RPC 名称和耗时，例如 `RPC Threads took 2400 ms`，不含查询文字和参数。诊断文件只记代码 `rpc-slow`。同一个 RPC 每分钟最多一条，一阵慢搜索只留一行。`Events`、`Downloads` 这类流在窗口存在期间一直打开，不计时；客户端中断的请求也不计。
