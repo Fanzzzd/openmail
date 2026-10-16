@@ -5,6 +5,7 @@ import { ATTACHMENT_TYPES, isAttachmentType } from "./attachment-types.js";
 import type { Label } from "../domain/account.js";
 import {
   hasSearchExpression,
+  isSearchOperator,
   parseSearchExpression,
   parseSearchQuery,
   searchMailboxLabel,
@@ -209,7 +210,7 @@ export function serverSearchIgnored(
   const ignored: string[] = [];
   const supportedTerm = (term: string): boolean => {
     const match = /^([\w]+):(.+)$/.exec(term);
-    if (!match) return true;
+    if (!match || !isSearchOperator(term)) return true;
     const key = match[1]?.toLowerCase() ?? "";
     const value = unquoteSearchValue(match[2] ?? "");
     return (
@@ -232,7 +233,7 @@ export function serverSearchIgnored(
     );
   const visit = (node: SearchExpression, dropped = false): void => {
     if (node.kind === "term") {
-      if (!supportedTerm(node.value) || (dropped && /^\w+:/.test(node.value)))
+      if (!supportedTerm(node.value) || (dropped && isSearchOperator(node.value)))
         ignored.push(
           parseSearchQuery({ search: node.value }).criteria?.proximity ? "AROUND" : node.value,
         );

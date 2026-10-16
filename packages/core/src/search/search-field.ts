@@ -8,7 +8,7 @@ import {
   searchWords,
   unquoteSearchValue,
 } from "./search-tokens.js";
-import { hasSearchExpression } from "./search.js";
+import { hasSearchExpression, isSearchOperator } from "./search.js";
 import type { Address } from "../domain/message.js";
 import type { Label } from "../domain/account.js";
 
@@ -31,12 +31,12 @@ export function searchFieldParts(value: string): {
   const complete = /\s$/.test(value) && completeQuotes(value);
   const pending = complete ? "" : (words.at(-1) ?? "");
   const finished = pending ? words.slice(0, -1) : words;
-  const plain = finished.filter((word) => !word.includes(":"));
+  const plain = finished.filter((word) => !isSearchOperator(word));
   // Plain words keep the finished space even when an operator after them became a chip,
   // so the next typed word starts a new word instead of joining the last one.
   const spaced = complete && plain.length > 0;
   return {
-    chips: finished.filter((word) => word.includes(":")),
+    chips: finished.filter(isSearchOperator),
     text: [...plain, pending].filter(Boolean).join(" ") + (spaced ? " " : ""),
     pending,
   };

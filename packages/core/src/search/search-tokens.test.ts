@@ -26,7 +26,7 @@ import {
   selectSearchOperator,
   serializeSearchField,
 } from "./search-field.js";
-import { gmailSearch, graphSearch } from "./provider-search.js";
+import { gmailSearch, graphSearch, serverSearchIgnored } from "./provider-search.js";
 import { matchesSearch } from "./search-match.js";
 import { quoteSearchValue } from "./search-tokens.js";
 import { imapSearch } from "../platform/node/imap-search.js";
@@ -330,4 +330,18 @@ it("runs the unfinished last plain word of a typed search as a prefix", () => {
   assert.strictEqual(liveSearchText("async "), "async");
   for (const typed of ["a", "from:ali", '"async re', '"async"', "-asy", "asy*", "a OR asy", "(asy"])
     assert.strictEqual(liveSearchText(typed), typed);
+});
+
+it("treats a colon outside a known operator as text", () => {
+  const typed = "design 10:00 re: https://example.com/a review from:elena ";
+  assert.deepStrictEqual(searchFieldParts(typed), {
+    chips: ["from:elena"],
+    text: "design 10:00 re: https://example.com/a review ",
+    pending: "",
+  });
+  for (const provider of ["imap", "outlook"] as const)
+    assert.deepStrictEqual(serverSearchIgnored({ search: typed.trim() }, provider), []);
+  assert.deepStrictEqual(serverSearchIgnored({ search: "design list:team" }, "imap"), [
+    "list:team",
+  ]);
 });

@@ -52,6 +52,15 @@ export const SEARCH_OPERATORS = [
   "after:",
 ];
 
+/** The keys a `key:value` word can start with; any other word with a colon, like 10:00, is text. */
+const SEARCH_OPERATOR_KEYS = new Set([
+  ...SEARCH_OPERATORS.map((operator) => operator.slice(0, operator.indexOf(":"))),
+  "size",
+]);
+/** Whether a search word is an operator such as `from:alice` or `-has:pdf`. */
+export const isSearchOperator = (word: string): boolean =>
+  SEARCH_OPERATOR_KEYS.has(/^-?([a-z_]+):/i.exec(word)?.[1]?.toLowerCase() ?? "");
+
 /**
  * Whether a search has nothing to look for: only blanks, double quotes and format characters
  * (soft hyphens, zero-width spaces, bidi isolates). parseSearchQuery drops an empty phrase or
