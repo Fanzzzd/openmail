@@ -12,7 +12,10 @@ import { hasSearchExpression } from "./search.js";
 import type { Address } from "../domain/message.js";
 import type { Label } from "../domain/account.js";
 
-/** The final term stays editable until whitespace/Enter finishes it outside quotes. */
+/**
+ * The final term stays editable until whitespace/Enter finishes it outside quotes.
+ * A space typed after plain words stays in `text`, because the field shows `text` as its value.
+ */
 export function searchFieldParts(value: string): {
   chips: string[];
   text: string;
@@ -22,15 +25,18 @@ export function searchFieldParts(value: string): {
   if (hasSearchExpression(value))
     return {
       chips: [],
-      text: value.trimEnd(),
+      text: value,
       pending: /\s$/.test(value) ? "" : (words.at(-1) ?? ""),
     };
   const complete = /\s$/.test(value) && completeQuotes(value);
   const pending = complete ? "" : (words.at(-1) ?? "");
   const finished = pending ? words.slice(0, -1) : words;
+  const plain = finished.filter((word) => !word.includes(":"));
+  // A finished operator became a chip and took the space with it; a finished word keeps it.
+  const spaced = complete && plain.length > 0 && !finished.at(-1)?.includes(":");
   return {
     chips: finished.filter((word) => word.includes(":")),
-    text: [...finished.filter((word) => !word.includes(":")), pending].filter(Boolean).join(" "),
+    text: [...plain, pending].filter(Boolean).join(" ") + (spaced ? " " : ""),
     pending,
   };
 }
@@ -41,7 +47,7 @@ export function serializeSearchField(chips: readonly string[], text: string): st
 
 export function selectSearchOperator(value: string, operator: string): string {
   const { chips, text, pending } = searchFieldParts(value);
-  const free = pending ? text.slice(0, -pending.length).trimEnd() : text;
+  const free = (pending ? text.slice(0, -pending.length) : text).trimEnd();
   const next = [free, operator].filter(Boolean).join(" ");
   return serializeSearchField(chips, operator.endsWith(":") ? next : `${next} `);
 }
@@ -140,6 +146,6 @@ export function editSearchToken(value: string, index: number): string {
   const token = chips[index];
   return serializeSearchField(
     chips.filter((_, i) => i !== index),
-    [text, token].filter(Boolean).join(" "),
+    [text.trimEnd(), token].filter(Boolean).join(" "),
   );
 }

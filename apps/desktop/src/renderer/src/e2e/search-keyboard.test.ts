@@ -39,3 +39,17 @@ it("Down before the search runs stays in the field", async () => {
   key("ArrowDown", {}, field);
   expect(document.activeElement).toBe(field);
 });
+
+it("a space typed after a word stays in the field", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+  field.focus();
+  for (const typed of ["board", "board ", "board new", "board new ", "board new newer:yesterday "])
+    fireEvent.change(field, { target: { value: typed } });
+  await eventually(() => expect(field.value).toBe("board new"));
+  expect(screen.getByRole("button", { name: "Modify newer:yesterday" })).toBeTruthy();
+  fireEvent.change(field, { target: { value: "board new " } });
+  expect(field.value).toBe("board new ");
+});

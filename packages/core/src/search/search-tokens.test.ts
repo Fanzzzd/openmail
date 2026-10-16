@@ -23,6 +23,7 @@ import {
   searchTokenModifiers,
   searchValueSuggestions,
   selectSearchOperator,
+  serializeSearchField,
 } from "./search-field.js";
 import { gmailSearch, graphSearch } from "./provider-search.js";
 import { matchesSearch } from "./search-match.js";
@@ -115,6 +116,41 @@ it("edits, negates and changes token modifiers without losing other terms or quo
     parseSearchQuery({ search: "-from: -before:invalid --to:alice" }).search,
     "-from: -before:invalid --to:alice",
   );
+});
+
+it("keeps a space typed after plain words, so the field can show it back", () => {
+  const typed = (value: string) => {
+    const parts = searchFieldParts(value);
+    return { ...parts, value: serializeSearchField(parts.chips, parts.text) };
+  };
+  assert.deepStrictEqual(typed("board "), {
+    chips: [],
+    text: "board ",
+    pending: "",
+    value: "board ",
+  });
+  assert.strictEqual(typed("board new").text, "board new");
+  assert.deepStrictEqual(typed("board new "), {
+    chips: [],
+    text: "board new ",
+    pending: "",
+    value: "board new ",
+  });
+  assert.deepStrictEqual(typed("board newer:yesterday "), {
+    chips: ["newer:yesterday"],
+    text: "board",
+    pending: "",
+    value: "newer:yesterday board",
+  });
+  assert.deepStrictEqual(typed("is:unread board "), {
+    chips: ["is:unread"],
+    text: "board ",
+    pending: "",
+    value: "is:unread board ",
+  });
+  assert.strictEqual(typed("from:a from:b ").text, "from:a from:b ");
+  assert.strictEqual(selectSearchOperator("board ", "is:unread"), "board is:unread ");
+  assert.strictEqual(editSearchToken("is:unread board ", 0), "board is:unread");
 });
 
 it("suggests calendar dates across month boundaries with an inclusive seven-day range", () => {
