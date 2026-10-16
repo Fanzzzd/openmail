@@ -1,5 +1,5 @@
 import { EventEmitter } from "node:events";
-import { Effect, Exit, Layer, Queue, Schema } from "effect";
+import { Effect, Exit, Layer, Logger, Queue, References, Schema } from "effect";
 import { RpcGroup, RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { afterAll, expect, it, vi } from "vitest";
 import { MAX_RPC_FRAME } from "../../shared/channel";
@@ -531,4 +531,65 @@ it("a reloaded page reusing request ids is answered only after its old client is
       }),
     ),
   );
+});
+
+it("reports a request that answers after a second by its tag and wall time, except streams", async () => {
+  const { createRpcFailureTracker, SLOW_RPC_MS } = await import("./rpc-security");
+  let clock = 0;
+  const recorded: string[] = [];
+  const tracker = createRpcFailureTracker(
+    (failure) => recorded.push(failure.rpc),
+    () => clock,
+  );
+  const request = (id: number, tag: string) =>
+    decodeRpcFrame(
+      JSON.stringify({ _tag: "Request", id, tag, payload: { search: "private" }, headers: [] }),
+    ) ?? [];
+  const exit = (id: number, failed = false): RpcMessage.FromServerEncoded => ({
+    _tag: "Exit",
+    requestId: String(id),
+    exit: failed
+      ? { _tag: "Failure", cause: [{ _tag: "Fail", error: { _tag: "NotFound" } }] }
+      : { _tag: "Success", value: null },
+  });
+  tracker.request(1, request(1, "Threads"));
+  tracker.request(1, request(2, "Threads"));
+  tracker.request(1, request(3, "ThreadCount"));
+  tracker.request(1, request(4, "Events"));
+  tracker.request(1, request(5, "Threads"));
+  clock = SLOW_RPC_MS - 1;
+  expect(tracker.response(1, exit(1))).toBeUndefined();
+  clock = 2400.4;
+  expect(tracker.response(1, exit(2))).toEqual({ rpc: "Threads", ms: 2400 });
+  expect(tracker.response(1, exit(3, true))).toEqual({ rpc: "ThreadCount", ms: 2400 });
+  expect(recorded).toEqual(["ThreadCount"]);
+  // A stream such as Events stays open for the window's lifetime.
+  expect(tracker.response(1, exit(4))).toBeUndefined();
+  // An interrupted request is not timed.
+  tracker.request(1, decodeRpcFrame(JSON.stringify({ _tag: "Interrupt", requestId: 5 })) ?? []);
+  expect(tracker.response(1, exit(5))).toBeUndefined();
+});
+
+it("logs rpc-slow at most once a minute per RPC, without arguments", async () => {
+  const { slowRpcWarning } = await import("./rpc-security");
+  const { LOG_CODE_ANNOTATION } = await import("@openmail/core/schema");
+  const lines: { message: unknown; code: unknown }[] = [];
+  const capture = Logger.make((options) =>
+    lines.push({
+      message: options.message,
+      code: options.fiber.getRef(References.CurrentLogAnnotations)[LOG_CODE_ANNOTATION],
+    }),
+  );
+  const slow = slowRpcWarning();
+  await Effect.runPromise(
+    Effect.gen(function* () {
+      yield* slow({ rpc: "Threads", ms: 2400 });
+      yield* slow({ rpc: "Threads", ms: 3100 });
+      yield* slow({ rpc: "ThreadCount", ms: 1200 });
+    }).pipe(Effect.provide(Logger.layer([capture]))),
+  );
+  expect(lines).toEqual([
+    { message: ["RPC Threads took 2400 ms"], code: "rpc-slow" },
+    { message: ["RPC ThreadCount took 1200 ms"], code: "rpc-slow" },
+  ]);
 });

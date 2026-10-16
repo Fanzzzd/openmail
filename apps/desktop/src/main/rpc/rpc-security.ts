@@ -1,7 +1,14 @@
 import type { EventEmitter } from "node:events";
 import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
-import { type Rpc, type RpcGroup, type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
-import { MailError } from "@openmail/core/schema";
+import {
+  type Rpc,
+  type RpcGroup,
+  type RpcMessage,
+  RpcSchema,
+  RpcSerialization,
+  RpcServer,
+} from "effect/rpc";
+import { MailError, throttledWarning } from "@openmail/core/schema";
 import { RPC_DEFECT_CLASSES, type RpcFailureKind } from "@openmail/core/node";
 import { MAX_RPC_FRAME } from "../../shared/channel";
 import { PUBLIC_ERROR_MESSAGES } from "../../shared/public-error-messages";
@@ -126,12 +133,31 @@ const describeFailure = (cause: EncodedCause): Omit<RpcFailure, "rpc"> | undefin
 export const rpcFailureText = (failure: RpcFailure) =>
   [failure.rpc, failure.kind, failure.error].filter(Boolean).join(" ");
 
+/** A request that answers later than this logs `rpc-slow`. Streams are left out. */
+export const SLOW_RPC_MS = 1000;
+
+/** A request that took SLOW_RPC_MS or longer: its tag and wall time, nothing else. */
+export interface SlowRpc {
+  readonly rpc: string;
+  readonly ms: number;
+}
+
+const streaming = new Set(
+  [...MailRpcs.requests].flatMap(([tag, rpc]) =>
+    RpcSchema.isStreamSchema(rpc.successSchema) ? [tag] : [],
+  ),
+);
+
 /**
  * Track only validated request tags, never payloads, credentials or account identifiers.
- * A request the client interrupted itself is not a failure.
+ * A request the client interrupted itself is not a failure. `response` returns the request
+ * when it took SLOW_RPC_MS or longer.
  */
-export function createRpcFailureTracker(record: (failure: RpcFailure) => void) {
-  const clients = new Map<number, Map<string, string>>();
+export function createRpcFailureTracker(
+  record: (failure: RpcFailure) => void,
+  now: () => number = () => performance.now(),
+) {
+  const clients = new Map<number, Map<string, { tag: string; start: number }>>();
   return {
     request(client: number, messages: readonly RpcMessage.FromClientEncoded[]) {
       let tags = clients.get(client);
@@ -142,22 +168,44 @@ export function createRpcFailureTracker(record: (failure: RpcFailure) => void) {
           tags = new Map();
           clients.set(client, tags);
         }
-        tags.set(String(message.id), message.tag);
+        tags.set(String(message.id), { tag: message.tag, start: now() });
       }
     },
-    response(client: number, response: RpcMessage.FromServerEncoded) {
-      if (response._tag !== "Exit") return;
+    response(client: number, response: RpcMessage.FromServerEncoded): SlowRpc | undefined {
+      if (response._tag !== "Exit") return undefined;
       const tags = clients.get(client);
-      const tag = tags?.get(String(response.requestId));
+      const request = tags?.get(String(response.requestId));
       tags?.delete(String(response.requestId));
       if (!tags?.size) clients.delete(client);
-      if (!tag || response.exit._tag !== "Failure") return;
-      const failure = describeFailure(response.exit.cause);
-      if (failure) record({ rpc: tag, ...failure });
+      if (!request) return undefined;
+      if (response.exit._tag === "Failure") {
+        const failure = describeFailure(response.exit.cause);
+        if (failure) record({ rpc: request.tag, ...failure });
+      }
+      const ms = now() - request.start;
+      return ms >= SLOW_RPC_MS && !streaming.has(request.tag)
+        ? { rpc: request.tag, ms: Math.round(ms) }
+        : undefined;
     },
     disconnect(client: number) {
       clients.delete(client);
     },
+  };
+}
+
+/**
+ * Logs a slow request as `rpc-slow` with its tag and wall time, at most once a minute per RPC, so
+ * a burst of slow searches leaves one line.
+ */
+export function slowRpcWarning(intervalMs = 60_000) {
+  const warnings = new Map<string, ReturnType<typeof throttledWarning>>();
+  return ({ rpc, ms }: SlowRpc) => {
+    let warn = warnings.get(rpc);
+    if (!warn) {
+      warn = throttledWarning("rpc-slow", intervalMs);
+      warnings.set(rpc, warn);
+    }
+    return warn(`RPC ${rpc} took ${ms} ms`);
   };
 }
 
@@ -194,6 +242,7 @@ export const makeStringProtocol = (transport: StringTransport) =>
           const disconnects = yield* Queue.make<number>();
           const clients = new Set<number>();
           const failures = createRpcFailureTracker((failure) => transport.failure(failure));
+          const slow = slowRpcWarning();
           const parser = serialization.makeUnsafe();
           const run = yield* FiberSet.makeRuntime();
           const detach = transport.attach({
@@ -220,10 +269,11 @@ export const makeStringProtocol = (transport: StringTransport) =>
           return {
             disconnects,
             send: (clientId, response) =>
-              Effect.sync(() => {
-                failures.response(clientId, response);
+              Effect.suspend(() => {
+                const slowRequest = failures.response(clientId, response);
                 const frame = parser.encode(publicRpcResponse(response));
                 if (typeof frame === "string") transport.send(clientId, frame);
+                return slowRequest ? slow(slowRequest) : Effect.void;
               }),
             end: (clientId) => Effect.sync(() => transport.end?.(clientId)),
             clientIds: Effect.sync(() => new Set(clients)),
