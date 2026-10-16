@@ -8,7 +8,7 @@ The first public version.
 
 ### Accounts and sync
 
-- Gmail and personal Outlook through OAuth, with OpenMail's built-in clients or your own. iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server with an app password. IMAP and SMTP connect only over TLS.
+- Gmail and personal Outlook through OAuth, with the built-in clients in release builds. A source build uses your own client. iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server with an app password. IMAP and SMTP connect only over TLS.
 - Local-first storage in SQLite (`node:sqlite`), shared by the desktop app, the CLI and the MCP server. Refresh tokens and IMAP passwords stay in the macOS keychain, never in the database or logs. While another process holds the write lock, the app waits briefly, backs off and polls again later.
 - Incremental sync, an offline change queue with retries, resumable backfill of older mail, and IMAP IDLE for new-mail signals.
 - A sync health check compares server and local counts per folder. A sync reset deletes only inside the listed window and confirms mass deletions with the server.
@@ -21,9 +21,8 @@ The first public version.
 - Sender authentication badges, link confirmation for mismatched or international domains, and warnings for dangerous attachments. Remote-session launchers, key material, certificates and other risky types need Save before they open. vCard and vCalendar files open in the in-app preview.
 - Inline images show when the message's raw source is 8 MB or less. OpenMail does not download a larger message to find them. Attachments download normally.
 - Attachments you open in other apps are copied to an internal folder. Unchanged copies are deleted after 7 days, Settings → Local cache clears the rest, and Time Machine skips the folder.
-- Full-text search over local mail with boolean, phrase, date, size and attachment operators, merged with server search, recent searches and match highlights.
+- Full-text search over local mail with boolean, phrase, date, size and attachment operators, merged with server search, recent searches and match highlights. A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation from before and scrolls the list back to it.
 - While you type a search, its last word matches as a prefix, so `asy` finds "async" and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP run the words as typed.
-- A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation from before and scrolls the list back to it.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
 
 ### Writing and organizing
