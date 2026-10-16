@@ -31,10 +31,12 @@ it("grows an empty field only while focused, and fills the header without a tool
 
 // At 1320 px with nothing selected the toolbar shows no actions, yet search still reserved 40rem
 // and left ~490 px empty, so "label:r…" truncated.
-it("reserves only 14rem for the toolbar while no message is selected", () => {
+it("reserves only 8rem, room for the right-hand icons, for the toolbar while no message is selected", () => {
   const none = searchSlotClass(true, "label:receipts", false);
   const selected = searchSlotClass(true, "label:receipts", true);
+  expect(grownWidth(none, 700)).toBe(520);
+  expect(grownWidth(none, 600)).toBe(472);
   expect(grownWidth(none, 1000)).toBe(520);
   expect(grownWidth(selected, 1000)).toBe(360);
-  expect(grownWidth(none, 500)).toBe(320);
+  expect(grownWidth(none, 400)).toBe(320);
 });

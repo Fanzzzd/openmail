@@ -450,7 +450,7 @@ it("opens the dates found menu by keyboard, audits it and returns focus", async 
 });
 
 // Chips truncated to "from:NO…" in a 320 px field while the header had room to spare. With no message
-// selected the toolbar has no actions, so only 14rem is reserved.
+// selected the toolbar has no actions, so only 8rem is reserved.
 it("lets reader search with a query grow toward 520 px beside the toolbar", () => {
   render(
     localized(
@@ -472,6 +472,6 @@ it("lets reader search with a query grow toward 520 px beside the toolbar", () =
   );
   const slot = document.querySelector("[data-search-slot]");
   expect(slot?.closest("header")?.className).toContain("@container/bar");
-  expect(slot?.className).toContain("basis-[clamp(20rem,100cqw_-_14rem,32.5rem)]!");
+  expect(slot?.className).toContain("basis-[clamp(20rem,100cqw_-_8rem,32.5rem)]!");
   expect(slot?.className).toContain("flex-[0_1_14rem]");
 });

@@ -5,7 +5,7 @@
  * holding a query, search grows into the room past those 960 px, up to the field's own 520 px
  * (32.5rem), so chips stop truncating to "from:NO…" while the header has space to spare. Below
  * 960 px it holds 20rem and the toolbar folds actions, as before. With no message selected the
- * toolbar shows no actions, so search reserves 14rem for it instead of 40rem.
+ * toolbar shows no actions, so search reserves 8rem for the right-hand icons instead of 40rem.
  */
 export function searchSlotClass(
   toolbarVisible: boolean,
@@ -22,6 +22,6 @@ export function searchSlotClass(
       : `${base} focus-within:basis-[clamp(20rem,100cqw_-_40rem,32.5rem)]!`;
   }
   return query
-    ? `${base} basis-[clamp(20rem,100cqw_-_14rem,32.5rem)]!`
-    : `${base} focus-within:basis-[clamp(20rem,100cqw_-_14rem,32.5rem)]!`;
+    ? `${base} basis-[clamp(20rem,100cqw_-_8rem,32.5rem)]!`
+    : `${base} focus-within:basis-[clamp(20rem,100cqw_-_8rem,32.5rem)]!`;
 }

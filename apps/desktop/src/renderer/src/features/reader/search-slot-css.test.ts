@@ -42,7 +42,7 @@ it("builds a CSS rule for every class the search slot returns", async () => {
   const css = compiler.build([...candidates]);
   const rules = [
     "basis-\\[clamp\\(20rem\\,100cqw_-_40rem\\,32\\.5rem\\)\\]\\!",
-    "basis-\\[clamp\\(20rem\\,100cqw_-_14rem\\,32\\.5rem\\)\\]\\!",
+    "basis-\\[clamp\\(20rem\\,100cqw_-_8rem\\,32\\.5rem\\)\\]\\!",
   ];
   for (const rule of rules) {
     expect(css).toContain(`.${rule}`);
