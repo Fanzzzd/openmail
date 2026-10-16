@@ -29,7 +29,7 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
     yield* Effect.gen(function* () {
       const store = yield* Store;
       const sql = yield* SqlClient.SqlClient;
-      const entry = { client: "claude-code", tool: "search", ok: true };
+      const entry = { client: "claude-code", tool: "search", ok: true, at: 1 };
       yield* store.appendAgentActivity(entry);
       const writer = new DatabaseSync(file);
       writer.exec("BEGIN IMMEDIATE");
@@ -45,7 +45,12 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
       const rows = yield* sql<{ timeout: number }>`PRAGMA busy_timeout`;
       assert.strictEqual(rows[0]?.timeout, 5000, "other statements keep the 5 s busy timeout");
       yield* store.appendAgentActivity(entry);
-      assert.strictEqual((yield* store.listAgentActivity(10)).length, 2);
+      const activity = yield* store.listAgentActivity(10);
+      assert.deepStrictEqual(
+        activity.map((row) => row.at),
+        [1, 1],
+        "rows keep the time of the call",
+      );
     }).pipe(Effect.provide(layer));
   }).pipe(Effect.scoped),
 );

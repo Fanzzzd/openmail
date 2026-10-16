@@ -37,7 +37,7 @@ import {
   SnoozeThreads,
   proposalHandlers,
 } from "./proposal-tools.js";
-import { Context, Duration, Effect, Exit, Semaphore } from "effect";
+import { Clock, Context, Duration, Effect, Exit, Semaphore } from "effect";
 import { logWarning } from "../domain/diagnostic-log.js";
 import { makeToolContext } from "./tool-context.js";
 import { cleanMcpClientName } from "./agent-identity.js";
@@ -101,6 +101,8 @@ interface ActivityEntry {
   readonly client: string;
   readonly tool: string;
   readonly ok: boolean;
+  /** When the call ended. A row that waits for the write lock keeps this time. */
+  readonly at: number;
 }
 /** How often rows that met another process's write lock are tried again. */
 const ACTIVITY_RETRY_SPACING = Duration.seconds(1);
@@ -183,15 +185,16 @@ export const MailToolkitLayer = MailToolkit.toLayer(
               : Effect.die(defect),
         ),
         Effect.onExit((exit) =>
-          Effect.flatMap(identity.current, (current) =>
-            current.recordsActivity
-              ? record({
-                  client: cleanMcpClientName(current.name),
-                  tool,
-                  ok: Exit.isSuccess(exit),
-                })
-              : Effect.void,
-          ).pipe(Effect.ignoreCause),
+          Effect.gen(function* () {
+            const current = yield* identity.current;
+            if (!current.recordsActivity) return;
+            yield* record({
+              client: cleanMcpClientName(current.name),
+              tool,
+              ok: Exit.isSuccess(exit),
+              at: yield* Clock.currentTimeMillis,
+            });
+          }).pipe(Effect.ignoreCause),
         ),
       );
     return MailToolkit.of(wrapHandlers(handlers, tracked));

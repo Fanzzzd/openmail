@@ -658,6 +658,7 @@ export class Store extends Context.Service<
     appendAgentActivity(entry: {
       client: string;
       tool: string;
+      at: number;
       ok: boolean;
     }): Effect.Effect<void, DatabaseBusy>;
     listAgentActivity(limit: number): Effect.Effect<AgentActivity[]>;

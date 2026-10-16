@@ -118,12 +118,12 @@ export const makePolicyStore = ({
     client: string;
     tool: string;
     ok: boolean;
+    at: number;
   }) {
-    const now = yield* Clock.currentTimeMillis;
     yield* briefLockWait(
       Effect.gen(function* () {
         yield* run(sql`INSERT INTO agent_activity (at, client, tool, ok)
-          VALUES (${now}, ${entry.client}, ${entry.tool}, ${entry.ok ? 1 : 0})`);
+          VALUES (${entry.at}, ${entry.client}, ${entry.tool}, ${entry.ok ? 1 : 0})`);
         yield* run(sql`DELETE FROM agent_activity
           WHERE id <= (SELECT max(id) FROM agent_activity) - ${AGENT_ACTIVITY_ROWS}`);
       }),

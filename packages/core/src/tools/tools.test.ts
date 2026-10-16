@@ -1086,7 +1086,7 @@ it.effect("a lock timeout in a tool is a busy error with a retry hint", () =>
 
 it.effect("an activity row that meets the write lock is written later, in order", () =>
   Effect.gen(function* () {
-    const written: string[] = [];
+    const written: { tool: string; at: number }[] = [];
     let busy = true;
     const mailbox = stubMailbox({
       accounts: { accounts: Effect.succeed([]) },
@@ -1095,7 +1095,7 @@ it.effect("an activity row that meets the write lock is written later, in order"
           busy
             ? Effect.fail(new DatabaseBusy({ message: "busy" }))
             : Effect.sync(() => {
-                written.push(entry.tool);
+                written.push({ tool: entry.tool, at: entry.at });
               }),
       },
     });
@@ -1108,7 +1108,11 @@ it.effect("an activity row that meets the write lock is written later, in order"
       assert.deepStrictEqual(written, []);
       busy = false;
       yield* TestClock.adjust("1 second");
-      assert.deepStrictEqual(written, ["list_accounts", "list_labels"]);
+      // Each row keeps the time of its call, not the time the lock was released.
+      assert.deepStrictEqual(written, [
+        { tool: "list_accounts", at: 0 },
+        { tool: "list_labels", at: 0 },
+      ]);
     }).pipe(Effect.provide(MailToolkitLayer.pipe(Layer.provide(mailbox), Layer.provide(identity))));
   }),
 );
