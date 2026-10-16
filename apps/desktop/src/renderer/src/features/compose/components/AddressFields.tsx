@@ -68,7 +68,8 @@ export function AddressFields({
         )}
       </div>
       <ServiceHint accountId={draft.accountId} service="contacts" />
-      <div className={row}>
+      {/* On a phone the To field keeps the row's width; Cc/Bcc wraps to its own line below. */}
+      <div className={`${row} coarse:max-sm:flex-wrap coarse:max-sm:gap-y-0`}>
         <span className={label}>
           <Trans>To</Trans>
         </span>
@@ -86,13 +87,15 @@ export function AddressFields({
           from={draft.from?.address ?? account?.email}
         />
         {!showBcc && (
-          <button
-            type="button"
-            onClick={() => setShowBcc(true)}
-            className={`h-9 shrink-0 text-a11y-muted hover:text-neutral-800 coarse:h-11 dark:hover:text-neutral-200 ${touchTarget}`}
-          >
-            <Trans>Cc/Bcc</Trans>
-          </button>
+          <div className="shrink-0 coarse:max-sm:basis-full coarse:max-sm:ps-16">
+            <button
+              type="button"
+              onClick={() => setShowBcc(true)}
+              className={`h-9 text-a11y-muted hover:text-neutral-800 coarse:h-11 dark:hover:text-neutral-200 ${touchTarget}`}
+            >
+              <Trans>Cc/Bcc</Trans>
+            </button>
+          </div>
         )}
       </div>
       {showBcc && (

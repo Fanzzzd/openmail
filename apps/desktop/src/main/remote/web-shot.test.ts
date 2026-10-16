@@ -24,7 +24,7 @@ interface Measured {
   small: { label: string; h: number }[];
   /** Keyboard shortcut text on screen: glyphs in visible text and in placeholders, such as "Search  ⌥⌘F" or "Search  /". */
   shortcuts: string[];
-  /** Composer footer buttons and the writing mode select whose text is cut off. */
+  /** Composer footer buttons, the writing mode select and recipient chips whose text is cut off. */
   clipped: string[];
   /** The composer footer is wider than the sheet. */
   footerOverflow: boolean;
@@ -115,7 +115,8 @@ const MEASURE = \`(() => {
     .map((e) => e.getAttribute("placeholder")).filter((p) => /[⌘⇧⌥⌃]/.test(p) || p.endsWith(" /"));
   const shortcuts = [...(document.body.innerText.match(/[⌘⇧⌥⌃][^ ]*/g) ?? []), ...placeholders];
   const footer = document.querySelector("[data-compose] footer");
-  const clipped = [...document.querySelectorAll('[data-compose] footer button, [data-compose] [role=toolbar] button *')]
+  // Recipient chips too: a name cut to "Dana …" next to Cc/Bcc on a phone.
+  const clipped = [...document.querySelectorAll('[data-compose] footer button, [data-compose] [role=toolbar] button *, [data-compose] [draggable=true] *')]
     .filter(visible).filter((e) => e.scrollWidth > e.clientWidth)
     .map((e) => e.getAttribute("aria-label") || e.textContent.trim());
   const footerOverflow = footer ? footer.scrollWidth > footer.clientWidth : false;
