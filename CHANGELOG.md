@@ -13,6 +13,7 @@ The first public version.
 - Incremental sync, an offline change queue with retries, resumable backfill of older mail, and IMAP IDLE for new-mail signals.
 - A sync health check compares server and local counts per folder. A sync reset deletes only inside the listed window and confirms mass deletions with the server.
 - Local cache rules per folder and label, with an attachment cache and a cache settings page.
+- Sign in again for an IMAP account opens with its address, username and servers filled in, so only the password is typed again.
 
 ### Reading and search
 
@@ -22,7 +23,7 @@ The first public version.
 - Inline images show when the message's raw source is 8 MB or less. OpenMail does not download a larger message to find them. Attachments download normally.
 - Attachments you open in other apps are copied to an internal folder. Unchanged copies are deleted after 7 days, Settings → Local cache clears the rest, and Time Machine skips the folder.
 - Full-text search over local mail with boolean, phrase, date, size and attachment operators, merged with server search, recent searches and match highlights. Size operators work on Outlook too, from an estimate of body and attachment sizes. `from:pri*` and `filename:Q4*` match as prefixes. A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation from before and scrolls the list back to it.
-- While you type a search, its last word matches as a prefix, so `asy` finds "async" and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP run the words as typed.
+- While you type a search, its last word matches as a prefix, so `asy` finds "async" and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix, and so does a recent search picked from the list. Saved searches, server search, the CLI and MCP run the words as typed.
 - Optional on-device OCR (macOS Vision), PDF text and semantic search.
 
 ### Writing and organizing
@@ -49,6 +50,7 @@ The first public version.
 - Optional AI per account, off by default: summaries, a mail assistant (⌘J), writing help and triage suggestions. Changes the assistant proposes wait for your approval. Automatic triage stops at 100 conversations per day. Claude Sonnet 5.5, Opus 5.5 and Haiku 5.5 appear by product name with a cost note.
 - An MCP server for Claude Code, Codex, Claude and Cursor, started by `OpenMail --mcp`, `openmail mcp` or `openmail-mcp`. Tools are read-only by default. Write tools only create AI suggestions (proposals in `list_proposals` and `openmail proposals`), and sending always needs confirmation in the app. A display name with an address in it is dropped from agent draft recipients, so a chip always shows the address it sends to.
 - An MCP client reads only the accounts where you turned on Allow AI to read this account. Tool results mark mail content as untrusted. `OPENMAIL_READ_ONLY=1` blocks every write to the mail server from the CLI or the MCP server.
+- The Anthropic API key lives in the keychain. Only Remove key deletes it; saving a blank key fails.
 - Connect AI apps from Settings → AI Access, with a diff to review before any config file changes. AI Access activity shows the tools each app called.
 
 ### Command line
