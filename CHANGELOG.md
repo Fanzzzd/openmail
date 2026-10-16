@@ -67,7 +67,7 @@ The first public version. Everything below is new.
 - MCP stays responsive while another process holds the write lock during the search backfill. Each backfill step waits at most 200 ms for the lock and tries again later.
 - `openmail accounts add` and `openmail accounts reauth` print the sign-in URL after "If nothing opens, visit:", so you can open it by hand over SSH or on a Mac with no browser.
 - A failed `openmail sync` says "Sync could not finish. Run it again, or add --log-level warn to see why." instead of promising an automatic retry.
-- The CLI logs only errors by default. `--log-level warn` shows diagnostics, and `openmail mcp` logs warnings.
+- The CLI logs only errors by default. `--log-level warn` shows diagnostics.
 - `openmail search -newsletter` reads words that start with `-` as query text. `--` before the query also works.
 - CLI commands fail with code `busy` and a retry hint when another OpenMail process keeps the write lock. `openmail-mcp` prints the same two lines on stderr when the lock keeps it from opening the database.
 - The CLI and MCP server start without the write lock when an account from an older version has no stored OAuth scopes. Before, `openmail mcp` exited after 5 s while the app was writing.
