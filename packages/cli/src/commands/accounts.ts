@@ -165,10 +165,13 @@ const accountsAdd = Command.make(
     if (oauthProvider(o.provider)) {
       const stray = imapOnlyFlags(o);
       if (stray.length > 0)
-        return yield* fail(`${stray.join(", ")} only apply to imap, not ${o.provider}.`, {
-          code: "invalid_input",
-          hint: `Drop ${stray.length === 1 ? "that flag" : "those flags"}; ${o.provider} signs in in the browser.`,
-        });
+        return yield* fail(
+          `${stray.join(", ")} only ${stray.length === 1 ? "applies" : "apply"} to imap, not ${o.provider}.`,
+          {
+            code: "invalid_input",
+            hint: `Drop ${stray.length === 1 ? "that flag" : "those flags"}; ${o.provider} signs in through the browser.`,
+          },
+        );
     }
     const mailbox = yield* Mailbox;
     let account;

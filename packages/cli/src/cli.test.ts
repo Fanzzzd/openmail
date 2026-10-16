@@ -276,8 +276,16 @@ describe("accounts add", () => {
           expect(code, provider).toBe(1);
           expect(stderr).toMatch(
             new RegExp(
-              `^error: --preset, --imap-port only apply to imap, not ${provider}\\.\\nhint: `,
+              `^error: --preset, --imap-port only apply to imap, not ${provider}\\.\\nhint: .*signs in through the browser`,
             ),
+          );
+          const one = await openmail(
+            ["accounts", "add", provider, "--imap-port", "993"],
+            join(dir, "home"),
+            env,
+          );
+          expect(one.stderr).toMatch(
+            new RegExp(`^error: --imap-port only applies to imap, not ${provider}\\.\\n`),
           );
         }
       } finally {
