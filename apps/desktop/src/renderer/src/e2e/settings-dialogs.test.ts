@@ -62,12 +62,11 @@ for (const [tab, opener, dialog, how, close] of [
     await eventually(() => expect(document.activeElement).toBe(button));
     expect(settings.contains(document.activeElement)).toBe(true);
   });
-
-async function openNewSpace() {
-  const settings = await openSettingsTab("Spaces");
+async function openNewSpaceIn(settings: HTMLElement) {
   fireEvent.click(await within(settings).findByRole("button", { name: "New space" }));
   return screen.findByRole("dialog", { name: "New space" }, { timeout: scaledMs(5000) });
 }
+const openNewSpace = async () => openNewSpaceIn(await openSettingsTab("Spaces"));
 
 it("the checked space icon has its own ring in light and dark, apart from the unchecked tiles", async () => {
   const editor = await openNewSpace();
@@ -81,4 +80,26 @@ it("the checked space icon has its own ring in light and dark, apart from the un
     expect(checked.classList.contains(ring), ring).toBe(true);
   expect(checked.classList.contains("data-checked:ring-2")).toBe(true);
   expect(checked.classList.contains("dark:data-checked:ring-2")).toBe(true);
+});
+
+it("editing the space name clears a save error and the field's invalid state", async () => {
+  const create = async (name: string) => {
+    const editor = await openNewSpaceIn(settings);
+    const field = within(editor).getByRole<HTMLInputElement>("textbox", {
+      name: "Name, like Work",
+    });
+    fireEvent.change(field, { target: { value: name } });
+    fireEvent.click(within(editor).getByRole("button", { name: "Create" }));
+    return { editor, field };
+  };
+  const settings = await openSettingsTab("Spaces");
+  const first = await create("Work");
+  await eventually(() => expect(first.editor.isConnected).toBe(false));
+  const { editor, field } = await create("Work");
+  await eventually(() => expect(within(editor).getByRole("alert")).toBeTruthy());
+  expect(field.getAttribute("aria-invalid")).toBe("true");
+  expect(field.classList.contains("aria-invalid:border-a11y-danger")).toBe(true);
+  fireEvent.change(field, { target: { value: "Work 2" } });
+  expect(within(editor).queryByRole("alert")).toBeNull();
+  expect(field.hasAttribute("aria-invalid")).toBe(false);
 });

@@ -2,7 +2,6 @@
 import { expect, it, vi } from "vitest";
 import { createElement as h, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { AsyncResult } from "effect/reactivity";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import { ProfileEditor } from "../features/accounts/ProfileEditor";
@@ -39,12 +38,12 @@ vi.mock(
 );
 vi.mock("../state/mutations", async () => {
   const { Atom } = await import("effect/reactivity");
-  const { Cause } = await import("effect");
+  const { Effect } = await import("effect");
   const { mutationsMock } = await import("../test-support/accessibility-fixtures");
-  // A save that failed, so the name field shows its error.
+  // A save that fails, so the name field shows its error.
   return {
     ...mutationsMock,
-    saveProfileAtom: Atom.make(AsyncResult.failure(Cause.die("save"))),
+    saveProfileAtom: Atom.fn(() => Effect.die("save")),
   };
 });
 vi.mock("../state/downloads", async () =>
@@ -224,7 +223,9 @@ it("Close window closes the recipient suggestions before the window", async () =
 it("marks the space name invalid and points it at the error while one shows", async () => {
   render(localized(h(ProfileEditor, { accounts: [account], profiles: spaces, onClose: vi.fn() })));
   const input = screen.getByRole("textbox", { name: "Name, like Work" });
-  const alert = screen.getByRole("alert");
+  fireEvent.change(input, { target: { value: "Work" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  const alert = await screen.findByRole("alert");
   expect(input.getAttribute("aria-invalid")).toBe("true");
   expect(input.getAttribute("aria-describedby")).toBe(alert.id);
   expect(alert.id).not.toBe("");

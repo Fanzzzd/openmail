@@ -41,9 +41,9 @@ export const atomReactMock = async (
                 : [],
           ),
     // Mocked queries and mutations are strings; local UI atoms keep their real state.
-    useAtom: (atom: unknown) =>
+    useAtom: (atom: unknown, options?: Parameters<typeof actual.useAtom>[1]) =>
       Atom.isAtom(atom) && Atom.isWritable(atom)
-        ? actual.useAtom(atom)
+        ? actual.useAtom(atom, options)
         : [AsyncResult.initial(), fixture.decide],
     useAtomSet: () => fixture.decide,
     useAtomRefresh: () => fixture.decide,

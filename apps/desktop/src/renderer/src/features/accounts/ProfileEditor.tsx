@@ -54,9 +54,12 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
 
   const [save, runSave] = useAtom(saveProfileAtom, { mode: "promiseExit" });
   const [remove, runRemove] = useAtom(deleteProfileAtom, { mode: "promiseExit" });
+  /** The name the last save tried. A save error is about that name, so editing it clears the error. */
+  const [savedName, setSavedName] = useState<string | null>(null);
 
   const submit = async () => {
     const input = { name: name.trim(), icon, color };
+    setSavedName(name);
     const exit = await runSave({ profile, input, members, accounts });
     if (Exit.isSuccess(exit)) {
       onSaved?.(exit.value);
@@ -75,7 +78,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
     }
   };
 
-  const saveError = resultError(i18n, save);
+  const saveError = savedName === name ? resultError(i18n, save) : null;
   const error = saveError ?? resultError(i18n, remove);
   const errorId = useId();
   const title = profile ? t`Edit space` : t`New space`;
@@ -106,7 +109,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             aria-invalid={saveError ? true : undefined}
             aria-describedby={error ? errorId : undefined}
             placeholder={t`Name, like Work`}
-            className={`min-w-0 flex-1 ${formInput}`}
+            className={`min-w-0 flex-1 ${formInput} aria-invalid:border-a11y-danger aria-invalid:outline-a11y-danger`}
           />
         </div>
 
