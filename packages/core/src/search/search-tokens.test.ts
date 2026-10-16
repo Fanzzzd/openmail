@@ -16,6 +16,7 @@ import { SEARCH_OPERATORS, parseSearchQuery } from "./search.js";
 import { attachmentHasType } from "./attachment-types.js";
 import {
   editSearchToken,
+  liveSearchText,
   modifySearchToken,
   negateSearchToken,
   searchDateSuggestions,
@@ -319,3 +320,14 @@ it.effect(
     );
   },
 );
+
+it("runs the unfinished last plain word of a typed search as a prefix", () => {
+  assert.strictEqual(liveSearchText("asy"), "asy*");
+  assert.strictEqual(liveSearchText("board asy"), "board asy*");
+  assert.strictEqual(liveSearchText("is:unread asy"), "is:unread asy*");
+  assert.strictEqual(liveSearchText("会议"), "会议*");
+  // A space or Enter finishes the word.
+  assert.strictEqual(liveSearchText("async "), "async");
+  for (const typed of ["a", "from:ali", '"async re', '"async"', "-asy", "asy*", "a OR asy", "(asy"])
+    assert.strictEqual(liveSearchText(typed), typed);
+});

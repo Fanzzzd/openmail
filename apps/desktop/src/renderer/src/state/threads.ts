@@ -7,6 +7,7 @@
 import {
   DEFAULT_PREFS,
   inboxCategories,
+  liveSearchText,
   mergeSearchResults,
   parseSearchQuery,
   searchInputError,
@@ -23,7 +24,7 @@ import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
 import { type Loaded, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
-import { filtersAtom, searchAtom, searchScopeAtom, viewAtom } from "./ui";
+import { filtersAtom, searchAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
 const PAGE = 100;
@@ -151,6 +152,17 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
   };
 });
 
+/**
+ * The query the local list runs: the list query, with the search's unfinished last word as a
+ * prefix. Server search runs the list query itself.
+ */
+const localQueryAtom = Atom.make((get): ListQuery | null => {
+  const query = get(listQueryAtom);
+  if (!query?.search) return query;
+  const search = liveSearchText(get(searchTextAtom));
+  return search === `${query.search}*` ? { ...query, search } : query;
+});
+
 export interface ThreadList {
   threads: readonly ThreadSummary[];
   /** No result for this query yet; `threads` may still be the previous view's. */
@@ -213,10 +225,11 @@ export const serverList = Atom.family((query: ListQuery) =>
 export const threadListAtom = Atom.writable(
   (get): ThreadList => {
     const query = get(listQueryAtom);
-    if (!query) return EMPTY;
+    const local = get(localQueryAtom);
+    if (!query || !local) return EMPTY;
     const invalid = searchInputProblem(query.search ?? "");
     if (invalid) return { ...EMPTY, searchInputInvalid: invalid };
-    const result = get(pagedList(query).loaded);
+    const result = get(pagedList(local).loaded);
     const total = AsyncResult.getOrElse(
       get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
       () => null,
@@ -300,7 +313,7 @@ export const threadListAtom = Atom.writable(
     };
   },
   (ctx, _next: void) => {
-    const query = ctx.get(listQueryAtom);
+    const query = ctx.get(localQueryAtom);
     if (!query) return;
     const { wanted, loaded } = pagedList(query);
     const result = ctx.get(loaded);

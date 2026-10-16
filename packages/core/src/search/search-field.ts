@@ -41,6 +41,24 @@ export function searchFieldParts(value: string): {
     pending,
   };
 }
+/**
+ * The search the local list runs while the field is typed in. The last word is unfinished until a
+ * space or Enter ends it, so a plain word of two or more characters matches as a prefix: `asy`
+ * finds "async". Operators,
+ * quotes, exclusions and expressions run as typed, as do server, saved and CLI searches.
+ */
+export function liveSearchText(value: string): string {
+  const search = value.trim();
+  const { pending } = searchFieldParts(value);
+  if (
+    Array.from(pending).length < 2 ||
+    !search.endsWith(pending) ||
+    hasSearchExpression(value) ||
+    !/^[\p{L}\p{N}][^\s":*()]*$/u.test(pending)
+  )
+    return search;
+  return `${search}*`;
+}
 export function serializeSearchField(chips: readonly string[], text: string): string {
   const value = [...chips, text].filter(Boolean).join(" ");
   return chips.length > 0 && !text ? `${value} ` : value;

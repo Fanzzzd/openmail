@@ -222,3 +222,19 @@ it("typing a search one key at a time keeps the open conversation", async () => 
   await advance(500);
   await eventually(() => expect(reader()).not.toContain("async retro"));
 });
+
+it("a search being typed matches its last word as a prefix", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { subject: "async retro" }),
+      incoming("two", { subject: "Lunch on Friday" }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("two"))).toBeTruthy());
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  fireEvent.change(field, { target: { value: "asy" } });
+  await eventually(() => expect(() => row(h.id("two"))).toThrow());
+  expect(row(h.id("one"))).toBeTruthy();
+});
