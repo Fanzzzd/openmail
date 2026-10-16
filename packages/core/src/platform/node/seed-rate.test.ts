@@ -123,12 +123,12 @@ it(
         return ((sorted[Math.ceil(middle) - 1] ?? 1) + (sorted[Math.floor(middle)] ?? 1)) / 2;
       };
       const growth = median(normalised.at(-1)) / median(normalised[0]);
-      const summary = `seed-rate budget, see docs/testing.md#tests-under-load (OPENMAIL_PERF_FACTOR=2 relaxes it locally): seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms; per ${BATCH} ratio ${ratios.map((r) => r.toFixed(2)).join(", ")}`;
+      const summary = `seed-rate budget, see docs/testing.md#tests-under-load (OPENMAIL_PERF_FACTOR=2 relaxes it locally): seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms; per ${BATCH} ratio ${ratios.map((r) => r.toFixed(2)).join(", ")}; growth ${growth.toFixed(2)}x (bound ${MAX_GROWTH}x)`;
       process.stdout.write(`${summary}\n`);
       if (ASSERT_BUDGET) expect(totalMs, summary).toBeLessThan(budgetMs);
       expect(
         growth,
-        `median calibrated ${BATCH} of the last ${CHUNK} over the first ${CHUNK}: ${growth.toFixed(2)}x; ${summary}`,
+        `growth is the median calibrated ${BATCH} of the last ${CHUNK} over the first ${CHUNK}; ${summary}`,
       ).toBeLessThan(MAX_GROWTH);
     } finally {
       rmSync(directory, { recursive: true, force: true });
