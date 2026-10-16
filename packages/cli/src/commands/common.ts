@@ -1,6 +1,7 @@
 /** Pieces every command shares: the CLI actor, failures and output. */
 
-import { type Actor, Mailbox, printable } from "@openmail/core";
+import { type Actor, Mailbox, type MailToolError, printable } from "@openmail/core";
+import type { CliErrorCode } from "../error-codes.js";
 import { profileNameKey } from "@openmail/core/schema";
 import { Console, Data, Effect, Runtime } from "effect";
 import { Flag } from "effect/cli";
@@ -13,8 +14,8 @@ export const CLI: Actor = { kind: "user", surface: "cli" };
  */
 export class Failed extends Data.TaggedError("Failed")<{
   readonly message: string;
-  /** Stable for scripts. Defaults to "failed". */
-  readonly code?: string;
+  /** Stable for scripts. Defaults to "failed". A tool's failure keeps its MCP code. */
+  readonly code?: CliErrorCode | MailToolError["code"];
   /** The next step; printed on stderr after the message. */
   readonly hint?: string;
   /** stdout already holds the --json answer, such as a tool's own result or error object. */
@@ -25,7 +26,11 @@ export class Failed extends Data.TaggedError("Failed")<{
 
 export const fail = (
   message: string,
-  extra: { readonly code?: string; readonly hint?: string; readonly printed?: boolean } = {},
+  extra: {
+    readonly code?: CliErrorCode | MailToolError["code"];
+    readonly hint?: string;
+    readonly printed?: boolean;
+  } = {},
 ) => Effect.fail(new Failed({ message, ...extra }));
 
 export const jsonFlag = Flag.Boolean("json").pipe(

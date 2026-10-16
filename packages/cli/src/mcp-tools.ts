@@ -1,4 +1,4 @@
-import { MailToolkit, ReadMailToolkit } from "@openmail/core";
+import { MailToolError, MailToolkit, ReadMailToolkit } from "@openmail/core";
 import { Context } from "effect";
 import { Tool } from "effect/ai";
 import { Command } from "effect/cli";
@@ -84,3 +84,6 @@ export const parameterHelp = (schema: unknown): string => {
   });
   return ["PARAMETERS (as keys of the --input-json object)", ...lines].join("\n");
 };
+
+/** Every `code` a failed tool call returns. The docs site lists these. */
+export const MCP_ERROR_CODES: readonly string[] = MailToolError.fields.code.literals;

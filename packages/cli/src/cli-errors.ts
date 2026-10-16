@@ -3,6 +3,7 @@
 import { isLockTimeout } from "@openmail/core";
 import { CliError } from "effect/cli";
 import { dataFolderError } from "./data-folder-error.js";
+import type { CliErrorCode } from "./error-codes.js";
 
 /** What `--json` prints on stdout for a failure, like an MCP tool error. */
 export interface ErrorReport {
@@ -34,7 +35,7 @@ const field = (error: object, key: string): string | undefined => {
   return typeof value === "string" ? value : undefined;
 };
 
-const plain = (message: string, code: string, hint: string): Explained => ({
+const plain = (message: string, code: CliErrorCode, hint: string): Explained => ({
   message,
   code,
   hint,

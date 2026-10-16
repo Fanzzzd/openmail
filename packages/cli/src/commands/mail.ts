@@ -106,7 +106,7 @@ const sync = Command.make(
     if (!results.some((r) => r.error)) return yield* print({ results }, json, syncTableOf);
     const error = {
       message: "Some accounts did not sync.",
-      code: "failed",
+      code: "failed" as const,
       hint: syncFailedHint(results, { json, verbose }),
     };
     // With --json, stdout stays one document: the results and the error object together.
