@@ -954,3 +954,21 @@ test("--log-level takes any letter case and a bad value is a usage error", async
     'error: Invalid value for flag --log-level: "bogus". Expected one of all, trace, debug, info, warn, warning, error, fatal, none.\nUsage: openmail <command> [flags] --log-level <level>\nRun `openmail --help` for details.\n',
   );
 });
+
+// A --server search that reached no server printed "(no conversations)" and exited 0.
+test("search --server fails when the server search failed for every account", async () => {
+  const offline = { OPENMAIL_OFFLINE: "1" };
+  const text = await openmail(["search", "zzzqqq", "--server"], undefined, offline);
+  expect(text.code).toBe(1);
+  expect(text.stdout).toContain("(no conversations)");
+  expect(text.stderr).toContain(
+    "error: The server search failed for every account.\nhint: Check the connection and try again, or search without --server.",
+  );
+  const json = await openmail(["search", "launch", "--server", "--json"], undefined, offline);
+  expect(json.code).toBe(1);
+  const output = row(JSON.parse(json.stdout));
+  expect(rows(output.threads).length).toBeGreaterThan(0);
+  expect(output.error).toMatchObject({ code: "provider_unavailable" });
+  const local = await openmail(["search", "launch"], undefined, offline);
+  expect(local.code, local.stderr).toBe(0);
+});

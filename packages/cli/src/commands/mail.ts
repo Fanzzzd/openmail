@@ -307,17 +307,25 @@ const search = Command.make(
         ? [`Showing the first ${SEARCH_CAP} hits; narrow the query for the rest.`]
         : []),
     ];
-    yield* print(
-      {
-        threads,
-        truncated,
-        ...(found.ignored || ignored.length ? { ignored } : {}),
-        errors: found.errors,
-        ...(next === undefined ? {} : { next_cursor: next }),
-      },
-      o.json,
-      () => pageText(threads, next, notes),
-    );
+    const page = {
+      threads,
+      truncated,
+      ...(found.ignored || ignored.length ? { ignored } : {}),
+      errors: found.errors,
+      ...(next === undefined ? {} : { next_cursor: next }),
+    };
+    // Local hits still print, but a --server search that reached no server is a failure.
+    const failedAccounts = new Set(found.errors.map((e) => e.accountId));
+    if (!o.server || !accountIds.length || accountIds.some((id) => !failedAccounts.has(id)))
+      return yield* print(page, o.json, () => pageText(threads, next, notes));
+    const error = {
+      message: "The server search failed for every account.",
+      code: "provider_unavailable" as const,
+      hint: "Check the connection and try again, or search without --server.",
+    };
+    // With --json, stdout stays one document: the page and the error object together.
+    yield* print(o.json ? { ...page, error } : page, o.json, () => pageText(threads, next, notes));
+    return yield* fail(error.message, { ...error, printed: o.json });
   }),
 ).pipe(
   Command.withDescription(
