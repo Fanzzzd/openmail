@@ -23,6 +23,8 @@ const calls = vi.hoisted(() => ({
   filters: new Array<ServerFilter>(),
   backups: new Array<FilterRestoration>(),
   labels: new Array<Label>(),
+  /** The last props the stubbed Dialog got, to see how it would dismiss. */
+  dialog: ((): { onClose?: () => void; keepOnOutsidePress?: boolean } => ({}))(),
 }));
 vi.mock("@effect/atom-react", async (original) => ({
   ...(await original<typeof import("@effect/atom-react")>()),
@@ -84,7 +86,17 @@ vi.mock("../../state/rpc", () => ({
 }));
 vi.mock("../settings/sections/ContactSettings", () => ({ ContactSettings: () => null }));
 vi.mock("../../ui/Dialog", () => ({
-  Dialog: ({ children }: { children: ReactNode }) => createElement("section", null, children),
+  Dialog: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    onClose?: () => void;
+    keepOnOutsidePress?: boolean;
+  }) => {
+    calls.dialog = props;
+    return createElement("section", null, children);
+  },
   Alert: ({
     open,
     title,
@@ -623,6 +635,30 @@ it("Outlook truncated previews describe the bounded sample without promising tha
     const alert = dom.element.querySelector('[role="alertdialog"]');
     expect(alert?.textContent).toContain("The preview checked at most 201 server messages.");
     expect(alert?.textContent).not.toContain("Narrow the conditions");
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("Create filter has Cancel and keeps a half-filled filter when the backdrop is clicked", () => {
+  const onClose = vi.fn();
+  const dom = render(createElement(FilterEditor, { account, onClose }));
+  try {
+    // Untouched, a click outside still closes it.
+    expect(calls.dialog.keepOnOutsidePress).toBe(false);
+    const markRead = [...dom.element.querySelectorAll("label")]
+      .find((label) => label.textContent === "Mark as read")
+      ?.querySelector<HTMLButtonElement>('[role="checkbox"]');
+    if (!markRead) throw new Error("Missing Mark as read");
+    act(() => markRead.click());
+    expect(calls.dialog.keepOnOutsidePress).toBe(true);
+    expect(calls.dialog.onClose).toBe(onClose);
+    const cancel = [...dom.element.querySelectorAll("button")].find(
+      (button) => button.textContent === "Cancel",
+    );
+    expect(cancel?.getAttribute("type")).toBe("button");
+    act(() => cancel?.click());
+    expect(onClose).toHaveBeenCalledTimes(1);
   } finally {
     dom.dispose();
   }

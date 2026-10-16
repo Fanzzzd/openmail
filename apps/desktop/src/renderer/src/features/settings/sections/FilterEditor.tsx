@@ -34,6 +34,7 @@ import { fieldLabel, fieldLegend } from "./server-settings-styles";
 import {
   buttonLink,
   buttonPrimary,
+  buttonSecondary,
   formInput,
   noticeRow,
   noticeTone,
@@ -86,12 +87,18 @@ export function FilterEditor({
   const [categoriesText, setCategoriesText] = useState(
     input.action.assignCategories?.join("\n") ?? "",
   );
+  // What the form opened with; once it differs, a click outside the dialog no longer discards it.
+  const [opened, setOpened] = useState(() => JSON.stringify(input));
+  const dirty = JSON.stringify(input) !== opened;
   const [inputSource, setInputSource] = useState(initial);
   const [categoriesSource, setCategoriesSource] = useState(input.action.assignCategories);
   if (inputSource !== initial) {
     setInputSource(initial);
-    if (initial)
-      setInput({ name: initial.name, criteria: initial.criteria, action: initial.action });
+    if (initial) {
+      const next = { name: initial.name, criteria: initial.criteria, action: initial.action };
+      setInput(next);
+      setOpened(JSON.stringify(next));
+    }
   }
   if (categoriesSource !== input.action.assignCategories) {
     setCategoriesSource(input.action.assignCategories);
@@ -165,6 +172,7 @@ export function FilterEditor({
     <Dialog
       aria-label={t`Create filter from these messages`}
       onClose={onClose}
+      keepOnOutsidePress={dirty}
       maxHeight="85vh"
       className="w-[540px] overflow-y-auto p-5"
     >
@@ -665,7 +673,10 @@ export function FilterEditor({
               ))}
           </div>
         )}
-        <div className="flex justify-end pt-1">
+        <div className="flex justify-end gap-2 pt-1">
+          <button type="button" className={buttonSecondary} onClick={onClose}>
+            <Trans>Cancel</Trans>
+          </button>
           <button
             type="submit"
             className={buttonPrimary}

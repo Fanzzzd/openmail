@@ -22,6 +22,8 @@ const sheet =
 interface DialogProps {
   /** Called on Escape and outside clicks. Omit to make the dialog impossible to dismiss. */
   onClose?: (() => void) | undefined;
+  /** Ignores clicks outside the sheet, so a stray click keeps unsaved input. Escape still closes. */
+  keepOnOutsidePress?: boolean;
   "aria-label": string;
   /** Size and layout of the sheet. */
   className?: string;
@@ -118,6 +120,7 @@ export function Dialog({
   closeButton = false,
   nested = false,
   maxHeight,
+  keepOnOutsidePress = false,
   children,
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
@@ -134,7 +137,7 @@ export function Dialog({
       onOpenChange={(open) => {
         if (!open) onClose?.();
       }}
-      disablePointerDismissal={!onClose}
+      disablePointerDismissal={!onClose || keepOnOutsidePress}
     >
       <BaseDialog.Portal>
         <BaseDialog.Backdrop
