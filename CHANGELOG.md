@@ -28,7 +28,7 @@ The first public version.
 
 ### Writing and organizing
 
-- Composer with rich text, plain text and Markdown, autosaved drafts synced both ways, undo send, send and archive, templates, signatures and From address choice.
+- Composer with rich text, plain text and Markdown, autosaved drafts synced both ways, undo send that still delivers when the Mac sleeps during the undo window, send and archive, templates, signatures and From address choice.
 - Replying to or forwarding an HTML message keeps its quote as a read-only block below an editable body. Edit quoted text joins the quote into the editor.
 - Replies and forwards go out when Gmail or Outlook no longer has the original message. IMAP replies stay threaded.
 - A Sent copy that fails to save is tried again with growing gaps, up to 10 tries in 7 days. After that OpenMail shows a notice.
