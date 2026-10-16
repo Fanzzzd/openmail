@@ -15,6 +15,16 @@ import {
 import type { OutlookClient } from "./client.js";
 import { AttachmentNames, GraphAddress, GraphMessage, writeFailure } from "./graph.js";
 
+/**
+ * The pre-check that estimates a Graph message's MIME size, since Graph has no size property.
+ * Headers and boundaries get the headroom. The body may go out as quoted-printable, three bytes
+ * for each non-ASCII byte, and again as text/plain. Attachments go out as base64 with a line
+ * break every 76 characters: 4/3 × 78/76 ≈ 1.37. getBytes enforces the cap on the real stream.
+ */
+const MIME_HEADROOM_BYTES = 128 * 1024;
+const MIME_BODY_FACTOR = 3;
+const MIME_ATTACHMENT_FACTOR = 1.4;
+
 export const makeOutlookRead = (client: OutlookClient) =>
   Effect.gen(function* () {
     const { codec, get, getBytes } = client;
@@ -65,9 +75,9 @@ export const makeOutlookRead = (client: OutlookClient) =>
             `/me/messages/${encodeURIComponent(providerId)}/attachments?$select=size`,
           );
           const estimate =
-            128 * 1024 +
-            Buffer.byteLength(metadata.body.content) * 3 +
-            parts.value.reduce((total, part) => total + part.size * 2, 0);
+            MIME_HEADROOM_BYTES +
+            Buffer.byteLength(metadata.body.content) * MIME_BODY_FACTOR +
+            parts.value.reduce((total, part) => total + part.size * MIME_ATTACHMENT_FACTOR, 0);
           if (parts["@odata.nextLink"] || estimate > maxBytes)
             return yield* new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
         }

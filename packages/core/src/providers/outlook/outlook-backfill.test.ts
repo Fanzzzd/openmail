@@ -62,6 +62,29 @@ it.effect(
     }),
 );
 
+// The estimate counted attachments twice over, so a 4 MB PDF next to a logo was refused under
+// the 8 MiB inline-image cap although its MIME is under 6 MB. Gmail and IMAP showed it.
+it.effect("a 4 MB attachment and a logo pass the media raw size pre-check", () =>
+  Effect.gen(function* () {
+    let rawCalls = 0;
+    const http = fakeHttp({
+      "GET /me/messages/m1": {
+        json: { body: { content: `<img src="cid:logo">${"x".repeat(50_000)}` } },
+      },
+      "GET /me/messages/m1/attachments": {
+        json: { value: [{ size: 4 * 1024 * 1024 }, { size: 20_000 }] },
+      },
+      "GET /me/messages/m1/$value": () => {
+        rawCalls++;
+        return { text: "body" };
+      },
+    });
+    const bytes = yield* run(http, (adapter) => adapter.fetchRaw(account, "m1", 8 * 1024 * 1024));
+    assert.strictEqual(new TextDecoder().decode(bytes), "body");
+    assert.strictEqual(rawCalls, 1);
+  }),
+);
+
 it.effect("Graph backfill follows nextLink, maps folders, and refuses foreign continuations", () =>
   Effect.gen(function* () {
     const next = `${GRAPH}/me/messages?$skiptoken=older`;
