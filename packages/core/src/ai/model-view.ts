@@ -4,6 +4,8 @@ import type { Address, Message } from "../domain/message.js";
 import { ADDRESSED_QUOTE_HEADER } from "../compose/compose-text.js";
 import type { ModelThread } from "./model-thread.js";
 import { localIso } from "../platform/host.js";
+import { Buffer } from "../platform/bytes.js";
+import { mailData } from "./ai.js";
 
 const QUOTE_MARKERS = [
   /^On .{4,200} wrote:\s*$/i,
@@ -119,7 +121,11 @@ export function toModelThread(messages: readonly Message[], maxChars: number): M
   };
 }
 
-/** Byte budget includes headers, ids and JSON escaping, conservatively bounding tokens. */
+/**
+ * Byte budget includes headers, ids and JSON escaping, conservatively bounding tokens. The view
+ * is measured as the prompt carries it: mailData escapes each < and > to six bytes, so mail full
+ * of code or XML grows past its JSON length.
+ */
 export function modelContext(messages: readonly Message[], tokenBudget = 6000): ModelThread {
   const bytes = Math.max(256, Math.min(tokenBudget, Number.MAX_SAFE_INTEGER));
   // Label ids and attachment names stay out of model context; the fields are omitted, not empty.
@@ -128,10 +134,7 @@ export function modelContext(messages: readonly Message[], tokenBudget = 6000): 
     ...rest,
     messages: rest.messages.map(({ attachments: _attachments, ...m }) => m),
   };
-  while (
-    new TextEncoder().encode(JSON.stringify(view)).length > bytes &&
-    view.messages.length > 0
-  ) {
+  while (Buffer.byteLength(mailData(view)) > bytes && view.messages.length > 0) {
     const first = view.messages[0];
     if (!first) break;
     if (first.text.length > 0) {

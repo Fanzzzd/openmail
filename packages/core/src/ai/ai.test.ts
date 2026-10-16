@@ -674,6 +674,32 @@ it.effect("summaries stream text only, reuse hashes, invalidate input/model chan
   }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake)));
 });
 
+it.effect("a thread of code or XML is cut to fit the summary prompt, not rejected", () => {
+  const requests: ModelRequest[] = [];
+  const xml = "<item><a>1</a><b>2</b></item>\n".repeat(8000);
+  const server = fakeServer("me@gmail.com", [
+    { ...incoming("m1"), bodyText: xml, bodyHtml: "", snippet: "xml" },
+  ]);
+  const fake = FakeModelLayer((request) => {
+    requests.push(request);
+    return textStream("Items");
+  });
+  return Effect.gen(function* () {
+    const m = yield* Mailbox;
+    yield* m.accounts.connect({ provider: "gmail" });
+    yield* m.sync.sync();
+    yield* m.ai.setAiAccount(consent);
+    const view = yield* m.reading.thread(messageId, "model", 80_000);
+    assert.isAtMost(Buffer.byteLength(mailData(view)), 80_000);
+    assert.isAbove(view.messages[0]?.text.length ?? 0, 0, "the message is cut, not dropped");
+    assert.isAbove(view.truncated, 0);
+    yield* Stream.runDrain(m.ai.summarize(messageId));
+    assert.strictEqual(requests.length, 1);
+    assert.isAtMost(Buffer.byteLength(requests[0]?.prompt ?? ""), AI_INPUT_BUDGET - 10_000);
+    assert.ok(requests[0]?.prompt.includes("\\u003citem\\u003e"));
+  }).pipe(Effect.provide(TestMailbox({ gmail: server }, { backgroundFlush: false }, {}, fake)));
+});
+
 it.effect(
   "assistant shares tools, isolates accounts and always proposes writes; drafts stay local",
   () => {
