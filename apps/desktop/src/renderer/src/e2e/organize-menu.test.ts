@@ -28,6 +28,8 @@ it("Copy to folders… in a conversation's menu is a menu item the arrow keys re
       .map((issue) => issue.id),
   ).toEqual([]);
   const copy = within(menu).getByRole("menuitem", { name: "Copy to folders…" });
+  // The menu moves focus into itself after it renders, so arrow keys pressed sooner miss it.
+  await eventually(() => expect(menu.contains(document.activeElement)).toBe(true));
   for (let step = 0; step < 40 && document.activeElement !== copy; step++) key("ArrowDown");
   expect(document.activeElement).toBe(copy);
   key("Enter");
