@@ -95,6 +95,27 @@ it("suggests address and folder values losslessly and includes subject and all l
   assert.deepStrictEqual(parseSearchQuery({ search: "in:inbox" }).criteria?.labels, ["INBOX"]);
 });
 
+it("lists every date and size operator, so each one becomes a chip", () => {
+  for (const key of [
+    "older",
+    "newer",
+    "before",
+    "after",
+    "older_than",
+    "newer_than",
+    "larger",
+    "smaller",
+    "size",
+  ]) {
+    assert.ok(SEARCH_OPERATORS.includes(`${key}:`), key);
+    assert.deepStrictEqual(searchFieldParts(`invoice ${key}:5M `).chips, [`${key}:5M`]);
+  }
+  assert.deepStrictEqual(
+    parseSearchQuery({ search: "size:5M" }).criteria,
+    parseSearchQuery({ search: "larger:5M" }).criteria,
+  );
+});
+
 it("edits, negates and changes token modifiers without losing other terms or quoted values", () => {
   const token = `from:${quoteSearchValue('Alice "A" Smith')}`;
   const value = `${token} has:pdf invoice`;
