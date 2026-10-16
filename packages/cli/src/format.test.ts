@@ -236,3 +236,11 @@ it("accounts list names openmail sync for a stored error that promises a retry",
     SYNC_FAILURE_TEXT.dns,
   );
 });
+
+describe("signInCommand quoting", () => {
+  it("quotes an address the shell would split or run", () => {
+    expect(signInCommand("imap:o'brien&co@example.org")).toBe(
+      "openmail accounts add imap --preset <preset> --email 'o'\\''brien&co@example.org'",
+    );
+  });
+});

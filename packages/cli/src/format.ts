@@ -37,7 +37,10 @@ export const signsInByAdding = (accountId: string) => accountId.startsWith(IMAP_
 export function signInCommand(accountId: string, imap?: ImapSettings): string {
   if (!signsInByAdding(accountId)) return `openmail accounts reauth ${accountId}`;
   const email = accountId.slice(IMAP_ID.length);
-  const flags = [`--preset ${imap ? shellWord(imap.preset) : "<preset>"}`, `--email ${email}`];
+  const flags = [
+    `--preset ${imap ? shellWord(imap.preset) : "<preset>"}`,
+    `--email ${shellWord(email)}`,
+  ];
   if (imap && imap.username !== email) flags.push(`--username ${shellWord(imap.username)}`);
   if (imap?.preset === "custom")
     flags.push(
