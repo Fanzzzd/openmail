@@ -1,13 +1,6 @@
 import type { EventEmitter } from "node:events";
 import { Effect, FiberSet, Layer, Queue, Schema } from "effect";
-import {
-  type Rpc,
-  type RpcGroup,
-  type RpcMessage,
-  RpcSchema,
-  RpcSerialization,
-  RpcServer,
-} from "effect/rpc";
+import { type Rpc, type RpcGroup, type RpcMessage, RpcSerialization, RpcServer } from "effect/rpc";
 import { MailError, throttledWarning } from "@openmail/core/schema";
 import { RPC_DEFECT_CLASSES, type RpcFailureKind } from "@openmail/core/node";
 import { MAX_RPC_FRAME } from "../../shared/channel";
@@ -133,8 +126,46 @@ const describeFailure = (cause: EncodedCause): Omit<RpcFailure, "rpc"> | undefin
 export const rpcFailureText = (failure: RpcFailure) =>
   [failure.rpc, failure.kind, failure.error].filter(Boolean).join(" ");
 
-/** A request that answers later than this logs `rpc-slow`. Streams are left out. */
+/** A request in TIMED_RPCS that answers later than this logs `rpc-slow`. */
 export const SLOW_RPC_MS = 1000;
+
+/**
+ * The RPCs that log `rpc-slow`: reads of the local database and in-memory state, which should
+ * answer in milliseconds, so a second means a local stall. Every other RPC can take seconds by
+ * design and would bury those lines: AwaitUndoSend waits out the undo delay (about 5.5 s a
+ * send), Connect and Reauth wait for the browser sign-in, AskAi, Summarize, ComposeAi and
+ * AiTriage wait for the model, Send, Sync, SearchServer, CheckForUpdates and CompactCache do
+ * network or disk work, and dialogs such as SaveAttachmentsTo wait for the person. InlineImages
+ * downloads the message source on first open and SyncHealth asks the provider, so they are
+ * left out too. Streams stay open for the window's lifetime and are never timed.
+ */
+export const TIMED_RPCS: ReadonlySet<string> = new Set([
+  "Threads",
+  "ThreadCount",
+  // Reads the stored thread; refetches a body only after the cache evicted it.
+  "Thread",
+  "UnreadCounts",
+  "UnreadByLabel",
+  "Labels",
+  "KnownSenders",
+  "Accounts",
+  "Profiles",
+  "Prefs",
+  "LabelPreferences",
+  "Templates",
+  "Signatures",
+  "NamedSignatures",
+  "SignatureDefaults",
+  "HiddenContacts",
+  "ImageSenders",
+  "UndoHistory",
+  "FailedOps",
+  "Proposals",
+  "Audit",
+  "BackfillState",
+  "CacheWindows",
+  "DraftStatus",
+] satisfies readonly RpcGroup.Rpcs<typeof MailRpcs>["_tag"][]);
 
 /** A request that took SLOW_RPC_MS or longer: its tag and wall time, nothing else. */
 export interface SlowRpc {
@@ -142,16 +173,10 @@ export interface SlowRpc {
   readonly ms: number;
 }
 
-const streaming = new Set(
-  [...MailRpcs.requests].flatMap(([tag, rpc]) =>
-    RpcSchema.isStreamSchema(rpc.successSchema) ? [tag] : [],
-  ),
-);
-
 /**
  * Track only validated request tags, never payloads, credentials or account identifiers.
- * A request the client interrupted itself is not a failure. `response` returns the request
- * when it took SLOW_RPC_MS or longer.
+ * A request the client interrupted itself is not a failure. `response` returns a TIMED_RPCS
+ * request that took SLOW_RPC_MS or longer.
  */
 export function createRpcFailureTracker(
   record: (failure: RpcFailure) => void,
@@ -183,7 +208,7 @@ export function createRpcFailureTracker(
         if (failure) record({ rpc: request.tag, ...failure });
       }
       const ms = now() - request.start;
-      return ms >= SLOW_RPC_MS && !streaming.has(request.tag)
+      return ms >= SLOW_RPC_MS && TIMED_RPCS.has(request.tag)
         ? { rpc: request.tag, ms: Math.round(ms) }
         : undefined;
     },

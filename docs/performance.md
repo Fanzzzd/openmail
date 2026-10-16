@@ -376,7 +376,9 @@ search-operator-plans.test.ts 的 OR 部分和“operators with a common word”
 
 ### 慢 RPC
 
-桌面主进程的 RPC 协议（`apps/desktop/src/main/rpc/rpc-security.ts`，本机窗口和远程访问共用）记下每个请求的开始时间。请求在 1 s 或更久后才返回时，用 `logWarning` 写一条 `rpc-slow`：只有 RPC 名称和耗时，例如 `RPC Threads took 2400 ms`，不含查询文字和参数。诊断文件只记代码 `rpc-slow`。同一个 RPC 每分钟最多一条，一阵慢搜索只留一行。`Events`、`Downloads` 这类流在窗口存在期间一直打开，不计时；客户端中断的请求也不计。
+桌面主进程的 RPC 协议（`apps/desktop/src/main/rpc/rpc-security.ts`，本机窗口和远程访问共用）记下每个请求的开始时间。`TIMED_RPCS` 里的请求在 1 s 或更久后才返回时，用 `logWarning` 写一条 `rpc-slow`：只有 RPC 名称和耗时，例如 `RPC Threads took 2400 ms`，不含查询文字和参数。诊断文件只记代码 `rpc-slow`。同一个 RPC 每分钟最多一条，一阵慢搜索只留一行。客户端中断的请求不计。
+
+`TIMED_RPCS` 只列读本地数据库和内存状态的 RPC，如 `Threads`、`ThreadCount`、`Thread`、`UnreadCounts`、`UnreadByLabel`、`Labels`、`KnownSenders`、`Accounts`、`Prefs`。它们正常几毫秒返回，超过 1 s 就是本机卡住。原来每个非流 RPC 都计时，`AwaitUndoSend` 每次发送都要等撤销时间（约 5.5 s），`Connect`、`Reauth` 等浏览器登录，`AskAi`、`Summarize`、`ComposeAi`、`AiTriage` 等模型，`Send`、`Sync`、`SearchServer`、`CheckForUpdates`、`CompactCache` 走网络或磁盘，`SaveAttachmentsTo` 这类对话框等用户，这些都写 `rpc-slow`，把真正的本机卡顿淹没了。`InlineImages` 第一次打开要下载邮件原文，`SyncHealth` 要问 provider，所以也不在表里。`Thread` 在表里：它读存储的会话，只在缓存淘汰了消息文本时才重新下载。`Events`、`Downloads` 这类流不在表里。
 
 ## 消息文本与附件检索排名
 

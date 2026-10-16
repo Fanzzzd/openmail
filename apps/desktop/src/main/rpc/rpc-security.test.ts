@@ -570,6 +570,43 @@ it("reports a request that answers after a second by its tag and wall time, exce
   expect(tracker.response(1, exit(5))).toBeUndefined();
 });
 
+it("times only local read RPCs: never streams, undo-send waits, sign-in or model calls", async () => {
+  const { createRpcFailureTracker, TIMED_RPCS } = await import("./rpc-security");
+  const { RpcSchema } = await import("effect/rpc");
+  for (const tag of TIMED_RPCS) {
+    const rpc = MailRpcs.requests.get(tag);
+    expect(rpc, tag).toBeDefined();
+    expect(rpc && RpcSchema.isStreamSchema(rpc.successSchema), tag).toBe(false);
+  }
+  let clock = 0;
+  const tracker = createRpcFailureTracker(
+    () => null,
+    () => clock,
+  );
+  const tags = ["Threads", "AwaitUndoSend", "AskAi", "Connect", "Send", "SaveAttachmentsTo"];
+  for (const [id, tag] of tags.entries())
+    tracker.request(
+      1,
+      decodeRpcFrame(JSON.stringify({ _tag: "Request", id, tag, payload: {}, headers: [] })) ?? [],
+    );
+  clock = 5500;
+  const slow = tags.map((_, id) =>
+    tracker.response(1, {
+      _tag: "Exit",
+      requestId: String(id),
+      exit: { _tag: "Success", value: null },
+    }),
+  );
+  expect(slow).toEqual([
+    { rpc: "Threads", ms: 5500 },
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  ]);
+});
+
 it("logs rpc-slow at most once a minute per RPC, without arguments", async () => {
   const { slowRpcWarning } = await import("./rpc-security");
   const { LOG_CODE_ANNOTATION } = await import("@openmail/core/schema");
