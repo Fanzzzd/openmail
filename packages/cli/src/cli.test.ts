@@ -941,3 +941,16 @@ test("accounts reauth names the add command for an IMAP account", async () => {
     "error: IMAP accounts sign in again by adding the address with a new password.\nhint: Run `openmail accounts add imap --preset <preset> --email alex.rivera@example.org`.\n",
   );
 });
+
+// effect/cli matched --log-level case-sensitively and logged a bad value as an InvalidValue
+// stack trace with exit 1.
+test("--log-level takes any letter case and a bad value is a usage error", async () => {
+  const listed = await openmail(["--log-level=Warn", "accounts", "list"]);
+  expect(listed.code, listed.stderr).toBe(0);
+  expect((await openmail(["accounts", "list", "--log-level", "ERROR"])).code).toBe(0);
+  const bad = await openmail(["list", "--log-level", "bogus"]);
+  expect(bad.code).toBe(2);
+  expect(bad.stderr).toBe(
+    'error: Invalid value for flag --log-level: "bogus". Expected one of all, trace, debug, info, warn, warning, error, fatal, none.\nUsage: openmail <command> [flags] --log-level <level>\nRun `openmail --help` for details.\n',
+  );
+});

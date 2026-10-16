@@ -124,4 +124,43 @@ export const withShortUsageErrors = <A, E, R>(
     );
   });
 
+/** The values effect/cli's built-in --log-level takes. */
+const LOG_LEVELS = ["all", "trace", "debug", "info", "warn", "warning", "error", "fatal", "none"];
+
+/**
+ * effect/cli matches --log-level values case-sensitively and reports a bad one as a logged
+ * stack trace with exit 1. This lowercases the value, so `--log-level=Warn` works, and turns
+ * a value that is no level into a usage error: `error:` and the usage on stderr, exit 2.
+ */
+export const withLogLevelChecked = (
+  args: readonly string[],
+): Effect.Effect<readonly string[], UsageError> =>
+  Effect.gen(function* () {
+    const out = [...args];
+    for (let i = 0; i < out.length; i++) {
+      const arg = out[i] ?? "";
+      if (arg === "--") break;
+      const inline = arg.startsWith("--log-level=");
+      if (arg !== "--log-level" && !inline) continue;
+      const value = inline ? arg.slice("--log-level=".length) : out[i + 1];
+      const level = value?.toLowerCase();
+      if (level === undefined || !LOG_LEVELS.includes(level)) {
+        const message =
+          value === undefined
+            ? "Flag --log-level needs a value."
+            : `Invalid value for flag --log-level: "${value}". Expected one of ${LOG_LEVELS.join(", ")}.`;
+        const hint = "Run `openmail --help` for details.";
+        yield* Console.error(
+          [`error: ${message}`, "Usage: openmail <command> [flags] --log-level <level>", hint].join(
+            "\n",
+          ),
+        );
+        return yield* Effect.fail(new UsageError({ message, hint }));
+      }
+      if (inline) out[i] = `--log-level=${level}`;
+      else out[++i] = level;
+    }
+    return out;
+  });
+
 const explicitHelp = process.argv.slice(2).some((arg) => arg === "--help" || arg === "-h");

@@ -17,7 +17,7 @@ import { toolCommands } from "./commands/tools.js";
 import { CliError, Command } from "effect/cli";
 import { corpus } from "./commands/corpus.js";
 import { Failed, WRITE_MODE_SETTING, fail } from "./commands/common.js";
-import { UsageError, withShortUsageErrors } from "./usage.js";
+import { UsageError, withLogLevelChecked, withShortUsageErrors } from "./usage.js";
 import { withQueryOperands } from "./search-args.js";
 import {
   type Explained,
@@ -109,9 +109,13 @@ const report = (explained: Explained) =>
       code: "app_only",
       hint: `Open OpenMail and change it under ${WRITE_MODE_SETTING}.`,
     })
-  : withShortUsageErrors(
-      Command.runWith(openmail, { version: CLI_VERSION })(withQueryOperands(cliArgs)),
-      openmail,
+  : withLogLevelChecked(cliArgs).pipe(
+      Effect.flatMap((args) =>
+        withShortUsageErrors(
+          Command.runWith(openmail, { version: CLI_VERSION })(withQueryOperands(args)),
+          openmail,
+        ),
+      ),
     )
 ).pipe(
   Effect.catch((error) => {
