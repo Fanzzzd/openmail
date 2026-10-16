@@ -40,6 +40,17 @@ export const noAccount = (id: string) =>
     hint: "Run `openmail accounts list` to see them.",
   });
 
+/** `--limit`, in the range 1 to 100 that list, search and audit share. */
+export const limitFlag = (description: string, fallback: number) =>
+  Flag.Int("limit").pipe(
+    Flag.withDescription(description),
+    Flag.withDefault(fallback),
+    Flag.filter(
+      (n) => n > 0 && n <= 100,
+      () => "must be between 1 and 100",
+    ),
+  );
+
 export const jsonFlag = Flag.Boolean("json").pipe(
   Flag.withDescription("Print machine-readable JSON"),
   Flag.withDefault(false),

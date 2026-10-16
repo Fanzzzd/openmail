@@ -11,6 +11,7 @@ import {
   fail,
   findSpace,
   jsonFlag,
+  limitFlag,
   noAccount,
   optionalInt,
   optionalString,
@@ -144,14 +145,7 @@ const sync = Command.make(
   }),
 ).pipe(Command.withDescription("Push queued changes, then fetch changes into the local database"));
 
-const limitFlag = Flag.Int("limit").pipe(
-  Flag.withDescription("Max threads"),
-  Flag.withDefault(20),
-  Flag.filter(
-    (n) => n > 0 && n <= 100,
-    () => "must be between 1 and 100",
-  ),
-);
+const threadLimit = limitFlag("Max threads", 20);
 
 /** `--space`, plus the hidden `--profile` it replaced, so older scripts keep working. */
 const spaceFlags = {
@@ -226,7 +220,7 @@ const list = Command.make(
       Flag.withDescription("Unread only"),
       Flag.withDefault(false),
     ),
-    limit: limitFlag,
+    limit: threadLimit,
     budget: legacyBudget,
     before: optionalInt("before", "Legacy page boundary; use --cursor to preserve same-date rows"),
     cursor: optionalString("cursor", "The cursor printed after the preceding page"),
@@ -291,7 +285,7 @@ const search = Command.make(
       Argument.variadic({ min: 1 }),
     ),
     account: optionalString("account", "Only this account"),
-    limit: limitFlag,
+    limit: threadLimit,
     budget: legacyBudget,
     cursor: optionalString("cursor", "The cursor printed after the preceding page"),
     server: Flag.Boolean("server").pipe(

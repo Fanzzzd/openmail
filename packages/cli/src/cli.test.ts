@@ -1035,6 +1035,14 @@ describe("errors", () => {
     expect(stderr).toContain("hint: Run `openmail accounts list` to see them.");
   });
 
+  test("audit --limit outside 1 to 100 is a usage error like list", async () => {
+    for (const limit of ["0", "-3", "101"]) {
+      const { code, stderr } = await openmail(["audit", "--limit", limit]);
+      expect(code, limit).toBe(2);
+      expect(stderr).toContain("must be between 1 and 100");
+    }
+  });
+
   test("--input-json that is not JSON names the flag", async () => {
     const { code, stdout, stderr } = await openmail([
       "tool",

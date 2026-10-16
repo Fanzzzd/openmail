@@ -1,7 +1,7 @@
 /** proposals, agents, audit and mcp: what models asked for, may do and did. */
 
 import { Argument, Command, Flag } from "effect/cli";
-import { WRITE_MODE_SETTING, fail, jsonFlag, print } from "./common.js";
+import { WRITE_MODE_SETTING, fail, jsonFlag, limitFlag, print } from "./common.js";
 import { Console, Effect } from "effect";
 
 import { APPROVE_IN_APP, Mailbox } from "@openmail/core";
@@ -96,7 +96,7 @@ const agents = Command.make("agents").pipe(
 const audit = Command.make(
   "audit",
   {
-    limit: Flag.Int("limit").pipe(Flag.withDescription("Max entries"), Flag.withDefault(50)),
+    limit: limitFlag("Max entries", 50),
     json: jsonFlag,
   },
   Effect.fn(function* ({ limit, json }) {
