@@ -9,7 +9,7 @@ import { DatabaseSync } from "node:sqlite";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
 import { Schema } from "effect";
-import { afterAll, beforeAll, describe, expect, test } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, test } from "vitest";
 import { scaledMs } from "../../core/test-support/test-time.js";
 import { REMOVE_NEEDS_YES } from "./commands/accounts.js";
 
@@ -363,7 +363,13 @@ describe("accounts add", () => {
           child.once("error", failed);
           child.once("close", () => done(text));
         });
+        // The child owns its database files, so wait for it to exit before the directory goes.
+        const exited =
+          child.exitCode === null && child.signalCode === null
+            ? new Promise<void>((done) => child.once("close", () => done()))
+            : Promise.resolve();
         child.kill();
+        await exited;
         expect(stderr).toContain("If nothing opens, visit:");
         const url = new URL(/^https:\/\/accounts\.google\.com\/\S+$/m.exec(stderr)?.[0] ?? "");
         expect(url.searchParams.get("client_id")).toBe("fake-client");
@@ -792,6 +798,16 @@ describe("spaces", () => {
       );
     });
 
+    // One failed test must not leave rows that fail the next one.
+    afterEach(() => {
+      const db = new DatabaseSync(join(home.path, "mail.db"));
+      try {
+        db.prepare("DELETE FROM profiles WHERE name != 'Work'").run();
+      } finally {
+        db.close();
+      }
+    });
+
     test("add creates the space with the keys scripts read", () => {
       expect(added.code, added.stderr).toBe(0);
       expect(added.stdout).toMatch(/^Added space Work \(.+\)\.$/m);
@@ -822,10 +838,12 @@ describe("spaces", () => {
         seed.close();
       }
       const add = (name: string) => openmail(["spaces", "add", name], home.path);
-      // Independent commands, started together: the test waits for one process start.
-      const [padded, removed, control, id, none, ...empty] = await Promise.all([
+      // The two commands that write run together, then the ones that only refuse a name.
+      const [padded, removed] = await Promise.all([
         add("  Play  "),
         openmail(["spaces", "remove", " rest "], home.path),
+      ]);
+      const [control, id, none, ...empty] = await Promise.all([
         add("Deep\twork"),
         // `--space` takes a name or an id, so a name can't be another space's id.
         add(String(space.id)),
@@ -853,7 +871,6 @@ describe("spaces", () => {
           { name: "Work" },
           { name: "Play" },
         ]);
-        db.prepare("DELETE FROM profiles WHERE name = 'Play'").run();
       } finally {
         db.close();
       }
@@ -880,7 +897,6 @@ describe("spaces", () => {
         expect(db.prepare("SELECT name, color FROM profiles WHERE name != 'Work'").all()).toEqual([
           { name: "Brown", color: "amber" },
         ]);
-        db.prepare("DELETE FROM profiles WHERE name = 'Brown'").run();
       } finally {
         db.close();
       }
