@@ -901,3 +901,34 @@ describe("errors", () => {
     expect(stderr).toContain("can only be changed in the app");
   });
 });
+
+// Sync turned the lock timeout into an error row per account: under a held write lock
+// `openmail sync` waited the 5 s busy timeout for every account, logged an ERROR
+// SyncCrashDiagnostic for each, and reported code failed.
+test("sync under a write lock another process keeps stops at the first busy account", async () => {
+  const home = await mkdtemp(join(tmpdir(), "openmail-cli-sync-busy-"));
+  try {
+    await cp(join(seeded, "home"), home, { recursive: true });
+    const holder = new DatabaseSync(join(home, "mail.db"));
+    holder.exec("PRAGMA journal_mode=WAL");
+    holder.exec("BEGIN IMMEDIATE");
+    try {
+      const { code, stdout, stderr } = await openmail(["sync", "--json"], home, {
+        OPENMAIL_OFFLINE: "1",
+      });
+      expect(code).toBe(1);
+      expect(JSON.parse(stdout)).toEqual({
+        message: "Another OpenMail process is writing to the local database.",
+        code: "busy",
+        hint: "Run the command again in a few seconds.",
+      });
+      expect(stderr).not.toContain("Diagnostic");
+      expect(stderr.match(/^error: /gm)).toHaveLength(1);
+    } finally {
+      holder.exec("ROLLBACK");
+      holder.close();
+    }
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});

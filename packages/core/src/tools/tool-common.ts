@@ -2,7 +2,6 @@
 
 import { Effect, Schema, SchemaGetter } from "effect";
 import { Tool } from "effect/ai";
-import { isSqlError } from "effect/sql/SqlError";
 import { Outcome, type Command } from "../domain/command.js";
 import {
   PageParameters,
@@ -64,9 +63,7 @@ export const busyToolError = () =>
     "OpenMail is writing to the mailbox; retry in a few seconds.",
   );
 
-/** A defect from a statement that waited the whole busy timeout for the write lock. */
-export const isLockTimeout = (defect: unknown): boolean =>
-  isSqlError(defect) && defect.reason._tag === "LockTimeoutError";
+export { isLockTimeout } from "../store/store-brief-lock.js";
 
 /** The next step for invalid input whose message already says what to change. */
 export const FIX_INPUT_HINT = "Change the arguments as the message says, then call the tool again.";

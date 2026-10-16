@@ -32,6 +32,7 @@ import { BackgroundRead } from "../providers/provider-connectivity.js";
 import { retryAfterMillis } from "../providers/provider-retry.js";
 import type { Change } from "../providers/adapter.js";
 import { logSyncCrash, type SyncCrashDiagnostic } from "../sync/sync-crash.js";
+import { isLockTimeout } from "../store/store-brief-lock.js";
 import {
   logSyncFailed,
   SYNC_FAILURE_TEXT,
@@ -123,6 +124,12 @@ type PullFailed = {
 const SYNC_ACCOUNTS = 3;
 
 const SYNC_RETRY_MESSAGE = SYNC_FAILURE_TEXT.unknown;
+
+/**
+ * Another process kept the write lock past the busy timeout. `sync` dies with the lock timeout
+ * instead of returning an error row, so the CLI and MCP say "busy" and the app retries later.
+ */
+const heldLock = (cause: Cause.Cause<unknown>) => isLockTimeout(Cause.squash(cause));
 
 export const makeSyncMailbox = (
   deps: MailboxDependencies & {
@@ -364,11 +371,16 @@ export const makeSyncMailbox = (
           );
         }),
       ),
-      // A bug in one provider must not stop the other accounts from syncing.
+      // A bug in one provider must not stop the other accounts from syncing. A full sync dies
+      // on a held write lock: every account would wait it out, so the caller reports busy once.
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
-          : logSyncCrash(cause, phase).pipe(Effect.andThen(failed(SYNC_RETRY_MESSAGE, undefined))),
+          : !scope && heldLock(cause)
+            ? Effect.die(Cause.squash(cause))
+            : logSyncCrash(cause, phase).pipe(
+                Effect.andThen(failed(SYNC_RETRY_MESSAGE, undefined)),
+              ),
       ),
     );
   });
@@ -474,33 +486,38 @@ export const makeSyncMailbox = (
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
-          : logSyncCrash(cause, "maintenance").pipe(
-              Effect.andThen(
-                Effect.gen(function* () {
-                  yield* Ref.update(runtime.syncState, (s) => ({
-                    ...s,
-                    running: false,
-                    errors: [SYNC_RETRY_MESSAGE],
-                  }));
-                  yield* emit({ _tag: "SyncState", state: yield* Ref.get(runtime.syncState) });
-                  return [
-                    {
-                      accountId: accountId ?? "all",
-                      changed: 0,
-                      deleted: 0,
-                      error: SYNC_RETRY_MESSAGE,
-                    },
-                  ];
-                }),
+          : heldLock(cause)
+            ? Effect.die(Cause.squash(cause))
+            : logSyncCrash(cause, "maintenance").pipe(
+                Effect.andThen(
+                  Effect.gen(function* () {
+                    yield* Ref.update(runtime.syncState, (s) => ({
+                      ...s,
+                      running: false,
+                      errors: [SYNC_RETRY_MESSAGE],
+                    }));
+                    yield* emit({ _tag: "SyncState", state: yield* Ref.get(runtime.syncState) });
+                    return [
+                      {
+                        accountId: accountId ?? "all",
+                        changed: 0,
+                        deleted: 0,
+                        error: SYNC_RETRY_MESSAGE,
+                      },
+                    ];
+                  }),
+                ),
               ),
-            ),
       ),
       Effect.onExit((exit) =>
         Ref.set(runtime.inflight, Option.none()).pipe(
           Effect.andThen(Deferred.done(self.done, exit)),
           Effect.andThen(
             exit._tag === "Failure"
-              ? Ref.update(runtime.syncState, (s) => ({ ...s, running: false }))
+              ? Ref.update(runtime.syncState, (s) => ({ ...s, running: false })).pipe(
+                  Effect.andThen(Ref.get(runtime.syncState)),
+                  Effect.flatMap((state) => emit({ _tag: "SyncState", state })),
+                )
               : Effect.void,
           ),
         ),

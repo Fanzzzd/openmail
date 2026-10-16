@@ -65,6 +65,7 @@ async function client(
   seed: boolean | ((directory: string) => Promise<unknown>) = false,
   protocolVersion = "2024-11-05",
   extraArgs: readonly string[] = [],
+  env: NodeJS.ProcessEnv = {},
 ) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
   if (seed) await (seed === true ? seedAttachmentMail : seed)(directory);
@@ -79,7 +80,7 @@ async function client(
     ],
     {
       cwd: process.cwd(),
-      env: { ...process.env, OPENMAIL_HOME: directory },
+      env: { ...process.env, ...env, OPENMAIL_HOME: directory },
       stdio: ["pipe", "pipe", "pipe"],
     },
   );
@@ -241,6 +242,40 @@ test.concurrent(
     } finally {
       db.close();
     }
+  },
+  scaledMs(30_000),
+);
+
+// Sync turned the lock timeout into a result row, so the tool answered isError false with
+// "Sync could not finish. It will retry automatically." after the 5 s busy timeout.
+test.concurrent(
+  "sync while another process holds the write lock fails with code busy",
+  async ({ expect, onTestFinished }) => {
+    const { request, directory, close } = await client(
+      onTestFinished,
+      false,
+      true,
+      true,
+      undefined,
+      [],
+      { OPENMAIL_OFFLINE: "1" },
+    );
+    const holder = new DatabaseSync(join(directory, "mail.db"));
+    holder.exec("BEGIN IMMEDIATE");
+    let held = true;
+    onTestFinished(() => {
+      if (held) holder.exec("ROLLBACK");
+      holder.close();
+    });
+    const called = Schema.decodeUnknownSync(CallResult)(
+      await request("tools/call", { name: "sync", arguments: {} }),
+    );
+    holder.exec("ROLLBACK");
+    held = false;
+    expect(called.isError, called.content[0]?.text).toBe(true);
+    expect(JSON.parse(called.content[0]?.text ?? "{}")).toMatchObject({ code: "busy" });
+    const { stderr } = await close();
+    expect(stderr).not.toContain("SyncCrashDiagnostic");
   },
   scaledMs(30_000),
 );

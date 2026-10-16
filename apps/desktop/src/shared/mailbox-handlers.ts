@@ -7,6 +7,13 @@ const USER = { kind: "user", surface: "app" } as const;
 
 type MailboxService = Mailbox["Service"];
 
+/**
+ * Sync dies only when another process holds the write lock past the busy timeout. The app's
+ * timer syncs again soon, so a button press or a reconnect leaves it to that run.
+ */
+const syncOrRetryLater = (m: MailboxService) =>
+  m.sync.sync().pipe(Effect.catchDefect(() => Effect.succeed([])));
+
 /** A held discard never outlives a minute, whatever the caller asks. */
 const MAX_DISCARD_HOLD_MS = 60_000;
 
@@ -247,9 +254,9 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     AgentWriteMode: () => m.proposals.agentWriteMode,
     SetAgentWriteMode: ({ mode }) => m.proposals.setAgentWriteMode(mode),
 
-    Sync: () => m.sync.resetConnectivity().pipe(Effect.andThen(m.sync.sync())),
+    Sync: () => m.sync.resetConnectivity().pipe(Effect.andThen(syncOrRetryLater(m))),
     NetworkChanged: () =>
-      m.sync.resetConnectivity().pipe(Effect.andThen(m.sync.sync()), Effect.asVoid),
+      m.sync.resetConnectivity().pipe(Effect.andThen(syncOrRetryLater(m)), Effect.asVoid),
     SyncState: () => m.sync.syncState,
     Events: () => m.app.events,
   } satisfies Partial<Parameters<typeof MailRpcs.of>[0]>;

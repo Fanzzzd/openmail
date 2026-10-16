@@ -590,7 +590,11 @@ export interface MailboxSync {
     query: ThreadQuery,
   ): Effect.Effect<import("../domain/cache.js").OlderResult, PerformError>;
 
-  /** Syncs provider changes and the queue. IMAP validates UIDs before pushing; concurrent calls join. */
+  /**
+   * Syncs provider changes and the queue. IMAP validates UIDs before pushing; concurrent calls
+   * join. A failing account is an error row. When another process holds the write lock past the
+   * busy timeout it dies with the lock timeout (`isLockTimeout`), so callers report busy once.
+   */
   sync(accountId?: string): Effect.Effect<SyncResult[]>;
   /** Desktop's lightweight inbox poll; CLI/MCP do not start a timer. */
   pollInbox(accountIds?: readonly string[], incrementalOnly?: boolean): Effect.Effect<SyncResult[]>;

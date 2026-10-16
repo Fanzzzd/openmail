@@ -129,7 +129,8 @@ export const makeAccountsMailbox = (
     );
     yield* changed;
     // Only the new account needs a pull; a sync(account.id) already running is joined.
-    yield* Effect.forkDetach(sync(account.id));
+    // A held write lock ends it early; the app's timer syncs the account later.
+    yield* Effect.forkDetach(sync(account.id).pipe(Effect.ignoreCause));
     return yield* store.getAccount(account.id).pipe(Effect.orDie);
   });
 
@@ -231,7 +232,7 @@ export const makeAccountsMailbox = (
           yield* changed;
           if (resumed) {
             runtime.polling.delete(id);
-            yield* FiberSet.run(runtime.background, sync(id));
+            yield* FiberSet.run(runtime.background, sync(id).pipe(Effect.ignoreCause));
           }
         }),
 

@@ -4,6 +4,10 @@ import { isSqlError } from "effect/sql/SqlError";
 import { DatabaseBusy } from "../domain/errors.js";
 import { first } from "./sql-rows.js";
 
+/** A defect from a statement that waited the whole busy timeout for the write lock. */
+export const isLockTimeout = (defect: unknown): boolean =>
+  isSqlError(defect) && defect.reason._tag === "LockTimeoutError";
+
 /** How long a write under `briefLockWait` waits for another process's write lock. */
 export const BRIEF_BUSY_TIMEOUT_MS = 200;
 const BusyTimeout = Schema.Struct({ timeout: Schema.Number });
@@ -48,7 +52,7 @@ export const makeBriefLockWait = (sql: SqlClient.SqlClient) => {
       Effect.catchCause((cause): Effect.Effect<never, E | DatabaseBusy> => {
         if (Cause.hasInterrupts(cause)) return Effect.failCause(cause);
         const error = Cause.squash(cause);
-        return isSqlError(error) && error.reason._tag === "LockTimeoutError"
+        return isLockTimeout(error)
           ? Effect.fail(
               new DatabaseBusy({ message: "Another process is writing to the local database." }),
             )
