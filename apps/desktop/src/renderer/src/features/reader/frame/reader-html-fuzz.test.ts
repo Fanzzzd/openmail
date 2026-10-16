@@ -105,16 +105,12 @@ it("CSS comments, escapes and nested functions cannot conceal blocked resources"
   }
 });
 
-it(
-  "one MiB text and 10k nested tags obey reader time and output budgets",
-  () => {
-    const started = performance.now();
-    const text = "x".repeat(1024 * 1024);
-    expect(sanitizeReaderHtml(text, false)).toBe(text);
-    const deep = sanitizeReaderHtml(nestedHtml(10_000), false);
-    assertSafe(deep);
-    expect(deep.length).toBeLessThan(150_000);
-    expect(performance.now() - started).toBeLessThan(scaledMs(15_000));
-  },
-  scaledMs(20_000),
-);
+it("one MiB text and 10k nested tags obey reader time and output budgets", () => {
+  const started = performance.now();
+  const text = "x".repeat(1024 * 1024);
+  expect(sanitizeReaderHtml(text, false)).toBe(text);
+  const deep = sanitizeReaderHtml(nestedHtml(10_000), false);
+  assertSafe(deep);
+  expect(deep.length).toBeLessThan(150_000);
+  expect(performance.now() - started).toBeLessThan(scaledMs(15_000));
+});

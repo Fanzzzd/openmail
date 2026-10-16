@@ -1,6 +1,5 @@
 import { defineConfig } from "vitest/config";
 import config, { waitSetup } from "./vitest.config";
-import { scaledMs } from "../../packages/core/test-support/test-time.js";
 
 export default defineConfig({
   ...config,
@@ -12,7 +11,5 @@ export default defineConfig({
     setupFiles: [...waitSetup, "src/renderer/src/e2e/setup.ts"],
     maxWorkers: 1,
     fileParallelism: false,
-    testTimeout: scaledMs(20_000),
-    hookTimeout: scaledMs(20_000),
   },
 });

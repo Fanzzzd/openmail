@@ -1,7 +1,6 @@
 import { afterEach, expect, it } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
 import { eventually, flow } from "./harness";
-import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -12,11 +11,7 @@ afterEach(async () => {
 async function openSettingsTab(tab: string) {
   current = await flow({ route: "/mail/all/inbox?dialog=settings" });
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
-  const settings = await screen.findByRole(
-    "dialog",
-    { name: "Settings" },
-    { timeout: scaledMs(5000) },
-  );
+  const settings = await screen.findByRole("dialog", { name: "Settings" });
   fireEvent.click(within(settings).getByRole("tab", { name: tab }));
   return settings;
 }
@@ -56,7 +51,7 @@ for (const [tab, opener, dialog, how, close] of [
     const button = await within(settings).findByRole("button", { name: opener });
     button.focus();
     fireEvent.click(button);
-    const editor = await screen.findByRole("dialog", { name: dialog }, { timeout: scaledMs(5000) });
+    const editor = await screen.findByRole("dialog", { name: dialog });
     close(editor);
     await eventually(() => expect(screen.queryByRole("dialog", { name: dialog })).toBeNull());
     await eventually(() => expect(document.activeElement).toBe(button));
@@ -64,7 +59,7 @@ for (const [tab, opener, dialog, how, close] of [
   });
 async function openNewSpaceIn(settings: HTMLElement) {
   fireEvent.click(await within(settings).findByRole("button", { name: "New space" }));
-  return screen.findByRole("dialog", { name: "New space" }, { timeout: scaledMs(5000) });
+  return screen.findByRole("dialog", { name: "New space" });
 }
 const openNewSpace = async () => openNewSpaceIn(await openSettingsTab("Spaces"));
 
@@ -127,11 +122,7 @@ for (const kind of ["label", "folder"] as const)
       route: "/mail/all/inbox?dialog=settings",
       provider: kind === "label" ? "gmail" : "imap",
     });
-    const settings = await screen.findByRole(
-      "dialog",
-      { name: "Settings" },
-      { timeout: scaledMs(5000) },
-    );
+    const settings = await screen.findByRole("dialog", { name: "Settings" });
     fireEvent.click(within(settings).getByRole("tab", { name: "Organize" }));
     fireEvent.click(await within(settings).findByRole("button", { name: "Delete Work" }));
     expect(

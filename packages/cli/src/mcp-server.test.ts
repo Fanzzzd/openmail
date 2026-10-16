@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { afterAll, beforeAll, describe, test, vi, type TestContext } from "vitest";
+import { afterAll, beforeAll, describe, test, type TestContext } from "vitest";
 import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
 import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
@@ -48,9 +48,7 @@ const run = (file: string, args: readonly string[], options: { env: NodeJS.Proce
     },
   );
 // Each test and hook waits on at most one `node dist/cli.js` start in series. A start opens and
-// migrates a database, about 1 s on a loaded machine, so the 5 s default fails without a real
-// fault. CI runners are slower still, so every budget scales with testTimeScale.
-vi.setConfig({ testTimeout: scaledMs(20_000), hookTimeout: scaledMs(20_000) });
+// migrates a database, about 1 s on a loaded machine; the scaled testTimeouts default covers it.
 
 // Each test waits on its own child processes, so tests run concurrently and only
 // the slowest CLI start bounds the file. Cleanups belong to the test that made them.

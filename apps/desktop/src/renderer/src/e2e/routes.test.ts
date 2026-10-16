@@ -3,7 +3,6 @@ import { afterEach, expect, it, vi } from "vitest";
 import { Effect } from "effect";
 import { SETTLE_MS } from "../routes/router";
 import { advance, eventually, flow, key, row } from "./harness";
-import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -85,11 +84,7 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
 it("opens the dialog a route names, and closing it leaves the route in place", async () => {
   const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
-  const settings = await screen.findByRole(
-    "dialog",
-    { name: "Settings" },
-    { timeout: scaledMs(5000) },
-  );
+  const settings = await screen.findByRole("dialog", { name: "Settings" });
   const length = h.router.history.length;
   fireEvent.keyDown(settings, { key: "Escape" });
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull());
@@ -237,7 +232,6 @@ it("a failed server search says the results are local, names the account and can
   const alert = await screen.findByText(
     "Showing results from this Mac. me@gmail.com couldn't search the server.",
     undefined,
-    { timeout: scaledMs(5000) },
   );
   expect(alert.closest('[role="alert"]')).toBeTruthy();
   expect(alert.className).not.toContain("truncate");

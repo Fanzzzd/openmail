@@ -39,7 +39,7 @@ vi.mock("./rpc", async () => {
   return { MailClient };
 });
 import { liveUpdatesAtom, RESUBSCRIBE_MS, syncStateAtom } from "./events";
-import { scaledMs, waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
+import { waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
 
 afterAll(() => {
   vi.doUnmock("./rpc");
@@ -68,7 +68,7 @@ for (const failure of ["die", "interrupt"] as const)
     try {
       registry.get(liveUpdatesAtom);
       await vi.waitFor(() => expect(registry.get(syncStateAtom).lastFinishedAt).toBe(42), {
-        timeout: scaledMs(2_000) + (RESUBSCRIBE_MS[0] ?? 0),
+        timeout: waitLimit.timeout + (RESUBSCRIBE_MS[0] ?? 0),
       });
       expect(subscriptions.count).toBe(2);
     } finally {

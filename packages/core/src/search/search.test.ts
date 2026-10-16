@@ -38,7 +38,6 @@ import { databaseLayer } from "../platform/node/db.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { InvalidInput } from "../domain/errors.js";
 import { type DerivedChunk } from "../ai/media.js";
-import { scaledMs } from "../../test-support/test-time.js";
 {
   const message: IncomingMessage = makeIncoming("m1", {
     threadId: "t1",
@@ -516,7 +515,6 @@ import { scaledMs } from "../../test-support/test-time.js";
           yield* sql`INSERT INTO messages_fts(messages_fts) VALUES('integrity-check')`;
         }).pipe(Effect.provide(layer));
       }).pipe(Effect.scoped, Effect.provide(Layer.mergeAll(NodeFileSystem.layer, NodePath.layer))),
-    scaledMs(20_000),
   );
 
   it.effect(

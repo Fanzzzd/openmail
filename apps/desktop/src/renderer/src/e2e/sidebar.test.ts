@@ -2,7 +2,6 @@ import { afterEach, expect, it } from "vitest";
 import { fireEvent, screen, within } from "@testing-library/react/pure";
 import { Effect } from "effect";
 import { flow, eventually, key } from "./harness";
-import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
   await current?.dispose();
@@ -114,11 +113,7 @@ it("favorite stars are named toggles off the tab order; in All accounts the menu
 
 it("with no account the sidebar lists no mailboxes and no sync status, and Add account starts on Gmail", async () => {
   current = await flow({ noAccounts: true });
-  const dialog = await screen.findByRole(
-    "dialog",
-    { name: "Add your first account" },
-    { timeout: scaledMs(5000) },
-  );
+  const dialog = await screen.findByRole("dialog", { name: "Add your first account" });
   await eventually(() =>
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Gmail" })),
   );
@@ -174,11 +169,7 @@ it("spaces switch from the sidebar alone, with no second picker above the panes"
         Effect.succeed([{ id: "work", name: "Work", icon: "W", color: "blue", position: 0 }]),
     },
   });
-  const spaces = await screen.findByRole(
-    "toolbar",
-    { name: "Spaces" },
-    { timeout: scaledMs(5000) },
-  );
+  const spaces = await screen.findByRole("toolbar", { name: "Spaces" });
   await eventually(() => expect(within(spaces).getByRole("button", { name: /Work/ })).toBeTruthy());
   expect(screen.queryByRole("combobox", { name: "Space" })).toBeNull();
 });

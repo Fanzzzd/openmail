@@ -83,7 +83,6 @@ async function openWebApp(mailbox: (m: Mailbox["Service"]) => Mailbox["Service"]
     socket.once("close", () => handlers.closed());
   });
   await vi.waitFor(() => expect(hub.listening).toBe(true), {
-    timeout: scaledMs(2_000),
     interval: 10,
   });
   const address = wss.address();
@@ -180,7 +179,7 @@ const settle = () =>
     });
   });
 
-// Clicks every control in every tab: slower than the scaled 20 s e2e default under load.
+// Clicks every control in every tab: slower than the scaled 30 s default under load.
 it(
   "no web settings control calls an RPC or sets a preference the Mac refuses",
   { timeout: scaledMs(60_000) },

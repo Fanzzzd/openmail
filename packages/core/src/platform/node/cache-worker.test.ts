@@ -15,11 +15,6 @@ import { nodeCacheMaintenance } from "./cache-maintenance.js";
 import { logCodeOf } from "../../domain/diagnostic-log.js";
 import { acquireDatabaseAccess, registerDatabaseLease } from "./database-access.js";
 import { expectFileBytes } from "../../../test-support/file-bytes.js";
-import { scaledMs } from "../../../test-support/test-time.js";
-
-// Each test builds a migrated database and some start a worker: about 0.5 s idle, several
-// seconds on a loaded runner, so the budget scales with testTimeScale.
-vi.setConfig({ testTimeout: scaledMs(20_000) });
 
 function fixture(version = 37) {
   const directory = mkdtempSync(join(tmpdir(), "openmail-worker-test-"));

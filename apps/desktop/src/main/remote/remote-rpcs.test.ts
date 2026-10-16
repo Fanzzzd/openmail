@@ -6,7 +6,6 @@ import { MailRpcs } from "../../shared/rpc";
 import { remotePrefs } from "./remote-handlers";
 import { createConnectionHub, remoteRpcServer } from "./remote-rpc-server";
 import { REMOTE_RPC_POLICY, remoteDisposition, RemoteRpcs } from "./remote-rpcs";
-import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 /**
  * The whole remote surface. Changing it is a security decision: update this
@@ -143,7 +142,6 @@ describe("remote RPC server", () => {
       ).pipe(Effect.provide(TestMailbox())),
     );
     await vi.waitFor(() => expect(hub.listening).toBe(true), {
-      timeout: scaledMs(5_000),
       interval: 10,
     });
     const frames: Frame[] = [];
@@ -163,7 +161,6 @@ describe("remote RPC server", () => {
     request("4", "ClipboardText");
     const exit = (id: string) => frames.find((frame) => frame.requestId === id)?.exit;
     await vi.waitFor(() => expect(["1", "2", "3", "4"].map(exit)).not.toContain(undefined), {
-      timeout: scaledMs(5_000),
       interval: 10,
     });
     expect(exit("1")?._tag).toBe("Success");
