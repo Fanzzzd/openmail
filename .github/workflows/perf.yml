@@ -2,7 +2,8 @@ name: Performance
 
 # The 100k-message budgets in docs/performance.md. Weekly, on demand, and before every release
 # (release.yml calls it), not on every push: the suite takes several minutes and shared runners
-# are noisy. Check runs the 10k seeding budget (seed-rate.test.ts) on every push.
+# are noisy. Check runs the 10k seeding growth bound (seed-rate.test.ts) on every push; its
+# absolute budget runs here.
 on:
   schedule:
     # Mondays 06:00 UTC.
@@ -19,6 +20,8 @@ concurrency:
 
 env:
   CI: "1"
+  # Turns on the wall-clock budgets, including seed-rate.test.ts's absolute one.
+  OPENMAIL_PERF: "1"
   # Shared runners are slower and noisier than an idle laptop; budgets get twice the room.
   OPENMAIL_PERF_FACTOR: "2"
   OPENMAIL_PERF_REPORT: ${{ github.workspace }}/perf-report/openmail-performance.json

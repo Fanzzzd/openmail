@@ -14,8 +14,9 @@ import { scaledMs } from "../../../test-support/test-time.js";
 // Regression guard: the on-open PRAGMA optimize recorded statistics for the empty FTS5 tables
 // (fixed in d5194310). Every later insert planned the index lookups as scans, and seeding the
 // 100k performance mailbox went from 5 s to 4 minutes per 10k messages. Only the weekly perf job
-// noticed. The default suite checks the growth bound only, which holds under load. The absolute
-// budget runs on CI and with OPENMAIL_PERF=1. See docs/testing.md#tests-under-load.
+// noticed. The default suite, Check included, asserts the growth bound only, which holds under
+// load. The absolute budget runs with OPENMAIL_PERF=1 (perf.yml). See
+// docs/testing.md#tests-under-load.
 const MESSAGES = 10_000;
 const CHUNK = 2_000;
 /**
@@ -23,15 +24,21 @@ const CHUNK = 2_000;
  * the regression put back. The budget grows with the calibration ratio on slower runners.
  */
 const BUDGET_MS = 6_000;
+const BATCH = 500;
 /**
  * Inserts stay about as fast while the indexes grow (1.1x here). With the regression the last
- * 2k took 4.9x as long as the first, on any machine.
+ * 2k took 4.9x as long as the first, on any machine. Growth compares the median calibrated
+ * 500-message transaction of the last 2k with the median of the first 2k, so one transaction or
+ * one calibration slice caught by a burst of load does not decide the result. The regression
+ * slowed every transaction of the last 2k.
  */
 const MAX_GROWTH = 2.5;
 /**
  * A slice of the CPU calibration loop (a third of perf-calibration.ts's, 11 ms on the reference
- * machine), timed before and after each chunk. Load that starts mid-run slows the loop as much as
- * the seeding, so a chunk's time divided by its ratio no longer depends on the load.
+ * machine), timed before and after each 500-message transaction. Steady load slows the loop as
+ * much as the seeding, so a transaction's time divided by the smaller of its two ratios no longer
+ * depends on the load. The smaller one, because a burst that hits one slice and not the
+ * transaction would otherwise shrink that transaction's time.
  */
 const SLICE_ITERATIONS = 10_000_000;
 const SLICE_REFERENCE_MS = 11;
@@ -47,8 +54,11 @@ const sliceRatio = () => {
   });
   return (samples.toSorted((a, b) => a - b)[1] ?? 1) / SLICE_REFERENCE_MS;
 };
-/** The absolute budget needs a quiet machine, so only CI and the perf runs assert it. */
-const ASSERT_BUDGET = Boolean(process.env.CI) || process.env.OPENMAIL_PERF === "1";
+/**
+ * The absolute budget needs a quiet machine, so only the perf runs assert it. Check's shared
+ * runners missed it on 2 of 6 pushes while growth stayed at 1.17x.
+ */
+const ASSERT_BUDGET = process.env.OPENMAIL_PERF === "1";
 
 it(
   "seeding 10k messages into a file database stays within its insert budget",
@@ -58,7 +68,8 @@ it(
     const directory = mkdtempSync(join(tmpdir(), "openmail-seed-rate-"));
     try {
       const ratios: number[] = [];
-      const normalised: number[] = [];
+      // Per chunk, each transaction's time divided by its own calibration ratio.
+      const normalised: number[][] = [];
       const chunksMs = await Effect.runPromise(
         Effect.gen(function* () {
           const store = yield* Store;
@@ -67,11 +78,13 @@ it(
           const chunks: number[] = [];
           let ratioBefore = sliceRatio();
           for (let chunk = 0; chunk < MESSAGES; chunk += CHUNK) {
-            const start = performance.now();
-            for (let batch = chunk; batch < chunk + CHUNK; batch += 500)
+            let elapsed = 0;
+            const batches: number[] = [];
+            for (let batch = chunk; batch < chunk + CHUNK; batch += BATCH) {
+              const start = performance.now();
               yield* store.transaction(
                 Effect.forEach(
-                  Array.from({ length: 500 }, (_, i) => fixtureMessage(batch + i)),
+                  Array.from({ length: BATCH }, (_, i) => fixtureMessage(batch + i)),
                   (message) =>
                     store.upsertMessage(
                       fixtureAccounts[Number(message.threadId.slice(6)) % 3] ?? "",
@@ -80,13 +93,15 @@ it(
                   { discard: true },
                 ),
               );
-            const elapsed = performance.now() - start;
-            const ratioAfter = sliceRatio();
-            const ratio = Math.max(1, ratioBefore, ratioAfter);
+              const ms = performance.now() - start;
+              const ratioAfter = sliceRatio();
+              elapsed += ms;
+              ratios.push(Math.max(1, ratioBefore, ratioAfter));
+              batches.push(ms / Math.max(1, Math.min(ratioBefore, ratioAfter)));
+              ratioBefore = ratioAfter;
+            }
             chunks.push(elapsed);
-            ratios.push(ratio);
-            normalised.push(elapsed / ratio);
-            ratioBefore = ratioAfter;
+            normalised.push(batches);
           }
           return chunks;
         }).pipe(
@@ -102,13 +117,18 @@ it(
       const ratio = Math.max(startRatio, ...ratios);
       const totalMs = chunksMs.reduce((sum, ms) => sum + ms, 0);
       const budgetMs = perfBudget(BUDGET_MS) * Math.max(1, ratio);
-      const growth = (normalised.at(-1) ?? 0) / (normalised[0] ?? 1);
-      const summary = `seed-rate budget, see docs/testing.md#tests-under-load (OPENMAIL_PERF_FACTOR=2 relaxes it locally): seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms; per chunk ratio ${ratios.map((r) => r.toFixed(2)).join(", ")}`;
+      const median = (batches: readonly number[] = [1]) => {
+        const sorted = batches.toSorted((a, b) => a - b);
+        const middle = sorted.length / 2;
+        return ((sorted[Math.ceil(middle) - 1] ?? 1) + (sorted[Math.floor(middle)] ?? 1)) / 2;
+      };
+      const growth = median(normalised.at(-1)) / median(normalised[0]);
+      const summary = `seed-rate budget, see docs/testing.md#tests-under-load (OPENMAIL_PERF_FACTOR=2 relaxes it locally): seeding ${MESSAGES} messages took ${Math.round(totalMs)} ms (budget ${Math.round(budgetMs)} ms at calibration ratio ${ratio.toFixed(2)}: CPU ${cpuMs.toFixed(1)} ms, SQLite ${sqliteMs.toFixed(1)} ms); per ${CHUNK}: ${chunksMs.map((ms) => Math.round(ms)).join(", ")} ms; per ${BATCH} ratio ${ratios.map((r) => r.toFixed(2)).join(", ")}`;
       process.stdout.write(`${summary}\n`);
       if (ASSERT_BUDGET) expect(totalMs, summary).toBeLessThan(budgetMs);
       expect(
         growth,
-        `last ${CHUNK} over first ${CHUNK}: ${growth.toFixed(2)}x; ${summary}`,
+        `median calibrated ${BATCH} of the last ${CHUNK} over the first ${CHUNK}: ${growth.toFixed(2)}x; ${summary}`,
       ).toBeLessThan(MAX_GROWTH);
     } finally {
       rmSync(directory, { recursive: true, force: true });

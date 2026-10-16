@@ -20,7 +20,7 @@ OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:pe
 
 `pnpm test:perf` 也运行 `visible-text-cost.test.ts`。
 
-CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面的写入速率预算把关。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
+CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面写入速率预算的增长断言把关。job 在 macos-latest 上先构建 core（同步测量从 `dist/` 加载 HTML worker），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
 
 每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留各次时延、最大值和测量结束时的一／五／十五分钟负载。fixture 生成、查询计划采集及索引完整性检查不计入时延。
 
@@ -71,12 +71,12 @@ fixture 中千分之一的邮件含 Google Sheet 链接，has:drive 和 has:spre
 
 ## 写入速率预算
 
-`seed-rate.test.ts` 在默认 `pnpm test` 中运行，所以每次 push 的 Check 都会跑。它用真实打开路径（迁移加打开时的规划器统计刷新）新建一个文件数据库，再通过 `Store.upsertMessage` 写入 1 万封 fixture 邮件，每 500 封一个事务，按每 2,000 封记一次时间。每段前后各跑一次 CPU 校准切片（`perf-calibration.ts` 循环的三分之一，参考机约 11 ms），该段取较大的比值，段内才开始的负载也会被计入。两条断言：
+`seed-rate.test.ts` 在默认 `pnpm test` 中运行，所以每次 push 的 Check 都会跑增长断言。`pnpm test:perf` 也包含它，perf.yml 在那里断言总时间。它用真实打开路径（迁移加打开时的规划器统计刷新）新建一个文件数据库，再通过 `Store.upsertMessage` 写入 1 万封 fixture 邮件，每 500 封一个事务，每个事务单独计时，每 2,000 封为一段。每个事务前后各跑一次 CPU 校准切片（`perf-calibration.ts` 循环的三分之一，参考机约 11 ms），事务时间除以两个比值中较小的一个。取较小的，是因为只打在切片上、没打在事务上的突发负载会把事务时间除得过小。两条断言：
 
-- 增长：最后 2,000 封与前 2,000 封的耗时之比（各自除以本段校准比）低于 2.5。参考机上是 1.1。默认套件只断言这一条。
-- 总时间：低于 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)，校准比取完整校准和各段切片中的最大值。参考机上约 3.7 s。只在设置了 `CI` 或 `OPENMAIL_PERF=1` 时断言。
+- 增长：最后 2,000 封各事务校准后时间的中位数，与前 2,000 封的中位数之比低于 2.5。参考机上是 1.1。中位数去掉单个被突发负载打中的事务或切片。默认套件只断言这一条。在 16 核机器负载 29–43 下连跑三次，增长是 1.09、0.65、1.34；按段求和的旧算法同样三次是 1.11、0.20、1.26，0.20 那次第一段有一个 3.9 s 的突发。
+- 总时间：低于 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)，校准比取完整校准和各切片中的最大值。参考机上约 3.7 s。只在设置了 `OPENMAIL_PERF=1` 时断言，即 `pnpm test:perf` 和 perf.yml。Check 的共享 runner 上它在 6 次 push 中失败 2 次，同期增长只有 1.17 倍，所以 Check 不断言它。
 
-失败信息写出总时间、预算、校准比和每段时间。打开时的 `PRAGMA optimize` 曾给空 FTS5 表记了统计（`d5194310` 修复）。把这个回归放回去后，同一台机器上总时间是 12.8 s，最后一段是第一段的 4.9 倍。按段校准后的最近一次复测是 5.1 倍，总时间 17.4 s，增长断言失败。
+失败信息写出总时间、预算、校准比和每段时间。打开时的 `PRAGMA optimize` 曾给空 FTS5 表记了统计（`d5194310` 修复）。把这个回归放回去后，同一台机器上总时间是 12.8 s，最后一段是第一段的 4.9 倍。按事务校准、取中位数后，在负载约 40 下复测两次是 5.07 倍和 5.74 倍，总时间 21.8 s 和 17.2 s，增长断言失败。
 
 ## 校准比
 

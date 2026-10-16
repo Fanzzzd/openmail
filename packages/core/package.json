@@ -36,7 +36,7 @@
     "check-types": "tsc -p tsconfig.json",
     "test": "vitest run",
     "perf:cost": "node --max-old-space-size=192 scripts/performance-cost.mjs",
-    "test:perf": "OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 NODE_OPTIONS=--max-old-space-size=192 vitest run src/platform/node/performance-large.test.ts src/platform/node/visible-text-cost.test.ts src/platform/node/sync-performance.test.ts src/platform/node/bytes.test.ts"
+    "test:perf": "OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 NODE_OPTIONS=--max-old-space-size=192 vitest run src/platform/node/performance-large.test.ts src/platform/node/visible-text-cost.test.ts src/platform/node/sync-performance.test.ts src/platform/node/bytes.test.ts src/platform/node/seed-rate.test.ts"
   },
   "dependencies": {
     "@effect/ai-anthropic": "4.0.3",
