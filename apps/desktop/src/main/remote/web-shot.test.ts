@@ -79,30 +79,53 @@ it.skipIf(!output || !existsSync(path.join(webRoot, "web.html")))(
     writeFileSync(
       script,
       `const { app, BrowserWindow } = require("electron");
-const [url, longestUrl, dir, labelsJson] = process.argv.slice(-4);
+const [url, longestUrl, dir, labelsJson, timingJson] = process.argv.slice(-5);
 const labels = JSON.parse(labelsJson);
+// limit: how long a step waits for its element; settle: the pause before a screenshot.
+const timing = JSON.parse(timingJson);
 // Keep running between windows; quit only when done.
 app.on("window-all-closed", () => {});
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const fs = require("fs");
 const path = require("path");
-// Steps: a string runs as page JS; { text } types; { key } presses a key; { wait } pauses.
+// Runs page JS until it returns true. A loaded machine renders late, and a page that is still
+// loading rejects the script, so both retry until timing.limit.
+async function until(win, js, what) {
+  const deadline = Date.now() + timing.limit;
+  let last;
+  for (;;) {
+    try {
+      if (await win.webContents.executeJavaScript(js)) return;
+    } catch (error) { last = error; }
+    if (Date.now() > deadline) throw new Error(what + (last ? ": " + last.message : ""));
+    await wait(100);
+  }
+}
+// Steps: a string runs as page JS; { poll, what } waits for page JS to return true, see until;
+// { text } types; { key } presses a key. Input events run in order, and the next poll waits
+// for whatever they render.
 async function run(win, steps) {
   for (const step of steps) {
     if (typeof step === "string") await win.webContents.executeJavaScript(step);
+    else if (step.poll) await until(win, step.poll, step.what);
     else if (step.text) await win.webContents.insertText(step.text);
-    else if (step.wait) await wait(step.wait);
     else if (step.key) for (const type of ["keyDown", "char", "keyUp"])
       win.webContents.sendInputEvent({ type, keyCode: step.key });
-    await wait(400);
   }
 }
-const click = (selector, text) =>
-  "(() => { const el = [...document.querySelectorAll(" + JSON.stringify(selector) + ")]" +
-  ".find((e) => e.getClientRects().length && e.textContent.includes(" + JSON.stringify(text ?? "") + "));" +
-  " if (!el) throw new Error(" + JSON.stringify("missing " + selector) + "); el.click(); })()";
-const focus = (selector) =>
-  "document.querySelector(" + JSON.stringify(selector) + ").focus()";
+// A reload step sets window.reloading, so the page it leaves does not count as loaded.
+const READY = { poll: '!window.reloading && document.body.innerText.includes("Quarterly report draft")', what: "the app did not load" };
+const click = (selector, text) => ({
+  poll: "(() => { const el = [...document.querySelectorAll(" + JSON.stringify(selector) + ")]" +
+    ".find((e) => e.getClientRects().length && e.textContent.includes(" + JSON.stringify(text ?? "") + "));" +
+    " if (!el) return false; el.click(); return true; })()",
+  what: "missing " + selector + (text ? " with " + text : ""),
+});
+const focus = (selector) => ({
+  poll: "(() => { const el = document.querySelector(" + JSON.stringify(selector) + ");" +
+    " el?.focus(); return !!el && document.activeElement === el; })()",
+  what: "could not focus " + selector,
+});
 // What a phone sees: text sizes of the fields and the smallest touch targets.
 const MEASURE = \`(() => {
   const visible = (e) => e.getClientRects().length > 0;
@@ -143,13 +166,8 @@ async function shot(width, height, mobile, name, steps = [], target = url) {
     await win.webContents.debugger.sendCommand("Emulation.setTouchEmulationEnabled", { enabled: true, maxTouchPoints: 5 });
     await win.webContents.debugger.sendCommand("Emulation.setEmitTouchEventsForMouse", { enabled: true, configuration: "mobile" });
   }
-  for (let i = 0; i < 60; i++) {
-    const ready = await win.webContents.executeJavaScript('document.body.innerText.includes("Quarterly report draft")');
-    if (ready) break;
-    await wait(250);
-  }
-  await run(win, steps);
-  await wait(1200);
+  await run(win, [READY, ...steps]);
+  await wait(timing.settle);
   const image = await win.webContents.capturePage();
   fs.writeFileSync(path.join(dir, name + ".png"), image.toPNG());
   const measured = await win.webContents.executeJavaScript(MEASURE);
@@ -174,8 +192,8 @@ app.whenReady().then(async () => {
       { text: "pr" },
     ]);
     await shot(390, 844, true, "web-390-search", [
-      'localStorage.setItem("openmail.recentSearches", JSON.stringify(["invoice", "from:dana", "lisbon flight"])); location.reload()',
-      { wait: 3000 },
+      'localStorage.setItem("openmail.recentSearches", JSON.stringify(["invoice", "from:dana", "lisbon flight"])); window.reloading = true; location.reload()',
+      READY,
       focus('input[aria-label="Search mail"]'),
       { key: "Down" },
     ]);
@@ -203,7 +221,14 @@ app.whenReady().then(async () => {
     );
     const code = await runElectron(
       script,
-      [app.url, longest.url, dir, JSON.stringify({ en: labels("en"), longest: labels(LONGEST) })],
+      [
+        app.url,
+        longest.url,
+        dir,
+        JSON.stringify({ en: labels("en"), longest: labels(LONGEST) }),
+        // The app used to get 15 s to load; every step now gets that, scaled.
+        JSON.stringify({ limit: scaledMs(15_000), settle: scaledMs(1200) }),
+      ],
       work,
     );
     await app.close();
