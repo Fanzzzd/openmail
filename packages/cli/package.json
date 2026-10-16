@@ -19,7 +19,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "check-types": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:perf": "OPENMAIL_PERF=1 vitest run src/mcp-server.test.ts"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.3",

@@ -8,6 +8,7 @@ import { promisify } from "node:util";
 import { Effect, Option, Schema } from "effect";
 import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
 import { writeMigratedDatabase } from "../../core/test-support/migrated-database.js";
+import { perfBudget } from "../../core/test-support/perf-budget.js";
 import { scaledMs } from "../../core/test-support/test-time.js";
 import { splitMcpLogLevel } from "./mcp-server.js";
 
@@ -319,7 +320,8 @@ test.concurrent(
     // The backfill retried every 5 s, so calls over 6 s cover one retry. A call may still wait
     // out a few 200 ms brief lock waits, and under load that adds up to seconds. The regression
     // is one 5 s busy timeout per blocked call, so the default bound sits under it, unscaled.
-    // Only OPENMAIL_PERF=1 asserts how fast a typical call is.
+    // Only OPENMAIL_PERF=1 (`pnpm --filter @openmail/cli test:perf`, run by perf.yml) asserts
+    // how fast a typical call is.
     const until = performance.now() + 6000;
     const durations: number[] = [];
     while (performance.now() < until) {
@@ -336,7 +338,7 @@ test.concurrent(
     }
     if (process.env.OPENMAIL_PERF === "1") {
       const sorted = durations.toSorted((a, b) => a - b);
-      expect(sorted[Math.floor(sorted.length / 2)]).toBeLessThan(500);
+      expect(sorted[Math.floor(sorted.length / 2)]).toBeLessThan(perfBudget(500));
     }
     const { stderr } = await close();
     expect(stderr).not.toMatch(/search index|search-index/i);

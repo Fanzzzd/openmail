@@ -1,6 +1,6 @@
 name: Performance
 
-# The 100k-message budgets in docs/performance.md. Weekly, on demand, and before every release
+# The 100k-message budgets in docs/performance.md and the CLI's MCP call latency. Weekly, on demand, and before every release
 # (release.yml calls it), not on every push: the suite takes several minutes and shared runners
 # are noisy. Check runs the 10k seeding growth bound (seed-rate.test.ts) on every push; its
 # absolute budget runs here.
@@ -60,8 +60,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The sync measurement loads core's built HTML worker from dist/.
-      - run: pnpm --filter @openmail/core build
+      # The sync measurement loads core's built HTML worker from dist/, and the MCP server
+      # measurement starts the built CLI.
+      - run: pnpm build --filter=@openmail/cli...
 
       # Node and node:sqlite only: no Electron window, display or network.
       - run: mkdir -p perf-report && pnpm test:perf
