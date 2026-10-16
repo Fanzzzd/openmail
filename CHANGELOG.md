@@ -27,6 +27,7 @@ The first public version. Everything below is new.
 - A Sent copy that fails to save is tried again after 1 h, 2 h, 4 h and so on, at most a day apart, up to 10 tries in 7 days. After that OpenMail shows the notice.
 - The word index is finished before CLI and MCP search and before `openmail sync`. If another process holds the write lock, `openmail search` prints a note on stderr and the MCP `search` tool returns `search_notice`: results are approximate until the index is done.
 - Date and size operators without a valid value, such as `newer:foo` or `larger:xyz`, are searched as plain text. MCP `search` and `openmail search --json` list them under `ignored`, and `openmail search` prints a note on stderr with the accepted forms.
+- Outlook messages with a large attachment, such as a 4 MB PDF next to a logo, show their inline images. The size check had counted attachments at twice their size.
 - Opening remote-session launchers, key material, certificates and the other risky attachment types needs Save first. vCard and vCalendar files open in the in-app preview.
 - Inline images in a message whose raw source is over 8 MB show as broken. OpenMail no longer downloads the whole message on every open. Attachments still download normally.
 - A space typed after plain words in the search field stays. The search field keeps focus when results replace the list, as in the narrow layout or with the reading pane hidden.
@@ -68,6 +69,15 @@ The first public version. Everything below is new.
 - A failed `openmail sync` says "Sync could not finish. Run it again, or add --log-level warn to see why." instead of promising an automatic retry.
 - The CLI logs only errors by default. `--log-level warn` shows diagnostics, and `openmail mcp` logs warnings.
 - `openmail search -newsletter` reads words that start with `-` as query text. `--` before the query also works.
+- CLI commands fail with code `busy` and a retry hint when another OpenMail process keeps the write lock. `openmail-mcp` prints the same two lines on stderr when the lock keeps it from opening the database.
+- The CLI and MCP server start without the write lock when an account from an older version has no stored OAuth scopes. Before, `openmail mcp` exited after 5 s while the app was writing.
+- MCP tool results no longer wait for the activity row. OpenMail writes it in the background, in call order, and still saves or logs it when the server closes.
+- `openmail sync --json` prints one JSON document. When an account fails, `{"results": [...]}` also gets an `error` object.
+- When every failed account needs a new sign-in, `openmail sync` says to sign in again instead of to rerun it.
+- `openmail sync --log-level warn` prints each unknown failure's error type, status and message, without addresses or tokens. `--log-level debug` adds the other failures. The hint no longer suggests the flag you already passed.
+- `openmail mcp`, `openmail-mcp` and `OpenMail --mcp` all log warnings and errors by default and take `--log-level`.
+- `openmail spaces add --color` takes the color names the app shows: purple, red, brown, green and gray. The old keys still work.
+- The CLI and MCP page lists every `code` the CLI prints with `--json`.
 - Connect AI apps from Settings, with a diff to review before any config file changes.
 - Claude Sonnet 5.5, Opus 5.5 and Haiku 5.5 appear by product name with a cost note. Automatic triage stops at 100 conversations per day.
 
