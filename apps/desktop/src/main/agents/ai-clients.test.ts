@@ -22,6 +22,7 @@ import {
   applyChange,
   clientView,
   clientViews,
+  logLevelArgs,
   matches,
   previewChange,
   withWrites,
@@ -673,6 +674,42 @@ describe("clients in a fake home", () => {
     const view = await clientView(host, "claude-desktop", RUNNABLE);
     expect(view.state).toBe("connected");
     expect("entry" in view && view.entry?.args).toEqual(["--mcp", "--log-level", "warn"]);
+  });
+
+  // A bare --log-level, an unknown level or a following --allow-writes were all kept as the
+  // value, so a bad hand edit counted as connected and kept writes on after they were turned off.
+  it("keeps --log-level only with a known level and never reads --allow-writes as its value", async () => {
+    expect(logLevelArgs(["--mcp", "--log-level", "WARN"])).toEqual(["--log-level", "WARN"]);
+    expect(logLevelArgs(["--mcp", "--log-level=Error"])).toEqual(["--log-level=Error"]);
+    for (const bad of [
+      ["--log-level"],
+      ["--log-level", "verbose"],
+      ["--log-level", "--allow-writes"],
+      ["--log-level="],
+      ["--log-level=verbose"],
+    ]) {
+      expect(logLevelArgs(["--mcp", ...bad]), bad.join(" ")).toEqual([]);
+      expect(matches({ ...LAUNCH, args: [...LAUNCH.args, ...bad] }, LAUNCH), bad.join(" ")).toBe(
+        false,
+      );
+    }
+    const host = await fakeHost();
+    const claude = join(host.home, "Library", "Application Support", "Claude");
+    await mkdir(claude, { recursive: true });
+    await writeFile(
+      join(claude, "claude_desktop_config.json"),
+      JSON.stringify({
+        mcpServers: {
+          openmail: { command: RUNNABLE.command, args: ["--mcp", "--log-level", "--allow-writes"] },
+        },
+      }),
+    );
+    expect((await clientView(host, "claude-desktop", RUNNABLE)).state).not.toBe("connected");
+    const off = { client: "claude-desktop", action: "connect", proposalTools: false } as const;
+    await applyChange(host, off, RUNNABLE, (await previewChange(host, off, RUNNABLE)).token);
+    const view = await clientView(host, "claude-desktop", RUNNABLE);
+    expect(view.state).toBe("connected");
+    expect("entry" in view && view.entry?.args).toEqual(RUNNABLE.args);
   });
 
   it("uses codex mcp add and reports a failing CLI", async () => {

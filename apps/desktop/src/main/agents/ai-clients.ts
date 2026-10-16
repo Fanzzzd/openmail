@@ -16,6 +16,8 @@ import {
 } from "node:fs/promises";
 import { basename, delimiter, dirname, isAbsolute, join } from "node:path";
 
+import { parseLogLevel } from "@openmail/cli/mcp-server";
+
 import {
   AI_CLIENT_IDS,
   type AiClientChange,
@@ -102,13 +104,18 @@ export const withWrites = (launch: McpLaunch, proposalTools: boolean): McpLaunch
 });
 
 /**
- * The person's `--log-level <level>` or `--log-level=<level>` in an entry's args. The docs
- * suggest adding it, so a reconnect keeps it.
+ * The person's `--log-level <level>` or `--log-level=<level>` in an entry's args, only when the
+ * value is a level the MCP server accepts. The docs suggest adding it, so a reconnect keeps it.
+ * A missing or unknown value is no choice: the entry does not match and a reconnect drops it,
+ * and a following `--allow-writes` is never read as the value.
  */
 export function logLevelArgs(args: readonly string[]): string[] {
   const at = args.findIndex((arg) => arg === "--log-level" || arg.startsWith("--log-level="));
   if (at < 0) return [];
-  return args.slice(at, args[at] === "--log-level" ? at + 2 : at + 1);
+  const separate = args[at] === "--log-level";
+  const value = separate ? args[at + 1] : args[at]?.slice("--log-level=".length);
+  if (parseLogLevel(value) === undefined) return [];
+  return args.slice(at, separate ? at + 2 : at + 1);
 }
 
 const withoutChoices = (args: readonly string[]) => {
