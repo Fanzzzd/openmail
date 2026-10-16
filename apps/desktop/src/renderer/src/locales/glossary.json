@@ -312,5 +312,16 @@
     "ja": "(?<!ロング|ショート)スワイプ",
     "ru": "смахив",
     "es": "desliz"
+  },
+  "Labs": {
+    "zh-CN": "实验功能",
+    "cs": "experimentáln",
+    "nl": "experimente",
+    "fr": "expérimenta",
+    "de": "experiment",
+    "it": "sperimental",
+    "ja": "試験運用機能",
+    "ru": "эксперимент",
+    "es": "experiment"
   }
 }

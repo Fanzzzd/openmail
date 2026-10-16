@@ -141,7 +141,17 @@ const TABS: { id: Tab; label: MessageDescriptor; icon: TabIcon; tile: string; gr
   { id: "remote", label: msg`Remote access`, icon: Smartphone, tile: "bg-emerald-600" },
   { id: "server", label: msg`Server`, icon: Server, tile: "bg-teal-600" },
   { id: "cache", label: msg`Local cache`, icon: HardDrive, tile: "bg-neutral-500" },
-  { id: "labs", label: msg`Labs`, icon: FlaskConical, tile: "bg-purple-500", group: true },
+  {
+    id: "labs",
+    label: msg({
+      message: "Labs",
+      comment:
+        "Settings tab for features that are off by default. Translate as experimental features or experiments, never laboratories, and keep it short for the sidebar.",
+    }),
+    icon: FlaskConical,
+    tile: "bg-purple-500",
+    group: true,
+  },
   { id: "log", label: msg`Activity`, icon: History, tile: "bg-neutral-500" },
 ];
 

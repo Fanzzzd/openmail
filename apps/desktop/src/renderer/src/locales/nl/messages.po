@@ -3822,9 +3822,10 @@ msgstr "Labels"
 msgid "Labels…"
 msgstr "Labels…"
 
+#. Settings tab for features that are off by default. Translate as experimental features or experiments, never laboratories, and keep it short for the sidebar.
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Labs"
-msgstr "Laboratoria"
+msgstr "Experimentele functies"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Language"
