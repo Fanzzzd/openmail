@@ -125,7 +125,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
                 <Radio.Root
                   key={i}
                   value={i}
-                  className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed dark:ring-1 dark:ring-white/20 dark:not-data-checked:bg-white/[0.08] motion-reduce:transition-none"
+                  className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed data-checked:ring-2 data-checked:ring-neutral-900 dark:ring-1 dark:ring-white/20 dark:not-data-checked:bg-white/[0.08] dark:data-checked:ring-2 dark:data-checked:ring-white motion-reduce:transition-none"
                 >
                   {i}
                 </Radio.Root>

@@ -62,3 +62,23 @@ for (const [tab, opener, dialog, how, close] of [
     await eventually(() => expect(document.activeElement).toBe(button));
     expect(settings.contains(document.activeElement)).toBe(true);
   });
+
+async function openNewSpace() {
+  const settings = await openSettingsTab("Spaces");
+  fireEvent.click(await within(settings).findByRole("button", { name: "New space" }));
+  return screen.findByRole("dialog", { name: "New space" }, { timeout: scaledMs(5000) });
+}
+
+it("the checked space icon has its own ring in light and dark, apart from the unchecked tiles", async () => {
+  const editor = await openNewSpace();
+  const icons = within(within(editor).getByRole("radiogroup", { name: "Icon" })).getAllByRole(
+    "radio",
+  );
+  const checked = icons.find((icon) => icon.getAttribute("aria-checked") === "true");
+  if (!checked) throw new Error("No checked icon");
+  // Checked tiles get a solid ring in each theme; at rest every tile has the same faint ring.
+  for (const ring of ["data-checked:ring-neutral-900", "dark:data-checked:ring-white"])
+    expect(checked.classList.contains(ring), ring).toBe(true);
+  expect(checked.classList.contains("data-checked:ring-2")).toBe(true);
+  expect(checked.classList.contains("dark:data-checked:ring-2")).toBe(true);
+});
