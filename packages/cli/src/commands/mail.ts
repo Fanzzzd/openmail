@@ -9,7 +9,7 @@ import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
 import { Console, Effect, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
-import { MAILBOXES, Mailbox, printable, redactSyncHealth } from "@openmail/core";
+import { MAILBOXES, Mailbox, type SyncResult, printable, redactSyncHealth } from "@openmail/core";
 import {
   SEARCH_VALUE_FORMS,
   unparsedSearchOperators,
@@ -56,6 +56,9 @@ const health = Command.make(
   }),
 ).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
 
+const syncTableOf = (value: { readonly results: readonly SyncResult[] }) =>
+  syncTable(value.results);
+
 /** Accepted and ignored: list, search and sync used to run as agent tools with a byte budget. */
 const legacyBudget = Flag.Int("token-budget").pipe(Flag.withHidden, Flag.optional);
 
@@ -82,10 +85,15 @@ const sync = Command.make(
     yield* finishSearchIndex;
     // A refresh the app's writer keeps busy is skipped quietly; the app refreshes hourly.
     yield* mailbox.sync.refreshPlannerStats.pipe(Effect.provide(Logger.layer([])));
-    yield* print({ results }, json, (value) => syncTable(value.results));
-    return yield* results.some((r) => r.error)
-      ? fail("Some accounts did not sync.", { hint: SYNC_FAILED_HINT })
-      : Effect.void;
+    if (!results.some((r) => r.error)) return yield* print({ results }, json, syncTableOf);
+    const error = {
+      message: "Some accounts did not sync.",
+      code: "failed",
+      hint: SYNC_FAILED_HINT,
+    };
+    // With --json, stdout stays one document: the results and the error object together.
+    yield* print(json ? { results, error } : { results }, json, syncTableOf);
+    return yield* fail(error.message, { ...error, printed: json });
   }),
 ).pipe(Command.withDescription("Push queued changes, then fetch changes into the local database"));
 

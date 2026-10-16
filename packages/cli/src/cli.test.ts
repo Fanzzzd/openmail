@@ -421,12 +421,23 @@ describe("expected sync failures", () => {
     expect(health.stderr).toBe("");
   });
 
-  test("--json names the same next step and promises no retry", async () => {
+  // stdout held the results and then a second JSON object for the error, so JSON.parse failed.
+  test("--json prints one document with the results and the error, and promises no retry", async () => {
     const sync = await openmail(["sync", "--json"], home.path, offline);
     expect(sync.code).toBe(1);
     expect(sync.stdout).not.toContain("retry");
     expect(sync.stdout).not.toContain("openmail --help");
-    expect(sync.stdout).toContain('"hint": "Run it again, or add --log-level warn to see why."');
+    const output = row(JSON.parse(sync.stdout));
+    expect(Object.keys(output)).toEqual(["results", "error"]);
+    expect(rows(output.results).map((result) => result.account_id)).toEqual([
+      "gmail:alex@example.com",
+      "imap:alex.rivera@example.org",
+    ]);
+    expect(output.error).toEqual({
+      message: "Some accounts did not sync.",
+      code: "failed",
+      hint: "Run it again, or add --log-level warn to see why.",
+    });
   });
 
   test("--log-level warn still shows them", async () => {
