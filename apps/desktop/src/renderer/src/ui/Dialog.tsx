@@ -2,7 +2,7 @@ import { AlertDialog } from "@base-ui/react/alert-dialog";
 import { Dialog as BaseDialog } from "@base-ui/react/dialog";
 import { useLingui } from "@lingui/react/macro";
 import { X } from "lucide-react";
-import { type ComponentProps, type ReactNode, useRef } from "react";
+import { type ComponentProps, type ReactNode, useRef, useState } from "react";
 import { isDesktop } from "../lib/platform";
 import { useLayoutMode } from "../lib/responsive-layout";
 import { useOpenSurface } from "./open-surfaces";
@@ -122,6 +122,12 @@ export function Dialog({
 }: DialogProps) {
   const narrow = useLayoutMode() === "narrow";
   useOpenSurface(true, onClose);
+  // Read before the dialog's own autofocus moves it. Base UI's default return target misses a
+  // control inside another dialog, such as Settings, and lands on the window behind.
+  const [opener] = useState(() => {
+    const active = document.activeElement;
+    return active instanceof HTMLElement && active !== document.body ? active : null;
+  });
   return (
     <BaseDialog.Root
       open
@@ -138,7 +144,7 @@ export function Dialog({
         <BaseDialog.Popup
           aria-label={label}
           initialFocus={initialFocus}
-          finalFocus={finalFocus}
+          finalFocus={finalFocus ?? (() => (opener?.isConnected ? opener : true))}
           className={`fixed top-1/2 left-1/2 z-50 -translate-x-1/2 -translate-y-1/2 ${sheet} ${popupMotion} ${className} ${className.includes("overflow-") ? "" : "overflow-y-auto"} ${centredSheet(maxHeight)} ${narrowSheet()}`}
         >
           <SheetDragStrip />
