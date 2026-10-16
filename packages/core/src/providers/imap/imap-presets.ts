@@ -40,7 +40,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 587,
     smtpSecure: false,
     appPasswordUrl: "https://account.apple.com/account/manage",
-    note: "在 Apple 账户的「登录与安全」里生成 App 专用密码。",
+    note: "Create an app-specific password under Sign-In and Security in your Apple Account.",
     serverSavesSent: true,
   },
   yahoo: {
@@ -51,7 +51,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://login.yahoo.com/account/security",
-    note: "在 Yahoo 账户的「账户安全」里生成应用密码。",
+    note: "Create an app password under Account Security in your Yahoo account.",
     serverSavesSent: true,
   },
   qq: {
@@ -62,7 +62,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://mail.qq.com/",
-    note: "在网页版「设置 → 账号与安全 → 安全设置」开启 IMAP/SMTP 服务，再生成授权码。",
+    note: "On the web, turn on IMAP/SMTP under Settings → Account & Security → Security Settings, then generate an authorization code.",
     // Only when「SMTP发信后保存到服务器」is on; send appends when it is off.
     serverSavesSent: true,
   },
@@ -74,7 +74,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://mail.163.com/",
-    note: "在网页版「设置 → POP3/SMTP/IMAP」开启 IMAP 服务，按提示生成授权码。",
+    note: "On the web, turn on IMAP under Settings → POP3/SMTP/IMAP, then follow the prompts to generate an authorization code.",
     serverSavesSent: true,
   },
   fastmail: {
@@ -85,7 +85,7 @@ export const IMAP_PRESETS: Record<string, ImapPreset> = {
     smtpPort: 465,
     smtpSecure: true,
     appPasswordUrl: "https://app.fastmail.com/settings/security/apps",
-    note: "在「设置 → 隐私与安全」里新建应用密码，勾选 IMAP 和 SMTP。",
+    note: "Create an app password under Settings → Privacy & Security, with IMAP and SMTP checked.",
     serverSavesSent: false,
   },
 };

@@ -16,8 +16,8 @@ import { Actions, ErrorLine, Field, PrimaryButton } from "./AccountFormParts";
 
 /**
  * The line under the password field: where to create the app password. UI text for core's
- * IMAP presets, keyed by preset id. Core keeps its own Chinese `note` for the CLI; the app
- * shows these instead and falls back to core's text for a preset it does not know.
+ * IMAP presets, keyed by preset id. Core keeps its own English `note` for the CLI; the app
+ * shows these translated texts instead and falls back to core's text for a preset it does not know.
  */
 const PRESET_NOTES: Record<string, MessageDescriptor> = {
   icloud: msg`Create an app-specific password under Sign-In and Security in your Apple Account.`,

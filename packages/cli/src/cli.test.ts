@@ -207,6 +207,16 @@ describe("accounts add", () => {
     expect(stderr).toMatch(/^error: Unknown preset nope\.\nhint: Use one of .*\bcustom\./);
   });
 
+  test("a named preset prints its English note and the app password page", async () => {
+    const { stderr } = await openmail(
+      ["accounts", "add", "imap", "--preset", "icloud", "--email", "a@icloud.com"],
+      join(seeded, "home"),
+      { OPENMAIL_IMAP_PASSWORD: undefined },
+    );
+    expect(stderr).toContain("Create an app-specific password under Sign-In and Security");
+    expect(stderr).not.toMatch(/[\u4e00-\u9fff]/);
+  });
+
   test("without a password or a terminal, fails before prompting", async () => {
     const { code, stdout, stderr } = await openmail(
       ["accounts", "add", "imap", "--preset", "custom", "--email", "a@b.c"].concat([
