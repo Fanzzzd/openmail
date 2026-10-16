@@ -9,7 +9,7 @@ The first public version.
 ### Accounts and sync
 
 - Gmail and personal Outlook through OAuth, with the built-in clients in release builds. A source build uses your own client. iCloud, Yahoo, QQ, 163, Fastmail and any IMAP/SMTP server with an app password. IMAP and SMTP connect only over TLS.
-- Local-first storage in SQLite (`node:sqlite`), shared by the desktop app, the CLI and the MCP server. Refresh tokens and IMAP passwords stay in the macOS keychain, never in the database or logs. While another process holds the write lock, the app waits briefly, backs off and polls again later.
+- Local-first storage in SQLite (`node:sqlite`), shared by the desktop app, the CLI and the MCP server. Refresh tokens and IMAP passwords stay in the macOS keychain, never in the database or logs. While another process holds the write lock, the app waits briefly, backs off and polls again later, and still records a sign-in that stopped working.
 - Incremental sync, an offline change queue with retries, resumable backfill of older mail, and IMAP IDLE for new-mail signals.
 - A sync health check compares server and local counts per folder. A sync reset deletes only inside the listed window and confirms mass deletions with the server.
 - Local cache rules per folder and label, with an attachment cache and a cache settings page.
@@ -38,7 +38,7 @@ The first public version.
 ### Desktop
 
 - Keyboard-first: three shortcut sets, link hints, Back and Forward, command menus.
-- Spaces group accounts, such as Work and Personal, each with its own notification hours. Switch from the sidebar, the icon rail, the Go menu or the space shortcuts. Overview shows every space with unread counts and sync status.
+- Spaces group accounts, such as Work and Personal, each with its own notification hours. Switch from the sidebar, the icon rail, the Go menu or the space shortcuts; the Go menu works with no window open. Overview shows every space with unread counts and sync status.
 - Menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links, and a layout that goes from three panes down to one.
 - Interface in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish, with plural forms in every language.
 - Accessibility checks with axe, keyboard paths and screen reader labels. Closing a dialog returns focus to the control that opened it.

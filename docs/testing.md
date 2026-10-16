@@ -67,7 +67,7 @@ The audit needs the npm registry, so it is not part of the offline checks above.
   - Desktop and CLI tests get the scaled limit as the default. [wait-defaults.ts](../packages/core/test-support/wait-defaults.ts) gives it to `vi.waitFor` and `vi.waitUntil` calls without a `timeout`. `pollDefaults` does the same for `expect.poll` in their Vitest configs. The desktop [setup file](../apps/desktop/src/renderer/src/test-support/wait-defaults.ts) sets Testing Library's `asyncUtilTimeout`, which `waitFor` and `findBy*` use.
   - A check that something does not happen has no event to wait for. Keep its real-time window short and multiply it by `scaledMs`.
   - Never scale virtual time from TestClock and fake timers.
-  - Never scale a bound that must stay under SQLite's 5 second busy timeout to catch a lock wait. It stays at 4 to 4.5 seconds, with a comment that says so.
+  - A test that holds the write lock opens the database with a 30 second busy timeout (`LONG_BUSY_TIMEOUT_MS` in test-time.ts; child processes read `OPENMAIL_TEST_BUSY_TIMEOUT_MS`, which can only lengthen it) and asserts under 15 seconds (`LOCK_WAIT_BOUND_MS`). A lock wait then costs 30 seconds and stands far above load noise. Don't scale these bounds.
   - The parser fuzz tests assert their wall-clock bounds only under `OPENMAIL_PERF=1`. The default suite checks the `budget-exceeded` flag and the output size instead.
 - Create database fixtures as independent copies with [migrated-database.ts](../packages/core/test-support/migrated-database.ts).
 - Compare large files byte for byte with [file-bytes.ts](../packages/core/test-support/file-bytes.ts).
