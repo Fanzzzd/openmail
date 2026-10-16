@@ -173,7 +173,6 @@ const badCursor = (message: string) =>
     message,
     code: "invalid_input",
     hint: "Omit --cursor to start from the first page.",
-    usage: true,
   });
 const decodePageCursor = (raw: Option.Option<string>, scope: string) =>
   Option.isNone(raw)

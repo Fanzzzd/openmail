@@ -120,13 +120,11 @@ const report = (explained: Explained) =>
 ).pipe(
   Effect.catch((error) => {
     const explained = explainError(error, home);
-    // Usage errors keep their own exit code, 2; every other failure exits 1.
+    // Errors the argument parser raises keep exit code 2; every other failure exits 1.
     const exit: Effect.Effect<never, unknown> =
       error instanceof UsageError || CliError.isCliError(error)
         ? Effect.fail(error)
-        : error instanceof Failed && error.usage === true
-          ? Effect.fail(new UsageError({ message: error.message, hint: error.hint ?? "" }))
-          : Effect.fail(new Failed({ message: explained.message }));
+        : Effect.fail(new Failed({ message: explained.message }));
     return Effect.andThen(report(explained), exit);
   }),
   // A defect (a database from a newer OpenMail, a file another process keeps locked) also

@@ -353,7 +353,7 @@ describe("reading", () => {
       hint: expect.stringContaining("openmail spaces list"),
     });
     const cursor = await openmail(["list", "--cursor", "garbage", "--json"]);
-    expect(cursor.code, cursor.stderr).toBe(2);
+    expect(cursor.code, cursor.stderr).toBe(1);
     expect(errorObject(cursor.stdout)).toMatchObject({
       code: "invalid_input",
       hint: expect.stringContaining("Omit --cursor"),
@@ -370,7 +370,7 @@ describe("reading", () => {
           ? String(page[CURSOR])
           : String((await object(["search", "e", "--limit", "1"]))[CURSOR]);
       const mismatch = await openmail([...args, "--cursor", first, "--json"]);
-      expect(mismatch.code, mismatch.stderr).toBe(2);
+      expect(mismatch.code, mismatch.stderr).toBe(1);
       expect(errorObject(mismatch.stdout).code).toBe("invalid_input");
     }
   });
