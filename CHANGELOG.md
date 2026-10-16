@@ -14,6 +14,8 @@ The first public version. Everything below is new.
 - Sync health check that compares server and local counts per folder. Sync resets delete only inside the listed window and confirm mass deletions with the server.
 - Local cache rules per folder and label, with an attachment cache and a cache settings page.
 - A dropped IMAP connection, such as Wi-Fi turning off mid-sync, counts as a network failure and shows "Can't reach the mail server right now."
+- Provider error messages keep at most 2,000 characters of a response body.
+- Adding an IMAP address again replaces its password and keeps its sender name and, on the same server, its authentication service trust.
 
 ### Reading and search
 
@@ -68,6 +70,8 @@ The first public version. Everything below is new.
 - Czech, French, Italian, Russian and Spanish labels start with a capital where the English text does.
 - Send feedback shows a redacted diagnostics preview with accounts numbered and hashes keyed per install. Copy diagnostics pastes it into a GitHub issue.
 - After three unexpected stops within five minutes, OpenMail offers to continue, reset the local mail cache and re-sync, or quit.
+- Selection, unread, not-loaded and filter preview counts use plural forms in every language. The notice for older messages on the server reads as such in French, Russian, Japanese, Spanish, Italian and Dutch.
+- The batch bar says "(loaded)" and counts the messages not loaded only when every loaded conversation is selected.
 
 ### AI and agents
 
@@ -88,6 +92,15 @@ The first public version. Everything below is new.
 - The CLI and MCP page lists every `code` the CLI prints with `--json`.
 - Connect AI apps from Settings, with a diff to review before any config file changes.
 - AI Access activity shows the account for a suggested or refused change when all its conversations are in one account.
+- `openmail sync` and the MCP `sync` tool report `busy` once when another OpenMail process keeps the write lock. `openmail sync` stops at the first busy account.
+- `OpenMail --mcp` prints an error line and a hint on stderr when it cannot start, like `openmail mcp`.
+- MCP read calls answer without waiting for a write lock another process holds. The activity row waits in the background.
+- Sign-in lines for an IMAP account name `openmail accounts add imap` with the account's server settings. `openmail accounts reauth` on an IMAP account prints that command as its hint.
+- `--log-level` takes any letter case. A value that is no level is a usage error with exit code 2.
+- AI Access counts an entry with `--log-level` as connected, and Reconnect keeps the flag.
+- `openmail sync --log-level warn` prints each failure on one line of at most 300 characters, without control characters, encoded addresses, display names or URL fragments.
+- `openmail search --server` exits 1 with code `provider_unavailable` when the server search failed for every account.
+- `openmail accounts list` names `openmail sync` as the next step for a stored sync error.
 - Claude Sonnet 5.5, Opus 5.5 and Haiku 5.5 appear by product name with a cost note. Automatic triage stops at 100 conversations per day.
 
 ### Remote access
