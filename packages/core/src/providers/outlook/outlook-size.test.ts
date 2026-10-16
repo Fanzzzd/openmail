@@ -124,6 +124,10 @@ it("migration 56 clears the attachment-only sizes migration 55 gave evicted Outl
   addMessage.run("o/evicted", "o", "evicted", "t2", "", "", "[]", 0, null);
   addMessage.run("o/cached", "o", "cached", "t3", "héllo", "", JSON.stringify([pdf]), 1, null);
   addMessage.run("i/evicted", "i", "evicted", "t4", "", "", "[]", 0, 0);
+  // Cached bodies that really are empty: their size equals the attachment total, and
+  // body_cached = 1 is all that tells them from an evicted row.
+  addMessage.run("o/empty-pdf", "o", "empty-pdf", "t6", "", "", JSON.stringify([pdf]), 1, null);
+  addMessage.run("o/empty", "o", "empty", "t7", "", "", "[]", 1, null);
   applyNativeMigration(db, MIGRATIONS[54] ?? "");
   // A body evicted after migration 55 kept the estimate the parser made from the full body.
   addMessage.run("o/later", "o", "later", "t5", "", "", JSON.stringify([pdf]), 0, pdf.size + 40);
@@ -136,6 +140,8 @@ it("migration 56 clears the attachment-only sizes migration 55 gave evicted Outl
   assert.strictEqual(size("o/evicted"), null);
   assert.strictEqual(size("o/cached"), estimatedMessageSize("héllo", [pdf]));
   assert.strictEqual(size("o/later"), pdf.size + 40);
+  assert.strictEqual(size("o/empty-pdf"), pdf.size);
+  assert.strictEqual(size("o/empty"), 0);
   assert.strictEqual(size("i/evicted"), 0);
   db.close();
 });
