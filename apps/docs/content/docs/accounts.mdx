@@ -39,6 +39,45 @@ OpenMail has presets for iCloud, Yahoo, QQ Mail, 163 Mail and Fastmail, plus a c
 
 OpenMail connects to IMAP and SMTP only over TLS. New mail arrives through IMAP IDLE, with polling as a fallback.
 
+## Spaces
+
+A space is a named group of accounts, such as Work or Personal. Each account is in at most one space. Accounts in no space show under **Ungrouped accounts** in Settings.
+
+When you have two or more accounts, OpenMail offers once to create a Personal and a Work space. You can skip it and make your own.
+
+### Create, edit and delete
+
+1. Open **Settings → Spaces** and click **New space**. In the sidebar, the **+** button at the right end of the switcher does the same.
+2. Enter a name, pick an icon and a color, and check the accounts to include. Checking an account that is in another space moves it out of that one.
+3. Click **Create**.
+
+To change a space, click **Edit** next to it in **Settings → Spaces**, or right-click its icon in the sidebar and choose **Edit space**. **Delete space** is in the same dialog. Deleting a space does not delete its accounts or mail. The accounts become ungrouped.
+
+A name cannot be blank, contain line breaks or tabs, repeat another space's name, or be `none`. You can also drag an account to another space in **Settings → Accounts**.
+
+### Switch spaces
+
+The switcher is the row of icons at the bottom of the sidebar. Click a space to open it. Two entries come first:
+
+- **Overview** shows every space on one screen, with unread counts, sync status for each account and the newest unread conversations.
+- **All accounts** shows mail from all accounts together.
+
+When the window is too narrow for the full sidebar but wide enough for two panes (roughly 800 to 960 px), the sidebar becomes a column of icons. The same entries sit at the bottom of that column, each with an unread badge. In an even narrower window, open the sidebar from its button to reach the switcher.
+
+Shortcuts:
+
+| Target       | Mimestream and Apple Mail | Gmail    |
+| ------------ | ------------------------- | -------- |
+| Overview     | ⌃1                        | ⌃1       |
+| All accounts | ⌃2                        | ⌃2       |
+| Space 1 to 9 | ⌃⌘1 to ⌃⌘9                | ⌘1 to ⌘9 |
+
+In both sets, ⌃3 to ⌃9 also open the first seven spaces. See [Keyboard shortcuts](/docs/keyboard-shortcuts#numbered-shortcuts).
+
+### Notifications by space
+
+Each space has its own active hours in **Settings → Notifications → Active hours by space**. Outside a space's active hours, OpenMail holds its notifications and leaves its unread mail out of the Dock badge. When active hours start again, you get one summary of the unread mail that arrived. Ungrouped accounts have their own schedule too.
+
 ## Optional services
 
 Each Gmail and Outlook account can connect extra services in **Settings → Accounts → Optional services**. Connecting one opens the provider's consent page again for that permission.
