@@ -1,17 +1,18 @@
 import { databaseLayer } from "./db.js";
 import { NodeSystem } from "./platform-node.js";
 import { SqlClient } from "effect/sql";
-import { Effect, Logger, Layer } from "effect";
+import { Effect, Logger, Layer, References } from "effect";
 import { expect, it, vi } from "vitest";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fork } from "node:child_process";
 import { DatabaseSync } from "node:sqlite";
 import { MIGRATIONS } from "../../db/migrations.js";
 import { applyNativeMigration } from "./migrations.js";
 import { checkDatabaseUpgradeSpace, DatabaseUpgradeSpaceError } from "./database-upgrade.js";
 import { nodeCacheMaintenance } from "./cache-maintenance.js";
+import { logCodeOf } from "../../domain/diagnostic-log.js";
 import { acquireDatabaseAccess, registerDatabaseLease } from "./database-access.js";
 import { expectFileBytes } from "../../../test-support/file-bytes.js";
 import { scaledMs } from "../../../test-support/test-time.js";
@@ -159,6 +160,42 @@ it("checks upgrade space before changing database bytes or dependent records", (
   }
   expectFileBytes(database.file, bytes);
   database.dispose();
+});
+
+// Every failed upgrade told the person to check free disk space, and no log said what failed.
+it("a failed upgrade worker logs why it failed and never reports a disk problem", async () => {
+  const database = fixture(36);
+  const garbage = join(mkdtempSync(join(tmpdir(), "openmail-worker-test-")), "mail.db");
+  writeFileSync(garbage, "not a database ".repeat(1000));
+  const logs: { code: unknown; message: unknown }[] = [];
+  const logger = Logger.layer([
+    Logger.make(({ message, fiber }) => {
+      logs.push({ code: logCodeOf(fiber.getRef(References.CurrentLogAnnotations)), message });
+    }),
+  ]);
+  const upgrade = (file: string, script: string) =>
+    Effect.runPromise(
+      nodeCacheMaintenance
+        .run({ file, kind: "upgrade", script, version: 37 })
+        .pipe(Effect.provide(logger)),
+    );
+  try {
+    expect(await upgrade(database.file, "SELECT * FROM no_such_table")).toBe("failed");
+    expect(await upgrade(garbage, MIGRATIONS[36] ?? "")).toBe("failed");
+    expect(logs).toEqual([
+      {
+        code: "database-maintenance-failed",
+        message: ["Local database upgrade worker failed: sql"],
+      },
+      {
+        code: "database-maintenance-failed",
+        message: ["Local database upgrade worker failed: corrupt"],
+      },
+    ]);
+  } finally {
+    database.dispose();
+    rmSync(dirname(garbage), { recursive: true, force: true });
+  }
 });
 
 it("reports a committed upgrade as done when a reader defers the final WAL checkpoint", async () => {

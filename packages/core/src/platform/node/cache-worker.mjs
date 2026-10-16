@@ -5,6 +5,8 @@ import { dirname } from "node:path";
 
 let db;
 let result = "failed";
+// Why a "failed" result failed, for the parent's log: a short code, never a path or message.
+let reason = "error";
 let upgradeCommitted = false;
 try {
   db = new DatabaseSync(workerData.file, { allowExtension: true });
@@ -84,11 +86,17 @@ try {
       : "busy"
     : "done";
 } catch (error) {
-  if ((error.errcode & 0xff) === 5 || (error.errcode & 0xff) === 6)
+  const code = error.errcode & 0xff;
+  if (code === 5 || code === 6)
     result = upgradeCommitted ? { _tag: "UpgradeCheckpointDeferred" } : "busy";
-  if (error.name === "DatabaseUpgradeSpaceError") result = "low-disk";
+  // SQLITE_FULL: the disk filled up while the rebuild wrote its copy.
+  else if (error.name === "DatabaseUpgradeSpaceError" || code === 13) result = "low-disk";
+  else if (error.code === "ERR_MODULE_NOT_FOUND") reason = "missing-module";
+  // SQLITE_CORRUPT and SQLITE_NOTADB.
+  else if (code === 11 || code === 26) reason = "corrupt";
+  else if (typeof error.errcode === "number") reason = "sql";
 } finally {
   db?.close();
 }
 // oxlint-disable-next-line unicorn/require-post-message-target-origin -- a worker_threads port has no target origin.
-parentPort.postMessage(result);
+parentPort.postMessage(result === "failed" ? { _tag: "MaintenanceFailed", reason } : result);

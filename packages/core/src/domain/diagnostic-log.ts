@@ -22,6 +22,7 @@ export const LogCode = Schema.Literals([
   "sent-copy-failed",
   "send-claim-renew-failed",
   "wal-checkpoint-deferred",
+  "database-maintenance-failed",
   "vector-search-unavailable",
   "browser-open-failed",
   "oauth-clients-file-invalid",

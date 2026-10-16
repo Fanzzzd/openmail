@@ -58,12 +58,15 @@ const upgradeRowidsInWorker = (filename: string) =>
       }
       yield* Effect.sleep("100 millis");
     } while (Date.now() < deadline);
+    // The worker logs why a "failed" upgrade failed; only "low-disk" is about space.
     if (result !== "done")
       yield* Effect.die(
         new Error(
           result === "busy"
             ? "The local database is busy. Close other OpenMail processes and try the upgrade again."
-            : "Could not upgrade the local database. Check free disk space and try again.",
+            : result === "low-disk"
+              ? "Could not upgrade the local database. Check free disk space and try again."
+              : "Could not upgrade the local database. Try again, and report a bug with the log if it keeps failing.",
         ),
       );
   });
