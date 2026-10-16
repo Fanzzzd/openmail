@@ -134,10 +134,24 @@ export interface SyncFailureDetail {
   readonly message: string;
 }
 
+const dropSyncFailureDetail = (_detail: SyncFailureDetail) => Effect.void;
+
 /** Receives every failed sync's error. The default drops it; `openmail sync` logs it on stderr. */
 export const SyncFailureDetailLog = Context.Reference<
   (detail: SyncFailureDetail) => Effect.Effect<void>
->("openmail/SyncFailureDetailLog", { defaultValue: () => () => Effect.void });
+>("openmail/SyncFailureDetailLog", { defaultValue: () => dropSyncFailureDetail });
+
+/**
+ * Hands a failed sync's detail to SyncFailureDetailLog. The app and MCP keep the default, which
+ * drops it, so the message is redacted only when a caller asked for it.
+ */
+export const logSyncFailureDetail = (
+  ...args: Parameters<typeof syncFailureDetail>
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const sink = yield* SyncFailureDetailLog;
+    if (sink !== dropSyncFailureDetail) yield* sink(syncFailureDetail(...args));
+  });
 
 /** The longest message a sync failure detail keeps. */
 export const DETAIL_MESSAGE_MAX = 300;

@@ -1,4 +1,5 @@
-import { isDefiniteSendFailure } from "./provider-send.js";
+import { API_ERROR_BODY_MAX, isDefiniteSendFailure, providerReadFailure } from "./provider-send.js";
+import { ApiError } from "./provider-http.js";
 import { assert, it } from "@effect/vitest";
 import { Clock, Effect, Fiber } from "effect";
 import {
@@ -127,4 +128,18 @@ it("send failures share the same definite/uncertain classification", () => {
     assert.isTrue(isDefiniteSendFailure(error));
   for (const error of [new SendUncertain({ message: "Unconfirmed" })])
     assert.isFalse(isDefiniteSendFailure(error));
+});
+
+// A failed call put the whole response body in the error message, and a body can be
+// megabytes of HTML from a proxy or an outage page.
+it("cuts a long response body in a provider error message", () => {
+  const error = providerReadFailure("Gmail")("a")(
+    new ApiError({ status: 502, body: `<html>${"x".repeat(1_000_000)}` }),
+  );
+  assert.isAtMost(error.message.length, API_ERROR_BODY_MAX + 20);
+  assert.isTrue(error.message.startsWith("Gmail API 502: <html>xxx"));
+  assert.strictEqual(
+    providerReadFailure("Gmail")("a")(new ApiError({ status: 400, body: "Bad label" })).message,
+    "Gmail API 400: Bad label",
+  );
 });

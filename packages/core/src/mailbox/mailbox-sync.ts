@@ -36,8 +36,7 @@ import { isLockTimeout } from "../store/store-brief-lock.js";
 import {
   logSyncFailed,
   SYNC_FAILURE_TEXT,
-  SyncFailureDetailLog,
-  syncFailureDetail,
+  logSyncFailureDetail,
   syncFailureText,
 } from "../sync/sync-failure.js";
 import { makeSyncHealth } from "../sync/sync-health.js";
@@ -364,7 +363,7 @@ export const makeSyncMailbox = (
         Effect.gen(function* () {
           const where = scope ? "inbox" : "full";
           yield* logSyncFailed(account, where, error);
-          yield* (yield* SyncFailureDetailLog)(syncFailureDetail(account, where, error));
+          yield* logSyncFailureDetail(account, where, error);
           return yield* failed(
             syncFailureText(error),
             error._tag === "AuthError" ? error : undefined,

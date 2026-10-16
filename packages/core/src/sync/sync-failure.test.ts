@@ -9,7 +9,9 @@ import { Store } from "../store/service.js";
 import {
   classifySyncFailure,
   DETAIL_MESSAGE_MAX,
+  logSyncFailureDetail,
   redactErrorMessage,
+  SyncFailureDetailLog,
   storedSyncFailureReason,
   SYNC_FAILURE_TEXT,
   syncFailureDetail,
@@ -144,3 +146,35 @@ it("keeps a failure detail on one line and redacts encoded addresses, names and 
   const cut = redactErrorMessage(`${"a ".repeat(140)}${"k".repeat(39)} end ${"x".repeat(400)}`);
   assert.notInclude(cut, "kkk");
 });
+
+// The redaction regexes were quadratic on a long unbroken run (200k characters took 31 s with
+// the event loop blocked), and every sync failure paid for them, though only the CLI logs it.
+it("redacts a provider body of any size in bounded time", () => {
+  const started = performance.now();
+  const message = redactErrorMessage(`Gmail API 500: ${"a".repeat(200_000)}`);
+  // The regression takes seconds; a loaded runner takes a few milliseconds.
+  assert.isBelow(performance.now() - started, 1000);
+  assert.isAtMost(message.length, DETAIL_MESSAGE_MAX + 1);
+});
+
+it.effect("builds a failure detail only when a caller logs it", () =>
+  Effect.gen(function* () {
+    let reads = 0;
+    const error = {
+      _tag: "ProviderError",
+      get message() {
+        reads++;
+        return "boom";
+      },
+    };
+    yield* logSyncFailureDetail({ provider: "gmail" }, "full", error);
+    assert.strictEqual(reads, 0, "the default sink drops the detail unbuilt");
+    const seen: string[] = [];
+    yield* logSyncFailureDetail({ provider: "gmail" }, "full", error).pipe(
+      Effect.provideService(SyncFailureDetailLog, (detail) =>
+        Effect.sync(() => seen.push(detail.message)),
+      ),
+    );
+    assert.deepStrictEqual(seen, ["boom"]);
+  }),
+);

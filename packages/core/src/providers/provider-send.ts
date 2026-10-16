@@ -75,6 +75,17 @@ export const isRateLimited = (status: number, body: string) =>
   status === 429 ||
   (status === 403 && /rate_?limit_?exceeded|totalQueryCostPerMinutePerUser/i.test(body));
 
+/** The most of a response body an error message keeps. Bodies can be megabytes of HTML. */
+export const API_ERROR_BODY_MAX = 2000;
+
+/** `Gmail API 400: <body>`, with the body cut to API_ERROR_BODY_MAX characters. */
+export const apiErrorMessage = (provider: string, error: ApiError) =>
+  `${provider} API ${error.status}: ${
+    error.body.length > API_ERROR_BODY_MAX
+      ? `${error.body.slice(0, API_ERROR_BODY_MAX)}…`
+      : error.body
+  }`;
+
 /** Maps a failed call to what the op queue does next: sign in again, drop
  * the op, or retry later. Meaningful read 404s are handled by the caller. */
 export const providerReadFailure =
@@ -82,7 +93,7 @@ export const providerReadFailure =
   (accountId: string) =>
   (error: ApiError | AuthError | ProviderError): AuthError | ProviderError => {
     if (error._tag !== "ApiError") return error;
-    const message = `${provider} API ${error.status}: ${error.body}`;
+    const message = apiErrorMessage(provider, error);
     if (error.status === 401) return new AuthError({ accountId, message });
     return new ProviderError({
       message,

@@ -2,7 +2,12 @@
 import { Schema } from "effect";
 import { BASE_SCOPES } from "../optional-services.js";
 import { ApiError } from "../provider-http.js";
-import { isRateLimited, providerDecode, providerReadFailure } from "../provider-send.js";
+import {
+  apiErrorMessage,
+  isRateLimited,
+  providerDecode,
+  providerReadFailure,
+} from "../provider-send.js";
 
 import { Label } from "../../domain/account.js";
 import { PermanentError, type ProviderFailure } from "../../domain/errors.js";
@@ -141,7 +146,7 @@ export const writeFailure =
   (accountId: string) =>
   (e: ApiError | ProviderFailure): ProviderFailure =>
     e._tag === "ApiError" && (e.status === 400 || e.status === 404)
-      ? new PermanentError({ message: `Gmail API ${e.status}: ${e.body}` })
+      ? new PermanentError({ message: apiErrorMessage("Gmail", e) })
       : e._tag === "PermanentError"
         ? e
         : readFailure(accountId)(e);
