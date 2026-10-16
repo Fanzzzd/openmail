@@ -1167,7 +1167,7 @@ describe("errors", () => {
     const { code, stderr } = await openmail(["proposals", "reject", "99"]);
     expect(code).toBe(1);
     expect(stderr).toBe(
-      "error: No proposal with id 99.\nhint: Run `openmail proposals` to see the pending ones.\n",
+      "error: No proposal with id 99.\nhint: Run `openmail proposals list` to see the pending ones.\n",
     );
   });
 

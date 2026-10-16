@@ -25,7 +25,7 @@ const NOT_FOUND_HINTS: Partial<Record<string, string>> = {
   message: "`openmail list` and `openmail search` print message ids.",
   thread: "`openmail list` and `openmail search` print message ids.",
   account: "Run `openmail accounts list` to see them.",
-  proposal: "Run `openmail proposals` to see the pending ones.",
+  proposal: "Run `openmail proposals list` to see the pending ones.",
   space: "Run `openmail spaces list` to see them.",
   profile: "Run `openmail spaces list` to see them.",
 };
