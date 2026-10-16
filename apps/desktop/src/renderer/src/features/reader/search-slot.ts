@@ -13,8 +13,15 @@ export function searchSlotClass(
   messageSelected: boolean,
 ): string {
   if (!toolbarVisible) return "flex min-w-0 flex-1";
-  // Important, so it beats the plain 20rem the 960 px container query sets.
-  const basis = `basis-[clamp(20rem,100cqw_-_${messageSelected ? 40 : 14}rem,32.5rem)]!`;
-  const grown = query ? basis : `focus-within:${basis}`;
-  return `flex min-w-0 flex-[0_1_14rem] @min-[960px]/bar:basis-80 ${grown}`;
+  // Tailwind emits only class names it finds whole in the source, so each one is written out.
+  // Important (!), so the grown basis beats the plain 20rem the 960 px container query sets.
+  const base = "flex min-w-0 flex-[0_1_14rem] @min-[960px]/bar:basis-80";
+  if (messageSelected) {
+    return query
+      ? `${base} basis-[clamp(20rem,100cqw_-_40rem,32.5rem)]!`
+      : `${base} focus-within:basis-[clamp(20rem,100cqw_-_40rem,32.5rem)]!`;
+  }
+  return query
+    ? `${base} basis-[clamp(20rem,100cqw_-_14rem,32.5rem)]!`
+    : `${base} focus-within:basis-[clamp(20rem,100cqw_-_14rem,32.5rem)]!`;
 }
