@@ -48,8 +48,24 @@ it("a space typed after a word stays in the field", async () => {
   field.focus();
   for (const typed of ["board", "board ", "board new", "board new ", "board new newer:yesterday "])
     fireEvent.change(field, { target: { value: typed } });
-  await eventually(() => expect(field.value).toBe("board new"));
+  await eventually(() => expect(field.value).toBe("board new "));
   expect(screen.getByRole("button", { name: "Modify newer:yesterday" })).toBeTruthy();
-  fireEvent.change(field, { target: { value: "board new " } });
-  expect(field.value).toBe("board new ");
 });
+
+for (const typed of ["board notes is:unread ", "board meeting from:elena "])
+  it(`a word typed after the chip in "${typed}" starts a new word`, async () => {
+    current = await flow();
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+    field.focus();
+    fireEvent.change(field, { target: { value: typed } });
+    const words = typed.split(" ").slice(0, 2).join(" ");
+    await eventually(() => expect(field.value).toBe(`${words} `));
+    for (const next of ["n", "ne", "nex", "next"])
+      fireEvent.change(field, { target: { value: `${words} ${next}` } });
+    await eventually(() => expect(field.value).toBe(`${words} next`));
+    expect(
+      screen.getByRole("button", { name: `Modify ${typed.trim().split(" ").at(-1)}` }),
+    ).toBeTruthy();
+  });

@@ -138,9 +138,9 @@ it("keeps a space typed after plain words, so the field can show it back", () =>
   });
   assert.deepStrictEqual(typed("board newer:yesterday "), {
     chips: ["newer:yesterday"],
-    text: "board",
+    text: "board ",
     pending: "",
-    value: "newer:yesterday board",
+    value: "newer:yesterday board ",
   });
   assert.deepStrictEqual(typed("is:unread board "), {
     chips: ["is:unread"],

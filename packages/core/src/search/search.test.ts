@@ -220,6 +220,18 @@ import { type DerivedChunk } from "../ai/media.js";
       pending: "",
     });
     assert.strictEqual(serializeSearchField(["from:alice"], ""), "from:alice ");
+    // An operator finished after plain words becomes a chip; the words keep their space.
+    for (const [value, chips, text] of [
+      ["board notes is:unread ", ["is:unread"], "board notes "],
+      ["board meeting from:elena ", ["from:elena"], "board meeting "],
+      ["invoice from:dana ", ["from:dana"], "invoice "],
+    ] as const) {
+      const parts = searchFieldParts(value);
+      assert.deepStrictEqual(parts, { chips: [...chips], text, pending: "" });
+      const typed = searchFieldParts(serializeSearchField(parts.chips, `${parts.text}n`));
+      assert.deepStrictEqual(typed.chips, [...chips]);
+      assert.strictEqual(typed.text, `${text}n`);
+    }
     assert.deepStrictEqual(searchFieldParts(serializeSearchField(["from:alice"], "")).chips, [
       "from:alice",
     ]);

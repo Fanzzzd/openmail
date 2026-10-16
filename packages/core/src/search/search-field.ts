@@ -32,8 +32,9 @@ export function searchFieldParts(value: string): {
   const pending = complete ? "" : (words.at(-1) ?? "");
   const finished = pending ? words.slice(0, -1) : words;
   const plain = finished.filter((word) => !word.includes(":"));
-  // A finished operator became a chip and took the space with it; a finished word keeps it.
-  const spaced = complete && plain.length > 0 && !finished.at(-1)?.includes(":");
+  // Plain words keep the finished space even when an operator after them became a chip,
+  // so the next typed word starts a new word instead of joining the last one.
+  const spaced = complete && plain.length > 0;
   return {
     chips: finished.filter((word) => word.includes(":")),
     text: [...plain, pending].filter(Boolean).join(" ") + (spaced ? " " : ""),
