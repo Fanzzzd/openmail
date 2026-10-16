@@ -364,6 +364,14 @@ describe("accounts remove", () => {
     );
   });
 
+  test("reauth with an unknown id is not_found with the hint", async () => {
+    const { code, stderr } = await openmail(["accounts", "reauth", "gmail:nobody@example.com"]);
+    expect(code).toBe(1);
+    expect(stderr).toBe(
+      "error: No account with id gmail:nobody@example.com.\nhint: Run `openmail accounts list` to see them.\n",
+    );
+  });
+
   test("--help names --yes", async () => {
     const { stdout } = await openmail(["accounts", "remove", "--help"]);
     expect(stdout).toMatch(/--yes, -y +Remove without asking/);

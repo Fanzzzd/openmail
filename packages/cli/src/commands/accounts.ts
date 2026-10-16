@@ -280,11 +280,12 @@ const accountsReauth = Command.make(
   { id: accountIdArgument },
   Effect.fn(function* ({ id }) {
     const mailbox = yield* Mailbox;
+    const known = (yield* mailbox.accounts.accounts).find((a) => a.id === id);
+    if (!known) return yield* noAccount(id);
     if (signsInByAdding(id)) {
-      const imap = (yield* mailbox.accounts.accounts).find((a) => a.id === id);
       return yield* fail("IMAP accounts sign in again by adding the address with a new password.", {
         code: "invalid_input",
-        hint: `Run \`${signInCommand(id, imap?.imap)}\`.`,
+        hint: `Run \`${signInCommand(id, known.imap)}\`.`,
       });
     }
     const account = yield* mailbox.accounts.reauth(id);
