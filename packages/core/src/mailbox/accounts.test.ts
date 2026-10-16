@@ -541,9 +541,18 @@ it.effect("adding an IMAP address again replaces its login and keeps its setting
     const again = yield* store.getAccount(account.id);
     assert.strictEqual(again.imap?.senderName, "Jane Doe");
     assert.strictEqual(again.imap?.authservId, "mx1.messagingengine.com");
-    // Trust names one server's results; another server starts without it.
+    const messageId = `${account.id}/m1`;
+    yield* store.upsertMessage(account.id, {
+      ...incoming("m1"),
+      security: { dmarc: "pass", spf: "pass", dkim: "pass" },
+    });
+    yield* m.accounts.connect({ provider: "imap", input: { ...input, password: "same" } });
+    assert.strictEqual((yield* store.getMessage(messageId)).security?.dmarc, "pass");
+    // Trust names one server's results; another server starts without it, and so do the
+    // results the old server's trust verified.
     host = "imap.example.com";
     yield* m.accounts.connect({ provider: "imap", input: { ...input, password: "newer" } });
+    assert.strictEqual((yield* store.getMessage(messageId)).security, undefined);
     const moved = yield* store.getAccount(account.id);
     assert.strictEqual(moved.imap?.imapHost, "imap.example.com");
     assert.strictEqual(moved.imap?.authservId, undefined);

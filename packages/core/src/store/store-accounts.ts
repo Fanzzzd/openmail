@@ -121,9 +121,7 @@ export const makeAccountsStore = ({
       const authservId = input.imapAuthservId?.toLowerCase() ?? null;
       if ((imap.authservId ?? null) !== authservId) {
         imap = { ...imap, authservId };
-        yield* run(sql`UPDATE accounts SET settings_json=${JSON.stringify(imap)} WHERE id=${id}`);
-        // Existing results must not survive a change to the trust boundary.
-        yield* run(sql`UPDATE messages SET security_json=NULL WHERE account_id=${id}`);
+        yield* setImapSettings(id, imap);
       }
     }
     if (input.imapSenderName !== undefined) {
@@ -187,9 +185,18 @@ export const makeAccountsStore = ({
       .pipe(Effect.catchIf(isSqlError, (error) => Effect.die(error)));
   });
 
-  const setImapSettings = Effect.fn("Store.setImapSettings")((id: string, settings: ImapSettings) =>
-    run(sql`UPDATE accounts SET settings_json = ${JSON.stringify(settings)} WHERE id = ${id}`),
-  );
+  const setImapSettings = Effect.fn("Store.setImapSettings")(function* (
+    id: string,
+    settings: ImapSettings,
+  ) {
+    const before = (yield* Effect.orDie(getAccount(id))).imap;
+    yield* run(
+      sql`UPDATE accounts SET settings_json = ${JSON.stringify(settings)} WHERE id = ${id}`,
+    );
+    // Existing results must not survive a change to the trust boundary.
+    if ((before?.authservId ?? null) !== (settings.authservId ?? null))
+      yield* run(sql`UPDATE messages SET security_json=NULL WHERE account_id=${id}`);
+  });
 
   const markReauth = Effect.fn("Store.markReauth")(function* (id: string, error: AuthError) {
     const reason = reauthReason(error);
