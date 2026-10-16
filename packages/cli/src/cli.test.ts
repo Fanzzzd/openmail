@@ -207,6 +207,58 @@ describe("accounts add", () => {
     expect(stderr).toMatch(/^error: Unknown preset nope\.\nhint: Use one of .*\bcustom\./);
   });
 
+  test("a host with whitespace is invalid_input before any prompt", async () => {
+    const { code, stdout, stderr } = await openmail([
+      "accounts",
+      "add",
+      "imap",
+      "--preset",
+      "custom",
+      "--imap-host",
+      "mail example.com",
+      "--smtp-host",
+      "smtp.example.com",
+      "--email",
+      "a@example.com",
+    ]);
+    expect(code, stderr).toBe(1);
+    expect(stdout).toBe("");
+    expect(stderr).toMatch(/^error: --imap-host mail example\.com is not a hostname\.\nhint: /);
+  });
+
+  // No client is configured and the openers exit 1, so a run that got past validation would
+  // fail with a different error and never reach a real browser.
+  test.skipIf(process.platform === "win32")(
+    "imap-only flags are invalid_input for gmail and outlook",
+    async () => {
+      const dir = await mkdtemp(join(tmpdir(), "openmail-cli-oauth-flags-"));
+      try {
+        const bin = join(dir, "bin");
+        await mkdir(bin);
+        for (const name of ["open", "xdg-open"]) {
+          await writeFile(join(bin, name), "#!/bin/sh\nexit 1\n");
+          await chmod(join(bin, name), 0o755);
+        }
+        const env = { HOME: dir, PATH: `${bin}:${process.env.PATH ?? ""}` };
+        for (const provider of ["gmail", "outlook"]) {
+          const { code, stderr } = await openmail(
+            ["accounts", "add", provider, "--preset", "icloud", "--imap-port", "993"],
+            join(dir, "home"),
+            env,
+          );
+          expect(code, provider).toBe(1);
+          expect(stderr).toMatch(
+            new RegExp(
+              `^error: --preset, --imap-port only apply to imap, not ${provider}\\.\\nhint: `,
+            ),
+          );
+        }
+      } finally {
+        await rm(dir, { recursive: true, force: true });
+      }
+    },
+  );
+
   test("a named preset prints its English note and the app password page", async () => {
     const { stderr } = await openmail(
       ["accounts", "add", "imap", "--preset", "icloud", "--email", "a@icloud.com"],

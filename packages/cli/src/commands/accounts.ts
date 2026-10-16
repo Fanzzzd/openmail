@@ -91,9 +91,43 @@ const badImapFlag = (o: {
     ["--imap-host", o.imapHost],
     ["--smtp-host", o.smtpHost],
   ] as const)
-    if (Option.isSome(host) && host.value.trim() === "") return `${flag} is empty.`;
+    if (Option.isSome(host)) {
+      if (host.value.trim() === "") return `${flag} is empty.`;
+      if (!validHost(host.value)) return `${flag} ${host.value} is not a hostname.`;
+    }
   return undefined;
 };
+
+/** A DNS name, IPv4 address or bracket-free IPv6 address: no spaces, slashes, schemes or ports. */
+const validHost = (host: string) => /^[A-Za-z0-9._:-]+$/.test(host) && !host.includes("://");
+
+/** The flags only imap reads, with the names the person typed. */
+const imapOnlyFlags = (o: {
+  readonly preset: Option.Option<string>;
+  readonly email: Option.Option<string>;
+  readonly username: Option.Option<string>;
+  readonly password: Option.Option<unknown>;
+  readonly imapHost: Option.Option<string>;
+  readonly imapPort: Option.Option<number>;
+  readonly smtpHost: Option.Option<string>;
+  readonly smtpPort: Option.Option<number>;
+  readonly smtpSecure: Option.Option<boolean>;
+}) =>
+  (
+    [
+      ["--preset", o.preset],
+      ["--email", o.email],
+      ["--username", o.username],
+      ["--password", o.password],
+      ["--imap-host", o.imapHost],
+      ["--imap-port", o.imapPort],
+      ["--smtp-host", o.smtpHost],
+      ["--smtp-port", o.smtpPort],
+      ["--smtp-secure", o.smtpSecure],
+    ] as const
+  )
+    .filter(([, value]) => Option.isSome(value))
+    .map(([flag]) => flag);
 
 const accountsAdd = Command.make(
   "add",
@@ -120,6 +154,14 @@ const accountsAdd = Command.make(
     ),
   },
   Effect.fn(function* (o) {
+    if (oauthProvider(o.provider)) {
+      const stray = imapOnlyFlags(o);
+      if (stray.length > 0)
+        return yield* fail(`${stray.join(", ")} only apply to imap, not ${o.provider}.`, {
+          code: "invalid_input",
+          hint: `Drop ${stray.length === 1 ? "that flag" : "those flags"}; ${o.provider} signs in in the browser.`,
+        });
+    }
     const mailbox = yield* Mailbox;
     let account;
     if (!oauthProvider(o.provider)) {
