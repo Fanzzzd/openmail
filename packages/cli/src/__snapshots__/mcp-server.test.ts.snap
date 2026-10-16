@@ -2,7 +2,7 @@
 
 exports[`CLI help keeps tools under \`tool\`, lists each by its first sentence and stays stable 1`] = `
 "DESCRIPTION
-  Local-first mail for people and models. Reads come from the local database; \`openmail sync\` refreshes it.
+  Local-first mail for people and models. Reads come from the local database; \`openmail sync\` refreshes it. Commands log errors on stderr and \`openmail mcp\` also logs warnings; --log-level changes that.
 
 USAGE
   openmail <subcommand> [flags]

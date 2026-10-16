@@ -9,11 +9,50 @@ import {
   READ_ONLY_CONNECTION,
   unknownArguments,
 } from "@openmail/core";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Layer, type LogLevel, Schema } from "effect";
 import { McpProtocol, McpSchema, McpServer } from "effect/ai";
 import type { Tool, Toolkit } from "effect/ai";
 import { CLI_VERSION } from "./version.js";
 import { invalidArguments } from "./tool-errors.js";
+
+/**
+ * The minimum log level of every MCP entry point: `openmail mcp`, `openmail-mcp` and
+ * `OpenMail --mcp`. A client keeps the server's stderr as its log, so warnings show there too,
+ * such as agent_activity rows the server had to drop.
+ */
+export const MCP_LOG_LEVEL: LogLevel.LogLevel = "Warn";
+
+/** The values `--log-level` takes, as in the CLI. */
+const LOG_LEVELS: Readonly<Record<string, LogLevel.LogLevel>> = {
+  all: "All",
+  trace: "Trace",
+  debug: "Debug",
+  info: "Info",
+  warn: "Warn",
+  warning: "Warn",
+  error: "Error",
+  fatal: "Fatal",
+  none: "None",
+};
+
+/**
+ * `--log-level <level>` or `--log-level=<level>` taken out of an MCP command line. `level` is
+ * MCP_LOG_LEVEL without the flag and undefined for a value that is not a level.
+ */
+export function splitMcpLogLevel(args: readonly string[]): {
+  readonly level: LogLevel.LogLevel | undefined;
+  readonly rest: readonly string[];
+} {
+  const at = args.findIndex((arg) => arg === "--log-level" || arg.startsWith("--log-level="));
+  if (at < 0) return { level: MCP_LOG_LEVEL, rest: args };
+  const flag = args[at] ?? "";
+  const inline = flag.startsWith("--log-level=");
+  const word = (inline ? flag.slice("--log-level=".length) : args[at + 1])?.toLowerCase();
+  return {
+    level: word !== undefined && Object.hasOwn(LOG_LEVELS, word) ? LOG_LEVELS[word] : undefined,
+    rest: [...args.slice(0, at), ...args.slice(at + (inline ? 1 : 2))],
+  };
+}
 
 /**
  * What the server tells the model at initialize. Claude Code and Codex show it to the model

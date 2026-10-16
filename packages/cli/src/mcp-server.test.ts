@@ -9,6 +9,7 @@ import { Effect, Option, Schema } from "effect";
 import { Store, TestMailbox, incoming } from "@openmail/core/testing/node";
 import { writeMigratedDatabase } from "../../core/test-support/migrated-database.js";
 import { scaledMs } from "../../core/test-support/test-time.js";
+import { splitMcpLogLevel } from "./mcp-server.js";
 
 const Frame = Schema.Struct({
   id: Schema.optionalKey(Schema.Union([Schema.Number, Schema.String])),
@@ -64,6 +65,7 @@ async function client(
   cli = false,
   seed: boolean | ((directory: string) => Promise<unknown>) = false,
   protocolVersion = "2024-11-05",
+  extraArgs: readonly string[] = [],
 ) {
   const directory = await mkdtemp(join(tmpdir(), "openmail-mcp-test-"));
   if (seed) await (seed === true ? seedAttachmentMail : seed)(directory);
@@ -74,6 +76,7 @@ async function client(
       cli ? "dist/cli.js" : "dist/mcp.js",
       ...(cli ? ["mcp"] : []),
       ...(allowWrites ? ["--allow-writes"] : []),
+      ...extraArgs,
     ],
     {
       cwd: process.cwd(),
@@ -382,6 +385,52 @@ test.concurrent(
   },
   scaledMs(30_000),
 );
+
+// `openmail-mcp` rejected every option but --allow-writes and logged at Info, unlike
+// `openmail mcp`. All MCP entry points log warnings by default and take --log-level.
+test.concurrent.for([
+  ["openmail-mcp", false],
+  ["openmail mcp", true],
+] as const)(
+  "%s logs warnings by default and takes --log-level",
+  async ([, cli], { expect, onTestFinished }) => {
+    const dropped = async (extraArgs: readonly string[]) => {
+      const { request, directory, close } = await client(
+        onTestFinished,
+        false,
+        cli,
+        true,
+        "2024-11-05",
+        extraArgs,
+      );
+      await request("tools/call", { name: "list_accounts", arguments: {} });
+      const holder = new DatabaseSync(join(directory, "mail.db"));
+      holder.exec("BEGIN IMMEDIATE");
+      onTestFinished(() => {
+        holder.exec("ROLLBACK");
+        holder.close();
+      });
+      await request("tools/call", { name: "access_status", arguments: {} });
+      const { stderr } = await close();
+      return stderr.includes("agent-activity-dropped");
+    };
+    const [byDefault, quiet] = await Promise.all([dropped([]), dropped(["--log-level", "error"])]);
+    expect(byDefault).toBe(true);
+    expect(quiet).toBe(false);
+  },
+  scaledMs(40_000),
+);
+
+test("splitMcpLogLevel reads --log-level and leaves the other arguments", ({ expect }) => {
+  expect(splitMcpLogLevel(["--allow-writes"])).toEqual({ level: "Warn", rest: ["--allow-writes"] });
+  expect(splitMcpLogLevel(["--log-level", "debug", "--allow-writes"])).toEqual({
+    level: "Debug",
+    rest: ["--allow-writes"],
+  });
+  expect(splitMcpLogLevel(["--log-level=ERROR"])).toEqual({ level: "Error", rest: [] });
+  expect(splitMcpLogLevel(["--log-level", "loud"]).level).toBeUndefined();
+  expect(splitMcpLogLevel(["--log-level"]).level).toBeUndefined();
+});
 
 // Clients put tools/list in the model's context on every turn, so it has a byte budget.
 test.concurrent(

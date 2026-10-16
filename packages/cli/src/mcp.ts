@@ -1,20 +1,20 @@
 #!/usr/bin/env -S node --disable-warning=ExperimentalWarning
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { NodeMailbox } from "@openmail/core";
-import { Effect, Logger } from "effect";
+import { Effect, Logger, References } from "effect";
 
 import { explainDefect, stderrText } from "./cli-errors.js";
-import { runMcp } from "./mcp-server.js";
+import { runMcp, splitMcpLogLevel } from "./mcp-server.js";
 import { oauthClientsFile } from "./oauth-clients.js";
 
-const args = process.argv.slice(2);
+const { level, rest: args } = splitMcpLogLevel(process.argv.slice(2));
 if (args.includes("--help")) {
   process.stdout.write(
-    "openmail-mcp [--allow-writes]\nRun MCP over stdio. Default: read tools only. --allow-writes exposes proposals, subject to app AI policy; approval and sending require the app.\n",
+    "openmail-mcp [--allow-writes] [--log-level <level>]\nRun MCP over stdio. Default: read tools only. --allow-writes exposes proposals, subject to app AI policy; approval and sending require the app.\nLogs warnings and errors on stderr. --log-level takes all, trace, debug, info, warn, error, fatal or none.\n",
   );
   process.exit(0);
 }
-if (args.some((arg) => arg !== "--allow-writes")) {
+if (level === undefined || args.some((arg) => arg !== "--allow-writes")) {
   process.stderr.write("Unknown option. Use openmail-mcp --help.\n");
   process.exit(1);
 }
@@ -29,5 +29,6 @@ runMcp(args.includes("--allow-writes")).pipe(
     }),
   ),
   Effect.provideService(Logger.LogToStderr, true),
+  Effect.provideService(References.MinimumLogLevel, level),
   NodeRuntime.runMain,
 );

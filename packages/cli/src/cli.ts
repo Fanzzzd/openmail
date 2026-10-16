@@ -28,6 +28,7 @@ import {
 } from "./cli-errors.js";
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { CLI_VERSION } from "./version.js";
+import { MCP_LOG_LEVEL } from "./mcp-server.js";
 
 /**
  * The CLI's browser: prints the consent URL on stderr first, because the OS opener
@@ -82,17 +83,14 @@ const providedCommands = mailboxCommands.map((command: Command.Command.Any) =>
 
 const openmail = Command.make("openmail").pipe(
   Command.withDescription(
-    "Local-first mail for people and models. Reads come from the local database; `openmail sync` refreshes it.",
+    "Local-first mail for people and models. Reads come from the local database; `openmail sync` refreshes it. Commands log errors on stderr and `openmail mcp` also logs warnings; --log-level changes that.",
   ),
   Command.withSubcommands([corpus, ...providedCommands]),
 );
 
 const cliArgs = process.argv.slice(2);
-/**
- * The minimum log level without --log-level. An MCP client keeps the server's stderr as its
- * log, so `openmail mcp` logs warnings too, such as agent_activity rows it had to drop.
- */
-const CLI_LOG_LEVEL = cliArgs[0] === "mcp" ? "Warn" : "Error";
+/** The minimum log level without --log-level. `openmail mcp` uses the MCP servers' level. */
+const CLI_LOG_LEVEL = cliArgs[0] === "mcp" ? MCP_LOG_LEVEL : "Error";
 const appOnlyWriteMode =
   cliArgs[0] === "agents" &&
   cliArgs[1] === "write-mode" &&

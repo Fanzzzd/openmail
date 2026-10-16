@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
+import { mcpLaunchArgs } from "./mcp-mode";
 
 const entry = path.join(desktopRoot, "out/main/index.js");
 
@@ -82,3 +83,15 @@ it.skipIf(!process.env.CI && !existsSync(entry))(
   },
   30_000,
 );
+
+// `OpenMail --mcp` parsed only --mcp and --allow-writes and logged at Info, unlike the CLI's
+// `openmail mcp`. Every MCP entry point logs warnings by default and takes --log-level.
+it("OpenMail --mcp logs warnings by default and takes --log-level", () => {
+  expect(mcpLaunchArgs(["/OpenMail", "--mcp"])).toEqual({ allowWrites: false, logLevel: "Warn" });
+  expect(mcpLaunchArgs(["/OpenMail", "--mcp", "--allow-writes", "--log-level", "debug"])).toEqual({
+    allowWrites: true,
+    logLevel: "Debug",
+  });
+  expect(mcpLaunchArgs(["/OpenMail", "--mcp", "--log-level=loud"])?.logLevel).toBe("Warn");
+  expect(mcpLaunchArgs(["/OpenMail"])).toBeNull();
+});

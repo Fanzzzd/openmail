@@ -1,16 +1,16 @@
 import { readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { runMcp } from "@openmail/cli/mcp-server";
+import { MCP_LOG_LEVEL, runMcp, splitMcpLogLevel } from "@openmail/cli/mcp-server";
 import { NodeMailbox } from "@openmail/core";
-import { Cause, Effect, Logger } from "effect";
+import { Cause, Effect, type LogLevel, Logger, References } from "effect";
 import { app } from "electron";
 
 import { desktopInferenceProcess } from "../app/inference";
 import { builtInOAuthClients } from "../security/oauth-clients";
 
 /**
- * `OpenMail --mcp [--allow-writes]` from a packaged app: the MCP server on stdio. This is how
+ * `OpenMail --mcp [--allow-writes] [--log-level <level>]` from a packaged app: the MCP server on stdio. This is how
  * Claude Code, Codex and the other clients start OpenMail's server without a separate Node.
  *
  * The packaged app keeps Electron's RunAsNode fuse off, so ELECTRON_RUN_AS_NODE can't turn the
@@ -18,8 +18,13 @@ import { builtInOAuthClients } from "../security/oauth-clients";
  * code, node:sqlite and keychain access as the app, and no other script can run under its
  * identity.
  */
-export function mcpLaunchArgs(argv: readonly string[]): { allowWrites: boolean } | null {
-  return argv.includes("--mcp") ? { allowWrites: argv.includes("--allow-writes") } : null;
+export function mcpLaunchArgs(
+  argv: readonly string[],
+): { allowWrites: boolean; logLevel: LogLevel.LogLevel } | null {
+  if (!argv.includes("--mcp")) return null;
+  // Electron and Chromium take flags of their own, so a value that is no level keeps the default.
+  const { level } = splitMcpLogLevel(argv);
+  return { allowWrites: argv.includes("--allow-writes"), logLevel: level ?? MCP_LOG_LEVEL };
 }
 
 /** Chromium profile folders of MCP processes, one per process: `OpenMail MCP <pid>`. */
@@ -45,7 +50,13 @@ async function pruneProfiles(temp: string) {
   }
 }
 
-export function runMcpMode({ allowWrites }: { allowWrites: boolean }): void {
+export function runMcpMode({
+  allowWrites,
+  logLevel,
+}: {
+  allowWrites: boolean;
+  logLevel: LogLevel.LogLevel;
+}): void {
   // No Dock icon, no menu bar, no window: the client owns this process through its stdin.
   if (process.platform === "darwin") app.setActivationPolicy("prohibited");
   app.disableHardwareAcceleration();
@@ -67,6 +78,7 @@ export function runMcpMode({ allowWrites }: { allowWrites: boolean }): void {
           }),
         ),
         Effect.provideService(Logger.LogToStderr, true),
+        Effect.provideService(References.MinimumLogLevel, logLevel),
       ),
     );
     if (exit._tag === "Failure") process.stderr.write(`${Cause.pretty(exit.cause)}\n`);
