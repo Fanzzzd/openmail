@@ -20,6 +20,8 @@ export class Failed extends Data.TaggedError("Failed")<{
   readonly hint?: string;
   /** stdout already holds the --json answer, such as a tool's own result or error object. */
   readonly printed?: boolean;
+  /** A bad value for a flag: exit 2 like other usage errors. */
+  readonly usage?: boolean;
 }> {
   readonly [Runtime.errorReported] = false;
 }
@@ -30,6 +32,7 @@ export const fail = (
     readonly code?: CliErrorCode | MailToolError["code"];
     readonly hint?: string;
     readonly printed?: boolean;
+    readonly usage?: boolean;
   } = {},
 ) => Effect.fail(new Failed({ message, ...extra }));
 

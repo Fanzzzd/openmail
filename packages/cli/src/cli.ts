@@ -124,7 +124,9 @@ const report = (explained: Explained) =>
     const exit: Effect.Effect<never, unknown> =
       error instanceof UsageError || CliError.isCliError(error)
         ? Effect.fail(error)
-        : Effect.fail(new Failed({ message: explained.message }));
+        : error instanceof Failed && error.usage === true
+          ? Effect.fail(new UsageError({ message: error.message, hint: error.hint ?? "" }))
+          : Effect.fail(new Failed({ message: explained.message }));
     return Effect.andThen(report(explained), exit);
   }),
   // A defect (a database from a newer OpenMail, a file another process keeps locked) also
