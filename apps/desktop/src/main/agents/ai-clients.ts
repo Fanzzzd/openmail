@@ -101,9 +101,30 @@ export const withWrites = (launch: McpLaunch, proposalTools: boolean): McpLaunch
   args: proposalTools ? [...launch.args, WRITE_FLAG] : launch.args,
 });
 
-/** Whether an entry starts this app's server. --allow-writes is a choice, not a mismatch. */
+/**
+ * The person's `--log-level <level>` or `--log-level=<level>` in an entry's args. The docs
+ * suggest adding it, so a reconnect keeps it.
+ */
+export function logLevelArgs(args: readonly string[]): string[] {
+  const at = args.findIndex((arg) => arg === "--log-level" || arg.startsWith("--log-level="));
+  if (at < 0) return [];
+  return args.slice(at, args[at] === "--log-level" ? at + 2 : at + 1);
+}
+
+const withoutChoices = (args: readonly string[]) => {
+  const level = logLevelArgs(args);
+  const at = level.length ? args.indexOf(level[0] ?? "") : -1;
+  return args.filter(
+    (arg, index) => arg !== WRITE_FLAG && (at < 0 || index < at || index >= at + level.length),
+  );
+};
+
+/**
+ * Whether an entry starts this app's server. --allow-writes and --log-level are choices, not
+ * a mismatch.
+ */
 export function matches(entry: McpLaunch, expected: McpLaunch): boolean {
-  const args = entry.args.filter((arg) => arg !== WRITE_FLAG);
+  const args = withoutChoices(entry.args);
   return (
     entry.command === expected.command &&
     JSON.stringify(args) === JSON.stringify(expected.args) &&
@@ -464,7 +485,12 @@ async function plan(host: AiClientsHost, change: AiClientChange, launch: McpLaun
   const view = await clientView(host, change.client, launch);
   if (view.state === "unreadable") throw fail("unreadable", view.problem);
   if (view.method === "manual") throw fail("notInstalled");
-  const target = change.action === "connect" ? withWrites(launch, change.proposalTools) : undefined;
+  // Reconnect changes only command, args and OPENMAIL_HOME, and keeps the person's log level.
+  const kept = "entry" in view && view.entry ? logLevelArgs(view.entry.args) : [];
+  const target =
+    change.action === "connect"
+      ? withWrites({ ...launch, args: [...launch.args, ...kept] }, change.proposalTools)
+      : undefined;
   const format = FORMATS[spec.format];
   const file = spec.configPath(host);
   const before = await readText(file);

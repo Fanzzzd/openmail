@@ -349,6 +349,12 @@ describe("the launch command", () => {
 
   it("matches entries regardless of --allow-writes", () => {
     expect(matches(withWrites(LAUNCH, true), LAUNCH)).toBe(true);
+    // A --log-level the person added, as the docs suggest, is no other copy of OpenMail.
+    for (const extra of [["--log-level", "debug"], ["--log-level=error"]])
+      expect(
+        matches({ ...LAUNCH, args: [...LAUNCH.args, ...extra, "--allow-writes"] }, LAUNCH),
+      ).toBe(true);
+    expect(matches({ ...LAUNCH, args: [...LAUNCH.args, "--other"] }, LAUNCH)).toBe(false);
     expect(matches({ ...LAUNCH, command: "/Volumes/OpenMail/OpenMail" }, LAUNCH)).toBe(false);
     expect(matches({ ...LAUNCH, env: { OPENMAIL_HOME: "/x" } }, LAUNCH)).toBe(false);
   });
@@ -631,6 +637,42 @@ describe("clients in a fake home", () => {
     const disconnect = { ...change, action: "disconnect" } as const;
     const removal = await previewChange(host, disconnect, LAUNCH);
     expect(removal.commands).toEqual([[cli, "mcp", "remove", "openmail"]]);
+  });
+
+  it("keeps the person's --log-level on reconnect", async () => {
+    const host = await fakeHost();
+    await fakeCli(host, "codex");
+    await mkdir(join(host.home, ".codex"));
+    const file = join(host.home, ".codex", "config.toml");
+    await writeFile(
+      file,
+      '[mcp_servers.openmail]\ncommand = "/old"\nargs = ["--mcp", "--log-level=debug"]\n',
+    );
+    const change = { client: "codex", action: "connect", proposalTools: true } as const;
+    const preview = await previewChange(host, change, LAUNCH);
+    await applyChange(host, change, LAUNCH, preview.token);
+    expect(readTomlEntry(await readFile(file, "utf8"))).toEqual({
+      command: LAUNCH.command,
+      args: ["--mcp", "--log-level=debug", "--allow-writes"],
+    });
+    const claude = join(host.home, "Library", "Application Support", "Claude");
+    await mkdir(claude, { recursive: true });
+    await writeFile(
+      join(claude, "claude_desktop_config.json"),
+      JSON.stringify({
+        mcpServers: { openmail: { command: "/old", args: ["--mcp", "--log-level", "warn"] } },
+      }),
+    );
+    const desktop = { client: "claude-desktop", action: "connect", proposalTools: false } as const;
+    await applyChange(
+      host,
+      desktop,
+      RUNNABLE,
+      (await previewChange(host, desktop, RUNNABLE)).token,
+    );
+    const view = await clientView(host, "claude-desktop", RUNNABLE);
+    expect(view.state).toBe("connected");
+    expect("entry" in view && view.entry?.args).toEqual(["--mcp", "--log-level", "warn"]);
   });
 
   it("uses codex mcp add and reports a failing CLI", async () => {
