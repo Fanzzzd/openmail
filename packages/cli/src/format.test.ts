@@ -8,6 +8,7 @@ import {
   proposalTable,
   stamp,
   signInCommand,
+  serverSearchFailure,
   syncFailedHint,
   syncTable,
   threadTable,
@@ -242,5 +243,38 @@ describe("signInCommand quoting", () => {
     expect(signInCommand("imap:o'brien&co@example.org")).toBe(
       "openmail accounts add imap --preset <preset> --email 'o'\\''brien&co@example.org'",
     );
+  });
+});
+
+describe("serverSearchFailure", () => {
+  const accounts: Account[] = [];
+  it("asks for sign-in when every error needs it", () => {
+    const error = serverSearchFailure(
+      [
+        { accountId: "gmail:a@example.com", message: "x", requiresReauth: true },
+        { accountId: "gmail:b@example.com", message: "x", requiresReauth: true },
+      ],
+      accounts,
+    );
+    expect(error.code).toBe("auth_failed");
+    expect(error.hint).toBe(
+      "Sign in again with `openmail accounts reauth gmail:a@example.com`, `openmail accounts reauth gmail:b@example.com`, or search without --server.",
+    );
+  });
+  it("covers both fixes for a mix and keeps the connection hint without sign-in", () => {
+    const mixed = serverSearchFailure(
+      [
+        { accountId: "gmail:a@example.com", message: "x", requiresReauth: true },
+        { accountId: "gmail:b@example.com", message: "x" },
+      ],
+      accounts,
+    );
+    expect(mixed.code).toBe("provider_unavailable");
+    expect(mixed.hint).toContain("openmail accounts reauth gmail:a@example.com");
+    expect(mixed.hint).toContain("check the connection");
+    expect(serverSearchFailure([{ accountId: "a", message: "x" }], accounts)).toMatchObject({
+      code: "provider_unavailable",
+      hint: "Check the connection and try again, or search without --server.",
+    });
   });
 });

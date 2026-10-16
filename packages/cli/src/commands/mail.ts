@@ -27,7 +27,14 @@ import {
   withUnparsedOperators,
 } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
-import { cliSyncResult, syncFailedHint, messageText, syncTable, threadTable } from "../format.js";
+import {
+  cliSyncResult,
+  serverSearchFailure,
+  syncFailedHint,
+  messageText,
+  syncTable,
+  threadTable,
+} from "../format.js";
 
 const health = Command.make(
   "health",
@@ -318,11 +325,7 @@ const search = Command.make(
     const failedAccounts = new Set(found.errors.map((e) => e.accountId));
     if (!o.server || !accountIds.length || accountIds.some((id) => !failedAccounts.has(id)))
       return yield* print(page, o.json, () => pageText(threads, next, notes));
-    const error = {
-      message: "The server search failed for every account.",
-      code: "provider_unavailable" as const,
-      hint: "Check the connection and try again, or search without --server.",
-    };
+    const error = serverSearchFailure(found.errors, yield* mailbox.accounts.accounts);
     // With --json, stdout stays one document: the page and the error object together.
     yield* print(o.json ? { ...page, error } : page, o.json, () => pageText(threads, next, notes));
     return yield* fail(error.message, { ...error, printed: o.json });

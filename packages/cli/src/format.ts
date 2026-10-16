@@ -162,6 +162,37 @@ export function syncFailedHint(
 }
 
 /**
+ * The error for a `search --server` that reached no server. When every account failed
+ * because it needs sign-in, the fix is signing in again, one command per account; a mix
+ * names both fixes.
+ */
+export function serverSearchFailure(
+  errors: readonly { readonly accountId: string; readonly requiresReauth?: boolean | undefined }[],
+  accounts: readonly Account[],
+) {
+  const reauth = [...new Set(errors.filter((e) => e.requiresReauth).map((e) => e.accountId))];
+  const commands = reauth
+    .map((id) => `\`${signInCommand(id, accounts.find((a) => a.id === id)?.imap)}\``)
+    .join(", ");
+  const retry = "check the connection and try again, or search without --server";
+  const all = reauth.length > 0 && errors.every((e) => e.requiresReauth);
+  if (all)
+    return {
+      message: "The server search failed for every account.",
+      code: "auth_failed" as const,
+      hint: `Sign in again with ${commands}, or search without --server.`,
+    };
+  return {
+    message: "The server search failed for every account.",
+    code: "provider_unavailable" as const,
+    hint:
+      reauth.length > 0
+        ? `Sign in again with ${commands}; for the other accounts ${retry}.`
+        : `Check the connection and try again, or search without --server.`,
+  };
+}
+
+/**
  * The app retries a failed sync on its own and says so. `openmail sync` runs once, so these
  * failures say what to do instead. Only an unknown failure is logged at warn level.
  */
