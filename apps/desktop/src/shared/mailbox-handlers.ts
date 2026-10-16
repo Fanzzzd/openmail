@@ -1,5 +1,5 @@
 import { Effect } from "effect";
-import type { Mailbox } from "@openmail/core/portable";
+import { isLockTimeout, type Mailbox } from "@openmail/core/portable";
 import { inspectAttachment, InvalidInput } from "@openmail/core/schema";
 import type { MailRpcs } from "./rpc";
 
@@ -11,8 +11,11 @@ type MailboxService = Mailbox["Service"];
  * Sync dies only when another process holds the write lock past the busy timeout. The app's
  * timer syncs again soon, so a button press or a reconnect leaves it to that run.
  */
+const heldLockAsEmpty = (defect: unknown) =>
+  isLockTimeout(defect) ? Effect.succeed([]) : Effect.die(defect);
+
 const syncOrRetryLater = (m: MailboxService) =>
-  m.sync.sync().pipe(Effect.catchDefect(() => Effect.succeed([])));
+  m.sync.sync().pipe(Effect.catchDefect(heldLockAsEmpty));
 
 /** A held discard never outlives a minute, whatever the caller asks. */
 const MAX_DISCARD_HOLD_MS = 60_000;
