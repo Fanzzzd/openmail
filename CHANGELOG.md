@@ -31,6 +31,8 @@ The first public version. Everything below is new.
 - Opening remote-session launchers, key material, certificates and the other risky attachment types needs Save first. vCard and vCalendar files open in the in-app preview.
 - Inline images in a message whose raw source is over 8 MB show as broken. OpenMail no longer downloads the whole message on every open. Attachments still download normally.
 - A space typed after plain words in the search field stays. The search field keeps focus when results replace the list, as in the narrow layout or with the reading pane hidden.
+- A word typed after an operator chip starts a new word. Typing `board notes is:unread next` searched for `board notesnext` before.
+- A search keeps the open conversation when it is among the results. Clearing the search reopens the conversation that was open before it, scrolls the list back to where it was and puts focus on that row.
 
 ### Writing and organizing
 
@@ -41,6 +43,9 @@ The first public version. Everything below is new.
 - IMAP setup asks for a sender name, which appears in the From line.
 - Calendar invites with RSVP and recurrence, and contact suggestions from the server and, optionally, Apple Contacts.
 - Copy to folders is a menu item in the conversation and batch menus, so the arrow keys reach it. Enter opens its form after the menu closes.
+- Copy to folders is hidden when the account has no folders to copy to. Its form opens at the row or the Batch actions button whose menu opened it.
+- The delete confirmation for a label or folder names it, for example: Delete the folder “Projects”?
+- The batch bar says "More messages not loaded" instead of "0 more not loaded" while the server still has older mail.
 - A draft saved on this Mac that is only waiting to sync closes without a prompt. The prompt now reads "This draft has unsaved changes or couldn't sync." and appears for unsaved changes or a sync that stopped.
 
 ### Desktop
@@ -49,6 +54,8 @@ The first public version. Everything below is new.
 - `openmail list --space` takes a space name or id. A space name cannot repeat another space's name (any letter case), cannot be `none`, cannot equal another space's id and cannot be blank once control and format characters are removed. Names are compared after NFKC normalization, and a name with a control character such as a line break is refused.
 - A space name with a line break or tab says "A space name can't contain line breaks or tabs." A name that equals another space's id says "That is another space's id. Choose another name."
 - The space editor rings the selected icon in dark mode, clears a save error once you edit the name, and names each color in words for screen readers.
+- The space picker bar above the panes is gone. Switch spaces from the sidebar, the icon rail or the space shortcuts.
+- The sidebar titles an Outlook or IMAP account's own mailboxes Folders. Gmail keeps Labels.
 - Spaces to group accounts, notification hours by space, menu bar and Dock integration, multiple windows, `mailto:` and `openmail:` links.
 - Responsive layout from three panes down to one.
 - Interface in English, Simplified Chinese, Czech, Dutch, French, German, Italian, Japanese, Russian and Spanish.
@@ -79,11 +86,13 @@ The first public version. Everything below is new.
 - `openmail spaces add --color` takes the color names the app shows: purple, red, brown, green and gray. The old keys still work.
 - The CLI and MCP page lists every `code` the CLI prints with `--json`.
 - Connect AI apps from Settings, with a diff to review before any config file changes.
+- AI Access activity shows the account for a suggested or refused change when all its conversations are in one account.
 - Claude Sonnet 5.5, Opus 5.5 and Haiku 5.5 appear by product name with a cost note. Automatic triage stops at 100 conversations per day.
 
 ### Remote access
 
 - Use your mailbox from a phone browser over Tailscale Serve. Off by default, bound to 127.0.0.1, limited to an allowlist of Tailscale logins and of RPCs.
+- On a phone, Cc/Bcc sits on its own line under To, so a recipient's name is no longer cut to "Dana …".
 
 ### Mobile (preview)
 
