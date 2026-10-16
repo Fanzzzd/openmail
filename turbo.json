@@ -99,7 +99,8 @@
         "$TURBO_ROOT$/docs/licenses/**",
         "$TURBO_ROOT$/THIRD_PARTY_NOTICES.md",
         "$TURBO_ROOT$/LICENSE",
-        "$TURBO_ROOT$/scripts/check-licenses.mjs"
+        "$TURBO_ROOT$/scripts/check-licenses.mjs",
+        "$TURBO_ROOT$/scripts/demo-data.mjs"
       ],
       "env": [
         "CI",

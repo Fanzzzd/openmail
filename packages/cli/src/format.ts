@@ -31,8 +31,11 @@ const shellWord = (word: string) =>
  * in again by adding the address again: that replaces the password and keeps the sender name
  * and the rest of the account. The flags repeat the stored server settings.
  */
+/** IMAP accounts sign in with a password, so they sign in again by being added again. */
+export const signsInByAdding = (accountId: string) => accountId.startsWith(IMAP_ID);
+
 export function signInCommand(accountId: string, imap?: ImapSettings): string {
-  if (!accountId.startsWith(IMAP_ID)) return `openmail accounts reauth ${accountId}`;
+  if (!signsInByAdding(accountId)) return `openmail accounts reauth ${accountId}`;
   const email = accountId.slice(IMAP_ID.length);
   const flags = [`--preset ${imap ? shellWord(imap.preset) : "<preset>"}`, `--email ${email}`];
   if (imap && imap.username !== email) flags.push(`--username ${shellWord(imap.username)}`);
