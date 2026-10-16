@@ -63,6 +63,7 @@ const PINNED = [
   "da0d7fc13c1d5aa3",
   "5a1b0b5bdf2eb5dd",
   "7cab6d30bcbee7be",
+  "a646e8e7d662f2bc",
 ];
 const pin = (migration: unknown) =>
   createHash("sha256").update(JSON.stringify(migration)).digest("hex").slice(0, 16);

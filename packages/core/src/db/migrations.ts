@@ -1453,6 +1453,17 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
      + COALESCE((SELECT SUM(json_extract(a.value, '$.size')) FROM json_each(messages.attachments_json) a), 0)
    WHERE message_size IS NULL
      AND account_id IN (SELECT id FROM accounts WHERE provider = 'outlook');`,
+  // user_version 56: migration 55 ran on Outlook rows whose body the cache had evicted
+  // (body_cached = 0, empty body), so they got only the attachment total, often 0, and
+  // smaller: matched them wrongly. Clear exactly those sizes; the parser stores the full
+  // estimate again when the body is fetched. Rows evicted after migration 55 keep the
+  // estimate the parser made from the full body, which never equals the attachment total
+  // unless the body really was empty.
+  `UPDATE messages SET message_size = NULL
+   WHERE body_cached = 0
+     AND message_size IS NOT NULL
+     AND message_size = COALESCE((SELECT SUM(json_extract(a.value, '$.size')) FROM json_each(messages.attachments_json) a), 0)
+     AND account_id IN (SELECT id FROM accounts WHERE provider = 'outlook');`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */
