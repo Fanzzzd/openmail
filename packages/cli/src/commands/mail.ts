@@ -9,7 +9,14 @@ import { Argument, Command, Flag } from "effect/cli";
 import { Failed, fail, findSpace, jsonFlag, optionalInt, optionalString, print } from "./common.js";
 import { Console, Effect, LogLevel, Logger, Option, Schema } from "effect";
 import { Buffer } from "node:buffer";
-import { MAILBOXES, Mailbox, type SyncResult, printable, redactSyncHealth } from "@openmail/core";
+import {
+  MAILBOXES,
+  Mailbox,
+  type SyncResult,
+  logWarning,
+  printable,
+  redactSyncHealth,
+} from "@openmail/core";
 import {
   SEARCH_VALUE_FORMS,
   type SearchResult,
@@ -63,14 +70,15 @@ const health = Command.make(
  * Why an account did not sync, for --log-level: an unknown failure at warn, the rest at debug.
  * The CLI writes no diagnostics file, and core already took addresses and tokens out.
  */
-const logSyncFailure = (detail: SyncFailureDetail) =>
-  (detail.failure === "unknown" ? Effect.logWarning : Effect.logDebug)(
+const logSyncFailure = (detail: SyncFailureDetail) => {
+  const line =
     [
       `${detail.provider} sync failed (${detail.scope}): ${detail.tag}`,
       ...(detail.reason === undefined ? [] : [`reason ${detail.reason}`]),
       ...(detail.status === undefined ? [] : [`status ${detail.status}`]),
-    ].join(", ") + (detail.message ? `: ${detail.message}` : ""),
-  );
+    ].join(", ") + (detail.message ? `: ${detail.message}` : "");
+  return detail.failure === "unknown" ? logWarning("sync-failed", line) : Effect.logDebug(line);
+};
 
 const syncTableOf = (value: { readonly results: readonly SyncResult[] }) =>
   syncTable(value.results);
