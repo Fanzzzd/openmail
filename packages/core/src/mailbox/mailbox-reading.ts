@@ -140,12 +140,24 @@ export const makeReadingMailbox = (
   });
 
   // The reader asks on every open; reuse the session cache instead of downloading again.
+  // The cap matches the cache limit, so a fetched source is always cached. A larger message
+  // (a logo next to a big PDF) shows its inline images as broken instead of downloading it.
   const inlineImages = Effect.fn("Mailbox.inlineImages")(function* (messageId: string) {
     const cached = runtime.attachmentCache.get(messageId, "inline-raw");
     if (cached) return yield* inlineImagesFromRaw(cached);
     const { account, adapter, providerId } = yield* source(messageId);
     const epoch = runtime.attachmentEpoch;
-    const raw = yield* adapter.fetchRaw(account, providerId);
+    const raw = yield* adapter.fetchRaw(account, providerId, MAX_INLINE_BYTES).pipe(
+      Effect.map((bytes): Uint8Array | null => bytes),
+      Effect.catchIf(
+        (error) => error._tag === "PermanentError" && error.message === MEDIA_RAW_TOO_LARGE,
+        () => Effect.succeed(null),
+      ),
+    );
+    if (!raw) {
+      const none: Record<string, string> = {};
+      return none;
+    }
     if (epoch === runtime.attachmentEpoch)
       runtime.attachmentCache.set(messageId, "inline-raw", raw);
     return yield* inlineImagesFromRaw(raw);

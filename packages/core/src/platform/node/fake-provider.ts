@@ -9,7 +9,7 @@ import {
 } from "../../calendar/calendar.js";
 import { Effect, Option, Stream } from "effect";
 
-import { attachmentFromRaw } from "../../mime/attachments.js";
+import { attachmentFromRaw, MEDIA_RAW_TOO_LARGE } from "../../mime/attachments.js";
 import { MailCodec, type MailCodecPort } from "../mail-codec.js";
 import { nodeMailCodec } from "./mail-codec.js";
 import { buildMime } from "./compose.js";
@@ -693,12 +693,14 @@ export function makeFakeProvider(
           );
         }),
       ),
-    fetchRaw: (account, providerId) =>
+    fetchRaw: (account, providerId, maxBytes) =>
       Effect.andThen(
         failOnce,
         Effect.suspend(() => {
           server.rawFetched.push(providerId);
           const raw = server.raw.get(providerId);
+          if (raw && maxBytes !== undefined && raw.byteLength > maxBytes)
+            return Effect.fail(new PermanentError({ message: MEDIA_RAW_TOO_LARGE }));
           if (raw) return Effect.succeed(raw);
           const m = server.messages.get(providerId);
           if (!m) return Effect.fail(new PermanentError({ message: `No message ${providerId}` }));

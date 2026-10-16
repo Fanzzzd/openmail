@@ -15,6 +15,7 @@ import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 import { toModelThread } from "../ai/model-view.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { Store } from "../store/service.js";
+import { MAX_INLINE_BYTES } from "../mime/attachments.js";
 import type { ProviderAdapter } from "../providers/adapter.js";
 {
   const user: Actor = { kind: "user", surface: "app" };
@@ -408,6 +409,24 @@ import type { ProviderAdapter } from "../providers/adapter.js";
         }),
     );
   });
+
+  it.effect("inline images skip a source larger than the cache instead of downloading it", () =>
+    withGmail([incoming("m1", { bodyHtml: '<img src="cid:logo@x">' })], (m, server) =>
+      Effect.gen(function* () {
+        const pdf = [
+          "--mix",
+          'Content-Type: application/pdf; name="big.pdf"',
+          'Content-Disposition: attachment; filename="big.pdf"',
+          "",
+          "A".repeat(MAX_INLINE_BYTES),
+          "--mix--",
+        ].join("\r\n");
+        server.raw.set("m1", new TextEncoder().encode(RELATED.replace("--mix--", pdf)));
+        const [thread] = yield* m.reading.threads({});
+        assert.deepStrictEqual(yield* m.reading.inlineImages(thread!.id), {});
+      }),
+    ),
+  );
 
   it.effect("the remote image allowlist stores addresses and domains in lower case", () =>
     withGmail([], (m) =>

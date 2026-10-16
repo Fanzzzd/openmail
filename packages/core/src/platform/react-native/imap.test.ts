@@ -24,6 +24,7 @@ import { Store } from "../../store/service.js";
 import { MailboxLive } from "../../mailbox/mailbox-live.js";
 import { Mailbox } from "../../mailbox/mailbox.js";
 import { Buffer } from "../bytes.js";
+import { MEDIA_RAW_TOO_LARGE } from "../../mime/attachments.js";
 const raw = Buffer.from(
   [
     "From: Alice <alice@example.test>",
@@ -1506,6 +1507,26 @@ it("lost SMTP acknowledgement without a Sent match preserves SendUncertain", asy
     expect(test.commands.some((c) => c.includes("APPEND"))).toBe(false);
   } finally {
     vi.useRealTimers();
+    await test.runtime.dispose();
+  }
+});
+
+it("fetchRaw refuses a message over the caller's cap with the shared too-large error", async () => {
+  const test = server();
+  try {
+    await test.runtime.runPromise(
+      Effect.gen(function* () {
+        const account = yield* (yield* Mailbox).accounts.connect({
+          provider: "imap",
+          input: { preset: "fastmail", email: "me@example.test", password: "secret" },
+        });
+        const adapter = (yield* Providers).get("imap");
+        const error = yield* Effect.flip(adapter.fetchRaw(account, "9:1:INBOX", 1));
+        expect(error).toMatchObject({ _tag: "PermanentError", message: MEDIA_RAW_TOO_LARGE });
+      }),
+    );
+    expect(test.commands.some((c) => c.includes("BODY.PEEK[]"))).toBe(false);
+  } finally {
     await test.runtime.dispose();
   }
 });

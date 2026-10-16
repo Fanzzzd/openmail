@@ -14,6 +14,7 @@ import { IMAP_SPECIAL_LABELS as SPECIAL, flagsOf } from "../../providers/imap/im
 import { mimeAddresses, type MimeMessage } from "../mail-codec.js";
 import type { IncomingMessage } from "../../domain/message.js";
 import { htmlToText } from "../../mime/mime.js";
+import { MEDIA_RAW_TOO_LARGE } from "../../mime/attachments.js";
 import { cachedHeaders } from "../../sync/header-backfill.js";
 
 const FOLDER_ALIASES: Record<string, readonly string[]> = {
@@ -122,18 +123,14 @@ export const fetchRawIn = async (client: ImapWire, id: string, maxBytes = 25 * 1
   const metadata = fetchFields(await client.command(`UID FETCH ${ref.uid} (UID RFC822.SIZE)`))[0];
   if (!metadata || metadata.uid !== ref.uid)
     throw new PermanentError({ message: "Message is gone" });
-  if (
-    !Number.isSafeInteger(metadata.size) ||
-    metadata.size < 0 ||
-    metadata.size > Math.min(maxBytes, 25 * 1024 * 1024)
-  )
+  if (!Number.isSafeInteger(metadata.size) || metadata.size < 0 || metadata.size > 25 * 1024 * 1024)
     throw new PermanentError({ message: "Message exceeds mobile download limit" });
+  if (metadata.size > maxBytes) throw new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
   const rows = await client.command(`UID FETCH ${ref.uid} (UID FLAGS RFC822.SIZE BODY.PEEK[])`);
   const fetched = fetchFields(rows).find((r) => r.uid === ref.uid);
   if (!(fetched?.raw instanceof Uint8Array))
     throw new PermanentError({ message: "Message is gone" });
-  if (fetched.raw.byteLength > maxBytes)
-    throw new PermanentError({ message: "Message exceeds download limit" });
+  if (fetched.raw.byteLength > maxBytes) throw new PermanentError({ message: MEDIA_RAW_TOO_LARGE });
   return fetched;
 };
 
