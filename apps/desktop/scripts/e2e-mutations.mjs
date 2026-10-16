@@ -34,8 +34,8 @@ export const cases = [
     "sync",
     "first sync",
     shared,
-    "Effect.andThen(m.sync.sync())",
-    "Effect.andThen(Effect.succeed([]))",
+    "m.sync.sync().pipe(Effect.catchDefect",
+    "Effect.succeed([]).pipe(Effect.catchDefect",
   ],
   [
     "read delay",
