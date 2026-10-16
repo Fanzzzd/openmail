@@ -6,6 +6,7 @@ import path from "node:path";
 import { expect, it } from "vitest";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
 import { mcpLaunchArgs } from "./mcp-mode";
+import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 const entry = path.join(desktopRoot, "out/main/index.js");
 
@@ -62,7 +63,7 @@ it.skipIf(!process.env.CI && !existsSync(entry))(
       });
       for (const request of requests)
         child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...request })}\n`);
-      const timer = setTimeout(() => child.kill("SIGKILL"), 20_000);
+      const timer = setTimeout(() => child.kill("SIGKILL"), scaledMs(20_000));
       const code = await exited;
       clearTimeout(timer);
       expect(code, stderr).toBe(0);
@@ -81,7 +82,7 @@ it.skipIf(!process.env.CI && !existsSync(entry))(
       rmSync(work, { recursive: true, force: true });
     }
   },
-  30_000,
+  scaledMs(30_000),
 );
 
 // `OpenMail --mcp` parsed only --mcp and --allow-writes and logged at Info, unlike the CLI's

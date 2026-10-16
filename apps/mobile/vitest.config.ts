@@ -1,7 +1,9 @@
 import { defineConfig } from "vitest/config";
+import { testTimeouts } from "../../packages/core/test-support/test-time.js";
 
 export default defineConfig({
   test: {
+    ...testTimeouts,
     environment: "node",
     globalSetup: ["../../packages/core/test-support/temp-directory.ts"],
     include: ["src/**/*.test.ts"],

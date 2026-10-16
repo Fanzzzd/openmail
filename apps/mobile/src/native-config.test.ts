@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Schema } from "effect";
 import { expect, it } from "vitest";
+import { scaledMs } from "../../../packages/core/test-support/test-time.js";
 const attributes = Schema.Struct({ $: Schema.Record(Schema.String, Schema.String) });
 const resolved = Schema.Struct({
   _internal: Schema.Struct({
@@ -40,57 +41,62 @@ const root = fileURLToPath(new URL("../", import.meta.url));
 // Native permission inspection needs no network or CLI telemetry initialization.
 const nativeEnv = { ...process.env, EXPO_OFFLINE: "1", EXPO_NO_TELEMETRY: "1" };
 // `expo config` runs the Expo config plugins in a child process; the 5 s default fails under load.
-it("resolved native configuration allows local notifications and fetch, without camera, microphone, boot or push capability", () => {
-  const config = Schema.decodeUnknownSync(Schema.fromJsonString(resolved))(
-    execFileSync(`${root}node_modules/.bin/expo`, ["config", "--type", "introspect", "--json"], {
-      cwd: root,
-      encoding: "utf8",
-      env: nativeEnv,
-    }),
-  )._internal.modResults;
-  for (const name of ["CAMERA", "RECORD_AUDIO", "RECEIVE_BOOT_COMPLETED"])
+it(
+  "resolved native configuration allows local notifications and fetch, without camera, microphone, boot or push capability",
+  () => {
+    const config = Schema.decodeUnknownSync(Schema.fromJsonString(resolved))(
+      execFileSync(`${root}node_modules/.bin/expo`, ["config", "--type", "introspect", "--json"], {
+        cwd: root,
+        encoding: "utf8",
+        env: nativeEnv,
+      }),
+    )._internal.modResults;
+    for (const name of ["CAMERA", "RECORD_AUDIO", "RECEIVE_BOOT_COMPLETED"])
+      expect(
+        config.android.manifest.manifest["uses-permission"].find(
+          (item) => item.$["android:name"] === `android.permission.${name}`,
+        )?.$["tools:node"],
+      ).toBe("remove");
     expect(
       config.android.manifest.manifest["uses-permission"].find(
-        (item) => item.$["android:name"] === `android.permission.${name}`,
+        (item) => item.$["android:name"] === "android.permission.POST_NOTIFICATIONS",
       )?.$["tools:node"],
-    ).toBe("remove");
-  expect(
-    config.android.manifest.manifest["uses-permission"].find(
-      (item) => item.$["android:name"] === "android.permission.POST_NOTIFICATIONS",
-    )?.$["tools:node"],
-  ).not.toBe("remove");
-  const taskReceiver = config.android.manifest.manifest.application
-    .flatMap((application) => application.receiver ?? [])
-    .find(
-      (receiver) => receiver.$["android:name"] === "expo.modules.taskManager.TaskBroadcastReceiver",
+    ).not.toBe("remove");
+    const taskReceiver = config.android.manifest.manifest.application
+      .flatMap((application) => application.receiver ?? [])
+      .find(
+        (receiver) =>
+          receiver.$["android:name"] === "expo.modules.taskManager.TaskBroadcastReceiver",
+      );
+    expect(taskReceiver?.$["tools:node"]).toBe("replace");
+    expect(
+      taskReceiver?.["intent-filter"]?.flatMap((filter) =>
+        filter.action.map((action) => action.$["android:name"]),
+      ),
+    ).toEqual(["expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"]);
+    expect(config.ios.infoPlist.UIBackgroundModes).toEqual(["fetch"]);
+    expect(config.ios.infoPlist.BGTaskSchedulerPermittedIdentifiers).toEqual([
+      "com.openmail.mobile.refresh",
+    ]);
+    expect(config.ios.entitlements).not.toHaveProperty("aps-environment");
+    expect(config.ios.infoPlist).not.toHaveProperty("NSCameraUsageDescription");
+    expect(config.ios.infoPlist).not.toHaveProperty("NSMicrophoneUsageDescription");
+    const services = config.android.manifest.manifest.application
+      .flatMap((application) => application.service ?? [])
+      .filter((service) => service.$["tools:node"] !== "remove")
+      .map((service) => service.$["android:name"]);
+    expect(services.some((name) => /FirebaseMessaging|Notifications|Boot/i.test(name ?? ""))).toBe(
+      false,
     );
-  expect(taskReceiver?.$["tools:node"]).toBe("replace");
-  expect(
-    taskReceiver?.["intent-filter"]?.flatMap((filter) =>
-      filter.action.map((action) => action.$["android:name"]),
-    ),
-  ).toEqual(["expo.modules.taskManager.TaskBroadcastReceiver.INTENT_ACTION"]);
-  expect(config.ios.infoPlist.UIBackgroundModes).toEqual(["fetch"]);
-  expect(config.ios.infoPlist.BGTaskSchedulerPermittedIdentifiers).toEqual([
-    "com.openmail.mobile.refresh",
-  ]);
-  expect(config.ios.entitlements).not.toHaveProperty("aps-environment");
-  expect(config.ios.infoPlist).not.toHaveProperty("NSCameraUsageDescription");
-  expect(config.ios.infoPlist).not.toHaveProperty("NSMicrophoneUsageDescription");
-  const services = config.android.manifest.manifest.application
-    .flatMap((application) => application.service ?? [])
-    .filter((service) => service.$["tools:node"] !== "remove")
-    .map((service) => service.$["android:name"]);
-  expect(services.some((name) => /FirebaseMessaging|Notifications|Boot/i.test(name ?? ""))).toBe(
-    false,
-  );
-  const packageJson = Schema.decodeUnknownSync(
-    Schema.fromJsonString(
-      Schema.Struct({ dependencies: Schema.Record(Schema.String, Schema.String) }),
-    ),
-  )(readFileSync(`${root}package.json`, "utf8"));
-  expect(packageJson.dependencies).toHaveProperty("expo-notifications");
-}, 30_000);
+    const packageJson = Schema.decodeUnknownSync(
+      Schema.fromJsonString(
+        Schema.Struct({ dependencies: Schema.Record(Schema.String, Schema.String) }),
+      ),
+    )(readFileSync(`${root}package.json`, "utf8"));
+    expect(packageJson.dependencies).toHaveProperty("expo-notifications");
+  },
+  scaledMs(30_000),
+);
 it("autolinks the synchronous backup-exclusion module with local notifications and the background worker", () => {
   const modules = Schema.decodeUnknownSync(
     Schema.fromJsonString(

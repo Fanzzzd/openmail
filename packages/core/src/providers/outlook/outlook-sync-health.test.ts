@@ -20,6 +20,7 @@ import {
   mailbox,
   tags,
 } from "../../../test-support/outlook-fixtures.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 it.effect("inbox polling follows only its delta and skips folder discovery", () =>
   Effect.gen(function* () {
     const inbox = `${GRAPH}/me/mailFolders/inbox/messages/delta?$deltatoken=before`;
@@ -359,7 +360,7 @@ for (const { local, syncs } of [
         ),
       );
     },
-    60_000,
+    scaledMs(60_000),
   );
 }
 

@@ -12,6 +12,7 @@ import { MIGRATIONS } from "./migrations.js";
 import { databaseLayer } from "../platform/node/db.js";
 import { NodeSystem } from "../platform/node/platform-node.js";
 import { newerDatabaseVersion, resetLocalCache } from "../platform/node/diagnostics.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const directories: string[] = [];
 afterEach(async () => {
@@ -68,39 +69,43 @@ it("migrate itself refuses a newer schema, so every platform's opener stops", as
   expect(versionOf(file)).toBe(MIGRATIONS.length + 1);
 });
 
-it("opening waits for a lock another process holds briefly instead of failing as locked", async () => {
-  // The CLI flake: four CLI processes start on one file; the read-only inspection ran without
-  // a busy timeout and died with "database is locked" while a sibling held the write lock.
-  const directory = await mkdtemp(join(tmpdir(), "openmail-locked-"));
-  directories.push(directory);
-  const file = join(directory, "mail.db");
-  const db = new DatabaseSync(file);
-  db.exec("CREATE TABLE t (x)");
-  db.close();
-  const holder = spawn(
-    process.execPath,
-    [
-      "-e",
-      `const { DatabaseSync } = require("node:sqlite");
+it(
+  "opening waits for a lock another process holds briefly instead of failing as locked",
+  async () => {
+    // The CLI flake: four CLI processes start on one file; the read-only inspection ran without
+    // a busy timeout and died with "database is locked" while a sibling held the write lock.
+    const directory = await mkdtemp(join(tmpdir(), "openmail-locked-"));
+    directories.push(directory);
+    const file = join(directory, "mail.db");
+    const db = new DatabaseSync(file);
+    db.exec("CREATE TABLE t (x)");
+    db.close();
+    const holder = spawn(
+      process.execPath,
+      [
+        "-e",
+        `const { DatabaseSync } = require("node:sqlite");
        const db = new DatabaseSync(process.argv[1]);
        db.exec("BEGIN EXCLUSIVE; INSERT INTO t VALUES (1)");
        process.stdout.write("locked\\n");
        setTimeout(() => { db.exec("COMMIT"); db.close(); }, 400);`,
-      file,
-    ],
-    { stdio: ["ignore", "pipe", "inherit"] },
-  );
-  const closed = once(holder, "close");
-  await once(holder.stdout, "data");
-  const exit = await Effect.runPromiseExit(
-    Effect.scoped(
-      Layer.build(databaseLayer(file, { vectorExtension: null }).pipe(Layer.provide(NodeSystem))),
-    ),
-  );
-  await closed;
-  expect(defectOf(exit)).toBeUndefined();
-  expect(versionOf(file)).toBe(MIGRATIONS.length);
-}, 30_000);
+        file,
+      ],
+      { stdio: ["ignore", "pipe", "inherit"] },
+    );
+    const closed = once(holder, "close");
+    await once(holder.stdout, "data");
+    const exit = await Effect.runPromiseExit(
+      Effect.scoped(
+        Layer.build(databaseLayer(file, { vectorExtension: null }).pipe(Layer.provide(NodeSystem))),
+      ),
+    );
+    await closed;
+    expect(defectOf(exit)).toBeUndefined();
+    expect(versionOf(file)).toBe(MIGRATIONS.length);
+  },
+  scaledMs(30_000),
+);
 
 it("cache reset refuses a database a newer OpenMail migrated and leaves it unchanged", async () => {
   const file = await newerDatabase();

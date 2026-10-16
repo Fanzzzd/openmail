@@ -170,20 +170,20 @@ const dialogs = () => [...document.querySelectorAll('[role="dialog"], [role="ale
 
 /**
  * Lets the click's RPCs reach the server and their replies render. A real
- * 30 ms window on purpose: this is a sweep for calls that should not happen,
- * and a click that makes no call has no event to wait for.
+ * 30 ms window, times testTimeScale, on purpose: this is a sweep for calls that
+ * should not happen, and a click that makes no call has no event to wait for.
  */
 const settle = () =>
   act(async () => {
     await new Promise<void>((resolve) => {
-      setTimeout(resolve, 30);
+      setTimeout(resolve, scaledMs(30));
     });
   });
 
-// Clicks every control in every tab: slower than the 10 s default under load.
+// Clicks every control in every tab: slower than the scaled 20 s e2e default under load.
 it(
   "no web settings control calls an RPC or sets a preference the Mac refuses",
-  { timeout: 60_000 },
+  { timeout: scaledMs(60_000) },
   async () => {
     const { denied, failures } = await openWebApp();
     // Settings is a lazy chunk; load it before the click so the dialog opens at once.

@@ -1,7 +1,7 @@
 import { Effect, Layer, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-import { waitLimit } from "../../../../../packages/core/test-support/test-time.js";
+import { waitLimit, scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 const native = vi.hoisted(() => ({
   primary: true,
@@ -136,23 +136,27 @@ beforeEach(async () => {
 });
 // The first test pays the cold transform of the main entry. That takes over 5 s
 // when `pnpm test` runs the core suite on the same cores.
-it("any already-created window can release startup after the first window closes", async () => {
-  await import("../main");
-  const { app } = await import("electron");
-  await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
-  const first = new EventEmitter();
-  const second = new EventEmitter();
-  app.emit("browser-window-created", undefined, first);
-  app.emit("browser-window-created", undefined, second);
-  first.emit("closed");
-  second.emit("ready-to-show");
-  await vi.waitFor(() => expect(native.vision).toHaveBeenCalledOnce(), waitLimit);
-  expect(first.listenerCount("ready-to-show")).toBe(0);
-  expect(second.listenerCount("closed")).toBe(0);
-  expect(app.listenerCount("browser-window-created")).toBe(0);
-  app.emit("will-quit", { preventDefault: vi.fn() });
-  await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
-}, 30_000);
+it(
+  "any already-created window can release startup after the first window closes",
+  async () => {
+    await import("../main");
+    const { app } = await import("electron");
+    await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
+    const first = new EventEmitter();
+    const second = new EventEmitter();
+    app.emit("browser-window-created", undefined, first);
+    app.emit("browser-window-created", undefined, second);
+    first.emit("closed");
+    second.emit("ready-to-show");
+    await vi.waitFor(() => expect(native.vision).toHaveBeenCalledOnce(), waitLimit);
+    expect(first.listenerCount("ready-to-show")).toBe(0);
+    expect(second.listenerCount("closed")).toBe(0);
+    expect(app.listenerCount("browser-window-created")).toBe(0);
+    app.emit("will-quit", { preventDefault: vi.fn() });
+    await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
+  },
+  scaledMs(30_000),
+);
 it("the second process exits before building core or opening any data", async () => {
   native.primary = false;
   await import("../main");

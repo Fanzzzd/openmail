@@ -23,6 +23,7 @@ import { StoreLive } from "../../store/store.js";
 import { incoming } from "./testing.js";
 import { MemoryPlatform } from "./platform-memory.js";
 import { traceQueries } from "./fixtures/performance-mailbox.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 const head = (row: ThreadSummary) => ({
   id: row.id,
@@ -408,7 +409,7 @@ for (const fixtureSeed of [90, 900, 9000]) {
           );
         }
       }).pipe(Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform())))),
-    { timeout: 120_000 },
+    { timeout: scaledMs(120_000) },
   );
 }
 
@@ -489,5 +490,5 @@ it.effect(
       Effect.ensuring(Effect.sync(trace.restore)),
     );
   },
-  { timeout: 120_000 },
+  { timeout: scaledMs(120_000) },
 );

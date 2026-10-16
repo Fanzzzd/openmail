@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { expect, it } from "vitest";
 import { fakeMessage, runElectron, serveWebApp, webRoot } from "./test-support/web-app-harness";
+import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 /**
  * The built web app on a phone (390 px, touch) in Electron's Chromium, behind
@@ -51,7 +52,7 @@ interface Result {
 // Skips without `pnpm build`, except under CI, where a missing web build fails.
 it.skipIf(!process.env.CI && !existsSync(path.join(webRoot, "web.html")))(
   "works as a phone app: home screen, safe areas, Back, reconnecting and the login page",
-  { timeout: 180_000 },
+  { timeout: scaledMs(180_000) },
   async () => {
     const app = await serveWebApp([
       fakeMessage("1", "Quarterly report draft", "Dana Whitfield", 5),

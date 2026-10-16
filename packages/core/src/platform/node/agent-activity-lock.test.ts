@@ -37,6 +37,8 @@ it.effect("an agent_activity row gives up quickly on a held write lock and keeps
         const started = performance.now();
         const failed = yield* Effect.flip(store.appendAgentActivity(entry));
         assert.strictEqual(failed._tag, "DatabaseBusy");
+        // Unscaled on purpose: the regression waits out the 5 s busy timeout, so the bound
+        // must stay under it on every machine.
         assert.isBelow(performance.now() - started, 4000);
       } finally {
         writer.exec("ROLLBACK");
@@ -79,6 +81,7 @@ it.effect("search index steps read first and wait only briefly for a held write 
         assert.deepStrictEqual(yield* store.backfillWordIndex(), { processed: 0, ready: true });
         assert.deepStrictEqual(yield* store.backfillSearchFlags(), { processed: 0, ready: true });
         // The regression waits out the 5 s busy timeout; a loaded runner can take a second or more.
+        // Unscaled on purpose, so the bound stays under the busy timeout on every machine.
         assert.isBelow(performance.now() - started, 4000);
         // The new message's bigrams are pending, so this step has to write.
         started = performance.now();

@@ -36,6 +36,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { vi } from "vitest";
 import { NodeSystem } from "./platform-node.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 const planDetail = (rows: unknown) =>
   Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ detail: Schema.String })))(rows)
@@ -817,7 +818,7 @@ for (const messageCount of [50, 150_000]) {
           ),
         );
       }),
-    { timeout: 120_000 },
+    { timeout: scaledMs(120_000) },
   );
 }
 

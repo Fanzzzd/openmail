@@ -74,7 +74,7 @@
         "!$TURBO_ROOT$/{apps,packages}/**/node_modules/**",
         "!$TURBO_ROOT$/{apps,packages}/**/{dist,out,.next,release}/**"
       ],
-      "env": ["CI", "VITEST_MAX_WORKERS"]
+      "env": ["CI", "VITEST_MAX_WORKERS", "OPENMAIL_TEST_TIME_SCALE"]
     },
     "@openmail/cli#test": {
       "dependsOn": ["^build", "build"],
@@ -136,7 +136,8 @@
     },
     "@openmail/docs#test": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "env": ["CI", "OPENMAIL_TEST_TIME_SCALE"]
     }
   }
 }

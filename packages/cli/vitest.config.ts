@@ -1,8 +1,9 @@
 import { defineConfig } from "vitest/config";
-import { pollDefaults } from "../core/test-support/test-time.js";
+import { pollDefaults, testTimeouts } from "../core/test-support/test-time.js";
 
 export default defineConfig({
   test: {
+    ...testTimeouts,
     environment: "node",
     globalSetup: ["../core/test-support/temp-directory.ts"],
     // Scaled defaults for vi.waitFor and expect.poll. See docs/testing.md.

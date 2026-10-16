@@ -17,6 +17,7 @@ import {
   pickNativeImages,
 } from "./native-compose";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
+import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 const native = vi.hoisted(() => {
   vi.resetModules();
   return {
@@ -301,7 +302,10 @@ it.skipIf(process.platform !== "darwin")(
           "--strict",
           path.join(desktopRoot, "out/native/OpenMailPhotos.app"),
         ]);
-      const output = execFileSync(binary, ["--self-test"], { encoding: "utf8", timeout: 30_000 });
+      const output = execFileSync(binary, ["--self-test"], {
+        encoding: "utf8",
+        timeout: scaledMs(30_000),
+      });
       expect(() => JSON.parse(output)).not.toThrow();
     }
   },

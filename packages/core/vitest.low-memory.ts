@@ -1,5 +1,6 @@
 import { globSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { testTimeouts } from "./test-support/test-time.js";
 
 /** Opt-in for resource-constrained local verification. */
 export const lowMemory = process.env.OPENMAIL_LOW_MEMORY_TESTS === "1";
@@ -8,8 +9,8 @@ export const lowMemoryTests = lowMemory
   ? {
       maxWorkers: 1,
       fileParallelism: false,
-      testTimeout: 60_000,
-      hookTimeout: 60_000,
+      testTimeout: Math.max(60_000, testTimeouts.testTimeout),
+      hookTimeout: Math.max(60_000, testTimeouts.hookTimeout),
     }
   : {};
 

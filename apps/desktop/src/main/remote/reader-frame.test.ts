@@ -4,6 +4,7 @@ import path from "node:path";
 import type { Prefs } from "@openmail/core/schema";
 import { expect, it } from "vitest";
 import { fakeMessage, runElectron, serveWebApp, webRoot } from "./test-support/web-app-harness";
+import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 /**
  * The reader's message frame in real Chromium: synthetic mail opened in the
@@ -149,7 +150,7 @@ const subject = (name: string) => `Frame case ${name}`;
 // Skips without `pnpm build`, except under CI, where a missing web build fails.
 it.skipIf(!process.env.CI && !existsSync(path.join(webRoot, "web.html")))(
   "sizes each message frame to its page in Chromium",
-  { timeout: 300_000 },
+  { timeout: scaledMs(300_000) },
   async () => {
     const messages = CASES.map((c, index) =>
       fakeMessage(String(index + 1), subject(c.name), "Frame Lab", index + 1, {

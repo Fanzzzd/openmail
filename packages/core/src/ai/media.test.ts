@@ -995,7 +995,7 @@ it.effect(
       }),
     ),
   // Inserts tens of thousands of rows; slow on a loaded machine.
-  30_000,
+  scaledMs(30_000),
 );
 
 it.effect("backfill chooses newest eligible mail and limits download reservations per minute", () =>

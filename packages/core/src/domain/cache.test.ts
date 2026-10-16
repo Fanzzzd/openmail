@@ -492,7 +492,7 @@ import { scaledMs } from "../../test-support/test-time.js";
         }),
       ),
     // The disk fixture can swap on shared Macs; the two-second paging assertion stays strict.
-    { timeout: lowMemoryTests.testTimeout === undefined ? 30_000 : 300_000 },
+    { timeout: lowMemoryTests.testTimeout === undefined ? scaledMs(30_000) : 300_000 },
   );
 
   it("unsigned and unpackaged builds never configure or check updates", () => {

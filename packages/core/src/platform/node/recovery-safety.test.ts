@@ -29,6 +29,7 @@ import {
   openDatabaseAccess,
   prepareDatabaseStartup,
 } from "./recovery-files.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 const dirs: string[] = [];
 function temp() {
   const dir = mkdtempSync(join(tmpdir(), "openmail-recovery-safety-"));
@@ -185,7 +186,7 @@ for (const step of ["sidecar", "linked", "installed"] as const)
   `;
     const child = spawnSync(process.execPath, ["--input-type=module", "-e", code], {
       encoding: "utf8",
-      timeout: 15000,
+      timeout: scaledMs(15_000),
     });
     expect(child.status, child.stderr).toBe(71);
     expect(existsSync(file)).toBe(true);

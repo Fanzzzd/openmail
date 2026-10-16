@@ -20,6 +20,7 @@ import { Providers } from "../providers/adapter.js";
 import { Store } from "../store/service.js";
 import { StoreLive } from "../store/store.js";
 import { fakeServer, TestMailbox } from "../platform/node/testing.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 const message = (id: string, labels = ["INBOX", "UNREAD"], threadId = id): IncomingMessage => ({
   providerId: id,
@@ -176,7 +177,7 @@ for (const provider of ["gmail", "outlook", "imap"] satisfies Provider[]) {
           ),
         );
       }).pipe(Effect.scoped),
-    { timeout: 60_000 },
+    { timeout: scaledMs(60_000) },
   );
 }
 

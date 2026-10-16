@@ -1,5 +1,6 @@
 import { defineConfig } from "vitest/config";
 import { lowMemory, lowMemoryTests, mockingTests } from "./vitest.low-memory.js";
+import { testTimeouts } from "./test-support/test-time.js";
 
 const include = ["src/**/*.test.ts"];
 const exclude =
@@ -9,6 +10,7 @@ const mocking = lowMemory ? mockingTests(import.meta.dirname, "src/**/*.test.ts"
 // Tests run from source; the build (tsconfig.build.json) leaves them out of dist.
 export default defineConfig({
   test: {
+    ...testTimeouts,
     ...lowMemoryTests,
     environment: "node",
     globalSetup: ["./test-support/temp-directory.ts"],

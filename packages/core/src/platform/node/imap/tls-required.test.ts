@@ -3,6 +3,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect } from "effect";
 import type { ImapSettings } from "../../../domain/account.js";
 import { openImap, smtpTransport } from "./session.js";
+import { scaledMs } from "../../../../test-support/test-time.js";
 
 for (const protocol of ["imap", "smtp"] as const) {
   it.effect(
@@ -85,6 +86,6 @@ for (const protocol of ["imap", "smtp"] as const) {
         if (protocol === "imap" && result._tag === "Failure")
           assert.ok(result.failure.message.includes("TLS is required before authentication"));
       }).pipe(Effect.scoped),
-    10_000,
+    scaledMs(10_000),
   );
 }

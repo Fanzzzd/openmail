@@ -9,6 +9,7 @@ import {
   serveWebApp,
   webRoot,
 } from "./test-support/web-app-harness";
+import { scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 
 /**
  * Screenshots of the built web app at phone and laptop widths, served by the
@@ -60,7 +61,7 @@ function labels(locale: string) {
 
 it.skipIf(!output || !existsSync(path.join(webRoot, "web.html")))(
   "captures the web build at phone width",
-  { timeout: 120_000 },
+  { timeout: scaledMs(120_000) },
   async () => {
     const dir = output ?? "";
     const mail = [

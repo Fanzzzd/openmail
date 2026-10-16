@@ -23,6 +23,7 @@ import {
 } from "../platform/node/portable-helpers.js";
 import type { IncomingMessage } from "../domain/message.js";
 import { Mailbox } from "../mailbox/mailbox.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 /** The host zone for these tests. NZDT is UTC+13 in October, so a stray UTC read shows. */
 const zone = "Pacific/Auckland";
@@ -300,7 +301,7 @@ const detect = (message: Parameters<typeof detectMailEvents>[0]) =>
         assert.strictEqual(invites.length, 20);
         assert.strictEqual(invites[0]?.invite.uid, "meeting-0@example.com");
       }),
-    { timeout: 15000 },
+    { timeout: scaledMs(15_000) },
   );
 
   it.effect("only the MIME From can suppress an organizer mismatch warning", () =>

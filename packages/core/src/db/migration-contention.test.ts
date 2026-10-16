@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
 import { MIGRATIONS } from "../platform/node/db.js";
+import { scaledMs } from "../../test-support/test-time.js";
 
 function opener(file: string, hold: boolean) {
   const child = spawn(
@@ -59,44 +60,50 @@ function opener(file: string, hold: boolean) {
   return { child, finished, waitFor, output: () => stdout };
 }
 
-it("concurrent processes wait beyond five seconds for an old database migration", async () => {
-  const directory = await mkdtemp(join(tmpdir(), "openmail-migration-wait-"));
-  const file = join(directory, "mail.db");
-  const children: ReturnType<typeof opener>[] = [];
-  try {
-    const db = new DatabaseSync(file);
+it(
+  "concurrent processes wait beyond five seconds for an old database migration",
+  async () => {
+    const directory = await mkdtemp(join(tmpdir(), "openmail-migration-wait-"));
+    const file = join(directory, "mail.db");
+    const children: ReturnType<typeof opener>[] = [];
     try {
-      db.exec("PRAGMA journal_mode=WAL");
-      for (const migration of MIGRATIONS.slice(0, -1)) applyNativeMigration(db, migration);
-      db.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
+      const db = new DatabaseSync(file);
+      try {
+        db.exec("PRAGMA journal_mode=WAL");
+        for (const migration of MIGRATIONS.slice(0, -1)) applyNativeMigration(db, migration);
+        db.exec(`PRAGMA user_version=${MIGRATIONS.length - 1}`);
+      } finally {
+        db.close();
+      }
+      const first = opener(file, true);
+      children.push(first);
+      await first.waitFor("migration-lock-held");
+      const second = opener(file, false);
+      children.push(second);
+      await second.waitFor("Waiting for another process to finish database migrations");
+      first.child.stdin.end("release\n");
+      await Promise.all(children.map((process) => process.finished));
+      expect(first.output()).toContain(`ready:${MIGRATIONS.length}`);
+      expect(second.output()).toContain(
+        "Waiting for another process to finish database migrations",
+      );
+      expect(second.output()).toContain(`ready:${MIGRATIONS.length}`);
+      const migrated = new DatabaseSync(file);
+      try {
+        expect(migrated.prepare("PRAGMA user_version").get()).toMatchObject({
+          user_version: MIGRATIONS.length,
+        });
+        expect(
+          migrated.prepare("SELECT name FROM sqlite_master WHERE name='message_search_meta'").all(),
+        ).toHaveLength(1);
+      } finally {
+        migrated.close();
+      }
     } finally {
-      db.close();
+      for (const process of children) if (process.child.exitCode === null) process.child.kill();
+      await Promise.allSettled(children.map((process) => process.finished));
+      await rm(directory, { recursive: true, force: true });
     }
-    const first = opener(file, true);
-    children.push(first);
-    await first.waitFor("migration-lock-held");
-    const second = opener(file, false);
-    children.push(second);
-    await second.waitFor("Waiting for another process to finish database migrations");
-    first.child.stdin.end("release\n");
-    await Promise.all(children.map((process) => process.finished));
-    expect(first.output()).toContain(`ready:${MIGRATIONS.length}`);
-    expect(second.output()).toContain("Waiting for another process to finish database migrations");
-    expect(second.output()).toContain(`ready:${MIGRATIONS.length}`);
-    const migrated = new DatabaseSync(file);
-    try {
-      expect(migrated.prepare("PRAGMA user_version").get()).toMatchObject({
-        user_version: MIGRATIONS.length,
-      });
-      expect(
-        migrated.prepare("SELECT name FROM sqlite_master WHERE name='message_search_meta'").all(),
-      ).toHaveLength(1);
-    } finally {
-      migrated.close();
-    }
-  } finally {
-    for (const process of children) if (process.child.exitCode === null) process.child.kill();
-    await Promise.allSettled(children.map((process) => process.finished));
-    await rm(directory, { recursive: true, force: true });
-  }
-}, 25_000);
+  },
+  scaledMs(25_000),
+);

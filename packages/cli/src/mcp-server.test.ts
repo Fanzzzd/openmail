@@ -149,11 +149,14 @@ async function client(
       });
       child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", id: requestId, method, params })}\n`);
     });
+  const initializeStarted = performance.now();
   const initialized = await request("initialize", {
     protocolVersion,
     capabilities: {},
     clientInfo: { name: "test-client", version: "1" },
   });
+  /** From writing initialize to its answer: the process start, without seeding. */
+  const initializeMs = performance.now() - initializeStarted;
   child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`);
   /** Closes stdin as a client does and resolves with everything the server wrote to stdout. */
   const close = async () => {
@@ -167,7 +170,7 @@ async function client(
     await exited;
     return { stdout: output, stderr: stderr.replace(MIGRATION_WAIT, "") };
   };
-  return { request, directory, initialized, close };
+  return { request, directory, initialized, initializeMs, close };
 }
 
 const RpcFrame = Schema.fromJsonString(
@@ -281,33 +284,38 @@ test.concurrent(
     onTestFinished(() => {
       for (const done of release) done();
     });
-    const started = performance.now();
-    const { request, close } = await client(onTestFinished, false, true, async (directory) => {
-      await seedAttachmentMail(directory);
-      // A first start records the account's OAuth scopes, a one-time write.
-      await Effect.runPromise(
-        Effect.scoped(
-          Effect.gen(function* () {
-            const store = yield* Store;
-            for (const account of yield* store.listAccounts) yield* store.grantedScopes(account.id);
-          }).pipe(
-            Effect.provide(
-              TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
-                database: join(directory, "mail.db"),
-              }),
+    const { request, initializeMs, close } = await client(
+      onTestFinished,
+      false,
+      true,
+      async (directory) => {
+        await seedAttachmentMail(directory);
+        // A first start records the legacy OAuth scopes of accounts without a row, a one-time
+        // write. Record them before the lock is taken, so the start below needs no write.
+        await Effect.runPromise(
+          Effect.scoped(
+            Effect.gen(function* () {
+              yield* (yield* Store).recordLegacyScopes;
+            }).pipe(
+              Effect.provide(
+                TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+                  database: join(directory, "mail.db"),
+                }),
+              ),
             ),
           ),
-        ),
-      );
-      const holder = new DatabaseSync(join(directory, "mail.db"));
-      holder.exec("BEGIN IMMEDIATE");
-      release.push(() => {
-        holder.exec("ROLLBACK");
-        holder.close();
-      });
-    });
-    // Includes the process start; a blocked backfill adds the 5 s busy timeout.
-    expect(performance.now() - started).toBeLessThan(scaledMs(4000));
+        );
+        const holder = new DatabaseSync(join(directory, "mail.db"));
+        holder.exec("BEGIN IMMEDIATE");
+        release.push(() => {
+          holder.exec("ROLLBACK");
+          holder.close();
+        });
+      },
+    );
+    // Includes the process start but not the seeding. A blocked backfill adds the 5 s busy
+    // timeout, so the bound stays under it on every machine, unscaled.
+    expect(initializeMs).toBeLessThan(4500);
     // The backfill retried every 5 s, so calls over 6 s cover one retry. A call may still wait
     // out a few 200 ms brief lock waits, and under load that adds up to seconds. The regression
     // is one 5 s busy timeout per blocked call, so the default bound sits under it, unscaled.

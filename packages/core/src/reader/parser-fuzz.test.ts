@@ -27,7 +27,11 @@ import { parseSearchExpression, parseSearchQuery, searchInputError } from "../se
 import { InvalidInput } from "../domain/errors.js";
 import { attachmentFilename } from "../mime/attachment-filename.js";
 import { hostileHtml, htmlTokens, nestedHtml } from "./parser-fuzz-corpus.js";
-import { scaledMs } from "../../test-support/test-time.js";
+import { perfBudget } from "../../test-support/perf-budget.js";
+
+// Wall-clock bounds run only under OPENMAIL_PERF=1. The default suite proves the budgets
+// through the budget-exceeded flag and the output size, which do not depend on load.
+const performanceBudgets = process.env.OPENMAIL_PERF === "1";
 
 const options = {
   seed: 0x520026,
@@ -252,7 +256,7 @@ describe("hostile HTML corpus and resource budgets", () => {
     expect(result.hidden).toBe(false);
     expect(result.text.split("\n")).toHaveLength(count);
     expect(result).toMatchObject({ flags: ["budget-exceeded"] });
-    expect(performance.now() - started).toBeLessThan(scaledMs(5000));
+    if (performanceBudgets) expect(performance.now() - started).toBeLessThan(perfBudget(5000));
   });
 
   it("bounds one MiB text, malformed comments, headers, CSS and parser output", () => {
@@ -281,7 +285,7 @@ describe("hostile HTML corpus and resource budgets", () => {
       expect(() => decodeHeader(malformed)).not.toThrow();
     }
     expect(attachmentFilename(input).length).toBe(200);
-    expect(performance.now() - started).toBeLessThan(scaledMs(10_000));
+    if (performanceBudgets) expect(performance.now() - started).toBeLessThan(perfBudget(10_000));
     expect(process.memoryUsage().heapUsed - before).toBeLessThan(128 * 1024 * 1024);
   });
 });

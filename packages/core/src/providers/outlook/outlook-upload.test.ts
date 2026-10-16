@@ -37,6 +37,7 @@ import {
 } from "../adapter.js";
 import { Secrets } from "../../platform/auth.js";
 import { Store } from "../../store/service.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 const account = buildAccount("outlook");
 const options = {
@@ -866,7 +867,7 @@ it.effect(
       assert.strictEqual(server.ranges.length, Math.ceil((100 * 1024 * 1024) / UPLOAD_CHUNK_SIZE));
       assert.strictEqual(server.sessionCount, 1);
     }),
-  { timeout: 30000 },
+  { timeout: scaledMs(30_000) },
 );
 
 it.effect("discarding a send preparation queues exact Message-ID cleanup", () =>
@@ -1248,5 +1249,5 @@ it.effect(
       assert.strictEqual(error._tag, "PermanentError");
       assert.strictEqual(server.calls.length, 0);
     }),
-  { timeout: 30000 },
+  { timeout: scaledMs(30_000) },
 );

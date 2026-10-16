@@ -1,6 +1,7 @@
 import * as React from "react";
 import { constVoid } from "effect/Function";
 import { beforeAll, vi } from "vitest";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 // See lazy-loads.ts. The second call, from React.lazy, gets the same cached module.
 vi.mock("../ui/lazy-dialog", async (importOriginal) => {
@@ -93,4 +94,4 @@ Object.defineProperty(HTMLElement.prototype, "innerText", {
 // findByRole wait, so every e2e file loads it before its tests run.
 beforeAll(async () => {
   await import("../features/settings/Settings");
-}, 60_000);
+}, scaledMs(60_000));

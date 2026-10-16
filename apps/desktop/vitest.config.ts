@@ -2,7 +2,7 @@ import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
 import Icons from "unplugin-icons/vite";
 import { lowMemoryTests } from "../../packages/core/vitest.low-memory.js";
-import { pollDefaults } from "../../packages/core/test-support/test-time.js";
+import { pollDefaults, testTimeouts } from "../../packages/core/test-support/test-time.js";
 
 /** Scaled defaults for vi.waitFor, Testing Library and expect.poll. See docs/testing.md. */
 export const waitSetup = ["src/renderer/src/test-support/wait-defaults.ts"];
@@ -13,6 +13,7 @@ export default defineConfig({
     Icons({ compiler: "jsx", jsx: "react" }),
   ],
   test: {
+    ...testTimeouts,
     ...lowMemoryTests,
     environment: "node",
     globalSetup: ["../../packages/core/test-support/temp-directory.ts"],

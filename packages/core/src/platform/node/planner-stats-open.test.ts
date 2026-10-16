@@ -49,7 +49,9 @@ it.effect("opening does not wait for a write lock another process holds", () =>
       for (const plannerStatsOwner of [true, false]) {
         const started = performance.now();
         const timeout = yield* open(file, { plannerStatsOwner });
-        assert.isBelow(performance.now() - started, 2000, `owner: ${plannerStatsOwner}`);
+        // Unscaled on purpose: the regression waits out the 5 s busy timeout, so the bound
+        // stays under it on every machine.
+        assert.isBelow(performance.now() - started, 4000, `owner: ${plannerStatsOwner}`);
         assert.strictEqual(timeout, 5000, "the on-open refresh restores the busy timeout");
       }
     } finally {

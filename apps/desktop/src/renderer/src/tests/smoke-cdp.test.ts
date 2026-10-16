@@ -3,6 +3,7 @@ import type { Socket } from "node:net";
 import { afterEach, expect, it } from "vitest";
 import { WebSocketServer, type WebSocket as ServerSocket } from "ws";
 import { connectCdp, listTargets } from "../../../../scripts/cdp.mjs";
+import { scaledMs } from "../../../../../../packages/core/test-support/test-time.js";
 
 type Frame = { id: number; method: string; params: Record<string, unknown> };
 type Fake = { port: number; frames: Frame[]; sockets: ServerSocket[]; url: string };
@@ -73,7 +74,7 @@ it("lists targets, and returns [] for a non-list answer or a stalled endpoint", 
   const stalled = await fakeCdp({ list: () => null });
   const started = Date.now();
   expect(await listTargets(stalled.port, { timeoutMs: 100 })).toEqual([]);
-  expect(Date.now() - started).toBeLessThan(2000);
+  expect(Date.now() - started).toBeLessThan(scaledMs(2000));
 });
 
 it("sends calls, resolves results, rejects CDP errors and forwards events", async () => {

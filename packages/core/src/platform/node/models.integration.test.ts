@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { deflateSync } from "node:zlib";
 import { makeNodeModels } from "./embeddings-node.js";
+import { scaledMs } from "../../../test-support/test-time.js";
 
 const root = fileURLToPath(new URL("../../../spikes/media/models/", import.meta.url));
 const optedIn = process.env.OPENMAIL_TEST_MODELS === "1";
@@ -102,5 +103,5 @@ it.skipIf(!optedIn || !present)(
       await rm(dir, { recursive: true, force: true });
     }
   },
-  60_000,
+  scaledMs(60_000),
 );
