@@ -2,7 +2,7 @@ import { categoryKey, mergeCategoryNames, providerCapabilities } from "@openmail
 import { useAtom, useAtomSet } from "@effect/atom-react";
 import { cloneElement, type ReactElement, useState } from "react";
 import { useLingui } from "@lingui/react/macro";
-import type { Provider } from "../../../../shared/api";
+import type { Label, Provider } from "../../../../shared/api";
 import { MenuItem } from "../../ui/Menu";
 import { PickerPopover } from "../../ui/Picker";
 import { buttonPrimary, formInput } from "../../ui/styles";
@@ -11,6 +11,14 @@ import {
   type OrganizationRequest,
   type OrganizationTarget,
 } from "./organize-state";
+
+/**
+ * Whether the form has anything to offer: Outlook categories always take new names, while an
+ * account without folders has nowhere to copy to.
+ */
+export const offersOrganization = (provider: Provider, labels: readonly Label[]) =>
+  providerCapabilities(provider).categories ||
+  labels.some((label) => !label.id.startsWith("category:"));
 
 function useTitle(provider: Provider) {
   const { t } = useLingui();
@@ -48,6 +56,7 @@ export function MultiOrganization({
 export function MultiOrganizationItem(target: OrganizationTarget) {
   const title = useTitle(target.provider);
   const request = useAtomSet(multiOrganizationAtom);
+  if (!offersOrganization(target.provider, target.labels)) return null;
   return (
     <MenuItem
       onClick={() => {

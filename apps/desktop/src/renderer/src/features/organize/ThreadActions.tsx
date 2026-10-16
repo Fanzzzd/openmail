@@ -55,7 +55,7 @@ import { Tip } from "../../ui/Tip";
 
 import { FocusedInboxActions } from "./FocusedInboxActions";
 import type { ThreadState } from "../../lib/focused-inbox";
-import { MultiOrganization, MultiOrganizationItem } from "./MultiOrganization";
+import { MultiOrganization, MultiOrganizationItem, offersOrganization } from "./MultiOrganization";
 
 type Icon = ComponentType<{ className?: string }>;
 type ComposeMode = "reply" | "replyAll" | "forward";
@@ -191,13 +191,15 @@ export function ThreadActions({
       }
     />
   ) : (
-    <MultiOrganization
-      provider={state.provider}
-      labels={labels}
-      current={state.labels}
-      onOp={onOp}
-      trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
-    />
+    offersOrganization(state.provider, labels) && (
+      <MultiOrganization
+        provider={state.provider}
+        labels={labels}
+        current={state.labels}
+        onOp={onOp}
+        trigger={<Toolbar.Button className={`${button} whitespace-nowrap`} />}
+      />
+    )
   );
   const controls: Record<ToolbarAction, ReactNode> = {
     archive: (

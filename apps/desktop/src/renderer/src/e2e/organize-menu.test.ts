@@ -1,6 +1,7 @@
 import axe from "axe-core";
 import { afterEach, expect, it } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
+import { Effect } from "effect";
 import { eventually, flow, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -43,4 +44,25 @@ it("Copy to folders… in a conversation's menu is a menu item the arrow keys re
   await eventually(() =>
     expect(JSON.stringify(h.requests.map((request) => request.payload))).toContain('"copy"'),
   );
+});
+
+it("an account with no folders offers no Copy to folders… in the row or batch menus", async () => {
+  current = await flow({ provider: "imap", handlers: { Labels: () => Effect.succeed([]) } });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const target = row(h.id("one"));
+  target.focus();
+  fireEvent.keyDown(target, { key: "F10", shiftKey: true });
+  const menu = await screen.findByRole("menu", { name: "Conversation actions" });
+  expect(within(menu).getByRole("menuitem", { name: /^Star/ })).toBeTruthy();
+  expect(within(menu).queryByRole("menuitem", { name: "Copy to folders…" })).toBeNull();
+  key("Escape");
+  await eventually(() => expect(screen.queryByRole("menu")).toBeNull());
+
+  fireEvent.click(row(h.id("one")));
+  fireEvent.click(row(h.id("two")), { metaKey: true });
+  fireEvent.click(await screen.findByRole("button", { name: "Batch actions" }));
+  const batch = await screen.findByRole("menu", { name: "Batch actions" });
+  expect(within(batch).getByRole("menuitem", { name: /^Star/ })).toBeTruthy();
+  expect(within(batch).queryByRole("menuitem", { name: "Copy to folders…" })).toBeNull();
 });
