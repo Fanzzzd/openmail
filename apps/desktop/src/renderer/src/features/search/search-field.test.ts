@@ -38,7 +38,8 @@ const controls = vi.hoisted(() => {
 let activeShortcutSet: "mimestream" | "apple" | "gmail" = "mimestream";
 // The widget shell is stubbed; test the real search field's callbacks and state without a browser.
 vi.mock("@base-ui/react/combobox", () => {
-  const wrap = ({ children }: { children: ReactNode }) => createElement("div", null, children);
+  const wrap = ({ children, className }: { children: ReactNode; className?: string }) =>
+    createElement("div", { className }, children);
   const GroupItems = createContext<string[]>([]);
   return {
     Combobox: {
@@ -571,4 +572,35 @@ it("a query shows a clear button that empties the field", () => {
     clear.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
   });
   expect(changed).toHaveBeenCalledWith("");
+});
+
+// At 1320 px the chips "label:receipts" and "from:northwind" collapsed to "l ×" and "f ×" inside a
+// 320 px field: the chips could shrink to nothing and the row clipped what did not fit.
+it("keeps chips at their natural width and scrolls the row instead of squeezing them", () => {
+  const dom = testDom();
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  dom.render(
+    createElement(
+      I18nProvider,
+      { i18n },
+      createElement(SearchField, {
+        value: "label:receipts from:northwind invoice",
+        inputRef: null,
+        onChange: vi.fn(),
+      }),
+    ),
+  );
+  const row = dom.element.querySelector("input")?.parentElement;
+  const chips = [...dom.element.querySelectorAll("button[title]")].map((b) =>
+    b.closest(".rounded-item"),
+  );
+  expect(chips).toHaveLength(2);
+  for (const chip of chips) {
+    expect(chip?.className).toContain("shrink-0");
+    expect(chip?.className).not.toContain("min-w-0");
+    expect(chip?.className).toContain("max-w-48");
+  }
+  expect(row?.className).toContain("overflow-x-auto");
+  expect(row?.className).not.toContain("overflow-hidden");
+  expect(dom.element.querySelector("input")?.className).toContain("min-w-24");
 });

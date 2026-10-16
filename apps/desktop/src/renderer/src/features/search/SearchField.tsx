@@ -181,13 +181,13 @@ export function SearchField({
         autoHighlight={false}
         onItemHighlighted={(item) => setHighlighted(item)}
       >
-        {/* One line at any width: chips shrink and truncate before the field grows taller. */}
-        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1.5 overflow-hidden rounded-control border border-edge bg-fill-quiet px-2 transition-colors focus-within:bg-transparent motion-reduce:transition-none">
+        {/* One line at any width: chips keep their width up to 12rem, then truncate. When they do not all fit, the row scrolls sideways. */}
+        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overflow-y-hidden rounded-control [scrollbar-width:none] border border-edge bg-fill-quiet px-2 transition-colors focus-within:bg-transparent motion-reduce:transition-none">
           <Search className="size-3.5 shrink-0 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
-              className="flex max-w-48 min-w-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
+              className="flex max-w-48 shrink-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
             >
               <DropdownMenu
                 label={t`Modify ${token}`}
@@ -255,7 +255,7 @@ export function SearchField({
             ref={fieldRef}
             aria-label={t`Search mail`}
             placeholder={chips.length ? undefined : searchKey ? t`Search  ${searchKey}` : t`Search`}
-            className="h-6 min-w-10 flex-1 bg-transparent text-body text-ellipsis outline-none"
+            className="h-6 min-w-24 flex-1 bg-transparent text-body text-ellipsis outline-none"
           />
         </Combobox.Chips>
         <Combobox.Portal>

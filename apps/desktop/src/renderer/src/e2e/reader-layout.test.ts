@@ -371,7 +371,7 @@ it("keeps the search field on one line and shows the scope as an icon at every w
   const chips = screen.getByRole("combobox", { name: "Search mail" }).parentElement;
   expect(chips?.className).not.toContain("flex-wrap");
   expect(chips?.className).toContain("h-7");
-  expect(chips?.className).toContain("overflow-hidden");
+  expect(chips?.className).toContain("overflow-x-auto");
   expect(field.getAttribute("placeholder")).toBeNull();
   expect(screen.getByRole("button", { name: /^Modify / }).className).toContain("truncate");
   expect(field.closest("[class*='@container/search']")).not.toBeNull();
