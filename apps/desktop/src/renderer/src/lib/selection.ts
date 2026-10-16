@@ -21,7 +21,7 @@ export const EMPTY_SELECTION: Selection = {
 };
 /**
  * A new search or filter keeps the one open conversation; the list drops it once the new rows
- * load without it. Several checked rows clear, so a row the new list hides is never a target.
+ * load without it, and for a search only once typing pauses. Several checked rows clear, so a row the new list hides is never a target.
  */
 export const selectionForQuery = (selection: Selection, previous: string, current: string) =>
   previous === current || (selection.ids.size === 1 && !selection.checking)

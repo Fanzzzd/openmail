@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
-import { eventually, flow, incoming, key, row } from "./harness";
+import { advance, eventually, flow, incoming, key, row } from "./harness";
 
 const reader = () => document.querySelector('[data-mail-pane="reader"]')?.textContent ?? "";
 
@@ -188,4 +188,37 @@ it("clearing a search with nothing selected puts focus on the list", async () =>
   await eventually(() =>
     expect(document.activeElement).toBe(screen.getByRole("listbox", { name: "Inbox" })),
   );
+});
+
+it("typing a search one key at a time keeps the open conversation", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { subject: "async retro" }),
+      incoming("two", { subject: "Lunch on Friday" }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()).toContain("async retro"));
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  // A half typed word can match nothing; the conversation stays open meanwhile.
+  fireEvent.change(field, { target: { value: "a" } });
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  expect(reader()).toContain("async retro");
+  for (const typed of ["as", "asy", "asyn", "async"])
+    fireEvent.change(field, { target: { value: typed } });
+  await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
+  await advance(500);
+  expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true");
+  expect(reader()).toContain("async retro");
+
+  // Settled results without it close it.
+  fireEvent.change(field, { target: { value: "asyncz" } });
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  expect(reader()).toContain("async retro");
+  await advance(500);
+  await eventually(() => expect(reader()).not.toContain("async retro"));
 });

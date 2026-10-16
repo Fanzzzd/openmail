@@ -157,16 +157,24 @@ export function useMailSelection({
     setSelection(EMPTY_SELECTION);
   }
   const startupSelection = startupMatchesScope ? (startupTarget?.id ?? null) : null;
+  /**
+   * The search is still being typed. A half typed word can match nothing, so the open
+   * conversation stays open until the search settles, and stays selected if the settled
+   * results include it.
+   */
+  const typing = search !== committedSearch;
   const [rowCache, setRowCache] = useState({
     list,
     selection,
     rows: new Map<string, ThreadSummary>(),
     scopeKey,
+    typing,
   });
   if (
     rowCache.list !== list ||
     rowCache.selection !== selection ||
-    rowCache.scopeKey !== scopeKey
+    rowCache.scopeKey !== scopeKey ||
+    rowCache.typing !== typing
   ) {
     const sameScope = rowCache.scopeKey === scopeKey;
     const remapped = reconcileSelection(
@@ -177,8 +185,9 @@ export function useMailSelection({
     );
     const preserveRemoval =
       removalNavigation?.scopeKey === scopeKey && removalNavigation.before === selection;
+    const keepWhileTyping = typing && remapped.ids.size === 1 && !remapped.checking;
     const reconciled =
-      startupSelection || threads.loading || preserveRemoval
+      startupSelection || threads.loading || preserveRemoval || keepWhileTyping
         ? remapped
         : trimSelection(remapped, visibleIds);
     if (reconciled !== selection) setSelection(reconciled);
@@ -189,7 +198,7 @@ export function useMailSelection({
     const rows = new Map(
       list.filter((row) => reconciled.ids.has(row.id)).map((row) => [row.id, row]),
     );
-    setRowCache({ list, selection: reconciled, rows, scopeKey });
+    setRowCache({ list, selection: reconciled, rows, scopeKey, typing });
   }
   const settled = settleStartupSelection(
     startupSelection,
