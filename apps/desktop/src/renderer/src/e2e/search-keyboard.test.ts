@@ -127,3 +127,65 @@ it("clearing a search reopens the conversation the results did not include", asy
   await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
   await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
 });
+
+const clearings = [
+  // The empty list's button leaves the field, so focus goes back to the restored row.
+  { clear: "the empty list's Clear search", query: "nothing-matches", focus: "row" },
+  // The field's own button and an emptied field keep the person in the field.
+  { clear: "the field's Clear search", query: '"Flow one"', focus: "field" },
+  { clear: "an emptied field", query: '"Flow one"', focus: "field" },
+] as const;
+
+// Escape moves focus to the row by itself, so the tests above pass without the focus return.
+// These clear the search without Escape.
+for (const { clear, query, focus } of clearings)
+  it(`clearing a search with ${clear} restores the selection and focuses the ${focus}`, async () => {
+    current = await flow();
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    fireEvent.click(row(h.id("two")));
+    await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
+    const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+    field.focus();
+    fireEvent.change(field, { target: { value: query } });
+    key("Enter", {}, field);
+    await eventually(() => expect(() => row(h.id("two"))).toThrow());
+    if (clear === "an emptied field") fireEvent.change(field, { target: { value: "" } });
+    else {
+      const inList = clear === "the empty list's Clear search";
+      if (inList) await screen.findByText("No matching messages");
+      // The field's button shows an icon; the empty list's shows the words.
+      const button = screen
+        .getAllByRole("button", { name: "Clear search" })
+        .find((candidate) => (candidate.textContent === "Clear search") === inList);
+      if (!button) throw new Error(`Missing ${clear}`);
+      // A click focuses a button in Chromium; fireEvent.click does not.
+      button.focus();
+      fireEvent.click(button);
+    }
+    await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
+    if (focus === "row")
+      await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+    else expect(document.activeElement).toBe(field);
+  });
+
+it("clearing a search with nothing selected puts focus on the list", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+  field.focus();
+  fireEvent.change(field, { target: { value: "nothing-matches" } });
+  key("Enter", {}, field);
+  await screen.findByText("No matching messages");
+  const button = screen
+    .getAllByRole("button", { name: "Clear search" })
+    .find((candidate) => candidate.textContent === "Clear search");
+  if (!button) throw new Error("Missing the empty list's Clear search");
+  button.focus();
+  fireEvent.click(button);
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  await eventually(() =>
+    expect(document.activeElement).toBe(screen.getByRole("listbox", { name: "Inbox" })),
+  );
+});
