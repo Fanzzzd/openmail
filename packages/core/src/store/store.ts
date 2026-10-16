@@ -28,6 +28,7 @@ import { makeSignatureStore } from "./store-signatures.js";
 import { makeSyncHealthStore } from "./store-sync-health.js";
 import { makeThreadsStore } from "./store-threads.js";
 import { makeWordIndexStore } from "./store-word-index.js";
+import { makeBriefLockWait } from "./store-brief-lock.js";
 import { makeUndoStore } from "../mailbox/undo-journal.js";
 export { applyOpToLabels, folderTarget } from "../domain/mail-ops.js";
 export { accountId } from "./store-rows.js";
@@ -128,6 +129,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ...organization,
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
+      briefLockWait: makeBriefLockWait(sql),
       ...makeSyncHealthStore(sql),
       ...makeDiagnosticsStore(sql),
       ...makeServiceStore(sql),

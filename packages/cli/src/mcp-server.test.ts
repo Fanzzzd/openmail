@@ -240,6 +240,62 @@ test.concurrent(
   scaledMs(30_000),
 );
 
+// The search backfill opened a write transaction before it checked for work, so with another
+// process holding the write lock node:sqlite blocked the event loop for the 5 s busy timeout
+// on start and again every 5 s retry: initialize and about one call in five took 5.6 s.
+test.concurrent(
+  "initialize and read tool calls stay fast while another process holds the write lock from start",
+  async ({ expect, onTestFinished }) => {
+    const release: (() => void)[] = [];
+    onTestFinished(() => {
+      for (const done of release) done();
+    });
+    const started = performance.now();
+    const { request, close } = await client(onTestFinished, false, true, async (directory) => {
+      await seedAttachmentMail(directory);
+      // A first start records the account's OAuth scopes, a one-time write.
+      await Effect.runPromise(
+        Effect.scoped(
+          Effect.gen(function* () {
+            const store = yield* Store;
+            for (const account of yield* store.listAccounts) yield* store.grantedScopes(account.id);
+          }).pipe(
+            Effect.provide(
+              TestMailbox({}, { backgroundFlush: false }, {}, undefined, {
+                database: join(directory, "mail.db"),
+              }),
+            ),
+          ),
+        ),
+      );
+      const holder = new DatabaseSync(join(directory, "mail.db"));
+      holder.exec("BEGIN IMMEDIATE");
+      release.push(() => {
+        holder.exec("ROLLBACK");
+        holder.close();
+      });
+    });
+    // Includes the process start; a blocked backfill adds the 5 s busy timeout.
+    expect(performance.now() - started).toBeLessThan(scaledMs(4000));
+    // The backfill retried every 5 s, so calls over 6 s cover one retry.
+    const until = performance.now() + 6000;
+    while (performance.now() < until) {
+      const before = performance.now();
+      const called = Schema.decodeUnknownSync(CallResult)(
+        await request("tools/call", { name: "list_accounts", arguments: {} }),
+      );
+      expect(called.isError ?? false, called.content[0]?.text).toBe(false);
+      expect(performance.now() - before).toBeLessThan(scaledMs(1000));
+      await new Promise((resolve) => {
+        setTimeout(resolve, 250);
+      });
+    }
+    const { stderr } = await close();
+    expect(stderr).not.toMatch(/search index|search-index/i);
+  },
+  scaledMs(40_000),
+);
+
 test.concurrent(
   "activity the server could not write before it closed is logged as dropped",
   async ({ expect, onTestFinished }) => {

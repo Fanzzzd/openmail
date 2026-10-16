@@ -33,7 +33,14 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
       derived: rows.some((row) => row.kind === "derived" && row.ready),
     })),
   );
+  // Each step reads before it opens a write transaction: BEGIN IMMEDIATE takes the write lock
+  // even when nothing is pending, and waits for another process that holds it.
   const backfillWordIndex = (requested = 200) =>
+    Effect.gen(function* () {
+      if ((yield* progress).every((row) => row.ready)) return { processed: 0, ready: true };
+      return yield* backfillWordIndexBatch(requested);
+    });
+  const backfillWordIndexBatch = (requested: number) =>
     sql
       .withTransaction(
         Effect.gen(function* () {
@@ -75,6 +82,14 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
       .pipe(Effect.orDie);
   /** Rows from before migration 45 get their has: operator flags in small committed batches. */
   const backfillSearchFlags = (requested = 500) =>
+    Effect.gen(function* () {
+      const pending = yield* all(Schema.Struct({ row_id: Schema.Int }))(
+        sql`SELECT row_id FROM message_search_meta INDEXED BY message_search_meta_flags_pending WHERE search_flags IS NULL LIMIT 1`,
+      );
+      if (pending.length === 0) return { processed: 0, ready: true };
+      return yield* backfillSearchFlagsBatch(requested);
+    });
+  const backfillSearchFlagsBatch = (requested: number) =>
     sql
       .withTransaction(
         Effect.gen(function* () {
@@ -104,6 +119,16 @@ export function makeWordIndexStore(sql: SqlClient.SqlClient) {
    * row from before migration 48. A queued row stays searchable through LIKE.
    */
   const indexBigrams = (requested = BIGRAM_BATCH_ROWS) =>
+    Effect.gen(function* () {
+      const pending = yield* all(Schema.Struct({ row_id: Schema.Int }))(
+        sql`SELECT p.row_id FROM search_bigram_pending p WHERE CASE p.kind
+          WHEN 'messages' THEN EXISTS(SELECT 1 FROM messages m WHERE m.rowid=p.row_id)
+          ELSE EXISTS(SELECT 1 FROM derived_chunks d WHERE d.id=p.row_id) END LIMIT 1`,
+      );
+      if (pending.length === 0) return { processed: 0, ready: true };
+      return yield* indexBigramsBatch(requested);
+    });
+  const indexBigramsBatch = (requested: number) =>
     sql
       .withTransaction(
         Effect.gen(function* () {

@@ -62,6 +62,11 @@ import { UnsubscribeNetwork } from "./unsubscribe.js";
 import { PlatformHost, onDeviceModelsSupported } from "../platform/host.js";
 
 export type { MailboxOptions } from "./mailbox-runtime.js";
+
+/** Another process holding the write lock is expected, not a fault, so it logs below Warn. */
+const searchIndexLockBusy = (retry: string) =>
+  Effect.logDebug(`Search index is waiting for another process's write lock; ${retry}`);
+
 export const MailboxLive = (
   requested: MailboxOptions = {},
 ): Layer.Layer<
@@ -193,19 +198,23 @@ export const MailboxLive = (
         ]) {
           let ready = false;
           while (!ready) {
-            const batch = yield* step.pipe(
-              Effect.result,
+            const retry = { processed: 0, ready: false, after: "5 seconds" } as const;
+            const batch = yield* store.briefLockWait(step).pipe(
+              Effect.map((done) => ({ ...done, after: "20 millis" as const })),
+              Effect.catchTag("DatabaseBusy", () =>
+                searchIndexLockBusy("retrying").pipe(Effect.as(retry)),
+              ),
               Effect.catchCause((cause) =>
                 Cause.hasInterrupts(cause)
                   ? Effect.failCause(cause)
                   : searchIndexFailed("Search index backfill failed; retrying").pipe(
-                      Effect.as({ _tag: "Failure" } as const),
+                      Effect.as(retry),
                     ),
               ),
             );
-            if (batch._tag === "Success" && batch.success.processed) indexed = true;
-            ready = batch._tag === "Success" && batch.success.ready;
-            if (!ready) yield* Effect.sleep(batch._tag === "Success" ? "20 millis" : "5 seconds");
+            if (batch.processed) indexed = true;
+            ready = batch.ready;
+            if (!ready) yield* Effect.sleep(batch.after);
           }
         }
         if (indexed) yield* changed;
@@ -218,10 +227,13 @@ export const MailboxLive = (
             Effect.gen(function* () {
               let ready = false;
               while (!ready) {
-                ready = (yield* store.indexBigrams()).ready;
+                ready = (yield* store.briefLockWait(store.indexBigrams())).ready;
                 if (!ready) yield* Effect.yieldNow;
               }
             }).pipe(
+              Effect.catchTag("DatabaseBusy", () =>
+                searchIndexLockBusy("retrying on the next change"),
+              ),
               Effect.catchCause((cause) =>
                 Cause.hasInterrupts(cause)
                   ? Effect.failCause(cause)
