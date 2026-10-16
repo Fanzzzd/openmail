@@ -12,10 +12,11 @@ import {
 } from "@openmail/core/schema";
 import { AsyncResult } from "effect/reactivity";
 import { ChevronDown, ChevronUp, GripVertical } from "lucide-react";
-import { useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Account, NamedSignature } from "../../../../../shared/api";
 import type { ComposeElement } from "../../compose/compose-editor-dom";
 import { causeText } from "../../../lib/errors";
+import { scrollBehavior } from "../../../lib/scroll-motion";
 import { Keys } from "../../../state/keys";
 import {
   deleteNamedSignatureAtom,
@@ -276,13 +277,21 @@ function SignatureEditor({ initial, onClose }: { initial: SignatureForm; onClose
   const [error, setError] = useState("");
   const bodyRef = useRef<ComposeElement>(null);
   const selectionRef = useRef<Range>(null);
+  const card = useRef<HTMLFieldSetElement>(null);
+  const nameField = useRef<HTMLInputElement>(null);
+  // The editor opens below every account's list, often off-screen: bring it up, ready for a name.
+  useEffect(() => {
+    card.current?.scrollIntoView({ block: "nearest", behavior: scrollBehavior() });
+    nameField.current?.focus({ preventScroll: true });
+  }, []);
   return (
-    <fieldset className={editorCard}>
+    <fieldset ref={card} className={editorCard}>
       <legend className={editorLegend}>{t`Edit signature`}</legend>
       <div className="clear-both space-y-4">
         <label className="block">
           <span className={fieldLabel}>{t`Signature name`}</span>
           <input
+            ref={nameField}
             className={formInput}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}

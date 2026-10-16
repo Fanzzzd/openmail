@@ -114,12 +114,21 @@ import { TemplateSettings } from "./TemplateSettings";
 import { DraftSyncRecovery } from "../../compose/components/DraftSyncRecovery";
 import { SignatureSettings } from "./SignatureSettings";
 
+const scrolled = vi.fn();
+const focused = vi.fn();
 function render(node: ReactNode) {
   const dom = testDom();
   vi.stubGlobal(
     "requestAnimationFrame",
     vi.fn(() => 0),
   );
+  // linkedom has no layout or focus; record what the editor scrolls to and focuses.
+  dom.window.HTMLElement.prototype.scrollIntoView = function (this: HTMLElement) {
+    scrolled(this);
+  };
+  dom.window.HTMLElement.prototype.focus = function (this: HTMLElement) {
+    focused(this);
+  };
   dom.render(
     createElement(I18nProvider, { i18n: setupI18n({ locale: "en", messages: {} }) }, node),
   );
@@ -352,6 +361,41 @@ it("named signatures support drag and keyboard button ordering without changing 
       payload: { patch: { signaturePosition: "below" } },
       reactivityKeys: ["prefs"],
     });
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("New signature scrolls the editor into view and focuses Signature name", () => {
+  calls.signatures = [];
+  scrolled.mockClear();
+  focused.mockClear();
+  const dom = render(
+    createElement(SignatureSettings, {
+      accounts: [
+        {
+          id: "gmail:me@example.com",
+          email: "me@example.com",
+          provider: "gmail",
+          createdAt: 0,
+          lastSyncedAt: null,
+          profileId: null,
+          needsReauth: false,
+          lastSyncError: null,
+        },
+      ],
+    }),
+  );
+  try {
+    act(() => button(dom, "New signature").click());
+    const editor = dom.element.querySelector("fieldset");
+    expect(editor?.querySelector("legend")?.textContent).toBe("Edit signature");
+    expect(scrolled).toHaveBeenCalledWith(editor);
+    const name = [...dom.element.querySelectorAll("label")].find((label) =>
+      label.textContent.startsWith("Signature name"),
+    );
+    expect(focused).toHaveBeenCalledTimes(1);
+    expect(focused).toHaveBeenCalledWith(name?.querySelector("input"));
   } finally {
     dom.dispose();
   }
