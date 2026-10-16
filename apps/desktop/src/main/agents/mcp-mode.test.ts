@@ -1,8 +1,9 @@
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { expect, it } from "vitest";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
 import { mcpLaunchArgs } from "./mcp-mode";
@@ -96,3 +97,46 @@ it("OpenMail --mcp logs warnings by default and takes --log-level", () => {
   expect(mcpLaunchArgs(["/OpenMail", "--mcp", "--log-level=loud"])?.logLevel).toBe("Warn");
   expect(mcpLaunchArgs(["/OpenMail"])).toBeNull();
 });
+
+// A startup failure printed Cause.pretty: the raw stack trace of the lock timeout, where
+// `openmail mcp` prints one error line and a hint. demo-data leaves mail.db in rollback-journal
+// mode, so the switch to WAL on open needs the write lock the holder keeps.
+it.skipIf(!process.env.CI && !existsSync(entry))(
+  "OpenMail --mcp explains a startup failure in two lines without a stack trace",
+  async () => {
+    const work = mkdtempSync(path.join(tmpdir(), "openmail-mcp-mode-"));
+    const home = path.join(work, "home");
+    execFileSync(process.execPath, [path.join(desktopRoot, "../../scripts/demo-data.mjs"), home]);
+    const holder = new DatabaseSync(path.join(home, "mail.db"));
+    holder.exec("PRAGMA journal_mode=DELETE");
+    holder.exec("BEGIN IMMEDIATE");
+    try {
+      const electron = String(createRequire(import.meta.url)("electron"));
+      const child = spawn(
+        electron,
+        [desktopRoot, "--mcp", `--user-data-dir=${path.join(work, "profile")}`],
+        { env: clientEnv(home), stdio: ["pipe", "pipe", "pipe"] },
+      );
+      let stderr = "";
+      child.stderr.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+      const exited = new Promise<number | null>((resolve) => {
+        child.once("exit", resolve);
+      });
+      const timer = setTimeout(() => child.kill("SIGKILL"), 30_000);
+      const code = await exited;
+      clearTimeout(timer);
+      expect(code, stderr).toBe(1);
+      expect(stderr).toContain(
+        "error: Another OpenMail process is writing to the local database.\nhint: Run the command again in a few seconds.\n",
+      );
+      expect(stderr).not.toMatch(/^\s+at /m);
+    } finally {
+      holder.exec("ROLLBACK");
+      holder.close();
+      rmSync(work, { recursive: true, force: true });
+    }
+  },
+  40_000,
+);

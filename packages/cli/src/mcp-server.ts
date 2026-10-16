@@ -9,9 +9,10 @@ import {
   READ_ONLY_CONNECTION,
   unknownArguments,
 } from "@openmail/core";
-import { Effect, Layer, type LogLevel, Schema } from "effect";
+import { Cause, Effect, Layer, type LogLevel, Schema } from "effect";
 import { McpProtocol, McpSchema, McpServer } from "effect/ai";
 import type { Tool, Toolkit } from "effect/ai";
+import { explainDefect, stderrText } from "./cli-errors.js";
 import { CLI_VERSION } from "./version.js";
 import { invalidArguments } from "./tool-errors.js";
 
@@ -184,3 +185,11 @@ export const runMcp = (allowWrites = false): Effect.Effect<void, never, Mailbox>
       return Effect.sync(() => process.stdin.off("end", done));
     }).pipe(Effect.andThen(Effect.sleep("500 millis"))),
   );
+
+/**
+ * The stderr text for a server that could not start, such as a database from a newer OpenMail
+ * or a write lock another process kept: `error: …` and `hint: …`, without a stack trace.
+ * stdout carries MCP frames, so every entry point writes this to stderr and exits 1.
+ */
+export const mcpStartupError = (cause: Cause.Cause<unknown>, home: string | undefined): string =>
+  stderrText(explainDefect(Cause.squash(cause), home));

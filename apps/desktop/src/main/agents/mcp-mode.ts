@@ -1,9 +1,9 @@
 import { readdir, rm } from "node:fs/promises";
 import { join } from "node:path";
 
-import { MCP_LOG_LEVEL, runMcp, splitMcpLogLevel } from "@openmail/cli/mcp-server";
+import { MCP_LOG_LEVEL, mcpStartupError, runMcp, splitMcpLogLevel } from "@openmail/cli/mcp-server";
 import { NodeMailbox } from "@openmail/core";
-import { Cause, Effect, type LogLevel, Logger, References } from "effect";
+import { Effect, type LogLevel, Logger, References } from "effect";
 import { app } from "electron";
 
 import { desktopInferenceProcess } from "../app/inference";
@@ -81,7 +81,9 @@ export function runMcpMode({
         Effect.provideService(References.MinimumLogLevel, logLevel),
       ),
     );
-    if (exit._tag === "Failure") process.stderr.write(`${Cause.pretty(exit.cause)}\n`);
+    // The same two lines as `openmail mcp`: what went wrong and what to do, no stack trace.
+    if (exit._tag === "Failure")
+      process.stderr.write(`${mcpStartupError(exit.cause, process.env.OPENMAIL_HOME)}\n`);
     await rm(profile, { recursive: true, force: true }).catch(() => null);
     app.exit(exit._tag === "Failure" ? 1 : 0);
   })();

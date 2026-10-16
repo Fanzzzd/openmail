@@ -1,10 +1,9 @@
 #!/usr/bin/env -S node --disable-warning=ExperimentalWarning
 import * as NodeRuntime from "@effect/platform-node/NodeRuntime";
 import { NodeMailbox } from "@openmail/core";
-import { Effect, Logger, References } from "effect";
+import { Cause, Effect, Logger, References } from "effect";
 
-import { explainDefect, stderrText } from "./cli-errors.js";
-import { runMcp, splitMcpLogLevel } from "./mcp-server.js";
+import { mcpStartupError, runMcp, splitMcpLogLevel } from "./mcp-server.js";
 import { oauthClientsFile } from "./oauth-clients.js";
 
 const { level, rest: args } = splitMcpLogLevel(process.argv.slice(2));
@@ -24,7 +23,7 @@ runMcp(args.includes("--allow-writes")).pipe(
   // lock another process kept) goes to stderr like the CLI's, and the process exits 1.
   Effect.catchDefect((defect) =>
     Effect.sync(() => {
-      process.stderr.write(`${stderrText(explainDefect(defect, process.env.OPENMAIL_HOME))}\n`);
+      process.stderr.write(`${mcpStartupError(Cause.die(defect), process.env.OPENMAIL_HOME)}\n`);
       process.exitCode = 1;
     }),
   ),
