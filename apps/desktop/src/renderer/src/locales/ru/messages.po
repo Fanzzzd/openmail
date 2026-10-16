@@ -528,7 +528,7 @@ msgstr "Добавить"
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add {provider}"
-msgstr "Добавьте {provider}"
+msgstr "Добавить {provider}"
 
 #: src/renderer/src/features/settings/sections/AiClientsSettings.tsx
 msgid "Add a mail account first."
@@ -616,7 +616,7 @@ msgstr "Добавьте ключ API Anthropic в «Настройки → До
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "Добавьте свою первую учётную запись"
+msgstr "Добавить первую учётную запись"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -1005,7 +1005,7 @@ msgstr "Спросить о своей почте"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Ask each time"
-msgstr "Спрашивайте каждый раз"
+msgstr "Спрашивать каждый раз"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
@@ -1031,7 +1031,7 @@ msgstr "Прикрепить файлы…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Attach the redacted diagnostics shown below"
-msgstr "Прикрепите отредактированную диагностику, показанную ниже."
+msgstr "Прикрепить диагностику ниже без личных данных"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Attached message"
@@ -1767,7 +1767,7 @@ msgstr "Подтвердить"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Confirm and add event"
-msgstr "Подтвердите и добавьте событие"
+msgstr "Подтвердить и добавить событие"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Confirm deleting this filter."
@@ -1817,7 +1817,7 @@ msgstr "Подключить учётную запись"
 
 #: src/renderer/src/app/use-app-messages.ts
 msgid "Connect an account to send feedback"
-msgstr "Подключите учётная запись, чтобы отправить отзыв"
+msgstr "Подключите учётную запись, чтобы отправить отзыв"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Connect calendar"
@@ -2741,7 +2741,7 @@ msgstr "Перетащите учётную запись, чтобы измен�
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
-msgstr "Перетащите выделенное в Finder"
+msgstr "Перетащить выбранное в Finder"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
@@ -3397,7 +3397,7 @@ msgstr "Объедините учётные записи в пространст
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
-msgstr "Группируйте сообщения в переписки"
+msgstr "Группировать сообщения в переписки"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
@@ -6070,7 +6070,7 @@ msgstr "Заменить все"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Replace emoji text as you type"
-msgstr "Заменяйте текст эмодзи по мере ввода"
+msgstr "Заменять текст эмодзи при вводе"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
@@ -6376,7 +6376,7 @@ msgstr "Сохранить этот черновик перед закрытие
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
-msgstr "Сохраните это сообщение как шаблон…"
+msgstr "Сохранить это сообщение как шаблон…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to attachment folder"
@@ -6497,7 +6497,7 @@ msgstr "Второй"
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Select {0}"
-msgstr "Выберите {0}"
+msgstr "Выбрать {0}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select 1 to 256 attachments."
@@ -6894,13 +6894,13 @@ msgstr "Войти"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
-msgstr "Войдите снова"
+msgstr "Войти снова"
 
 #. Only the verb is visible. The account address is read by screen readers.
 #: src/renderer/src/features/settings/Settings.tsx
 msgctxt "account row action"
 msgid "Sign in again <0>{email}</0>"
-msgstr "Войдите снова <0>{email}</0>"
+msgstr "Войти снова <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -6913,7 +6913,7 @@ msgstr "Войдите снова, чтобы изменить Отсортир�
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "Войдите ещё раз, чтобы включить фильтры."
+msgstr "Войти снова, чтобы включить фильтры"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
@@ -7201,7 +7201,7 @@ msgstr "Остановить обработку следующих фильтр�
 #. placeholder {0}: a.address
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
-msgstr "Перестаньте предлагать {0}"
+msgstr "Больше не предлагать {0}"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -8321,15 +8321,15 @@ msgstr "Используйте изображения PNG, JPEG, GIF или WebP
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Use selection for find"
-msgstr "Используйте выделение для поиска"
+msgstr "Использовать выделение для поиска"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the account default address"
-msgstr "Используйте адрес учётной записи по умолчанию"
+msgstr "Использовать адрес учётной записи по умолчанию"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
-msgstr "Используйте адрес, на который было отправлено сообщение"
+msgstr "Использовать адрес, на который было отправлено сообщение"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"

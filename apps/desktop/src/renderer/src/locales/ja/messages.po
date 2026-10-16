@@ -556,7 +556,7 @@ msgstr "フィルターの条件を 1 つ以上追加してください。"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Add at least one recipient"
-msgstr "少なくとも 1 人の受信者を追加します"
+msgstr "少なくとも 1 人の受信者を追加してください"
 
 #: src/renderer/src/features/compose/components/ComposerAlerts.tsx
 msgid "Add attachment"
@@ -879,7 +879,7 @@ msgstr "この送信者のメッセージを常に移動しますか？"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "必ずメッセージ全体を引用してください"
+msgstr "常にメッセージ全体を引用する"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
@@ -1031,7 +1031,7 @@ msgstr "ファイルを添付…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Attach the redacted diagnostics shown below"
-msgstr "以下に示す編集された診断を添付してください"
+msgstr "個人情報を伏せた以下の診断情報を添付する"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Attached message"
@@ -1432,7 +1432,7 @@ msgstr "アップデートを確認"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Check for updates…"
-msgstr "アップデートを確認してください…"
+msgstr "アップデートを確認…"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
@@ -2643,7 +2643,7 @@ msgstr "繰り返さない"
 
 #: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
-msgstr "元のメッセージを添付しないでください"
+msgstr "元のメッセージを添付しない"
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -2741,7 +2741,7 @@ msgstr "アカウントをドラッグすると、並べ替えたり別のスペ
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
-msgstr "選択したものをファインダーにドラッグします"
+msgstr "選択項目を Finder にドラッグ"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
@@ -4424,7 +4424,7 @@ msgstr "モデルは検証済みで準備完了です。検索はこのデバイ
 
 #: src/renderer/src/features/search/SearchField.tsx
 msgid "Modify {token}"
-msgstr "{token} を変更します"
+msgstr "{token} を変更"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Monday"
@@ -4647,7 +4647,7 @@ msgstr "名前"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Name the template, then press Return"
-msgstr "テンプレートに名前を付けて、Return キーを押します"
+msgstr "テンプレートに名前を付けて、Return キーを押してください"
 
 #: src/renderer/src/features/accounts/ProfileEditor.tsx
 msgid "Name, like Work"
@@ -5183,7 +5183,7 @@ msgstr "macOS の通知設定を開く"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
-msgstr "このメッセージのみを新しいウィンドウで開きます"
+msgstr "このメッセージだけを新しいウィンドウで開く"
 
 #: src/renderer/src/features/sidebar/SpaceSwitcher.tsx
 msgid "Open space"
@@ -5645,7 +5645,7 @@ msgstr "「メイン」は Gmail のほかのカテゴリを除外し、Outlook 
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Print"
-msgstr "印刷する"
+msgstr "プリント"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Print message…"
@@ -6070,7 +6070,7 @@ msgstr "すべて置き換える"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Replace emoji text as you type"
-msgstr "入力時に絵文字テキストを置き換えます"
+msgstr "入力時に絵文字テキストを置き換える"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
@@ -6376,7 +6376,7 @@ msgstr "閉じる前にこの下書きを保存しますか？"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
-msgstr "このメッセージをテンプレートとして保存します…"
+msgstr "このメッセージをテンプレートとして保存…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to attachment folder"
@@ -6497,7 +6497,7 @@ msgstr "第2"
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Select {0}"
-msgstr "{0} を選択します"
+msgstr "{0} を選択"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select 1 to 256 attachments."
@@ -6894,13 +6894,13 @@ msgstr "サインイン"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
-msgstr "再度サインインしてください"
+msgstr "再度サインイン"
 
 #. Only the verb is visible. The account address is read by screen readers.
 #: src/renderer/src/features/settings/Settings.tsx
 msgctxt "account row action"
 msgid "Sign in again <0>{email}</0>"
-msgstr "再度サインインしてください<0>：{email}</0>"
+msgstr "再度サインイン<0>：{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -6913,7 +6913,7 @@ msgstr "優先/その他を変更するには再度ログインしてくださ�
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "再度サインインしてフィルターを有効にします"
+msgstr "再度サインインしてフィルターを有効にする"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
@@ -7188,11 +7188,11 @@ msgstr "STARTTLS (通常は 587)"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {address}"
-msgstr "{address} からの画像の読み込みを停止します"
+msgstr "{address} からの画像の読み込みを停止"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Stop loading images from {domain}"
-msgstr "{domain} からの画像の読み込みを停止します"
+msgstr "{domain} からの画像の読み込みを停止"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Stop processing more filters"
@@ -7993,15 +7993,15 @@ msgstr "フルスクリーンを切り替え"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle message background"
-msgstr "メッセージの背景を切り替えます"
+msgstr "メッセージの背景を切り替え"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle quick filters"
-msgstr "クイックフィルターを切り替える"
+msgstr "クイックフィルターを切り替え"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Toggle reading pane position"
-msgstr "閲覧ペインの位置を切り替えます"
+msgstr "閲覧ペインの位置を切り替え"
 
 #: src/renderer/src/features/organize/SnoozeDialog.tsx
 msgid "Tomorrow morning"
@@ -8301,7 +8301,7 @@ msgstr "svc:openmail のようなサービス名を使用してください。"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Use an http, https or mailto link"
-msgstr "http、https、または mailto リンクを使用します"
+msgstr "http、https、または mailto リンクを使用してください"
 
 #: src/renderer/src/features/compose/hooks/use-compose-messages.ts
 msgid "Use an image up to 8 MB."

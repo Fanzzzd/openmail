@@ -162,7 +162,7 @@ msgstr "Спросить об этой переписке"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Ask each time"
-msgstr "Спрашивайте каждый раз"
+msgstr "Спрашивать каждый раз"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -963,7 +963,7 @@ msgstr "Показаны результаты поиска на сервере."
 #: app/index.tsx
 #: app/settings.tsx
 msgid "Sign in again"
-msgstr "Войдите снова"
+msgstr "Войти снова"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx

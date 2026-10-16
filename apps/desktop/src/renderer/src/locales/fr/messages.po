@@ -616,7 +616,7 @@ msgstr "Ajoutez votre clé API Anthropic dans Réglages → Accès à l’IA, pu
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "Ajoutez votre premier compte"
+msgstr "Ajouter votre premier compte"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -855,11 +855,11 @@ msgstr "Toujours clair"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {address}"
-msgstr "Chargez toujours les images depuis {address}"
+msgstr "Toujours charger les images depuis {address}"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Always load images from {domain}"
-msgstr "Chargez toujours les images depuis {domain}"
+msgstr "Toujours charger les images depuis {domain}"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Always load remote images from"
@@ -879,11 +879,11 @@ msgstr "Toujours déplacer les messages de cet expéditeur ?"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always quote the whole message"
-msgstr "Citez toujours l’intégralité du message"
+msgstr "Toujours citer l’intégralité du message"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Always use selection"
-msgstr "Utilisez toujours la sélection"
+msgstr "Toujours utiliser la sélection"
 
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
 msgid "Always, block trackers"
@@ -1009,7 +1009,7 @@ msgstr "Demander à chaque fois"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
-msgstr "Demandez-moi d’abord"
+msgstr "Me demander d’abord"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Assign categories (one per line)"
@@ -1432,7 +1432,7 @@ msgstr "Rechercher les mises à jour"
 
 #: src/renderer/src/state/desktop.ts
 msgid "Check for updates…"
-msgstr "Vérifiez les mises à jour…"
+msgstr "Rechercher les mises à jour…"
 
 #: src/renderer/src/features/compose/components/EditorMoreMenu.tsx
 msgid "Check grammar on this Mac"
@@ -2643,7 +2643,7 @@ msgstr "Ne se répète pas"
 
 #: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
-msgstr "Ne joignez pas le message d’origine"
+msgstr "Ne pas joindre le message d’origine"
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -2741,7 +2741,7 @@ msgstr "Faites glisser un compte pour changer sa position ou le déplacer vers u
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
-msgstr "Faites glisser la sélection vers le Finder"
+msgstr "Faire glisser la sélection vers le Finder"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
@@ -6070,7 +6070,7 @@ msgstr "Remplacer tout"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Replace emoji text as you type"
-msgstr "Remplacez le texte emoji pendant que vous tapez"
+msgstr "Remplacer le texte emoji pendant la saisie"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
@@ -6376,7 +6376,7 @@ msgstr "Enregistrer ce brouillon avant de fermer ?"
 
 #: src/renderer/src/features/compose/components/TemplatePicker.tsx
 msgid "Save this message as a template…"
-msgstr "Enregistrez ce message comme modèle…"
+msgstr "Enregistrer ce message comme modèle…"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Save to attachment folder"
@@ -6497,7 +6497,7 @@ msgstr "Deuxième"
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Select {0}"
-msgstr "Sélectionnez {0}"
+msgstr "Sélectionner {0}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select 1 to 256 attachments."
@@ -6894,13 +6894,13 @@ msgstr "Se connecter"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
-msgstr "Connectez-vous à nouveau"
+msgstr "Se reconnecter"
 
 #. Only the verb is visible. The account address is read by screen readers.
 #: src/renderer/src/features/settings/Settings.tsx
 msgctxt "account row action"
 msgid "Sign in again <0>{email}</0>"
-msgstr "Connectez-vous à nouveau <0>{email}</0>"
+msgstr "Se reconnecter <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -6913,7 +6913,7 @@ msgstr "Reconnectez-vous pour modifier Prioritaire/Autres."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "Connectez-vous à nouveau pour activer les filtres"
+msgstr "Se reconnecter pour activer les filtres"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
@@ -7201,7 +7201,7 @@ msgstr "Arrêter le traitement des filtres suivants"
 #. placeholder {0}: a.address
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
-msgstr "Arrêtez de suggérer {0}"
+msgstr "Ne plus suggérer {0}"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
@@ -7326,7 +7326,7 @@ msgstr "État de la synchronisation de {email}"
 #: src/renderer/src/features/sidebar/SidebarFooter.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Sync now"
-msgstr "Synchronisez maintenant"
+msgstr "Synchroniser maintenant"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Sync window"
@@ -8329,7 +8329,7 @@ msgstr "Utiliser l’adresse par défaut du compte"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
-msgstr "Utilisez l’adresse à laquelle le message a été envoyé"
+msgstr "Utiliser l’adresse à laquelle le message a été envoyé"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"

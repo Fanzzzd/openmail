@@ -69,6 +69,53 @@ const russianInformal = [
 ];
 
 type Catalog = Awaited<ReturnType<ReturnType<typeof formatter>["parse"]>>;
+type CatalogMessage = Catalog[string];
+
+/** Files whose every message names a menu item or command: the app menu and shortcut names. */
+const COMMAND_FILES = new Set([
+  "src/renderer/src/state/desktop.ts",
+  "src/renderer/src/i18n/shortcut-names.ts",
+]);
+/** Buttons and menu items outside those files that once read as instructions. */
+const COMMAND_LABELS = new Set([
+  "Sign in again",
+  "Sign in again <0>{email}</0>",
+  "Sign in again to enable filters",
+  "Drag selected to Finder",
+  "Select {0}",
+  "Modify {token}",
+  "Stop loading images from {address}",
+  "Stop loading images from {domain}",
+  "Always load images from {address}",
+  "Always load images from {domain}",
+  "Open only this message in a new window",
+  "Don't attach the original message",
+  "Replace emoji text as you type",
+  "Ask each time",
+  "Stop suggesting {0}",
+  "Confirm and add event",
+]);
+/**
+ * A menu item or button: a command name, a known label, or a command that opens more
+ * ("Save as template…"), as opposed to progress ("Loading…") or a sentence.
+ */
+function isCommand(source: string, message: CatalogMessage): boolean {
+  if (/[.?!:]$/.test(source)) return false;
+  if (message.origin?.some(([file]) => COMMAND_FILES.has(file))) return true;
+  if (COMMAND_LABELS.has(source)) return true;
+  return source.endsWith("…") && !/^\p{L}+ing\b|ing…$/u.test(source);
+}
+/**
+ * Commands are names, not requests. Japanese ends them on a verb stem or dictionary form
+ * (アップデートを確認…), never ください or ます. Russian, French and Czech use the infinitive
+ * (Войти снова, Se reconnecter, Znovu se přihlásit), never the polite imperative.
+ */
+const commandAsRequest: Partial<Record<string, RegExp>> = {
+  ja: /(?:ください|ます)…?$/u,
+  ru: /^\p{L}+(?:йте|ите)(?!\p{L})/u,
+  fr: /^(?:Ne )?\p{L}+ez(?:-vous)?(?!\p{L})/u,
+  cs: /^(?:Znovu |Pokaždé )?(?:se )?\p{L}+(?:te|ete|ěte|ujte|ejte)(?!\p{L})/u,
+};
 
 /** The checks every catalog's messages pass, the desktop app's and the mobile app's. */
 function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
@@ -197,6 +244,8 @@ function checkMessages(locale: string, catalog: Catalog, failures: string[]) {
       !/^Carattere(?!\p{L})/u.test(target)
     )
       failures.push(`${locale}: infinitive: ${source} → ${target}`);
+    if (commandAsRequest[locale]?.test(target) && isCommand(source, message))
+      failures.push(`${locale}: command as request: ${source} → ${target}`);
     // Spanish text starts with a capital, unless it starts with a name such as iOS.
     if (
       locale === "es" &&

@@ -963,7 +963,7 @@ msgstr "サーバーの検索結果を表示します。"
 #: app/index.tsx
 #: app/settings.tsx
 msgid "Sign in again"
-msgstr "再度サインインしてください"
+msgstr "再度サインイン"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx

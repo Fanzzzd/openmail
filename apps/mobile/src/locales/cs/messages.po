@@ -162,7 +162,7 @@ msgstr "Zeptat se na tuto konverzaci"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Ask each time"
-msgstr "Pokaždé se ptejte"
+msgstr "Pokaždé se zeptat"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -963,7 +963,7 @@ msgstr "Zobrazují se výsledky hledání na serveru."
 #: app/index.tsx
 #: app/settings.tsx
 msgid "Sign in again"
-msgstr "Znovu se přihlaste"
+msgstr "Znovu se přihlásit"
 
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx

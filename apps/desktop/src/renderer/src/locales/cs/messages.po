@@ -616,7 +616,7 @@ msgstr "Přidejte svůj klíč API Anthropic v Nastavení → Přístup AI a pak
 
 #: src/renderer/src/features/accounts/AddAccountDialog.tsx
 msgid "Add your first account"
-msgstr "Přidejte svůj první účet"
+msgstr "Přidat první účet"
 
 #: src/renderer/src/features/reader/attachments/AttachmentImportDialog.tsx
 msgid "Added"
@@ -1005,7 +1005,7 @@ msgstr "Zeptat se na poštu"
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Ask each time"
-msgstr "Pokaždé se ptejte"
+msgstr "Pokaždé se zeptat"
 
 #: src/renderer/src/features/settings/sections/ai-clients-ui.tsx
 msgid "Ask me first"
@@ -1031,7 +1031,7 @@ msgstr "Přiložit soubory…"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Attach the redacted diagnostics shown below"
-msgstr "Připojte redigovanou diagnostiku zobrazenou níže"
+msgstr "Připojit diagnostiku níže bez osobních údajů"
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Attached message"
@@ -1767,7 +1767,7 @@ msgstr "Potvrdit"
 
 #: src/renderer/src/features/calendar/CalendarEvents.tsx
 msgid "Confirm and add event"
-msgstr "Potvrďte a přidejte událost"
+msgstr "Potvrdit a přidat událost"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Confirm deleting this filter."
@@ -1791,7 +1791,7 @@ msgstr "Potvrďte trvalé smazání v aplikaci."
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Confirm removal"
-msgstr "Potvrďte odstranění"
+msgstr "Potvrdit odstranění"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Confirm the new event in OpenMail to create it."
@@ -1912,7 +1912,7 @@ msgstr "Pokračovat"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Continue editing"
-msgstr "Pokračujte v úpravách"
+msgstr "Pokračovat v úpravách"
 
 #: src/renderer/src/features/feedback/Feedback.tsx
 msgid "Continue to draft"
@@ -1982,7 +1982,7 @@ msgstr "Kopírovat odkaz na konverzaci"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy link to message"
-msgstr "Zkopírujte odkaz do zprávy"
+msgstr "Zkopírovat odkaz na zprávu"
 
 #: src/renderer/src/features/settings/sections/SyncHealth.tsx
 msgid "Copy redacted report"
@@ -2007,7 +2007,7 @@ msgstr "Kopírovat do složek…"
 
 #: src/renderer/src/features/settings/sections/SignatureSettings.tsx
 msgid "Copy to local signature"
-msgstr "Zkopírujte do místního podpisu"
+msgstr "Zkopírovat do místního podpisu"
 
 #: src/renderer/src/features/reader/ThreadViewMenu.tsx
 msgid "Copy webmail link"
@@ -2318,7 +2318,7 @@ msgstr "Vytvořit filtr"
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 #: src/renderer/src/i18n/action-names.ts
 msgid "Create filter from these messages"
-msgstr "Vytvořte filtr z těchto zpráv"
+msgstr "Vytvořit filtr z těchto zpráv"
 
 #: src/renderer/src/features/accounts/ProfileSettings.tsx
 msgid "Create Personal and Work spaces?"
@@ -2643,7 +2643,7 @@ msgstr "Neopakuje se"
 
 #: src/renderer/src/features/compose/components/ComposeAttachments.tsx
 msgid "Don't attach the original message"
-msgstr "Nepřipojujte původní zprávu"
+msgstr "Nepřipojovat původní zprávu"
 
 #: src/renderer/src/features/accounts/FirstRunDone.tsx
 #: src/renderer/src/features/reader/RemoteImagesPrompt.tsx
@@ -2741,7 +2741,7 @@ msgstr "Přetažením účtu změníte jeho pořadí nebo ho přesunete do jiné
 
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Drag selected to Finder"
-msgstr "Přetáhněte vybrané do Finderu"
+msgstr "Přetáhnout vybrané do Finderu"
 
 #: src/renderer/src/features/settings/sections/AiSettings.tsx
 msgid "Each automatic summary uses your Anthropic API key and sends up to {summaryKb} KB of the conversation. At most {summaryCap} a day across all accounts. Summaries that fail before any text arrives don't count."
@@ -2995,11 +2995,11 @@ msgstr "Rozbalit vše"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Expand all messages"
-msgstr "Rozbalte všechny zprávy"
+msgstr "Rozbalit všechny zprávy"
 
 #: src/renderer/src/features/sidebar/Sidebar.tsx
 msgid "Expand categories"
-msgstr "Rozbalte kategorie"
+msgstr "Rozbalit kategorie"
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Expanded"
@@ -3060,7 +3060,7 @@ msgstr "Název souboru"
 
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Fill template variables"
-msgstr "Vyplňte proměnné šablony"
+msgstr "Vyplnit proměnné šablony"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Filter recovery is only available for Gmail."
@@ -3285,11 +3285,11 @@ msgstr "Obecné"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate app-specific password"
-msgstr "Vygenerujte heslo pro konkrétní aplikaci"
+msgstr "Vygenerovat heslo pro aplikaci"
 
 #: src/renderer/src/features/accounts/ImapStep.tsx
 msgid "Generate authorization code"
-msgstr "Vygenerujte autorizační kód"
+msgstr "Vygenerovat autorizační kód"
 
 #: src/renderer/src/features/compose/components/ComposerAi.tsx
 msgid "Generate preview"
@@ -3361,7 +3361,7 @@ msgstr "Přejít"
 #: src/renderer/src/features/organize/GoToFolder.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Go to folder"
-msgstr "Přejděte do složky"
+msgstr "Přejít do složky"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Google Calendar can't use this repeating event's time zone. Choose another time zone."
@@ -3397,7 +3397,7 @@ msgstr "Seskupte účty do prostorů, například „Pracovní“ a „Osobní�
 
 #: src/renderer/src/features/settings/sections/ReadingSettings.tsx
 msgid "Group messages into conversations"
-msgstr "Seskupování zpráv do konverzací"
+msgstr "Seskupovat zprávy do konverzací"
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Has attachment"
@@ -3664,7 +3664,7 @@ msgstr "Vložit obrázek"
 
 #: src/renderer/src/features/compose/components/TemplateVariables.tsx
 msgid "Insert template"
-msgstr "Vložte šablonu"
+msgstr "Vložit šablonu"
 
 #: src/renderer/src/features/settings/sections/TemplateSettings.tsx
 msgid "Insert variable"
@@ -3726,7 +3726,7 @@ msgstr "Kurzíva"
 
 #: src/renderer/src/features/calendar/MeetingLinks.tsx
 msgid "Join meeting"
-msgstr "Připojte se ke schůzce"
+msgstr "Připojit se ke schůzce"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Jump to selection"
@@ -5163,7 +5163,7 @@ msgstr "Otevřít v novém okně"
 
 #: src/renderer/src/features/reader/use-thread-mail-actions.ts
 msgid "Open in Outlook"
-msgstr "Otevřete v aplikaci Outlook"
+msgstr "Otevřít v aplikaci Outlook"
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Open in webmail"
@@ -5179,7 +5179,7 @@ msgstr "Otevřít odkaz"
 
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "Open macOS notification settings"
-msgstr "Otevřete nastavení oznámení macOS"
+msgstr "Otevřít nastavení oznámení macOS"
 
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Open only this message in a new window"
@@ -5861,7 +5861,7 @@ msgstr "Obnovit"
 #: src/renderer/src/features/settings/sections/AppleContactsSettings.tsx
 #: src/renderer/src/features/settings/sections/ContactSettings.tsx
 msgid "Refresh contacts"
-msgstr "Obnovte kontakty"
+msgstr "Obnovit kontakty"
 
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Reject"
@@ -6066,11 +6066,11 @@ msgstr "Nahradit"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace all"
-msgstr "Vyměňte všechny"
+msgstr "Nahradit vše"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Replace emoji text as you type"
-msgstr "Nahraďte text emodži při psaní"
+msgstr "Nahrazovat text emodži při psaní"
 
 #: src/renderer/src/features/compose/components/ComposeEditorBars.tsx
 msgid "Replace with"
@@ -6158,7 +6158,7 @@ msgstr "Obnovit oblíbené"
 
 #: src/main/app/native-i18n.ts
 msgid "Reset local cache"
-msgstr "Obnovte místní mezipaměť"
+msgstr "Resetovat místní mezipaměť"
 
 #: src/renderer/src/features/settings/sections/InteractionSettings.tsx
 msgid "Reset toolbar"
@@ -6497,7 +6497,7 @@ msgstr "Druhý"
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Select {0}"
-msgstr "Vyberte {0}"
+msgstr "Vybrat {0}"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select 1 to 256 attachments."
@@ -6514,7 +6514,7 @@ msgstr "Vyberte účty povolené v Nastavení → Přístup AI. Asistent prohled
 #: src/renderer/src/app/WindowUi.tsx
 #: src/renderer/src/state/desktop.ts
 msgid "Select all"
-msgstr "Vyberte vše"
+msgstr "Vybrat vše"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Select at least one conversation."
@@ -6894,13 +6894,13 @@ msgstr "Přihlásit se"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 #: src/renderer/src/features/sync-status/MailStatusNotice.tsx
 msgid "Sign in again"
-msgstr "Znovu se přihlaste"
+msgstr "Znovu se přihlásit"
 
 #. Only the verb is visible. The account address is read by screen readers.
 #: src/renderer/src/features/settings/Settings.tsx
 msgctxt "account row action"
 msgid "Sign in again <0>{email}</0>"
-msgstr "Znovu se přihlaste <0>{email}</0>"
+msgstr "Znovu se přihlásit <0>{email}</0>"
 
 #: src/renderer/src/ui/SignInAgainOnMac.tsx
 msgid "Sign in again on your Mac"
@@ -6913,7 +6913,7 @@ msgstr "Přihlaste se znovu pro změnu Prioritní/Další."
 
 #: src/renderer/src/features/settings/sections/FilterEditor.tsx
 msgid "Sign in again to enable filters"
-msgstr "Chcete-li povolit filtry, znovu se přihlaste"
+msgstr "Znovu se přihlásit a povolit filtry"
 
 #: src/renderer/src/lib/errors.ts
 msgid "Sign in again to enable filters and automatic replies."
@@ -7293,7 +7293,7 @@ msgstr "Synchronizace"
 
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Sync aliases and signatures"
-msgstr "Synchronizujte aliasy a podpisy"
+msgstr "Synchronizovat aliasy a podpisy"
 
 #: src/renderer/src/features/overview/Overview.tsx
 msgid "Sync all"
@@ -8321,15 +8321,15 @@ msgstr "Používejte obrázky PNG, JPEG, GIF nebo WebP do velikosti 8 MB."
 
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Use selection for find"
-msgstr "K nalezení použijte výběr"
+msgstr "Použít výběr k hledání"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the account default address"
-msgstr "Použijte výchozí adresu účtu"
+msgstr "Použít výchozí adresu účtu"
 
 #: src/renderer/src/features/settings/sections/ComposeSettings.tsx
 msgid "Use the address the message was sent to"
-msgstr "Použijte adresu, na kterou byla zpráva odeslána"
+msgstr "Použít adresu, na kterou byla zpráva odeslána"
 
 #: src/renderer/src/features/accounts/OAuthStep.tsx
 msgid "Use the built-in client"

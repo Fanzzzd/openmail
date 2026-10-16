@@ -162,7 +162,7 @@ msgstr "Preguntar sobre esta conversación"
 #. js-lingui-explicit-id
 #: app/settings.tsx
 msgid "Ask each time"
-msgstr "Pregunta cada vez"
+msgstr "Preguntar cada vez"
 
 #. js-lingui-explicit-id
 #: app/compose.tsx
@@ -805,7 +805,7 @@ msgstr "Quitar etiqueta"
 #. js-lingui-explicit-id
 #: src/ai-settings.tsx
 msgid "Replies and forwards"
-msgstr "Responde y reenvía"
+msgstr "Respuestas y reenvíos"
 
 #. js-lingui-explicit-id
 #: app/reader.tsx
