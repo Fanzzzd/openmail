@@ -8,6 +8,7 @@ import { act, createElement, useEffect, useRef, useState } from "react";
 import { afterAll, afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { DesktopEvent } from "../../../shared/desktop";
 import type { ToastState } from "../ui/Toast";
+import { rememberSearchReturn } from "../features/search/search-return";
 import { emptyDraft, toDraftInput } from "../features/compose/draft";
 import { useRunMail } from "../state/mail";
 import type { ThreadList } from "../state/threads";
@@ -351,10 +352,12 @@ function Harness() {
     spaces: [],
   });
   useEffect(() => {
+    searchFieldRef = searchRef;
     model = { navigation, mailActions, composition };
   });
   return null;
 }
+let searchFieldRef: { current: HTMLInputElement | null };
 let model: {
   navigation: ReturnType<typeof useMailSelection>;
   mailActions: ReturnType<typeof useMailActions>;
@@ -690,6 +693,23 @@ it("Escape clears checked rows after popups and the search field", () => {
   expect(checked()).toEqual(["three"]);
   expect(key("Escape").defaultPrevented).toBe(false);
   expect(checked()).toEqual(["three"]);
+});
+
+it("Escape in the search field puts focus back where it was before the field took it", () => {
+  const document = dom.window.document;
+  const row = document.createElement("button");
+  const field = document.createElement("input");
+  document.body.append(row, field);
+  searchFieldRef.current = field;
+  try {
+    // The DOM stub does not track the focused element, so watch the call.
+    const focus = vi.spyOn(row, "focus");
+    rememberSearchReturn(row, null);
+    key("Escape", field);
+    expect(focus).toHaveBeenCalledTimes(1);
+  } finally {
+    searchFieldRef.current = null;
+  }
 });
 
 it("native bridge defers search while a dialog is open and updates menu state", async () => {

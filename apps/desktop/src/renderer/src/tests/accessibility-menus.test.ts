@@ -9,6 +9,7 @@ import { ProfileEditor } from "../features/accounts/ProfileEditor";
 import { TextContextMenu } from "../app/WindowUi";
 import { RecipientField } from "../features/compose/components/RecipientField";
 import { SearchField } from "../features/search/SearchField";
+import { restoreSearchReturn } from "../features/search/search-return";
 import {
   ContextMenuContent,
   ContextMenuRoot,
@@ -267,4 +268,27 @@ it("names the search chip row and groups each chip under its token", async () =>
   expect(within(first).getByRole("button", { name: "Modify label:Projects" })).toBeTruthy();
   expect(within(first).getByRole("button", { name: "Remove label:Projects" })).toBeTruthy();
   await audit();
+});
+
+// Escape in an empty field blurred it and left focus on the page; the field now remembers where
+// focus came from.
+it("remembers what had focus before the search field and hands it back", () => {
+  render(
+    localized(
+      h("main", null, [
+        h("button", { key: "row", type: "button" }, "Row"),
+        h(SearchField, { key: "field", value: "", onChange: vi.fn(), inputRef: null }),
+      ]),
+    ),
+  );
+  const row = screen.getByRole("button", { name: "Row" });
+  const input = screen.getByRole("combobox", { name: "Search mail" });
+  row.focus();
+  input.focus();
+  input.blur();
+  expect(document.activeElement).toBe(document.body);
+  expect(restoreSearchReturn()).toBe(true);
+  expect(document.activeElement).toBe(row);
+  // A second restore has nothing left to return to.
+  expect(restoreSearchReturn()).toBe(false);
 });

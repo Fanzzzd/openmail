@@ -51,6 +51,7 @@ import { isTouchWeb } from "../../lib/platform";
 import { primaryShortcutText } from "../../../../shared/shortcuts";
 import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
+import { rememberSearchReturn } from "./search-return";
 import { focusFirstResult } from "./result-focus";
 
 /** The operator reference on the docs site, opened in the default browser. */
@@ -269,6 +270,7 @@ export function SearchField({
             </Combobox.Chip>
           ))}
           <Combobox.Input
+            onFocus={(e) => rememberSearchReturn(e.relatedTarget, e.currentTarget.parentElement)}
             onKeyDown={(e) => {
               // Once the search ran, Down or a second Enter moves on to the results.
               const toResults =

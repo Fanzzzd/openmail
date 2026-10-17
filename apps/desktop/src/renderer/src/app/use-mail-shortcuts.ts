@@ -40,6 +40,7 @@ import { isBackKey } from "../lib/responsive-layout";
 import { isTypingTarget } from "../lib/typing-target";
 import { checkingRows } from "../lib/selection";
 import { escapeClearsSearch } from "./search-escape";
+import { restoreSearchReturn } from "../features/search/search-return";
 export function useMailShortcuts({
   searchRef,
   navigation,
@@ -205,8 +206,11 @@ export function useMailShortcuts({
           readerOpen: panes.shown.reader && selectedId !== null,
         })
       ) {
+        const field = searchRef.current;
         setQuery("");
-        searchRef.current?.blur();
+        field?.blur();
+        // Out of the field, focus goes back to what had it, or to the list, never to the page.
+        if (e.target === field && !restoreSearchReturn()) navigation.focusList(selection.focus);
       }
       return;
     }
