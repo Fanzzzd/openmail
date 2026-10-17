@@ -297,7 +297,7 @@ export const makeThreadsStore = ({
         ${
           fast
             ? sql`recent AS MATERIALIZED (
-          SELECT m.rowid FROM ${listSource(q)} WHERE CASE WHEN ${listFilter(unsearched)} THEN ${newestMatch} ELSE 0 END
+          SELECT m.rowid FROM ${listSource(q)} WHERE ${accountScope(sql, q.accountIds, "m.account_id")} AND CASE WHEN ${listFilter(unsearched)} THEN ${newestMatch} ELSE 0 END
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         ),`
             : sql.literal("")

@@ -673,3 +673,5 @@ OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vi
 ```
 
 修正回归包含 FK-on smoke／手机升级保留依赖表、重复压力检查抵扣空闲页、未开启回收时不继续删除、worker 禁止调用方线程执行 VACUUM、心跳响应、真实子进程 CLI 共享锁、直接 SQLite writer、升级空间不足保留数据库字节，以及十种语言的字节复数。
+
+单账户搜索的账户范围：线程快速路径的 `recent` CTE 原来只在 CASE 里判断账户，单账户搜索会扫 `messages_account_list_date_id` 的所有账户并对每行跑 CASE，耗时随整个数据库增长。现在 `WHERE` 先写 `accountScope(…, "m.account_id")`，再接 CASE。评审者在 100k 库上测得：100 封邮件的账户上 `from:nobody weekly` 从 111 ms 降到 0.6 ms，大账户上 `is:unread weekly` 从 131 ms 降到 8 ms。[search-account-scope-plans.test.ts](../packages/core/src/store/search-account-scope-plans.test.ts) 在默认套件里检查单账户会话页的 `recent` 和平铺页的语句：账户过滤写在第一个 CASE 前，计划是 `messages_account_list_date_id (account_id=?`。去掉修复、去掉 `messagePage` 外层的 `accountScope`、把 `labelWalk` 设为 `true`，三种改动各让它失败。`performance-large.test.ts` 新增 `search one account from: no match and common word`（200 ms）、`search one account from: and common word`（200 ms）、`search one account is:unread and common word`（200 ms）、`search one account common word`（150 ms），账户是 fixture 里 33k 封的 gmail 账户。2026-10-17 `OPENMAIL_PERF=1` 各跑一次的中位数，修复前依次为 103、98、126、88 ms，修复后为 48、22、30、33 ms。

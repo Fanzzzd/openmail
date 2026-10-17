@@ -300,6 +300,24 @@ it.effect(
             ),
         );
       }
+      // One account of three: the thread fast pass's `recent` CTE scoped its rows only inside a
+      // CASE, so a one-account search walked messages_account_list_date_id across every account
+      // (from:nobody weekly on a 100-message account: 111 ms before, 0.6 ms after, on 100k).
+      for (const [name, search, budget, threads] of [
+        ["search one account from: no match and common word", "from:nobody weekly", 200, 0],
+        ["search one account from: and common word", "from:person1 weekly", 200, 50],
+        ["search one account is:unread and common word", "is:unread weekly", 200, 50],
+        ["search one account common word", "weekly", 150, 50],
+      ] as const)
+        yield* measure(
+          name,
+          budget,
+          store
+            .listThreads({ search, limit: 50, accountIds: [gmail] })
+            .pipe(
+              Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, threads))),
+            ),
+        );
       // A count reads Spam/Trash eligibility from message_search_meta. Reading labels_json, after
       // the body columns, took 0.4 s warm and 3.4 s cold for `weekly OR alpha` on fixture R.
       // These run warm: the suite cannot clear the system page cache.
