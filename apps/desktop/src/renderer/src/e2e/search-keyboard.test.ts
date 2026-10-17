@@ -277,3 +277,28 @@ it("a keyboard-selected row leaves focus in the search field as the query change
   expect(h.server.pushed).toHaveLength(0);
   expect(row(h.id("three"))).toBeTruthy();
 });
+
+// Base UI stopped Escape in a field with a chip, so the search stayed. Once it went through, the
+// field's open state from typing showed the empty field's hint under the list.
+it("Escape in a search with a chip clears it, closes the suggestions and returns to the row", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("two")));
+  await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
+  const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+  row(h.id("two")).focus();
+  field.focus();
+  fireEvent.input(field, { target: { value: "from:nobody " }, inputType: "insertText" });
+  await eventually(() =>
+    expect(screen.getByRole("button", { name: "Modify from:nobody" })).toBeTruthy(),
+  );
+  await eventually(() => expect(h.href()).toContain("q="));
+  expect(field.getAttribute("aria-expanded")).toBe("false");
+  key("Escape", {}, field);
+  await eventually(() => expect(h.href()).not.toContain("q="));
+  expect(screen.queryByRole("button", { name: "Modify from:nobody" })).toBeNull();
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  await wait(50);
+  expect(field.getAttribute("aria-expanded")).toBe("false");
+});

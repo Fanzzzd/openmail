@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { expect, it, vi } from "vitest";
+import { expect, it, onTestFinished, vi } from "vitest";
 import { createElement as h, useState } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -291,4 +291,27 @@ it("remembers what had focus before the search field and hands it back", () => {
   expect(document.activeElement).toBe(row);
   // A second restore has nothing left to return to.
   expect(restoreSearchReturn()).toBe(false);
+});
+
+// Base UI stopped Escape in a field with chips, so the window never cleared the search.
+it("Escape in a search field with a chip reaches the window once the suggestions are closed", async () => {
+  searchChips("from:priya ");
+  const input = screen.getByRole("combobox", { name: "Search mail" });
+  const escapes = vi.fn();
+  const listen = (event: KeyboardEvent) => {
+    if (event.key === "Escape") escapes(input.getAttribute("aria-expanded"));
+  };
+  window.addEventListener("keydown", listen);
+  onTestFinished(() => window.removeEventListener("keydown", listen));
+  input.focus();
+  typeInto(input, "from");
+  await screen.findByRole("listbox");
+  const user = userEvent.setup();
+  // The first Escape only closes the suggestions.
+  await user.keyboard("{Escape}");
+  await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+  expect(screen.getByRole("button", { name: "Modify from:priya" })).toBeTruthy();
+  expect(escapes).not.toHaveBeenCalledWith("false");
+  await user.keyboard("{Escape}");
+  expect(escapes).toHaveBeenLastCalledWith("false");
 });

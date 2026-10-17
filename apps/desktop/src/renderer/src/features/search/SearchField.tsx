@@ -207,7 +207,16 @@ export function SearchField({
           if (details.reason === "input-change") emit(chips, next);
         }}
         onValueChange={(next, details) => {
-          if (details.reason === "escape-key" || details.reason === "input-clear") return;
+          // With the popup closed, Base UI clears chips on Escape and stops the key. The window's
+          // handler clears the search and hands focus back, so the key goes on to it. The open
+          // state can still be on from typing with nothing to suggest; the emptied field would
+          // then show its hint.
+          if (details.reason === "escape-key") {
+            details.allowPropagation();
+            setOpen(false);
+            return;
+          }
+          if (details.reason === "input-clear") return;
           if (details.reason === "item-press") {
             const key = next.find((token) => !chips.includes(token));
             const suggestion = key === undefined ? undefined : suggestionFor(byKey, key);
