@@ -6439,6 +6439,10 @@ msgstr "Zoeken op betekenis"
 msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 msgstr "Zoeken kan maximaal {MAX_SEARCH_TERMS} woorden en operatoren gebruiken. Verwijder er een paar."
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search filters"
+msgstr "Zoekfilters"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."

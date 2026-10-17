@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { expect, it, vi } from "vitest";
 import { createElement as h, useState } from "react";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
@@ -237,7 +237,7 @@ const searchChips = (value: string) => {
     const [text, setText] = useState(value);
     return h(SearchField, { value: text, onChange: setText, inputRef: null });
   };
-  render(localized(h(Field)));
+  render(localized(h("main", null, h(Field))));
 };
 
 // Base UI's chip refocused itself on Tab, so Tab from a chip's Modify button came back to it.
@@ -251,4 +251,20 @@ it("Tab from the last search chip's Modify button moves on to the input", async 
   expect(document.activeElement).toBe(input);
   await user.tab({ shift: true });
   expect(document.activeElement).toBe(modify);
+});
+
+it("names the search chip row and groups each chip under its token", async () => {
+  searchChips("label:Projects from:bob ");
+  const toolbar = screen.getByRole("toolbar", { name: "Search filters" });
+  const groups = within(toolbar).getAllByRole("group");
+  expect(groups.map((group) => group.getAttribute("aria-label"))).toEqual([
+    "label:Projects",
+    "from:bob",
+  ]);
+  // The Modify and Remove buttons sit inside their chip's group.
+  const first = groups[0];
+  if (!first) throw new Error("Missing chip group");
+  expect(within(first).getByRole("button", { name: "Modify label:Projects" })).toBeTruthy();
+  expect(within(first).getByRole("button", { name: "Remove label:Projects" })).toBeTruthy();
+  await audit();
 });

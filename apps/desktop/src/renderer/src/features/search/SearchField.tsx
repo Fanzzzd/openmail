@@ -219,11 +219,17 @@ export function SearchField({
         onItemHighlighted={(item) => setHighlighted(item)}
       >
         {/* One line at any width: chips keep their width up to 12rem, then truncate. When they do not all fit, the row scrolls sideways. */}
-        <Combobox.Chips className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overflow-y-hidden rounded-control [scrollbar-width:none] border border-edge bg-fill-quiet px-2 transition-colors focus-within:bg-transparent motion-reduce:transition-none">
+        <Combobox.Chips
+          aria-label={t`Search filters`}
+          className="focus-within:ring-2 focus-within:ring-a11y-focus flex h-7 min-w-0 flex-1 items-center gap-1.5 overflow-x-auto overflow-y-hidden rounded-control [scrollbar-width:none] border border-edge bg-fill-quiet px-2 transition-colors focus-within:bg-transparent motion-reduce:transition-none"
+        >
           <Search className="size-3.5 shrink-0 text-a11y-muted" />
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
+              // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- Base UI renders the chip as a div; a fieldset would add a border and legend.
+              role="group"
+              aria-label={token}
               onFocus={revealOnFocus}
               onKeyDown={letTabMoveFocus}
               className="flex max-w-48 shrink-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"

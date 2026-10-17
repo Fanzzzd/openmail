@@ -6439,6 +6439,10 @@ msgstr "Поиск по смыслу"
 msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 msgstr "Поиск может использовать не более {MAX_SEARCH_TERMS} слов и операторов. Удалите некоторые."
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search filters"
+msgstr "Фильтры поиска"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."

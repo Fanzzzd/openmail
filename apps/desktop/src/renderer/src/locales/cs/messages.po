@@ -6439,6 +6439,10 @@ msgstr "Hledání podle významu"
 msgid "Search can use at most {MAX_SEARCH_TERMS} words and operators. Remove some."
 msgstr "Hledání může použít nejvýše {MAX_SEARCH_TERMS} slov a operátorů. Některé odeberte."
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Search filters"
+msgstr "Filtry hledání"
+
 #: src/renderer/src/features/mail-list/MessageList.tsx
 #: src/renderer/src/lib/errors.ts
 msgid "Search groups can nest at most {MAX_SEARCH_DEPTH} levels deep. Remove some parentheses."
