@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
-import { advance, eventually, flow, incoming, key, row } from "./harness";
+import { advance, eventually, flow, incoming, key, row, wait } from "./harness";
 
 const reader = () => document.querySelector('[data-mail-pane="reader"]')?.textContent ?? "";
 
@@ -237,4 +237,43 @@ it("a search being typed matches its last word as a prefix", async () => {
   fireEvent.change(field, { target: { value: "asy" } });
   await eventually(() => expect(() => row(h.id("two"))).toThrow());
   expect(row(h.id("one"))).toBeTruthy();
+});
+
+// A row picked with the keyboard took focus back from the field whenever the results changed, so
+// the rest of the query went to the list and Backspace trashed the conversation.
+it("a keyboard-selected row leaves focus in the search field as the query changes", async () => {
+  current = await flow({
+    messages: [
+      incoming("one"),
+      incoming("two"),
+      incoming("three", { subject: "Jordan Lee", date: Date.now() - 3000 }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("three"))).toBeTruthy());
+  row(h.id("one")).focus();
+  // The first Down selects the focused row.
+  for (const id of ["one", "two", "three"]) {
+    key("ArrowDown");
+    await eventually(() => expect(row(h.id(id)).getAttribute("aria-selected")).toBe("true"));
+  }
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("three"))));
+  const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+  field.focus();
+  // Results that keep the row, results that drop it, and the cleared field bringing it back.
+  for (const [typed, shown] of [
+    ["jo", "three"],
+    ["flow", "one"],
+    ["", "three"],
+  ] as const) {
+    fireEvent.change(field, { target: { value: typed } });
+    await eventually(() => expect(row(h.id(shown))).toBeTruthy());
+    await wait(50);
+    expect(document.activeElement).toBe(field);
+  }
+  key("Backspace");
+  await wait(50);
+  expect(await h.run(h.store.listPendingOps)).toHaveLength(0);
+  expect(h.server.pushed).toHaveLength(0);
+  expect(row(h.id("three"))).toBeTruthy();
 });

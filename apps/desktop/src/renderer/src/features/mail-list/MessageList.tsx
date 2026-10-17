@@ -312,7 +312,9 @@ function MessageListBody({
     setViewport({ top: el.scrollTop, height: el.clientHeight });
   }, [loading, window.total, listRef, searchQuery?.search]);
 
-  // Unmounted rows still have coordinates, so keyboard navigation can reach them.
+  // Unmounted rows still have coordinates, so keyboard navigation can reach them. Focus moves to
+  // the row only from the list or from nowhere: new results while the person types in the search
+  // field must not pull keys, Backspace included, into the list.
   useEffect(() => {
     const el = listRef.current;
     if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return constVoid;
@@ -322,6 +324,8 @@ function MessageListBody({
     else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
     setViewport({ top: el.scrollTop, height: el.clientHeight });
     const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (active && active !== document.body && !el.contains(active)) return;
       for (const row of el.querySelectorAll<HTMLButtonElement>("[data-id]"))
         if (row.dataset.id === selectedId) {
           row.focus({ preventScroll: true });
