@@ -77,6 +77,15 @@ const openMenuOnKey = (event: KeyboardEvent<HTMLButtonElement>) => {
   event.currentTarget.click();
 };
 
+/**
+ * Base UI's chip refocuses itself on any key it does not handle, Tab included, so Tab from a chip's
+ * Modify or Remove button landed on the chip and the next Tab on the same button again. Skipping
+ * its handler for Tab lets the browser move focus on, forward or back.
+ */
+const letTabMoveFocus = (event: KeyboardEvent<HTMLElement> & { preventBaseUIHandler(): void }) => {
+  if (event.key === "Tab") event.preventBaseUIHandler();
+};
+
 export function SearchField({
   value,
   onChange,
@@ -216,6 +225,7 @@ export function SearchField({
             <Combobox.Chip
               key={`${index}:${token}`}
               onFocus={revealOnFocus}
+              onKeyDown={letTabMoveFocus}
               className="flex max-w-48 shrink-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
             >
               <DropdownMenu

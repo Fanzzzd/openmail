@@ -2,6 +2,7 @@
 import { expect, it, vi } from "vitest";
 import { createElement as h, useState } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import { ProfileEditor } from "../features/accounts/ProfileEditor";
@@ -229,4 +230,25 @@ it("marks the space name invalid and points it at the error while one shows", as
   expect(input.getAttribute("aria-describedby")).toBe(alert.id);
   expect(alert.id).not.toBe("");
   await audit();
+});
+
+const searchChips = (value: string) => {
+  const Field = () => {
+    const [text, setText] = useState(value);
+    return h(SearchField, { value: text, onChange: setText, inputRef: null });
+  };
+  render(localized(h(Field)));
+};
+
+// Base UI's chip refocused itself on Tab, so Tab from a chip's Modify button came back to it.
+it("Tab from the last search chip's Modify button moves on to the input", async () => {
+  searchChips("label:Projects from:bob ");
+  const input = screen.getByRole("combobox", { name: "Search mail" });
+  const modify = screen.getByRole("button", { name: "Modify from:bob" });
+  modify.focus();
+  const user = userEvent.setup();
+  await user.tab();
+  expect(document.activeElement).toBe(input);
+  await user.tab({ shift: true });
+  expect(document.activeElement).toBe(modify);
 });
