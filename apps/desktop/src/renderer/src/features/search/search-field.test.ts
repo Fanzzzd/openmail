@@ -658,3 +658,31 @@ it.each([
     dom.dispose();
   }
 });
+
+// The row scrolls sideways and Base UI moves focus between chips with a plain focus(), which
+// leaves a partly visible chip mostly hidden (only its x showed).
+it("scrolls a chip into view when it or its Modify button takes focus", () => {
+  const dom = renderChips();
+  const scrolled: Element[] = [];
+  const scrollIntoView = vi.fn(function (this: Element) {
+    scrolled.push(this);
+  });
+  Object.assign(dom.window.HTMLElement.prototype, { scrollIntoView });
+  try {
+    const modify = dom.element.querySelector('button[aria-label="Modify label:receipts"]');
+    const chip = modify?.closest(".rounded-item");
+    if (!modify || !chip) throw new Error("Missing chip");
+    for (const target of [chip, modify]) {
+      scrollIntoView.mockClear();
+      scrolled.length = 0;
+      act(() => {
+        target.dispatchEvent(new dom.window.Event("focusin", { bubbles: true }));
+      });
+      // Focus bubbles, so the Modify button's focus scrolls the whole chip.
+      expect(scrolled).toEqual([chip]);
+      expect(scrollIntoView).toHaveBeenCalledWith({ inline: "nearest", block: "nearest" });
+    }
+  } finally {
+    dom.dispose();
+  }
+});

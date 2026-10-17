@@ -59,6 +59,14 @@ const SEARCH_HELP_URL = "https://openmail-docs.vercel.app/docs/search-operators"
 const noContacts = Atom.make(AsyncResult.success<readonly Address[]>([]));
 
 /**
+ * Base UI moves focus between chips with a plain focus(), which does not scroll
+ * a partly visible chip into view in the row that scrolls sideways. React
+ * focus events bubble, so this also covers the Modify button inside the chip.
+ */
+const revealOnFocus = (event: FocusEvent<HTMLElement>) =>
+  event.currentTarget.scrollIntoView({ inline: "nearest", block: "nearest" });
+
+/**
  * The chip catches Enter and Space as they bubble and moves focus to the input,
  * so the Modify button opens its menu here and the chip never sees the key.
  */
@@ -207,6 +215,7 @@ export function SearchField({
           {chips.map((token, index) => (
             <Combobox.Chip
               key={`${index}:${token}`}
+              onFocus={revealOnFocus}
               className="flex max-w-48 shrink-0 items-center gap-1 rounded-item bg-blue-500/10 px-1.5 text-footnote whitespace-nowrap text-blue-800 dark:bg-blue-400/15 dark:text-blue-200"
             >
               <DropdownMenu
