@@ -17,7 +17,16 @@ import {
 } from "@openmail/core/schema";
 import { Clock, Folder, Mails, Search, X } from "lucide-react";
 import { AsyncResult, Atom } from "effect/reactivity";
-import { type Ref, useEffect, useId, useImperativeHandle, useRef, useState } from "react";
+import {
+  type FocusEvent,
+  type KeyboardEvent,
+  type Ref,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from "react";
 import { recentSearches, useRecentSearches } from "../../state/recent-searches";
 import {
   contactLookup,
@@ -48,6 +57,17 @@ import { focusFirstResult } from "./result-focus";
 const SEARCH_HELP_URL = "https://openmail-docs.vercel.app/docs/search-operators";
 
 const noContacts = Atom.make(AsyncResult.success<readonly Address[]>([]));
+
+/**
+ * The chip catches Enter and Space as they bubble and moves focus to the input,
+ * so the Modify button opens its menu here and the chip never sees the key.
+ */
+const openMenuOnKey = (event: KeyboardEvent<HTMLButtonElement>) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.currentTarget.click();
+};
 
 export function SearchField({
   value,
@@ -197,6 +217,7 @@ export function SearchField({
                     type="button"
                     aria-label={t`Modify ${token}`}
                     title={token}
+                    onKeyDown={openMenuOnKey}
                     className="min-w-0 truncate"
                   >
                     {token}

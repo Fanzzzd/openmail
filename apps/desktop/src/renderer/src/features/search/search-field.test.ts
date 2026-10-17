@@ -29,6 +29,7 @@ const controls = vi.hoisted(() => {
     groups,
     open: false,
     text: "",
+    chipKey: vi.fn(),
     contactLookup: vi.fn(),
     labelScope: vi.fn(),
     accountIds: ["gmail:one"],
@@ -62,7 +63,9 @@ vi.mock("@base-ui/react/combobox", () => {
         return createElement("div", null, props.children);
       },
       Chips: wrap,
-      Chip: wrap,
+      // Like Base UI's chip: it sees keys as they bubble up from the Modify button inside it.
+      Chip: ({ children, ...props }: ComponentProps<"div">) =>
+        createElement("div", { ...props, onKeyDown: (e) => controls.chipKey(e.key) }, children),
       Portal: wrap,
       Positioner: wrap,
       Popup: wrap,
@@ -603,4 +606,55 @@ it("keeps chips at their natural width and scrolls the row instead of squeezing 
   expect(row?.className).toContain("overflow-x-auto");
   expect(row?.className).not.toContain("overflow-hidden");
   expect(dom.element.querySelector("input")?.className).toContain("min-w-24");
+});
+
+const renderChips = () => {
+  const dom = testDom();
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  dom.render(
+    createElement(
+      I18nProvider,
+      { i18n },
+      createElement(SearchField, {
+        value: "label:receipts from:northwind",
+        inputRef: null,
+        onChange: vi.fn(),
+      }),
+    ),
+  );
+  return dom;
+};
+
+// Base UI's chip stops Enter and Space as they bubble and focuses the input, so the Modify button
+// never opened its menu from the keyboard (ArrowDown and click did).
+it.each([
+  ["Enter", "Enter"],
+  ["Space", " "],
+])("%s on a chip's Modify button opens its menu before the chip sees the key", (_name, key) => {
+  controls.chipKey.mockClear();
+  const dom = renderChips();
+  try {
+    const modify = dom.element.querySelector('button[aria-label="Modify label:receipts"]');
+    if (!modify) throw new Error("Missing Modify button");
+    const clicked = vi.fn();
+    modify.addEventListener("click", clicked);
+    const event = new dom.window.Event("keydown", { bubbles: true, cancelable: true });
+    Object.assign(event, { key });
+    act(() => {
+      modify.dispatchEvent(event);
+    });
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(event.defaultPrevented).toBe(true);
+    expect(controls.chipKey).not.toHaveBeenCalled();
+    // Other keys still reach the chip, which moves focus between chips with them.
+    const arrow = new dom.window.Event("keydown", { bubbles: true, cancelable: true });
+    Object.assign(arrow, { key: "ArrowRight" });
+    act(() => {
+      modify.dispatchEvent(arrow);
+    });
+    expect(controls.chipKey).toHaveBeenCalledWith("ArrowRight");
+    expect(clicked).toHaveBeenCalledTimes(1);
+  } finally {
+    dom.dispose();
+  }
 });
