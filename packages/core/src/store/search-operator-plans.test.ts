@@ -618,6 +618,42 @@ it.effect(
   scaledMs(180_000),
 );
 
+// A date walk whose unsearched window is shorter than the page holds every unsearched head. When
+// each of them matches, or none exists, the fast pass is the whole result: the full query walked
+// the date index a second time to find nothing.
+it.effect(
+  "a date walk with no match or a short window of matching heads runs once",
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
+      const { a } = yield* seed;
+      const rows = yield* loadRows;
+      const walks = (queries: readonly QueryPlan[]) =>
+        queries.filter((query) => query.sql.includes("page AS MATERIALIZED ("));
+      for (const search of [
+        "from:nobody weekly",
+        "-is:important -has:attachment from:nobody weekly",
+        "from:nobody -to:r3 subject:report",
+        "is:starred from:nobody delivery",
+        // Starred mail from sender 3: a few threads, each head matching.
+        "from:s3 is:starred weekly",
+      ])
+        for (const accountIds of [undefined, [a]]) {
+          const query: ThreadQuery = { search, ...(accountIds ? { accountIds } : {}) };
+          trace.start();
+          const page = yield* Store.use((store) => store.listThreads({ ...query, limit: 40 }));
+          const pages = walks(trace.stop());
+          assert.isBelow(page.length, 40, search);
+          if (search.startsWith("from:s3")) assert.isAbove(page.length, 0, search);
+          assert.lengthOf(pages, 1, search);
+          assert.include(pages[0]?.sql ?? "", "recent AS MATERIALIZED (", search);
+          yield* check(rows, `${search}${accountIds ? " in A" : ""}`, query, true);
+        }
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
+  scaledMs(180_000),
+);
+
 // The side table joins values with char(30) and a name and address with char(31). A value with
 // either would match across values there, so it keeps the per-row json_each test.
 const separatorSearches = ['to:"a\u001eb"', 'cc:"team\u001fteam"', 'filename:"x\u001ey"'].map(

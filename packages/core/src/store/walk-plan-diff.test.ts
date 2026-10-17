@@ -2,6 +2,7 @@ import { assert, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { SqlClient } from "effect/sql";
 import type { IncomingMessage, ThreadQuery, ThreadSummary } from "../domain/message.js";
+import { traceQueries } from "../platform/node/fixtures/performance-mailbox.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { parseSearchQuery } from "../search/search.js";
 import { scaledMs } from "../../test-support/test-time.js";
@@ -13,7 +14,8 @@ const layer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
 
 // A randomized differential test from the round 22 review. CommonTermRows=0 makes every search
 // that planTextPage can walk walk the date index; 1e9 starts every search from the text index's
-// rowids. Both plans must return the same pages, second pages, flags and counts. The default
+// rowids. Both plans must return the same pages, second pages, flags and counts. The first
+// searches (FEW) match a few threads, so thread walks also answer from the fast pass. The default
 // suite runs 1,500 messages and 60 searches (120 comparisons); OPENMAIL_PERF runs 3,000 and 300.
 // OPENMAIL_DIFF_SEED picks another random sequence.
 const MESSAGES = process.env.OPENMAIL_PERF ? 3000 : 1500;
@@ -61,6 +63,16 @@ const WORDS: readonly [string, ...string[]] = [
   "sender",
 ];
 
+// Searches with a few matching threads: a walk whose unsearched window is shorter than the page
+// and whose heads all match answers from the fast pass alone (threadPage).
+const FEW = [
+  "from:s3 is:starred weekly",
+  "from:s7 is:important has:attachment delivery",
+  "from:s11 is:starred -is:read report",
+  "cc:team2 from:s5 is:starred weekly",
+  "from:s13 has:attachment is:starred weekly",
+];
+
 const shown = (threads: readonly ThreadSummary[]) =>
   threads.map((thread) => [
     thread.id,
@@ -72,8 +84,9 @@ const shown = (threads: readonly ThreadSummary[]) =>
 
 it.effect(
   "date walk plans return the same rows as row-set plans",
-  () =>
-    Effect.gen(function* () {
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
       const store = yield* Store;
       const sql = yield* SqlClient.SqlClient;
       const { planTextPage } = makeQueryStore({ sql });
@@ -139,7 +152,16 @@ it.effect(
       };
       const run = (query: ThreadQuery, threshold: number) =>
         Effect.gen(function* () {
+          trace.start();
           const first = yield* store.listThreads({ ...query, limit: 15 });
+          // The full thread query has a page and no unsearched window.
+          const fullPass = trace
+            .stop()
+            .some(
+              (statement) =>
+                statement.sql.includes("page AS MATERIALIZED (") &&
+                !statement.sql.includes("recent AS MATERIALIZED ("),
+            );
           const last = first.at(-1);
           const second = last
             ? yield* store.listThreads({
@@ -150,16 +172,19 @@ it.effect(
               })
             : [];
           const count = yield* store.countThreads(query);
-          return { first: shown(first), second: shown(second), count };
+          return { fullPass, result: { first: shown(first), second: shown(second), count } };
         }).pipe(Effect.provideService(CommonTermRows, threshold));
       let compared = 0;
       let walked = 0;
       let emptyWalks = 0;
+      let oneWalkEmpty = 0;
+      let oneWalkShort = 0;
       const differences: string[] = [];
       for (let k = 0; k < SEARCHES; k++) {
+        const few = FEW[k];
         const query: ThreadQuery = {
-          search: search(),
-          flat: r() < 0.4,
+          search: few ?? search(),
+          flat: r() < 0.4 && few === undefined,
           ...(r() < 0.25 ? { accountIds: [a] } : {}),
           ...(r() < 0.3
             ? {
@@ -188,12 +213,15 @@ it.effect(
             derivedWordIndexReady: true,
             operatorTextReady: ready,
           }).pipe(Effect.provideService(CommonTermRows, WALK));
-          const walk = yield* run(query, WALK);
-          const rows = yield* run(query, ROW_SET);
+          const { fullPass, result: walk } = yield* run(query, WALK);
+          const { result: rows } = yield* run(query, ROW_SET);
           compared++;
           if (planned.textPage) {
             walked++;
             if (!walk.first.length) emptyWalks++;
+            if (!query.flat && !fullPass && walk.first.length < 15)
+              if (walk.first.length) oneWalkShort++;
+              else oneWalkEmpty++;
           }
           if (JSON.stringify(walk) !== JSON.stringify(rows))
             differences.push(
@@ -207,6 +235,10 @@ it.effect(
       // them to an empty page.
       assert.isAbove(walked, compared / 4);
       assert.isAbove(emptyWalks, 0);
-    }).pipe(Effect.provide(layer)),
+      // Some thread walks answered from the fast pass alone, empty and with a few threads.
+      assert.isAbove(oneWalkEmpty, 0);
+      assert.isAbove(oneWalkShort, 0);
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
   scaledMs(process.env.OPENMAIL_PERF ? 600_000 : 120_000),
 );

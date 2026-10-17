@@ -320,7 +320,7 @@ search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小�
 
 `countThreads` 的 `message_search_meta` 捷径只按文字索引的 MATCH 计数，不看 criteria。原来走到这里的只有 `subject:`（它在 MATCH 里），现在 `planTextPage` 对 `from:` 等也设 `textPage`，所以捷径限定为 criteria 只有 `subject:` 或为空，其余按行计数。没有这个限制时 `to:r3 weekly` 计数为 1542，正确值是 350。
 
-最坏的情况是没有命中的发件人：`from:nobody weekly` 要把日期索引走完一遍。
+最坏的情况是没有命中的发件人：`from:nobody weekly` 要把日期索引走完一遍。原来会话模式要走两遍，见下面“没有命中的日期遍历”。
 
 fixture R，无统计，修复前后（ms，三次热运行中位数；计数各跑一次）：
 
@@ -373,7 +373,25 @@ search-operator-plans.test.ts 的“is:important with a common word tests the la
 
 walk-plan-diff.test.ts 是评审者的随机差分测试：2 个账户、1,500 封随机生成的邮件，随机组合运算符、否定、OR、单账户、按文件夹、列表筛选和 `is:unread` 开关，分别在 `CommonTermRows=0`（能走日期遍历的都走）和 `1e9`（都从 rowid 出发）下比较第一页、第二页、标志和计数，副表回填完成和未完成各比一次。默认 60 次搜索（120 次比较），`OPENMAIL_PERF=1` 用 3,000 封和 300 次搜索，`OPENMAIL_DIFF_SEED` 换随机序列。测试要求至少四分之一的比较走日期遍历，且有走到空页的。
 
-`performance-large.test.ts` 的 fixture 给 1/1000 的邮件加了 IMPORTANT，新增 `search is:important and common word, flat`、`search is:important and common word, flat, one account`、`search Important list filter and common word, flat` 三项，预算 200 ms。
+`performance-large.test.ts` 的 fixture 给 1/1000 的邮件加了 IMPORTANT，新增 `search is:important and common word, flat`、`search is:important and common word, flat, one account`、`search Important list filter and common word, flat` 三项，预算 200 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 32、52、30 ms。
+
+### 没有命中的日期遍历
+
+`threadPage` 的快速路径先取 `recent`：按日期取最新的 `limit` 个不含词条件的会话头，再看它们是否匹配完整查询。原来只要结果少于 `limit` 就再跑完整查询。没有命中时两条语句都要把日期索引走完，`-is:important -has:attachment from:nobody weekly` 是两条约 200 ms 的语句。
+
+每个匹配都满足不含词的条件。`recent` 少于 `limit` 行时，它就是全部不含词的会话头。一个会话的不含词会话头如果匹配完整查询，它就是这个会话最新的匹配。所以 `recent` 没有截断、其中每一行都匹配时，快速路径的结果就是完整结果；`recent` 为空时结果为空。快速语句现在用 `(SELECT COUNT(*) AS recent_count FROM recent) r LEFT JOIN page c` 返回窗口大小，没有命中时也返回一行。结果行数少于 `recent_count` 才跑完整查询。
+
+50k 封邮件的 fixture，同上（ms）：
+
+| 测量                                                       | 修复前 | 修复后 |
+| ---------------------------------------------------------- | -----: | -----: |
+| `-is:important -has:attachment from:nobody weekly`         |    404 |    197 |
+| `-is:important -has:attachment from:nobody weekly`，单账户 |    396 |    197 |
+| `from:nobody weekly`                                       |    120 |     56 |
+
+两个账户的 `from:nobody weekly` 平铺本来就是一条语句，56 ms 不变。
+
+search-operator-plans.test.ts 的“a date walk with no match or a short window of matching heads runs once”对 4 种没有命中的搜索和 1 种只有几个会话的搜索（`from:s3 is:starred weekly`），在全部账户和单账户下检查只有一条带 `page AS MATERIALIZED` 的语句，且它含 `recent`，结果对照参考结果。walk-plan-diff.test.ts 的前 5 次搜索只命中几个会话；测试要求会话模式的日期遍历里既有空结果、也有非空的短结果只跑快速路径。7 个种子各 300 次搜索（`OPENMAIL_PERF=1`，共 4,200 次比较）没有差异。`performance-large.test.ts` 新增 `search negations, no match and common word`，预算 350 ms，和 `from:nobody weekly` 一致。2026-10-17 `OPENMAIL_PERF=1` 跑一次，它的中位数为 91 ms，`search from: no match and common word` 从上面的 155 ms 降到 89 ms。
 
 ### 计数排除 Spam 和 Trash
 

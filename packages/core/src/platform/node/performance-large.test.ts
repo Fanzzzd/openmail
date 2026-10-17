@@ -246,6 +246,13 @@ it.effect(
         ["search from: and common word", "from:person1 weekly", 200, 50],
         ["search has:attachment and common word", "has:attachment weekly", 200, 50],
         ["search from: no match and common word", "from:nobody weekly", 350, 0],
+        // No match: the fast pass's empty window is the answer, so the date index is walked once.
+        [
+          "search negations, no match and common word",
+          "-is:important -has:attachment from:nobody weekly",
+          350,
+          0,
+        ],
       ] as const)
         yield* measure(
           name,

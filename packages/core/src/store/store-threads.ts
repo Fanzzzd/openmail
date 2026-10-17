@@ -43,6 +43,11 @@ const decodeSummaries = Schema.decodeUnknownSync(Schema.Array(SummaryRow));
 
 const decodeThreads = Schema.decodeUnknownSync(Schema.Array(ThreadRow));
 
+/** threadPage's fast pass: the unsearched window's size, and a null id when no head matched. */
+const decodeWindow = Schema.decodeUnknownSync(
+  Schema.Array(Schema.Struct({ recent_count: Schema.Number, id: Schema.NullOr(Schema.String) })),
+);
+
 const proximityWindow = (limit: number) => Math.min(limit, 50);
 
 const asciiText = (text: string) => /^[\t\n\r\x20-\x7e]*$/.test(text);
@@ -259,6 +264,11 @@ export const makeThreadsStore = ({
     // If every head in the newest unsearched window matches, older matching
     // replies cannot enter that window. Avoid building the corpus-wide FTS set.
     // Any missing head requires the full query; cursors always use that query.
+    // A window shorter than the limit holds every unsearched head. Every match passes the
+    // unsearched filter, so the newest match of a thread is its unsearched head when that head
+    // matches. If all of them match, the window is the whole result; an empty window means no
+    // match. The full query walked the date index a second time for that answer (two ~200 ms
+    // statements for `-is:important -has:attachment from:nobody weekly` on 50k messages).
     const optimistic =
       !!q.textPage &&
       q.before === undefined &&
@@ -300,17 +310,23 @@ export const makeThreadsStore = ({
             AND ${q.before === undefined ? sql.literal("1") : sql`(m.list_date < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (m.list_date = ${q.before} AND m.id < ${q.beforeId})`})`}
           ORDER BY m.list_date DESC,m.id DESC LIMIT ${limit}
         )
-        SELECT c.*,
+        SELECT c.*,${fast ? sql.literal("r.recent_count,") : sql.literal("")}
           EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id AND v.is_unread=1) AS any_unread,
           EXISTS(SELECT 1 FROM flag_candidates v WHERE v.account_id=c.account_id AND v.thread_id=c.thread_id AND v.is_starred=1) AS any_starred,
           (SELECT COUNT(*) FROM messages t WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id) AS thread_count,
           (SELECT json_group_array(json_object('name',p.from_name,'address',p.from_addr))
             FROM (SELECT from_name,from_addr,MIN(date) AS first FROM messages t
               WHERE t.account_id=c.account_id AND t.thread_id=c.thread_id GROUP BY from_addr ORDER BY first) p) AS participants_json
-        FROM page c ORDER BY c.date DESC,c.id DESC`
-      ).pipe(Effect.map(decodeThreads), Effect.orDie);
-    let rows = yield* query(optimistic);
-    if (optimistic && rows.length < limit) rows = yield* query(false);
+        FROM ${fast ? sql.literal("(SELECT COUNT(*) AS recent_count FROM recent) r LEFT JOIN page c") : sql.literal("page c")} ORDER BY c.date DESC,c.id DESC`
+      ).pipe(Effect.orDie);
+    let rows: ReturnType<typeof decodeThreads>;
+    if (optimistic) {
+      // The fast pass returns one row with the window's size even when no head matched.
+      const raw = yield* query(true);
+      const window = decodeWindow(raw);
+      rows = decodeThreads(raw.filter((_, at) => window[at]?.id !== null));
+      if (rows.length < (window[0]?.recent_count ?? 0)) rows = decodeThreads(yield* query(false));
+    } else rows = decodeThreads(yield* query(false));
     return rows.map((r): ThreadSummary => ({
       ...toSummary(r),
       ...(r.attachments_json.length
