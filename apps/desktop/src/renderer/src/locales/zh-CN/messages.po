@@ -5980,6 +5980,11 @@ msgstr "移除当前标签"
 msgid "Remove favorite"
 msgstr "取消收藏"
 
+#. Menu item on a search chip, such as from:bob, that drops it from the search.
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Remove filter"
+msgstr "移除过滤器"
+
 #: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "从收藏夹移除"

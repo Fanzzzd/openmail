@@ -5970,6 +5970,11 @@ msgstr "Rimuovi l’etichetta corrente"
 msgid "Remove favorite"
 msgstr "Rimuovi preferito"
 
+#. Menu item on a search chip, such as from:bob, that drops it from the search.
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Remove filter"
+msgstr "Rimuovi filtro"
+
 #: src/renderer/src/features/sidebar/SidebarItems.tsx
 msgid "Remove from favorites"
 msgstr "Rimuovi dai preferiti"

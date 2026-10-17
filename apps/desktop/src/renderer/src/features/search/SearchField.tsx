@@ -182,6 +182,15 @@ export function SearchField({
       chips.map((previous, i) => (i === index ? token : previous)),
       text,
     );
+  // The chip's Remove button takes no Tab stop, so its menu offers the same; focus goes to the
+  // input, as the chip and its menu are gone.
+  const removeChip = (index: number) => {
+    emit(
+      chips.filter((_, i) => i !== index),
+      text,
+    );
+    requestAnimationFrame(() => fieldRef.current?.focus());
+  };
   const editChip = (index: number) => {
     onChange(editSearchToken(value, index));
     setOpen(false);
@@ -272,6 +281,14 @@ export function SearchField({
                     {modifier}:
                   </MenuItem>
                 ))}
+                <MenuSeparator />
+                <MenuItem onClick={() => removeChip(index)}>
+                  {t({
+                    message: "Remove filter",
+                    comment:
+                      "Menu item on a search chip, such as from:bob, that drops it from the search.",
+                  })}
+                </MenuItem>
               </DropdownMenu>
               <Combobox.ChipRemove aria-label={t`Remove ${token}`} className="shrink-0">
                 <X className="size-3" />

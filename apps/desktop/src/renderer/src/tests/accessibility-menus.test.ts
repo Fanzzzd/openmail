@@ -315,3 +315,22 @@ it("Escape in a search field with a chip reaches the window once the suggestions
   await user.keyboard("{Escape}");
   expect(escapes).toHaveBeenLastCalledWith("false");
 });
+
+// A chip's Remove button takes no Tab stop, so a keyboard user had no way to drop a chip but
+// Backspace from the end.
+it("the search chip's Modify menu removes the chip and returns focus to the input", async () => {
+  searchChips("label:Projects from:bob ");
+  const input = screen.getByRole("combobox", { name: "Search mail" });
+  screen.getByRole("button", { name: "Modify label:Projects" }).focus();
+  const user = userEvent.setup();
+  await user.keyboard("{Enter}");
+  const menu = await screen.findByRole("menu", { name: "Modify label:Projects" });
+  const remove = within(menu).getByRole("menuitem", { name: "Remove filter" });
+  await user.keyboard("{End}");
+  await waitFor(() => expect(document.activeElement).toBe(remove));
+  await user.keyboard("{Enter}");
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  expect(screen.queryByRole("group", { name: "label:Projects" })).toBeNull();
+  expect(screen.getByRole("group", { name: "from:bob" })).toBeTruthy();
+  await waitFor(() => expect(document.activeElement).toBe(input));
+});
