@@ -54,7 +54,13 @@ export function fixtureMessage(i: number, large = false): IncomingMessage {
     bodyText: `weekly alpha beta 预算批准，会议通知。\n${"Project update and delivery schedule. ".repeat(8)}${i % 1000 === 500 ? `\nSheet: https://docs.google.com/spreadsheets/d/${i}/edit` : ""}${i % 10_000 === 4321 ? "\n鲸鱼出没" : ""}\nOn Monday someone wrote:\n> Earlier message`,
     bodyHtml: fixtureHtml[i % 2] ?? "",
     rfcMessageId: `<message${i}@example.com>`,
-    labels: ["INBOX", folder, ...(i % 4 === 0 ? ["UNREAD"] : [])],
+    // One message in a thousand is important, so is:important with a common word walks far.
+    labels: [
+      "INBOX",
+      folder,
+      ...(i % 4 === 0 ? ["UNREAD"] : []),
+      ...(i % 1000 === 3 ? ["IMPORTANT"] : []),
+    ],
     attachments:
       i % 10 === 0 ? [{ filename: "report.pdf", mimeType: "application/pdf", size: 2048 }] : [],
     isUnread: i % 4 === 0,

@@ -256,6 +256,43 @@ it.effect(
               Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, threads))),
             ),
         );
+      // is:important tests labels_json with a bare json_each EXISTS. A flat page ran the word
+      // index probe before it (863 ms on 50k messages); one account walked the account index and
+      // read labels_json from the table. 100 of 100k messages are important.
+      for (const [name, search, query] of [
+        ["search is:important and common word, flat", "is:important weekly", { flat: true }],
+        [
+          "search is:important and common word, flat, one account",
+          "is:important weekly",
+          { flat: true, accountIds: [gmail] },
+        ],
+        [
+          "search Important list filter and common word, flat",
+          "weekly",
+          {
+            flat: true,
+            listFilters: {
+              enabled: true,
+              unread: false,
+              starred: false,
+              important: true,
+              inInbox: false,
+            },
+          },
+        ],
+      ] as const) {
+        const expected = Math.min(50, yield* store.countThreads({ ...query, search }));
+        assert.isAbove(expected, 0, name);
+        yield* measure(
+          name,
+          200,
+          store
+            .listThreads({ ...query, search, limit: 50 })
+            .pipe(
+              Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, expected))),
+            ),
+        );
+      }
       // A count reads Spam/Trash eligibility from message_search_meta. Reading labels_json, after
       // the body columns, took 0.4 s warm and 3.4 s cold for `weekly OR alpha` on fixture R.
       // These run warm: the suite cannot clear the system page cache.

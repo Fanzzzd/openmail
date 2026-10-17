@@ -347,6 +347,34 @@ fixture R，无统计，修复前后（ms，三次热运行中位数；计数各
 
 search-operator-plans.test.ts 的“operators with a common word”对 13 种搜索（含否定、无命中的发件人、`has:attachment` 和多个否定）对照参考结果，并检查每种的 `recent` 窗口走 `messages_list_date_id`、计数不走 `message_search_meta_threads`；回填未完成时 `to:r3 weekly` 不走日期遍历。operator-text-diff.test.ts 把评审者的随机差分测试移进默认套件：每轮 40 次随机写入（新邮件、改写、标志、本地操作、删除、改 provider id、补头部、淘汰消息文本、删 Spam、删账户），之后把副表和重新计算的结果逐行比较，并对 25 个运算符搜索在用副表和逐行判断两种状态下比较结果页和计数。默认 10 轮，`OPENMAIL_PERF=1` 跑 50 轮，`OPENMAIL_DIFF_SEED` 换随机序列。`performance-large.test.ts` 新增 `search -to: and common word`、`search from: and common word`、`search has:attachment and common word` 预算 200 ms，`search from: no match and common word` 预算 350 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 72、30、33、155 ms。
 
+### is:important 加常见词
+
+r21 让 `is:important` 加常见词走日期遍历后，平铺模式变慢了。`messagePage` 把 `listFilter(q)` 直接用 AND 连起来，`is:important` 编译成一个裸的 `json_each` EXISTS，SQLite 把按行探测的 `EXISTS (… messages_words MATCH ?)` 排在标签检查前面，遍历到的每一行都查一次词索引。会话模式没有这个问题：`headFilter` 用 CASE 先判断行自己的条件。
+
+现在 `messagePage` 在有 `textPage` 时也用 `CASE WHEN listFilter(不含词的查询) THEN listFilter(q) ELSE 0 END`，账户范围留在 CASE 外面，账户索引仍能用它。不含词的查询由 `unsearchedQuery` 生成，会话模式共用。
+
+单账户还有第二个问题：`listIndex` 给单账户的文字页选 `messages_account_list_date_id`，它不含 `labels_json`，每个遍历到的行都要回表读 `labels_json`。现在文字页只要判断标签（`is:important`、`label:`、它们的否定、列表筛选的 Important 和 In Inbox、按文件夹搜索），单账户也走覆盖 `labels_json` 的 `messages_list_date_id`，和标签视图的规则一致。
+
+50k 封邮件的 fixture（2 个账户，1/1000 带 IMPORTANT，`weekly` 在每封邮件里），无统计，热缓存，四次运行取后三次中位数（ms）。“行集合”是 `CommonTermRows` 设为 1e9、从词索引 rowid 出发的计划，作参考：
+
+| 测量                                         | 修复前 | 修复后 | 行集合 |
+| -------------------------------------------- | -----: | -----: | -----: |
+| `is:important weekly`，平铺                  |    863 |     30 |    237 |
+| `is:important weekly`，平铺，单账户          |   1092 |     30 |    245 |
+| `is:read is:important weekly`，平铺          |    645 |     26 |    194 |
+| 列表筛选 Important 加 `weekly`，平铺         |    857 |     27 |    236 |
+| `is:important weekly`，会话，单账户          |    237 |     30 |      - |
+| `is:important weekly`，会话                  |     32 |     29 |    422 |
+| `is:important weekly`，单账户，1k 封的小账户 |     22 |     19 |      - |
+
+列表筛选 Important 加常见词的平铺搜索（r21 之前 841 ms）也由同一处修好。小账户走全局索引要读别的账户的索引项，但不回表，没有变慢。
+
+search-operator-plans.test.ts 的“is:important with a common word tests the label before the word index”对照参考结果检查 `is:important weekly`、`is:read is:important weekly`、`-is:important weekly` 的会话、平铺和单账户形状，以及平铺的列表筛选 Important 加 `weekly`。它检查每条同时有词索引探测和标签检查的语句，查询计划里 `SCAN json_each` 在 `SCAN messages_words` 前面；平铺页（含单账户）走 `messages_list_date_id`。改动前这个测试在两处都失败。
+
+walk-plan-diff.test.ts 是评审者的随机差分测试：2 个账户、1,500 封随机生成的邮件，随机组合运算符、否定、OR、单账户、按文件夹、列表筛选和 `is:unread` 开关，分别在 `CommonTermRows=0`（能走日期遍历的都走）和 `1e9`（都从 rowid 出发）下比较第一页、第二页、标志和计数，副表回填完成和未完成各比一次。默认 60 次搜索（120 次比较），`OPENMAIL_PERF=1` 用 3,000 封和 300 次搜索，`OPENMAIL_DIFF_SEED` 换随机序列。测试要求至少四分之一的比较走日期遍历，且有走到空页的。
+
+`performance-large.test.ts` 的 fixture 给 1/1000 的邮件加了 IMPORTANT，新增 `search is:important and common word, flat`、`search is:important and common word, flat, one account`、`search Important list filter and common word, flat` 三项，预算 200 ms。
+
 ### 计数排除 Spam 和 Trash
 
 OR 和运算符搜索的计数用 `NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) …)` 排除垃圾邮件和废纸篓。`labels_json` 在 `body_text`、`body_html` 后面，每个计数的行都要读溢出页链。评审者在 fixture R 上冷读 `weekly OR alpha` 计数 3.4 s，41 万次缺页，读 1.6 GB。

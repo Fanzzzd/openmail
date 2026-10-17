@@ -1,4 +1,4 @@
-import { Effect, Schema } from "effect";
+import { Context, Effect, Schema } from "effect";
 import { type SqlClient } from "effect/sql";
 import { type Fragment } from "effect/sql/Statement";
 import type { AttachmentType, SearchCondition, ThreadQuery } from "../domain/message.js";
@@ -43,6 +43,14 @@ export const EFFECTIVE_DATE = "m.list_date";
 
 /** A search term in more messages than this walks the date index (planTextPage). */
 export const COMMON_TERM_ROWS = 2048;
+
+/**
+ * The threshold planTextPage reads. Tests set 0 to walk the date index for every term and 1e9
+ * to start every search from the text index's rowids, then compare the two plans' results.
+ */
+export const CommonTermRows = Context.Reference<number>("openmail/CommonTermRows", {
+  defaultValue: () => COMMON_TERM_ROWS,
+});
 
 const ROW_WALK_KEYS: ReadonlySet<string> = new Set([
   "from",
@@ -102,6 +110,20 @@ const containsProximity = (node: SearchExpression): boolean => {
   }
 };
 
+const labelCondition = (c: SearchCondition) =>
+  c.important !== undefined || (c.labels?.length ?? 0) > 0 || c.userLabels !== undefined;
+
+/** The filter reads labels_json beyond the Spam/Trash eligibility. */
+const testsLabels = (q: LocalQuery) => {
+  const { excluded = [], ...criteria } = q.criteria ?? {};
+  return (
+    labelCondition(criteria) ||
+    excluded.some(labelCondition) ||
+    (q.listFilters?.enabled === true && (q.listFilters.important || q.listFilters.inInbox)) ||
+    (q.searchScope === "folder" && (q.mailbox ?? "inbox") !== "all")
+  );
+};
+
 export const listIndex = (q: LocalQuery) => {
   const boundedPage = !!q.textPage || q.proximityPage?.kind === "prefilter";
   // A label list or a mailbox view other than Inbox tests labels_json on each walked row, also
@@ -115,13 +137,18 @@ export const listIndex = (q: LocalQuery) => {
   // Across accounts SQLite otherwise sorts the entire inbox using the
   // account/date index. Walk the global date index and stop at the limit.
   // Search keeps the planner free to start from its selective FTS rowids.
-  return boundedPage && q.messageIds === undefined && q.accountIds?.length === 1
-    ? "messages_account_list_date_id"
-    : (boundedPage || q.search === undefined) &&
-        q.messageIds === undefined &&
-        (q.accountIds?.length !== 1 || labelView)
-      ? "messages_list_date_id"
-      : undefined;
+  // A bounded page that tests labels walks the global index for the same reason as a label
+  // view: one-account `is:important weekly` read 50k rows' labels_json from the table (225 ms
+  // on 50k messages, 20 ms on the global index).
+  const oneAccount = q.accountIds?.length === 1;
+  const labelWalk = labelView || (boundedPage && testsLabels(q));
+  return q.messageIds !== undefined
+    ? undefined
+    : boundedPage && oneAccount && !labelWalk
+      ? "messages_account_list_date_id"
+      : (boundedPage || q.search === undefined) && (!oneAccount || labelWalk)
+        ? "messages_list_date_id"
+        : undefined;
 };
 
 /**
@@ -626,9 +653,10 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     match: string,
   ) {
     const table = sql.literal(index);
+    const threshold = yield* CommonTermRows;
     const rows = yield* all(Schema.Struct({ n: Schema.Number }))(sql`SELECT COUNT(*) AS n FROM (
-        SELECT rowid FROM ${table} WHERE ${table} MATCH ${match} LIMIT ${sql.literal(String(COMMON_TERM_ROWS + 1))})`);
-    return (rows[0]?.n ?? 0) > COMMON_TERM_ROWS
+        SELECT rowid FROM ${table} WHERE ${table} MATCH ${match} LIMIT ${sql.literal(String(threshold + 1))})`);
+    return (rows[0]?.n ?? 0) > threshold
       ? ({ ...q, textPage: { index, match }, rowBoundText: true } satisfies LocalQuery)
       : q;
   });

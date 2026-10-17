@@ -73,6 +73,22 @@ const ProximityProbeRow = Schema.Struct({
   has_derived: Schema.Number,
 });
 
+/**
+ * The query without its words: a superset of the matches that a date walk tests before it opens
+ * the text index. textPage covers subject: too, so it drops with the words. Kept, threadPage's
+ * newest-in-thread check probed the word index for every newer reply of each walked row: about
+ * 30k probes in the 204-message threads of the 100k fixture (900 ms).
+ */
+const unsearchedQuery = (q: LocalQuery): LocalQuery => {
+  const { subject: _subject, ...otherCriteria } = q.criteria ?? {};
+  return {
+    ...q,
+    search: "",
+    textPage: undefined,
+    ...(q.textPage && q.criteria ? { criteria: otherCriteria } : {}),
+  };
+};
+
 const newestFirst = (a: ThreadSummary, b: ThreadSummary) =>
   b.date - a.date || sqliteTextCompare(b.id, a.id);
 
@@ -248,16 +264,7 @@ export const makeThreadsStore = ({
       q.before === undefined &&
       !materialize &&
       !hasSearchExpression(q.search ?? "");
-    // textPage covers subject: too, so the unsearched superset drops it with the words. Kept,
-    // the newest-in-thread check probed the word index for every newer reply of each walked
-    // row: about 30k probes in the 204-message threads of the 100k fixture (900 ms).
-    const { subject: _subject, ...otherCriteria } = q.criteria ?? {};
-    const unsearched: LocalQuery = {
-      ...q,
-      search: "",
-      textPage: undefined,
-      ...(q.textPage && q.criteria ? { criteria: otherCriteria } : {}),
-    };
+    const unsearched = unsearchedQuery(q);
     const newestMatch = sql`NOT EXISTS (SELECT 1 FROM candidates n WHERE n.account_id=m.account_id AND n.thread_id=m.thread_id
       AND n.date>=m.list_date AND (n.date > m.list_date OR (n.date=m.list_date AND n.id>m.id)))`;
     // newestMatch reruns the whole filter on every newer message of the row's thread. On a
@@ -368,10 +375,17 @@ export const makeThreadsStore = ({
     return yield* fullPage();
   });
 
-  /** Conversation grouping off: each message in the view is its own row, newest first. */
+  /**
+   * Conversation grouping off: each message in the view is its own row, newest first.
+   * A date walk tests the row's own filter before the row-bound MATCH, as threadPage's
+   * headFilter does. In a plain AND SQLite ran the MATCH before a bare json_each test such as
+   * is:important: flat `is:important weekly` probed the word index for every walked row (863 ms
+   * on 50k messages with 1 in 1000 important). The account scope stays outside the CASE, where
+   * the account index can use it.
+   */
   const messagePage = (q: LocalQuery, limit: number) =>
     sql`SELECT ${sql.literal(SUMMARY_COLUMNS)} FROM ${listSource(q)}
-        WHERE ${listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
+        WHERE ${q.textPage ? sql`${accountScope(sql, q.accountIds, "m.account_id")} AND CASE WHEN ${listFilter(unsearchedQuery(q))} THEN ${listFilter(q)} ELSE 0 END` : listFilter(q)} ${q.before === undefined ? sql.literal("") : sql`AND (${sql.literal(EFFECTIVE_DATE)} < ${q.before} ${q.beforeId === undefined ? sql.literal("") : sql`OR (${sql.literal(EFFECTIVE_DATE)} = ${q.before} AND m.id < ${q.beforeId})`})`}
         ORDER BY date DESC, m.id DESC LIMIT ${limit}`.pipe(
       Effect.map(decodeSummaries),
       Effect.orDie,

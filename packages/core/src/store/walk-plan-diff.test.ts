@@ -1,0 +1,212 @@
+import { assert, it } from "@effect/vitest";
+import { Effect, Layer } from "effect";
+import { SqlClient } from "effect/sql";
+import type { IncomingMessage, ThreadQuery, ThreadSummary } from "../domain/message.js";
+import { MemoryPlatform } from "../platform/node/platform-memory.js";
+import { parseSearchQuery } from "../search/search.js";
+import { scaledMs } from "../../test-support/test-time.js";
+import { Store } from "./service.js";
+import { StoreLive } from "./store.js";
+import { CommonTermRows, makeQueryStore } from "./store-query.js";
+
+const layer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
+
+// A randomized differential test from the round 22 review. CommonTermRows=0 makes every search
+// that planTextPage can walk walk the date index; 1e9 starts every search from the text index's
+// rowids. Both plans must return the same pages, second pages, flags and counts. The default
+// suite runs 1,500 messages and 60 searches (120 comparisons); OPENMAIL_PERF runs 3,000 and 300.
+// OPENMAIL_DIFF_SEED picks another random sequence.
+const MESSAGES = process.env.OPENMAIL_PERF ? 3000 : 1500;
+const SEARCHES = process.env.OPENMAIL_PERF ? 300 : 60;
+const WALK = 0;
+const ROW_SET = 1e9;
+
+function random(seed: number) {
+  let state = seed >>> 0;
+  return () => {
+    state = (state * 1664525 + 1013904223) >>> 0;
+    return state / 2 ** 32;
+  };
+}
+
+const OPERATORS: readonly [string, ...string[]] = [
+  "from:s3",
+  "from:sender",
+  "from:nobody",
+  "is:unread",
+  "is:read",
+  "is:starred",
+  "is:important",
+  "has:attachment",
+  "to:r2",
+  "to:nobody",
+  "cc:team",
+  "cc:corp",
+  "filename:report",
+  "filename:pdf",
+  "list:news",
+  "subject:weekly",
+  "subject:report",
+  "label:Label_1",
+  "label:IMPORTANT",
+  "in:inbox",
+];
+const WORDS: readonly [string, ...string[]] = [
+  "weekly",
+  "delivery",
+  "alpine",
+  "report",
+  "weekl*",
+  "nomatchword",
+  "sender",
+];
+
+const shown = (threads: readonly ThreadSummary[]) =>
+  threads.map((thread) => [
+    thread.id,
+    thread.threadCount,
+    thread.isUnread,
+    thread.isStarred,
+    thread.date,
+  ]);
+
+it.effect(
+  "date walk plans return the same rows as row-set plans",
+  () =>
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const { planTextPage } = makeQueryStore({ sql });
+      const r = random(Number(process.env.OPENMAIL_DIFF_SEED ?? 11));
+      const pick = <A>(values: readonly [A, ...A[]]): A =>
+        values[Math.floor(r() * values.length)] ?? values[0];
+      const a = (yield* store.upsertAccount("gmail", "me@example.com")).id;
+      const b = (yield* store.upsertAccount("gmail", "you@example.com")).id;
+      const start = Date.parse("2026-01-01T00:00:00Z");
+      const message = (i: number): IncomingMessage => ({
+        providerId: `p${i}`,
+        threadId: `t${r() < 0.1 ? 0 : Math.floor(i / (1 + Math.floor(r() * 6)))}`,
+        subject: `${r() < 0.8 ? "Weekly" : "Planning"} ${r() < 0.5 ? "report" : "notes"} ${i % 40}`,
+        from: { name: `Sender ${i % 30}`, address: `s${i % 30}@example.com` },
+        to: r() < 0.1 ? [] : [{ name: `Recipient ${i % 7}`, address: `r${i % 7}@example.com` }],
+        cc: r() < 0.3 ? [{ name: "Team", address: `team${i % 5}@corp.example` }] : [],
+        // Three messages share each date: ties order by id.
+        date: start + Math.floor(i / 3) * 60_000,
+        snippet: "",
+        bodyText: [
+          r() < 0.85 ? "weekly" : "",
+          r() < 0.6 ? "delivery" : "",
+          r() < 0.01 ? "alpine" : "",
+        ].join(" "),
+        bodyHtml: "",
+        headers: r() < 0.3 ? [{ name: "List-Id", value: "<news.example.com>" }] : [],
+        labels: [
+          r() < 0.05 ? "SPAM" : r() < 0.05 ? "TRASH" : r() < 0.7 ? "INBOX" : "Label_2",
+          ...(r() < 0.3 ? ["UNREAD"] : []),
+          ...(r() < 0.2 ? ["IMPORTANT"] : []),
+          ...(r() < 0.15 ? ["Label_1"] : []),
+        ],
+        attachments:
+          r() < 0.15
+            ? [
+                {
+                  filename: r() < 0.3 ? "" : `report${i % 3}.pdf`,
+                  mimeType: "application/pdf",
+                  size: 10,
+                },
+              ]
+            : [],
+        isUnread: r() < 0.3,
+        isStarred: r() < 0.08,
+      });
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let i = 0; i < MESSAGES; i++) yield* store.upsertMessage(i % 2 ? a : b, message(i));
+        }),
+      );
+      while (!(yield* store.backfillWordIndex(5000)).ready) {
+        /* drain */
+      }
+      const search = () => {
+        const parts: string[] = [];
+        const operators = Math.floor(r() * 3);
+        for (let k = 0; k < operators; k++)
+          parts.push(`${r() < 0.35 ? "-" : ""}${pick(OPERATORS)}`);
+        const words = 1 + Math.floor(r() * 2);
+        for (let k = 0; k < words; k++) parts.push(`${r() < 0.08 ? "-" : ""}${pick(WORDS)}`);
+        if (r() < 0.1) parts.push("OR", pick(WORDS));
+        return parts.toSorted(() => r() - 0.5).join(" ");
+      };
+      const run = (query: ThreadQuery, threshold: number) =>
+        Effect.gen(function* () {
+          const first = yield* store.listThreads({ ...query, limit: 15 });
+          const last = first.at(-1);
+          const second = last
+            ? yield* store.listThreads({
+                ...query,
+                limit: 15,
+                before: last.date,
+                beforeId: last.id,
+              })
+            : [];
+          const count = yield* store.countThreads(query);
+          return { first: shown(first), second: shown(second), count };
+        }).pipe(Effect.provideService(CommonTermRows, threshold));
+      let compared = 0;
+      let walked = 0;
+      let emptyWalks = 0;
+      const differences: string[] = [];
+      for (let k = 0; k < SEARCHES; k++) {
+        const query: ThreadQuery = {
+          search: search(),
+          flat: r() < 0.4,
+          ...(r() < 0.25 ? { accountIds: [a] } : {}),
+          ...(r() < 0.3
+            ? {
+                label: pick(["INBOX", "Label_1", "IMPORTANT"]),
+                searchScope: pick(["all", "folder"] as const),
+              }
+            : {}),
+          ...(r() < 0.15
+            ? {
+                listFilters: {
+                  enabled: true,
+                  unread: r() < 0.5,
+                  starred: r() < 0.3,
+                  important: r() < 0.5,
+                  inInbox: r() < 0.5,
+                },
+              }
+            : {}),
+          ...(r() < 0.1 ? { unreadOnly: true } : {}),
+        };
+        for (const ready of [true, false]) {
+          yield* sql`UPDATE message_operator_text_backfill SET ready=${ready ? 1 : 0}`;
+          const planned = yield* planTextPage({
+            ...parseSearchQuery(query),
+            wordIndexReady: true,
+            derivedWordIndexReady: true,
+            operatorTextReady: ready,
+          }).pipe(Effect.provideService(CommonTermRows, WALK));
+          const walk = yield* run(query, WALK);
+          const rows = yield* run(query, ROW_SET);
+          compared++;
+          if (planned.textPage) {
+            walked++;
+            if (!walk.first.length) emptyWalks++;
+          }
+          if (JSON.stringify(walk) !== JSON.stringify(rows))
+            differences.push(
+              `${JSON.stringify(query)} ready=${ready}\n walk=${JSON.stringify(walk)}\n rows=${JSON.stringify(rows)}`,
+            );
+        }
+      }
+      assert.deepStrictEqual(differences, []);
+      assert.strictEqual(compared, SEARCHES * 2);
+      // The comparison means something only if a good share of the searches walked, some of
+      // them to an empty page.
+      assert.isAbove(walked, compared / 4);
+      assert.isAbove(emptyWalks, 0);
+    }).pipe(Effect.provide(layer)),
+  scaledMs(process.env.OPENMAIL_PERF ? 600_000 : 120_000),
+);

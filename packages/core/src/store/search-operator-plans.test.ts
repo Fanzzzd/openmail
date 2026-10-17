@@ -63,6 +63,7 @@ const message = (i: number, revision = 0): IncomingMessage => ({
   labels: [
     i % 41 === 0 ? "SPAM" : i % 43 === 0 ? "TRASH" : "INBOX",
     ...(i % 3 === 0 ? ["UNREAD"] : []),
+    ...(i % 7 === 2 ? ["IMPORTANT"] : []),
   ],
   attachments: [
     ...(i % 10 === 0
@@ -141,7 +142,13 @@ function matcher(search: string) {
             );
           });
       case "is":
-        return value === "unread" ? (row) => row.is_unread === 1 : (row) => row.is_starred === 1;
+        return value === "unread"
+          ? (row) => row.is_unread === 1
+          : value === "read"
+            ? (row) => row.is_unread === 0
+            : value === "important"
+              ? (row) => row.labels_json.includes("IMPORTANT")
+              : (row) => row.is_starred === 1;
       case "has":
         return (row) => row.attachments_json.length > 0;
       default:
@@ -276,13 +283,19 @@ const seed = Effect.gen(function* () {
   return { a: a.id, b: b.id, accountOf };
 });
 
-const check = (rows: readonly Row[], name: string, query: ThreadQuery, ordered: boolean) =>
+const check = (
+  rows: readonly Row[],
+  name: string,
+  query: ThreadQuery,
+  ordered: boolean,
+  listed: (row: Row) => boolean = () => true,
+) =>
   Effect.gen(function* () {
     const store = yield* Store;
     const flat = query.flat ?? false;
     const matches = matcher(query.search ?? "");
     const scoped = (row: Row) =>
-      matches(row) && (query.accountIds?.includes(row.account_id) ?? true);
+      matches(row) && listed(row) && (query.accountIds?.includes(row.account_id) ?? true);
     const result = yield* store.listThreads({ ...query, limit: 40 });
     const page = shown(result, flat);
     const expected = reference(rows, scoped, flat, 40);
@@ -532,6 +545,74 @@ it.effect(
       trace.start();
       yield* checkAll(rows, [["to:r3 weekly", true]], a);
       assert.isFalse(datePageWalks(trace.stop()));
+    }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
+  },
+  scaledMs(180_000),
+);
+
+// is:important tests labels_json with a bare json_each EXISTS. In a plain AND SQLite ran the
+// row-bound MATCH first, so flat `is:important weekly` probed the word index for every walked row
+// (863 ms on 50k messages with 1 in 1000 important). One account read labels_json from the table
+// through the account index (225 ms); the global date index covers it.
+it.effect(
+  "is:important with a common word tests the label before the word index",
+  () => {
+    const trace = traceQueries();
+    return Effect.gen(function* () {
+      const { a } = yield* seed;
+      const rows = yield* loadRows;
+      const important = (row: Row) => row.labels_json.includes("IMPORTANT");
+      trace.start();
+      yield* checkAll(
+        rows,
+        [
+          ["is:important weekly", true],
+          ["is:read is:important weekly", true],
+          ["-is:important weekly", true],
+        ],
+        a,
+      );
+      // The Important list filter with a common word in flat mode.
+      for (const accountIds of [undefined, [a]])
+        yield* check(
+          rows,
+          `list filter important weekly flat${accountIds ? " in A" : ""}`,
+          {
+            search: "weekly",
+            flat: true,
+            listFilters: {
+              enabled: true,
+              unread: false,
+              starred: false,
+              important: true,
+              inInbox: false,
+            },
+            ...(accountIds ? { accountIds } : {}),
+          },
+          true,
+          important,
+        );
+      const probes = trace
+        .stop()
+        .filter(
+          (query) =>
+            query.sql.includes("messages_words WHERE rowid=m.rowid") &&
+            query.sql.includes("json_each(m.labels_json)"),
+        );
+      // Flat pages, in all accounts and in one, walk the global date index and test the label
+      // before they open the word index.
+      const flatPages = probes.filter((query) => !query.sql.includes("FROM candidates n"));
+      assert.isAbove(flatPages.length, 0);
+      assert.isTrue(flatPages.some((query) => query.sql.includes("m.account_id IN (?)")));
+      for (const query of flatPages)
+        assert.include(query.sql, "messages m INDEXED BY messages_list_date_id", query.sql);
+      for (const query of probes) {
+        const plan = query.plan.join("\n");
+        const label = query.plan.findIndex((line) => line.startsWith("SCAN json_each"));
+        const word = query.plan.findIndex((line) => line.startsWith("SCAN messages_words"));
+        assert.isAtLeast(label, 0, plan);
+        assert.isBelow(label, word, plan);
+      }
     }).pipe(Effect.provide(layer), Effect.ensuring(Effect.sync(trace.restore)));
   },
   scaledMs(180_000),
