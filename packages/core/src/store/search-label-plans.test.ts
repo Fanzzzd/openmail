@@ -48,8 +48,15 @@ const decodeLabels = (row: Row) =>
 
 const newestFirst = (a: Row, b: Row) => b.list_date - a.list_date || sqliteTextCompare(b.id, a.id);
 
-/** label: and words over the stored labels and text alone: no SQL condition is reused. */
-function matcher(names: ReadonlyMap<string, ReadonlyMap<string, string>>, search: string) {
+/**
+ * label: and words over the stored labels and text alone: no SQL condition is reused. A mailbox
+ * view other than All Mail shows its Spam and Trash rows too (`withSpamAndTrash`).
+ */
+function matcher(
+  names: ReadonlyMap<string, ReadonlyMap<string, string>>,
+  search: string,
+  withSpamAndTrash = false,
+) {
   const hasLabel = (row: Row, label: string) =>
     decodeLabels(row).some(
       (id) =>
@@ -77,7 +84,8 @@ function matcher(names: ReadonlyMap<string, ReadonlyMap<string, string>>, search
     .map((part) => tokens(part).map(term))
     .map((terms) => (row: Row) => terms.every((test) => test(row)));
   return (row: Row) =>
-    !hasLabel(row, "SPAM") && !hasLabel(row, "TRASH") && alternatives.some((test) => test(row));
+    (withSpamAndTrash || (!hasLabel(row, "SPAM") && !hasLabel(row, "TRASH"))) &&
+    alternatives.some((test) => test(row));
 }
 
 function reference(
@@ -280,6 +288,33 @@ it.effect(
               );
           }
       const labelLists = trace.stop();
+      // A label view with the search scope set to the current folder sends the view's label and
+      // mailbox with the search (state/threads.ts). A common word walks the date index there too.
+      const mailboxLabel = { all: undefined, inbox: "INBOX", important: "IMPORTANT" } as const;
+      trace.start();
+      for (const label of ["Label_1", "IMPORTANT"])
+        for (const mailbox of ["all", "inbox", "important"] as const)
+          for (const search of ["weekly", "weekly delivery", "is:unread weekly"])
+            for (const flat of [false, true])
+              for (const accountIds of [undefined, [a.id]]) {
+                const box = mailboxLabel[mailbox];
+                yield* check(
+                  `folder ${label} ${mailbox} ${search}${flat ? " flat" : ""}${accountIds ? " in A" : ""}`,
+                  {
+                    search,
+                    searchScope: "folder",
+                    mailbox,
+                    label,
+                    flat,
+                    ...(accountIds ? { accountIds } : {}),
+                  },
+                  (row) =>
+                    decodeLabels(row).includes(label) &&
+                    (box === undefined || decodeLabels(row).includes(box)) &&
+                    matcher(names, search, box !== undefined)(row),
+                );
+              }
+      const folderSearches = trace.stop();
 
       const nameLookups = labelSearches.filter((query) => query.sql.includes("FROM labels WHERE"));
       assert.isAbove(nameLookups.length, 0);
@@ -319,6 +354,39 @@ it.effect(
         assert.isBelow(label, newest, walk);
         const probe = walk.indexOf("messages_words WHERE rowid=m.rowid");
         if (probe >= 0) assert.isBelow(newest, probe, walk);
+      }
+      // Each page of a folder-scope search in a label view walks the date index and probes the
+      // word index by rowid. Before, these started from every messages_words rowid of the word
+      // and sorted them in a temp B-tree: 2.1 s for `weekly` on Folder_5 of 100k messages.
+      const folderPages = folderSearches.filter(
+        (query) =>
+          query.sql.includes("page AS MATERIALIZED (") ||
+          query.sql.includes("ORDER BY date DESC, m.id DESC LIMIT"),
+      );
+      const threadPages = folderPages.filter((query) =>
+        query.sql.includes("page AS MATERIALIZED ("),
+      );
+      assert.isAbove(threadPages.length, 0);
+      assert.isAbove(folderPages.length - threadPages.length, 0);
+      for (const query of folderPages) {
+        const shape = `${query.sql}\n${query.plan.join("\n")}`;
+        assert.include(query.sql, "messages_words WHERE rowid=m.rowid", shape);
+        assert.isTrue(
+          query.plan.some((line) =>
+            /^SCAN m USING (COVERING )?INDEX messages_list_date_id\b/.test(line),
+          ),
+          shape,
+        );
+        // A flat page is one walk. A thread page's newest-in-thread check may build the word's
+        // rowid set, so only the flat page rules it out with the sort.
+        if (!query.sql.includes("page AS MATERIALIZED (")) {
+          assert.notMatch(
+            query.plan.join("\n"),
+            /^SCAN messages_words VIRTUAL TABLE INDEX 0:M/m,
+            shape,
+          );
+          assert.notInclude(query.plan.join("\n"), "USE TEMP B-TREE FOR ORDER BY", shape);
+        }
       }
     }).pipe(
       Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),

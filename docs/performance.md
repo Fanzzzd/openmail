@@ -416,6 +416,30 @@ fixture R，无统计，热缓存，计数各跑一次（ms）：
 
 search-operator-plans.test.ts 的 OR 部分和“operators with a common word”检查每条按行计数的语句含 `s.row_id=m.rowid AND s.eligible=1`、不含 `json_each(m.labels_json)`。`performance-large.test.ts` 新增 `count OR`、`count operator OR common word`、`count -to: and common word` 三项，预算 250 ms，热缓存。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 55、64、110 ms。
 
+### 标签视图里按当前文件夹搜索
+
+在标签视图里把搜索范围切到“Current folder”，再输入常见词，桌面端发出 `{search, searchScope:"folder", label, mailbox}`（`apps/desktop/src/renderer/src/state/threads.ts`）。`planTextPage` 原先对 `q.label && q.searchScope === "folder"` 直接返回，不设 `textPage`，查询从 `weekly` 的全部 `messages_words` rowid 出发，再用临时 B 树按日期排序（`SCAN messages_words VIRTUAL TABLE INDEX 0:M4`，`USE TEMP B-TREE FOR ORDER BY`）。
+
+这个提前返回是 `60f0d7e9` 第一版 `planTextPage` 加的。当时日期遍历每一行先做 newest-in-thread 检查再判断标签，`messages_list_date_id` 也还不用于带标签的文字页，稀疏标签加日期遍历会很慢。上面“label: 搜索与标签列表”一节已经改掉这两点：遍历先判断行自己的标签，`messages_list_date_id` 覆盖 `labels_json`。`label:Folder_5 weekly` 从那时起就走日期遍历，按文件夹搜索的标签视图走的是同一个过滤，只是标签来自视图。
+
+改动：
+
+- 去掉 `planTextPage` 里的这个条件。
+- `testsLabels` 原先只在 `mailbox` 不是 `all` 时算按文件夹搜索判断标签，漏了 `q.label`。单账户、`mailbox: "all"` 的标签视图因此会遍历不含 `labels_json` 的 `messages_account_list_date_id`，每行回表。现在条件是 `searchScope === "folder" && (mailbox 不是 all || 有 label)`，这类查询走 `messages_list_date_id`。
+
+100k fixture（`seedMailbox(100_000)`，Folder_5 在 1/67 的邮件上，未运行 ANALYZE），Node v24.21.0，`performance-large.test.ts` 的五次热运行中位数，50 个会话，单位 ms。修复前一分钟负载 8–23（16 核），修复后是完整 `OPENMAIL_PERF=1` 运行里的数字，负载 52–63，只作对比：
+
+| 测量                                   | 修复前 | 修复后 |
+| -------------------------------------- | -----: | -----: |
+| `weekly`，Folder_5，`mailbox: "all"`   |   2159 |     27 |
+| `subject:weekly alpha`，同上           |   2460 |     25 |
+| `weekly`，同上，平铺                   |    151 |     13 |
+| `weekly`，Folder_5，`mailbox: "inbox"` |   1824 |     31 |
+
+评审者在自己的 fixture 副本上测得修复前 498、586、132、336 ms，修复后 9、11、6、10 ms。
+
+[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) 在默认套件里对 `Label_1` 和 `IMPORTANT` 两个标签、`all`／`inbox`／`important` 三个邮箱、三种搜索，在会话和平铺、全部账户和单账户下对照参考结果。它还检查每条页面语句的计划里有 `SCAN m USING … INDEX messages_list_date_id`，并按 rowid 探测词索引；平铺页的计划里没有 `SCAN messages_words VIRTUAL TABLE INDEX 0:M`，也没有 `USE TEMP B-TREE FOR ORDER BY`。去掉修复后这几项都失败；只去掉 `testsLabels` 那一半时，单账户 `mailbox: "all"` 的计划检查失败。[walk-plan-diff.test.ts](../packages/core/src/store/walk-plan-diff.test.ts) 的随机搜索给标签视图加上随机邮箱，并在随机搜索后固定跑一轮：7 个标签（用户标签、INBOX、IMPORTANT、STARRED、CATEGORY_SOCIAL，以及 Gmail 和 Outlook 判断方式不同的 CATEGORY_PERSONAL）× 5 种邮箱（不设、inbox、all、starred、important）× 会话和平铺，共 70 次比较，每次都要求走日期遍历，再和从 rowid 出发的计划比较两页、标志和计数。`OPENMAIL_PERF=1` 下种子 1–4 和 11 没有差异。`performance-large.test.ts` 新增四项 `search current folder in label view…`，预算 200 ms。
+
 ### performance-large.test.ts
 
 新加的九项测量都设 200 ms，和 `label:` 搜索一致。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数（ms）：`search subject: common` 15、`search subject: phrase` 18、`search OR` 94、`search OR is:unread` 85、`search attachment word OR common` 108、`search to: no match` 24、`search cc: no match` 20、`search filename: no match` 20、`search list: no match` 26。OR 三项离预算只有约 2 倍，它们每次都要建附件文字的邮件 id 集合并给页补附件命中，所以没有收紧到 150 ms；其余各项远低于预算，200 ms 是回归线而不是目标。

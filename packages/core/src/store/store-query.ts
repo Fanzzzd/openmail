@@ -120,7 +120,8 @@ const testsLabels = (q: LocalQuery) => {
     labelCondition(criteria) ||
     excluded.some(labelCondition) ||
     (q.listFilters?.enabled === true && (q.listFilters.important || q.listFilters.inInbox)) ||
-    (q.searchScope === "folder" && (q.mailbox ?? "inbox") !== "all")
+    // A folder-scope search tests the view's mailbox label and, in a label view, its label.
+    (q.searchScope === "folder" && ((q.mailbox ?? "inbox") !== "all" || q.label !== undefined))
   );
 };
 
@@ -669,8 +670,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
       expressionMedia(q.search ?? "") ||
       hasSearchExpression(q.search ?? "") ||
       !walkableCriteria(q) ||
-      q.messageIds ||
-      (q.label && q.searchScope === "folder")
+      q.messageIds
     )
       return q;
     if (subject !== undefined || words.length > 1) {

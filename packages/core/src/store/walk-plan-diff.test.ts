@@ -17,7 +17,9 @@ const layer = StoreLive.pipe(Layer.provideMerge(MemoryPlatform()));
 // rowids. Both plans must return the same pages, second pages, flags and counts. The first
 // searches (FEW) match a few threads, so thread walks also answer from the fast pass. The default
 // suite runs 1,500 messages and 60 searches (120 comparisons); OPENMAIL_PERF runs 3,000 and 300.
-// OPENMAIL_DIFF_SEED picks another random sequence.
+// OPENMAIL_DIFF_SEED picks another random sequence. After the random searches, a fixed sweep runs
+// folder-scope searches in label views (state/threads.ts sends the view's label and mailbox) over
+// user, system and category labels and several mailboxes; each must walk.
 const MESSAGES = process.env.OPENMAIL_PERF ? 3000 : 1500;
 const SEARCHES = process.env.OPENMAIL_PERF ? 300 : 60;
 const WALK = 0;
@@ -95,6 +97,8 @@ it.effect(
         values[Math.floor(r() * values.length)] ?? values[0];
       const a = (yield* store.upsertAccount("gmail", "me@example.com")).id;
       const b = (yield* store.upsertAccount("gmail", "you@example.com")).id;
+      // Outlook decides CATEGORY_PERSONAL by the absence of CATEGORY_OTHER.
+      const c = (yield* store.upsertAccount("outlook", "me@outlook.com")).id;
       const start = Date.parse("2026-01-01T00:00:00Z");
       const message = (i: number): IncomingMessage => ({
         providerId: `p${i}`,
@@ -118,6 +122,11 @@ it.effect(
           ...(r() < 0.3 ? ["UNREAD"] : []),
           ...(r() < 0.2 ? ["IMPORTANT"] : []),
           ...(r() < 0.15 ? ["Label_1"] : []),
+          // Fixed by position, so the random sequence above stays as it was.
+          ...(i % 13 === 0 ? ["STARRED"] : []),
+          ...(i % 9 === 4 ? ["CATEGORY_SOCIAL"] : []),
+          ...(i % 4 === 1 ? ["CATEGORY_PERSONAL"] : []),
+          ...(i % 10 === 9 && i % 3 === 0 ? ["CATEGORY_OTHER"] : []),
         ],
         attachments:
           r() < 0.15
@@ -134,7 +143,8 @@ it.effect(
       });
       yield* store.transaction(
         Effect.gen(function* () {
-          for (let i = 0; i < MESSAGES; i++) yield* store.upsertMessage(i % 2 ? a : b, message(i));
+          for (let i = 0; i < MESSAGES; i++)
+            yield* store.upsertMessage(i % 10 === 9 ? c : i % 2 ? a : b, message(i));
         }),
       );
       while (!(yield* store.backfillWordIndex(5000)).ready) {
@@ -188,8 +198,11 @@ it.effect(
           ...(r() < 0.25 ? { accountIds: [a] } : {}),
           ...(r() < 0.3
             ? {
-                label: pick(["INBOX", "Label_1", "IMPORTANT"]),
+                label: pick(["INBOX", "Label_1", "IMPORTANT", "STARRED", "CATEGORY_PERSONAL"]),
                 searchScope: pick(["all", "folder"] as const),
+                ...(r() < 0.6
+                  ? { mailbox: pick(["inbox", "all", "starred", "important"] as const) }
+                  : {}),
               }
             : {}),
           ...(r() < 0.15
@@ -229,7 +242,53 @@ it.effect(
             );
         }
       }
+      // Folder-scope searches in a label view walk for every label and mailbox.
+      const folderSearches = [
+        "weekly",
+        "weekly delivery",
+        "subject:weekly alpine",
+        "is:unread weekly",
+      ];
+      let sweep = 0;
+      let sweepRows = 0;
+      for (const label of [
+        "Label_1",
+        "Label_2",
+        "INBOX",
+        "IMPORTANT",
+        "STARRED",
+        "CATEGORY_SOCIAL",
+        "CATEGORY_PERSONAL",
+      ])
+        for (const mailbox of [undefined, "inbox", "all", "starred", "important"] as const)
+          for (const flat of [false, true]) {
+            const query: ThreadQuery = {
+              search: folderSearches[sweep % folderSearches.length] ?? "weekly",
+              searchScope: "folder",
+              label,
+              ...(mailbox ? { mailbox } : {}),
+              flat,
+              ...(sweep % 3 === 0 ? { accountIds: [sweep % 2 ? a : c] } : {}),
+            };
+            sweep++;
+            yield* sql`UPDATE message_operator_text_backfill SET ready=1`;
+            const planned = yield* planTextPage({
+              ...parseSearchQuery(query),
+              wordIndexReady: true,
+              derivedWordIndexReady: true,
+              operatorTextReady: true,
+            }).pipe(Effect.provideService(CommonTermRows, WALK));
+            assert.isDefined(planned.textPage, JSON.stringify(query));
+            const { result: walk } = yield* run(query, WALK);
+            const { result: rows } = yield* run(query, ROW_SET);
+            sweepRows += walk.first.length;
+            if (JSON.stringify(walk) !== JSON.stringify(rows))
+              differences.push(
+                `${JSON.stringify(query)}\n walk=${JSON.stringify(walk)}\n rows=${JSON.stringify(rows)}`,
+              );
+          }
       assert.deepStrictEqual(differences, []);
+      assert.isAbove(sweepRows, sweep);
       assert.strictEqual(compared, SEARCHES * 2);
       // The comparison means something only if a good share of the searches walked, some of
       // them to an empty page.

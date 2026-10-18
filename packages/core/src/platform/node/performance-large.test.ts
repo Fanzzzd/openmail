@@ -350,6 +350,28 @@ it.effect(
             })
             .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
         );
+      // A label view with the search scope set to the current folder sends the view's label and
+      // mailbox with the search. These walk the date index like `label:Folder_5 weekly`.
+      for (const [name, search, mailbox, flat] of [
+        ["search current folder in label view", "weekly", "all", false],
+        ["search current folder in label view subject:", "subject:weekly alpha", "all", false],
+        ["search current folder in label view flat", "weekly", "all", true],
+        ["search current folder in label view Inbox", "weekly", "inbox", false],
+      ] as const)
+        yield* measure(
+          name,
+          200,
+          store
+            .listThreads({
+              search,
+              searchScope: "folder",
+              mailbox,
+              label: "Folder_5",
+              flat,
+              limit: 50,
+            })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
       // While the person types, the search field runs the unfinished last word as a prefix.
       // The word index has no prefix index, so each probe of `pe*` expands it over all terms.
       for (const search of ["we*", "week*", "person", "pe*", "weekly de*", "weekly delivery"])
