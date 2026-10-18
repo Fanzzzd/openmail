@@ -72,15 +72,13 @@ for size in 16 32 128 256 512; do
 done
 iconutil -c icns "$iconset" -o icon.icns
 
-# The docs site's touch icon: the whole grid, corners transparent.
-sips -z 180 180 icon.png --out ../../docs/app/apple-icon.png >/dev/null
-
 rsvg-convert -w 22 -h 22 trayTemplate.svg -o trayTemplate.png
 rsvg-convert -w 44 -h 44 trayTemplate.svg -o trayTemplate@2x.png
 
-# Home-screen icons for the web build: the icon's body, full bleed, opaque,
-# since iOS and Android round the corners themselves.
-python3 - icon.png ../src/renderer/web-public/icons <<'PY'
+# Home-screen icons for the web build and the docs site's touch icon: the
+# icon's body, full bleed, opaque, since iOS and Android round the corners
+# themselves. iOS fills transparent corners with black.
+python3 - icon.png ../src/renderer/web-public/icons ../../docs/app/apple-icon.png <<'PY'
 import sys
 from PIL import Image
 src = Image.open(sys.argv[1]).convert("RGBA")
@@ -107,4 +105,5 @@ for y in range(n):
             po[x, y] = c
 for size, name in [(180, "apple-touch-icon.png"), (192, "icon-192.png"), (512, "icon-512.png")]:
     out.resize((size, size), Image.LANCZOS).save(f"{sys.argv[2]}/{name}", optimize=True)
+out.resize((180, 180), Image.LANCZOS).save(sys.argv[3], optimize=True)
 PY
