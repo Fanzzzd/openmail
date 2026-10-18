@@ -2778,6 +2778,11 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "Upravit text zprávy"
 
+#. Menu item on a search chip, such as from:bob, that puts its text back in the search field to edit.
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Edit filter"
+msgstr "Upravit filtr"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Edit link"
@@ -2815,10 +2820,6 @@ msgstr "Upravit text tohoto konceptu?"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Edit this filter in webmail to keep all its conditions and actions."
 msgstr "Upravte tento filtr ve webové poště, aby se zachovaly všechny jeho podmínky a akce."
-
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Edit token"
-msgstr "Upravit token"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."

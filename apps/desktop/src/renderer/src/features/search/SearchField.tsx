@@ -270,7 +270,13 @@ export function SearchField({
                   </button>
                 }
               >
-                <MenuItem onClick={() => editChip(index)}>{t`Edit token`}</MenuItem>
+                <MenuItem onClick={() => editChip(index)}>
+                  {t({
+                    message: "Edit filter",
+                    comment:
+                      "Menu item on a search chip, such as from:bob, that puts its text back in the search field to edit.",
+                  })}
+                </MenuItem>
                 <MenuItem onClick={() => replaceChip(index, negateSearchToken(token))}>
                   {token.startsWith("-") ? t`Include matches` : t`Exclude matches`}
                 </MenuItem>

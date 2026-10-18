@@ -2788,6 +2788,11 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "编辑正文"
 
+#. Menu item on a search chip, such as from:bob, that puts its text back in the search field to edit.
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Edit filter"
+msgstr "编辑过滤器"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Edit link"
@@ -2825,10 +2830,6 @@ msgstr "编辑这封草稿的正文？"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Edit this filter in webmail to keep all its conditions and actions."
 msgstr "请在网页版邮箱中编辑这个过滤器，以保留它的全部条件和操作。"
-
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Edit token"
-msgstr "编辑条件"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."

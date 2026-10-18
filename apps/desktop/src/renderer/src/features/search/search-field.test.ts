@@ -209,7 +209,7 @@ it("typing values, selecting suggestions and modifying/editing chips retains the
     expect(
       parseSearchQuery({ search: changed.mock.calls.at(-1)?.[0] }).criteria?.excluded?.[0]?.to,
     ).toBe("alice+reports@example.com");
-    click(dom, "Edit token");
+    click(dom, "Edit filter");
     expect(controls.text).toBe('invoice -to:"alice+reports@example.com"');
     expect(inputRef.current).not.toBeNull();
     act(() => controls.type('invoice label:"Work '));

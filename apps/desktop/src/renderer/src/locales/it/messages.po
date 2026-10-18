@@ -2778,6 +2778,11 @@ msgctxt "message text action"
 msgid "Edit body"
 msgstr "Modifica testo del messaggio"
 
+#. Menu item on a search chip, such as from:bob, that puts its text back in the search field to edit.
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Edit filter"
+msgstr "Modifica filtro"
+
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
 msgid "Edit link"
@@ -2815,10 +2820,6 @@ msgstr "Modificare il testo di questa bozza?"
 #: src/renderer/src/features/settings/sections/ServerSettings.tsx
 msgid "Edit this filter in webmail to keep all its conditions and actions."
 msgstr "Modifica questo filtro nella webmail per mantenere tutte le sue condizioni e azioni."
-
-#: src/renderer/src/features/search/SearchField.tsx
-msgid "Edit token"
-msgstr "Modifica token"
 
 #: src/renderer/src/features/compose/components/BodyNotices.tsx
 msgid "Editing removes tables, images and other formatting this editor cannot keep from the quoted text. Lists, bold, italic, underline and links are kept."
