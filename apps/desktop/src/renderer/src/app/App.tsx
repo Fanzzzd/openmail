@@ -406,6 +406,7 @@ export function App({ composeId }: { composeId?: string }) {
       searchMatches={selected?.searchMatches}
       query={query}
       onQuery={setQuery}
+      onEnterResults={navigation.enterResults}
       searchRef={searchRef}
       onComposeMessage={(id, mode, attachment) => startCompose(mode, attachment, id)}
       onEditDraft={openSavedDraft}

@@ -29,6 +29,8 @@ interface Props {
   searchMatches?: readonly SearchMatch[] | undefined;
   query: string;
   onQuery: (q: string) => void;
+  /** Down or Enter from a search that ran: moves to the results. False when there are none. */
+  onEnterResults: () => boolean;
   searchRef: RefObject<HTMLInputElement | null>;
   /**
    * Actions for the open thread, left of the search field. They fill the room
@@ -58,6 +60,7 @@ export function Reader({
   searchMatches,
   query,
   onQuery,
+  onEnterResults,
   searchRef,
   renderToolbar,
   onSelectMessage,
@@ -125,7 +128,12 @@ export function Reader({
             data-search-slot
             className={searchSlotClass(prefs.toolbarVisible, query, Boolean(messageId && messages))}
           >
-            <SearchField value={query} onChange={onQuery} inputRef={searchRef} />
+            <SearchField
+              value={query}
+              onChange={onQuery}
+              onEnterResults={onEnterResults}
+              inputRef={searchRef}
+            />
           </div>
         )}
       </header>

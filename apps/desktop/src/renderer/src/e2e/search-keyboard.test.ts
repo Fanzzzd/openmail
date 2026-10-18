@@ -10,8 +10,10 @@ afterEach(async () => {
   current = undefined;
 });
 
+// Down only focused the first row, so the reader stayed empty, actions had nothing selected and the
+// next Down selected the same row.
 for (const stroke of ["ArrowDown", "Enter"])
-  it(`${stroke} after a search runs moves focus to the first result`, async () => {
+  it(`${stroke} after a search runs selects and focuses the first result`, async () => {
     current = await flow({
       messages: [
         incoming("one", { subject: "Quarterly report" }),
@@ -28,8 +30,40 @@ for (const stroke of ["ArrowDown", "Enter"])
     await eventually(() => expect(() => row(h.id("one"))).toThrow());
     expect(document.activeElement).toBe(field);
     key(stroke, {}, field);
-    expect(document.activeElement).toBe(row(h.id("two")));
+    await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+    expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true");
+    await eventually(() => expect(reader()).toContain("Lunch on Friday"));
   });
+
+// With a later result selected, Down from the field focused the first row while the selection, the
+// reader and Archive stayed on the selected one.
+it("Down from the field focuses the selected result", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { subject: "Jordan notes", date: Date.now() - 1000 }),
+      incoming("two", { subject: "Jordan budget", date: Date.now() - 2000 }),
+      incoming("three", { subject: "Lunch on Friday", date: Date.now() - 3000 }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("three"))).toBeTruthy());
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  fireEvent.change(field, { target: { value: "jordan" } });
+  key("Enter", {}, field);
+  await eventually(() => expect(() => row(h.id("three"))).toThrow());
+  key("ArrowDown", {}, field);
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
+  key("ArrowDown");
+  await eventually(() => expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true"));
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  field.focus();
+  key("ArrowDown", {}, field);
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  expect(row(h.id("one")).getAttribute("aria-selected")).toBe("false");
+  expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true");
+  expect(reader()).toContain("Jordan budget");
+});
 
 it("Down before the search runs stays in the field", async () => {
   current = await flow();

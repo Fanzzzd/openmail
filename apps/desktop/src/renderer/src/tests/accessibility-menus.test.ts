@@ -195,7 +195,12 @@ it("Close window closes the text context menu before the window", async () => {
 it("Close window closes the search suggestions before the window", async () => {
   const Field = () => {
     const [value, setValue] = useState("");
-    return h(SearchField, { value, onChange: setValue, inputRef: null });
+    return h(SearchField, {
+      value,
+      onChange: setValue,
+      onEnterResults: () => false,
+      inputRef: null,
+    });
   };
   render(localized(h(Field)));
   typeInto(screen.getByRole("combobox", { name: "Search mail" }), "from");
@@ -236,7 +241,12 @@ it("marks the space name invalid and points it at the error while one shows", as
 const searchChips = (value: string) => {
   const Field = () => {
     const [text, setText] = useState(value);
-    return h(SearchField, { value: text, onChange: setText, inputRef: null });
+    return h(SearchField, {
+      value: text,
+      onChange: setText,
+      onEnterResults: () => false,
+      inputRef: null,
+    });
   };
   render(localized(h("main", null, h(Field))));
 };
@@ -277,7 +287,13 @@ it("remembers what had focus before the search field and hands it back", () => {
     localized(
       h("main", null, [
         h("button", { key: "row", type: "button" }, "Row"),
-        h(SearchField, { key: "field", value: "", onChange: vi.fn(), inputRef: null }),
+        h(SearchField, {
+          key: "field",
+          value: "",
+          onChange: vi.fn(),
+          onEnterResults: () => false,
+          inputRef: null,
+        }),
       ]),
     ),
   );

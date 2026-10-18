@@ -52,7 +52,6 @@ import { primaryShortcutText } from "../../../../shared/shortcuts";
 import { useShortcutSet } from "../../i18n/use-shortcut-text";
 import { itemClass, popupOffset, popupSurface } from "../../ui/styles";
 import { rememberSearchReturn } from "./search-return";
-import { focusFirstResult } from "./result-focus";
 
 /** The operator reference on the docs site, opened in the default browser. */
 const SEARCH_HELP_URL = "https://openmail-docs.vercel.app/docs/search-operators";
@@ -90,10 +89,13 @@ const letTabMoveFocus = (event: KeyboardEvent<HTMLElement> & { preventBaseUIHand
 export function SearchField({
   value,
   onChange,
+  onEnterResults,
   inputRef,
 }: {
   value: string;
   onChange: (text: string) => void;
+  /** Moves to the results of the search that ran. False when there are none. */
+  onEnterResults: () => boolean;
   inputRef: Ref<HTMLInputElement>;
 }) {
   const { t } = useLingui();
@@ -307,7 +309,7 @@ export function SearchField({
                 !e.altKey &&
                 !e.metaKey &&
                 !e.ctrlKey;
-              if (toResults && focusFirstResult(document)) {
+              if (toResults && onEnterResults()) {
                 e.preventDefault();
                 e.preventBaseUIHandler();
                 return;

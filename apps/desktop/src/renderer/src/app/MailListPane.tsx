@@ -134,7 +134,12 @@ export function MailListPane({
       }}
       searchBar={
         !prefs.readingPaneVisible || narrow ? (
-          <SearchField value={query} onChange={setQuery} inputRef={searchRef} />
+          <SearchField
+            value={query}
+            onChange={setQuery}
+            onEnterResults={navigation.enterResults}
+            inputRef={searchRef}
+          />
         ) : undefined
       }
       // One pane at a time leaves no reader toolbar, so selected rows get their actions above the

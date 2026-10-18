@@ -447,6 +447,23 @@ export function useMailSelection({
     focusList(next.focus);
     if (next.focus === list.at(-1)?.id) loadMore();
   };
+  /**
+   * Down or Enter from a search that ran. A selected result keeps the selection and takes focus;
+   * otherwise the first result becomes the keyboard selection, as the list's own Down makes it.
+   * False when there are no results.
+   */
+  const enterResults = () => {
+    const first = list[0];
+    if (!first) return false;
+    const kept =
+      selection.focus && visibleIds.has(selection.focus)
+        ? selection.focus
+        : [...selection.ids].find((id) => visibleIds.has(id));
+    if (kept) setSelectionSource("keyboard");
+    else select(first.id, "keyboard");
+    focusList(kept ?? first.id);
+    return true;
+  };
   /** Gmail's J/K while rows are checked: the cursor moves, the checked rows stay. */
   const moveListCursor = (direction: 1 | -1) => {
     const next = moveCursor(
@@ -527,6 +544,7 @@ export function useMailSelection({
   return {
     selectAll: selectAllRows,
     move,
+    enterResults,
     moveListCursor,
     toggleFocusedRow,
     clearChecks,
