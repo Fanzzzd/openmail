@@ -1,5 +1,5 @@
 /**
- * Unpackaged runs call themselves "OpenMail Dev" and use the blueprint dev icon
+ * Unpackaged runs call themselves "OpenMail Dev" and use the drafting-paper dev icon
  * (build/icon-dev.png), so a dev instance is never mistaken for the installed
  * app. Only displayed strings and icons change. Never call app.setName here:
  * Electron derives userData from the app name, and a dev run must keep using
