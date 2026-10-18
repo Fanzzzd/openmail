@@ -239,10 +239,10 @@ it("typing a search one key at a time keeps the open conversation", async () => 
   const field = screen.getByLabelText("Search mail");
   field.focus();
   // A half typed word can match nothing; the conversation stays open meanwhile.
-  fireEvent.change(field, { target: { value: "a" } });
+  fireEvent.change(field, { target: { value: "az" } });
   await eventually(() => expect(() => row(h.id("one"))).toThrow());
   expect(reader()).toContain("async retro");
-  for (const typed of ["as", "asy", "asyn", "async"])
+  for (const typed of ["a", "as", "asy", "asyn", "async"])
     fireEvent.change(field, { target: { value: typed } });
   await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
   await advance(500);
@@ -271,6 +271,50 @@ it("a search being typed matches its last word as a prefix", async () => {
   fireEvent.change(field, { target: { value: "asy" } });
   await eventually(() => expect(() => row(h.id("two"))).toThrow());
   expect(row(h.id("one"))).toBeTruthy();
+});
+
+// One typed letter ran as a whole word, so the first key of nearly every search emptied the list
+// and showed "No matching messages".
+it("a one-letter last word keeps the list until a second letter or Enter", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { subject: "Northwind invoice" }),
+      incoming("two", { subject: "Lunch on Friday" }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("two"))).toBeTruthy());
+  const list = screen.getByRole("listbox");
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  const shows = async (ids: readonly string[], hidden: readonly string[]) => {
+    await eventually(() => {
+      for (const id of hidden) expect(() => row(h.id(id))).toThrow();
+    });
+    await wait(50);
+    for (const id of ids) expect(row(h.id(id))).toBeTruthy();
+    expect(screen.queryByText("No matching messages")).toBeNull();
+  };
+  // From an empty field the mailbox stays, header and all.
+  fireEvent.change(field, { target: { value: "p" } });
+  await shows(["one", "two"], []);
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(list.getAttribute("aria-label")).not.toBe("Search results");
+  for (const typed of ["lu", "lunch", "lunch "]) {
+    fireEvent.change(field, { target: { value: typed } });
+    await shows(["two"], ["one"]);
+  }
+  // A new short word or an operator without its value keeps the previous search's rows.
+  for (const typed of ["lunch f", "lunch is:", "lunch is:u"]) {
+    fireEvent.change(field, { target: { value: typed } });
+    await shows(["two"], ["one"]);
+  }
+  // Enter runs the one letter as typed.
+  fireEvent.change(field, { target: { value: "p" } });
+  key("Enter", {}, field);
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  expect(() => row(h.id("two"))).toThrow();
+  await eventually(() => expect(screen.getByText("No matching messages")).toBeTruthy());
 });
 
 // A row picked with the keyboard took focus back from the field whenever the results changed, so

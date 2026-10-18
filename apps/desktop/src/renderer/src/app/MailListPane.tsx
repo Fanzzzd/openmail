@@ -105,6 +105,9 @@ export function MailListPane({
     prefs,
   } = navigation;
   const { rowState, act, requestPermanentDelete } = mailActions;
+  // The search the list runs. A last word too short to search yet is left out of it, so the
+  // list, its header and its scroll position stay as they were.
+  const listSearch = listQuery?.search ?? "";
   return (
     <MessageList
       leading={leading}
@@ -149,7 +152,7 @@ export function MailListPane({
           <BatchActions {...batchToolbar} />
         ) : undefined
       }
-      resetKey={JSON.stringify([view, search, filters])}
+      resetKey={JSON.stringify([view, listSearch, filters])}
       title={title}
       threads={list}
       loading={threads.loading}
@@ -157,7 +160,7 @@ export function MailListPane({
       loadError={threads.loadError}
       exhausted={threads.exhausted}
       showAccount={showAccount}
-      searching={search !== ""}
+      searching={listSearch !== ""}
       searchingServer={threads.searchingServer}
       searchTruncated={threads.searchTruncated}
       searchErrorAccounts={threads.searchErrorAccounts}

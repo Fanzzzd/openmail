@@ -18,7 +18,7 @@ The search field suggests the common filters when you start typing their name, f
 | `invoice OR receipt`  | Either word. Parentheses group terms: `(invoice OR receipt) from:alice`.                                                    |
 | `alpha AROUND 3 beta` | The two words at most three words apart.                                                                                    |
 
-While you type in the search field, a last word of two or more characters also matches longer words, so `asy` finds async and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. Saved searches, server search, the CLI and MCP match whole words; add `*`, as in `budg*`, to ask for a prefix. A trailing `*` is also accepted on `from:`, `to:`, `cc:`, `bcc:`, `filename:`, `list:` and `deliveredto:`, as in `from:pri*`. These operators already match any part of the value. Label and folder names match whole: `label:Work*` is searched as plain text.
+While you type in the search field, a last word of two or more characters also matches longer words, so `asy` finds async and `10:0` finds 10:00. A typed space ends the word; Enter keeps it a prefix. A last word of one character, or an operator still missing its value such as `is:u`, waits. The list keeps the search without it until you type more or press Enter. Saved searches, server search, the CLI and MCP match whole words; add `*`, as in `budg*`, to ask for a prefix. A trailing `*` is also accepted on `from:`, `to:`, `cc:`, `bcc:`, `filename:`, `list:` and `deliveredto:`, as in `from:pri*`. These operators already match any part of the value. Label and folder names match whole: `label:Work*` is searched as plain text.
 
 ## People
 

@@ -64,14 +64,15 @@ it("typing in a narrow window's search keeps the field and its focus while resul
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   const field = screen.getByRole<HTMLInputElement>("combobox", { name: "Search mail" });
   field.focus();
-  fireEvent.change(field, { target: { value: "L" } });
+  // One letter waits for a second; the results replace the list at "Lu".
+  fireEvent.change(field, { target: { value: "Lu" } });
   await eventually(() =>
     expect(screen.getByRole("heading", { name: "Search results" })).toBeTruthy(),
   );
   expect(field.isConnected).toBe(true);
   expect(document.activeElement).toBe(field);
-  fireEvent.change(field, { target: { value: "Lu" } });
-  await eventually(() => expect(field.value).toBe("Lu"));
+  fireEvent.change(field, { target: { value: "Lun" } });
+  await eventually(() => expect(field.value).toBe("Lun"));
   expect(document.activeElement).toBe(field);
 });
 

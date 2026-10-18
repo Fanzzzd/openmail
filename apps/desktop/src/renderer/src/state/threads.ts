@@ -8,6 +8,7 @@ import {
   DEFAULT_PREFS,
   inboxCategories,
   liveSearchText,
+  searchedFieldText,
   mergeSearchResults,
   parseSearchQuery,
   searchInputError,
@@ -24,7 +25,7 @@ import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
 import { type Loaded, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
-import { filtersAtom, searchAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
+import { filtersAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
 const PAGE = 100;
@@ -122,7 +123,8 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
         .map((a) => a.id)
     : baseScope;
   const common = scope ? { accountIds: scope } : {};
-  const search = get(searchAtom);
+  // A last word too short to search yet keeps the list on the search without it.
+  const search = searchedFieldText(get(searchTextAtom)).trim();
   if (search)
     return {
       ...common,

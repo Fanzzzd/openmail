@@ -8,7 +8,7 @@ import {
   searchWords,
   unquoteSearchValue,
 } from "./search-tokens.js";
-import { hasSearchExpression, isSearchOperator } from "./search.js";
+import { hasSearchExpression, isSearchOperator, parseSearchQuery } from "./search.js";
 import type { Address } from "../domain/message.js";
 import type { Label } from "../domain/account.js";
 
@@ -42,20 +42,37 @@ export function searchFieldParts(value: string): {
   };
 }
 /**
- * The search the local list runs while the field is typed in. The last word stays unfinished
- * until a typed space ends it, so a plain word of two or more characters matches as a prefix:
+ * The part of the field's text that the list searches. An unfinished last word waits while it
+ * has fewer than two characters, not counting a leading `-` or `"`, and while it is an operator
+ * whose value does not parse yet, such as `is:` or `is:u`. Run as typed, `p` matches only the
+ * whole word and `is:u` matches as text, so the list emptied on the first key of a search. The
+ * list keeps the search without that word meanwhile. Enter ends the word with a space (see
+ * `submittedSearchText`), so a submitted `p` or `is:u` runs as typed. Expressions run as typed.
+ */
+export function searchedFieldText(value: string): string {
+  const { pending } = searchFieldParts(value);
+  if (!pending || !value.endsWith(pending) || hasSearchExpression(value)) return value;
+  const waits = isSearchOperator(pending)
+    ? parseSearchQuery({ search: pending }).search !== ""
+    : Array.from(pending.replace(/^-?"?/, "")).length < 2;
+  return waits ? value.slice(0, -pending.length) : value;
+}
+/**
+ * The search the local list runs while the field is typed in, from `searchedFieldText`. The
+ * last word stays unfinished until a typed space ends it, so a plain word of two or more characters matches as a prefix:
  * `asy` finds "async". Enter keeps the word a prefix (see `submittedSearchText`). A word that
  * starts with a digit may contain colons, so `10:0` finds "10:00"; operator keys start with a
  * letter. Operators, quotes, exclusions and expressions run as typed, as do server, saved and
  * CLI searches.
  */
 export function liveSearchText(value: string): string {
-  const search = value.trim();
-  const { pending } = searchFieldParts(value);
+  const searched = searchedFieldText(value);
+  const search = searched.trim();
+  const { pending } = searchFieldParts(searched);
   if (
     Array.from(pending).length < 2 ||
     !search.endsWith(pending) ||
-    hasSearchExpression(value) ||
+    hasSearchExpression(searched) ||
     !/^(?:[\p{L}\p{N}][^\s":*()]*|\p{N}[^\s"*()]*)$/u.test(pending)
   )
     return search;

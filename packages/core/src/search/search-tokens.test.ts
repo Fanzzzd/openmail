@@ -17,6 +17,7 @@ import { attachmentHasType } from "./attachment-types.js";
 import {
   editSearchToken,
   liveSearchText,
+  searchedFieldText,
   submittedSearchText,
   modifySearchToken,
   negateSearchToken,
@@ -350,8 +351,38 @@ it("runs the unfinished last plain word of a typed search as a prefix", () => {
   assert.strictEqual(liveSearchText("会议"), "会议*");
   // A typed space finishes the word.
   assert.strictEqual(liveSearchText("async "), "async");
-  for (const typed of ["a", "from:ali", '"async re', '"async"', "-asy", "asy*", "a OR asy", "(asy"])
+  for (const typed of ["from:ali", '"async re', '"async"', "-asy", "asy*", "a OR asy", "(asy"])
     assert.strictEqual(liveSearchText(typed), typed);
+});
+
+// `p` ran as a whole word and `is:u` as text, so the first key of a search emptied the list.
+it("waits for a second character or an operator's value before searching the last word", () => {
+  for (const [typed, searched] of [
+    ["p", ""],
+    ["-", ""],
+    ["-p", ""],
+    ['"', ""],
+    ['"p', ""],
+    ["north p", "north "],
+    ["is:unread p", "is:unread "],
+    ["is:", ""],
+    ["is:u", ""],
+    ["-is:u", ""],
+    ["board label:", "board "],
+    ['from:"jo', ""],
+    ["before:2024", ""],
+  ] as const) {
+    assert.strictEqual(searchedFieldText(typed), searched, typed);
+    assert.strictEqual(liveSearchText(typed), searched.trim(), typed);
+  }
+  // A second character, a parsed value or a finished word searches.
+  for (const typed of ["pa", "-pa", "is:unread", "from:a", "p ", "is:u ", "a OR p", "10"])
+    assert.strictEqual(searchedFieldText(typed), typed);
+  assert.strictEqual(liveSearchText("p "), "p");
+  assert.strictEqual(liveSearchText("is:u "), "is:u");
+  // Enter still runs a one-letter word or an unfinished operator as typed.
+  assert.strictEqual(liveSearchText(submittedSearchText("p")), "p");
+  assert.strictEqual(liveSearchText(submittedSearchText("is:u")), "is:u");
 });
 
 it("keeps an unfinished word a prefix after Enter, and chips a finished operator", () => {
