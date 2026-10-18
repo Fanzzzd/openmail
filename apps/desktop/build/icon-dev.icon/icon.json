@@ -1,30 +1,66 @@
 {
-  "fill": {
-    "linear-gradient": [
-      "srgb:0.04314,0.34118,0.90196,1.00000",
-      "srgb:0.02353,0.17255,0.54902,1.00000"
-    ],
-    "orientation": {
-      "start": {
-        "x": 0.5,
-        "y": 0.0
-      },
-      "stop": {
-        "x": 0.5,
-        "y": 1.0
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:1.00000,1.00000,1.00000,1.00000",
+          "srgb:0.94902,0.95294,0.96078,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.16471,0.17255,0.19216,1.00000",
+          "srgb:0.10196,0.10588,0.12157,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
       }
     }
-  },
+  ],
   "groups": [
     {
-      "name": "mark",
+      "name": "flap",
       "layers": [
         {
-          "name": "mark",
-          "image-name": "mark.svg",
+          "name": "flap",
+          "image-name": "flap.svg",
           "glass": true,
+          "opacity": 0.94,
           "fill-specializations": [
             {
+              "value": {
+                "solid": "srgb:0.10980,0.10980,0.11765,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "tinted",
               "value": {
                 "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
               }
@@ -34,60 +70,80 @@
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.4
+        "opacity": 0.5
       },
       "specular": true,
       "translucency": {
         "enabled": true,
-        "value": 0.08
+        "value": 0.1
       }
     },
     {
-      "name": "paper",
+      "name": "o",
       "layers": [
         {
-          "name": "marks",
-          "image-name": "marks.svg",
-          "glass": false,
-          "opacity": 0.18,
+          "name": "o",
+          "image-name": "o.svg",
+          "glass": true,
           "fill-specializations": [
             {
               "value": {
-                "solid": "srgb:0.90980,0.94118,1.00000,1.00000"
+                "solid": "srgb:0.10980,0.10980,0.11765,1.00000"
               }
-            }
-          ]
-        },
-        {
-          "name": "major",
-          "image-name": "major.svg",
-          "glass": false,
-          "opacity": 0.26,
-          "fill-specializations": [
+            },
             {
+              "appearance": "dark",
               "value": {
-                "solid": "srgb:0.90980,0.94118,1.00000,1.00000"
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
               }
-            }
-          ]
-        },
-        {
-          "name": "minor",
-          "image-name": "minor.svg",
-          "glass": false,
-          "opacity": 0.1,
-          "fill-specializations": [
+            },
             {
+              "appearance": "tinted",
               "value": {
-                "solid": "srgb:0.90980,0.94118,1.00000,1.00000"
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
               }
             }
           ]
         }
       ],
       "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.1
+      }
+    },
+    {
+      "name": "Paper",
+      "layers": [
+        {
+          "name": "paper",
+          "image-name-specializations": [
+            {
+              "value": "paper.svg"
+            },
+            {
+              "appearance": "dark",
+              "value": "paper-dark.svg"
+            },
+            {
+              "appearance": "tinted",
+              "value": "paper-mono.svg"
+            }
+          ],
+          "glass": false
+        }
+      ],
+      "shadow": {
         "kind": "none",
-        "opacity": 0
+        "opacity": 0.5
+      },
+      "translucency": {
+        "enabled": false,
+        "value": 0.5
       },
       "specular": false
     }

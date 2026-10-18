@@ -1,30 +1,60 @@
 {
-  "fill": {
-    "linear-gradient": [
-      "srgb:0.14902,0.15294,0.17255,1.00000",
-      "srgb:0.05490,0.05490,0.06667,1.00000"
-    ],
-    "orientation": {
-      "start": {
-        "x": 0.5,
-        "y": 0.0
-      },
-      "stop": {
-        "x": 0.5,
-        "y": 1.0
+  "fill-specializations": [
+    {
+      "value": {
+        "linear-gradient": [
+          "srgb:0.20392,0.21176,0.23922,1.00000",
+          "srgb:0.06667,0.07059,0.08235,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
+      }
+    },
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.10196,0.10588,0.12157,1.00000",
+          "srgb:0.01961,0.01961,0.02353,1.00000"
+        ],
+        "orientation": {
+          "start": {
+            "x": 0.5,
+            "y": 0
+          },
+          "stop": {
+            "x": 0.5,
+            "y": 1
+          }
+        }
       }
     }
-  },
+  ],
   "groups": [
     {
-      "name": "mark",
+      "name": "flap",
       "layers": [
         {
-          "name": "mark",
-          "image-name": "mark.svg",
+          "name": "flap",
+          "image-name": "flap.svg",
           "glass": true,
+          "opacity": 0.94,
           "fill-specializations": [
             {
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
               "value": {
                 "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
               }
@@ -34,12 +64,44 @@
       ],
       "shadow": {
         "kind": "neutral",
-        "opacity": 0.4
+        "opacity": 0.5
       },
       "specular": true,
       "translucency": {
         "enabled": true,
-        "value": 0.08
+        "value": 0.1
+      }
+    },
+    {
+      "name": "o",
+      "layers": [
+        {
+          "name": "o",
+          "image-name": "o.svg",
+          "glass": true,
+          "fill-specializations": [
+            {
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            },
+            {
+              "appearance": "dark",
+              "value": {
+                "solid": "srgb:1.00000,1.00000,1.00000,1.00000"
+              }
+            }
+          ]
+        }
+      ],
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0.5
+      },
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.1
       }
     }
   ],
