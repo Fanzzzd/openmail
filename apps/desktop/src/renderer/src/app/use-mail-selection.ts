@@ -478,6 +478,15 @@ export function useMailSelection({
       cancelled = true;
     };
   }, [resultsRequest, query, threads]);
+  // Leaving the field drops the request at once. Checking focus only when the list answers
+  // missed a blur and refocus while the list loaded.
+  useEffect(() => {
+    const field = resultsRequest?.from;
+    if (!field) return constVoid;
+    const leave = () => setResultsRequest((current) => (current?.from === field ? null : current));
+    field.addEventListener("focusout", leave);
+    return () => field.removeEventListener("focusout", leave);
+  }, [resultsRequest]);
   /** Gmail's J/K while rows are checked: the cursor moves, the checked rows stay. */
   const moveListCursor = (direction: 1 | -1) => {
     const next = moveCursor(

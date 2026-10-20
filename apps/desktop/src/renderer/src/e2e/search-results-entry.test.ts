@@ -179,3 +179,21 @@ it("Escape after Down while the search loads returns to the mailbox without open
   expect(reader()).not.toContain("Quarterly report");
   expect(await markedRead()).toEqual([]);
 });
+
+// Focus was checked only when the list answered, so leaving the field and coming back while the
+// search loaded kept the request: the first result opened and was marked read.
+it("leaving the search field after Down drops the request, even when focus comes back", async () => {
+  const { h, field, markedRead } = await start();
+  const release = await h.holdLists();
+  fireEvent.change(field, { target: { value: "lunch" } });
+  key("ArrowDown", {}, field);
+  field.blur();
+  field.focus();
+  await release();
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  await wait(100);
+  expect(document.activeElement).toBe(field);
+  expect(selectedRows()).toEqual([]);
+  expect(reader()).not.toContain("Lunch on Friday");
+  expect(await markedRead()).toEqual([]);
+});

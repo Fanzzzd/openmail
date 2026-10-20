@@ -122,11 +122,18 @@ export const cases = [
     'if (!first) return { kind: "enter", id: "", kept: false };',
   ],
   [
-    "search results request kept after the text changes",
+    "search results request kept after the text changes or focus leaves",
     "editing the search after Down|Escape after Down while the search loads",
     `${renderer}features/search/results-entry.ts`,
     "if (now.search !== request.search || now.active !== request.from)",
     "if (false)",
+  ],
+  [
+    "search results request kept after the field loses focus",
+    "leaving the search field after Down",
+    `${renderer}app/use-mail-selection.ts`,
+    '    field.addEventListener("focusout", leave);',
+    "",
   ],
   [
     "notification click",
@@ -136,14 +143,34 @@ export const cases = [
     "void event.href;",
   ],
 ];
+/** More changes a case makes, each `[relative, before, after]` in a file of its own. */
+const moreEdits = new Map([
+  [
+    "search results request kept after the text changes or focus leaves",
+    // Escape moves focus to the list, so the field's focusout drops the request too.
+    [
+      [
+        `${renderer}app/use-mail-selection.ts`,
+        '    field.addEventListener("focusout", leave);',
+        "",
+      ],
+    ],
+  ],
+]);
+const edits = ([name, , relative, before, after]) => [
+  [relative, before, after],
+  ...(moreEdits.get(name) ?? []),
+];
+
 /** Cases whose anchor text is no longer in its file. Every anchor is checked before any case runs. */
 export function missingAnchors() {
-  return cases
-    .filter(
-      ([, , relative, before]) =>
-        !readFileSync(resolve(desktop, relative), "utf8").includes(before),
-    )
-    .map(([name, , relative, before]) => `${name} (${relative}): ${before}`);
+  return cases.flatMap((entry) =>
+    edits(entry)
+      .filter(
+        ([relative, before]) => !readFileSync(resolve(desktop, relative), "utf8").includes(before),
+      )
+      .map(([relative, before]) => `${entry[0]} (${relative}): ${before}`),
+  );
 }
 
 function run() {
@@ -157,19 +184,24 @@ function run() {
   const directory = mkdtempSync(join(tmpdir(), "openmail-mutations-"));
   const killed = new Set();
   try {
-    for (const [name, pattern, relative, before, after] of cases) {
-      const path = resolve(desktop, relative);
-      const original = readFileSync(path, "utf8");
+    for (const entry of cases) {
+      const [name, pattern] = entry;
+      const originals = new Map();
       const report = join(directory, "report.json");
       rmSync(report, { force: true });
-      const changed = original.replace(before, after);
-      writeFileSync(
-        path,
-        relative === shared && !original.includes('import { Effect } from "effect";')
-          ? `import { Effect } from "effect";\n${changed}`
-          : changed,
-      );
       try {
+        for (const [relative, before, after] of edits(entry)) {
+          const path = resolve(desktop, relative);
+          const original = readFileSync(path, "utf8");
+          originals.set(path, original);
+          const changed = original.replace(before, after);
+          writeFileSync(
+            path,
+            relative === shared && !original.includes('import { Effect } from "effect";')
+              ? `import { Effect } from "effect";\n${changed}`
+              : changed,
+          );
+        }
         const result = spawnSync(
           "pnpm",
           [
@@ -208,11 +240,11 @@ function run() {
         for (const test of selected) killed.add(test.fullName);
         process.stdout.write(`${name}: ${selected.length} test(s) failed as required\n`);
       } finally {
-        writeFileSync(path, original);
+        for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 50)
-      throw new Error(`Expected all 50 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 51)
+      throw new Error(`Expected all 51 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
