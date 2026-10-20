@@ -9,7 +9,7 @@ Settings → Compose 中的 “Use Apple Contacts” 默认关闭。仅该开关
 - 每个窗口挂载联系人状态轮询。状态或快照版本变化会失效 `Keys.contacts`，刷新已有建议、组、照片和联系人标识符；状态查询不注册该 key，避免递归轮询。
 - 请求权限超过 120 秒且进程被超时终止时显示“等待授权”，不再次申请。后续状态轮询发现授权或拒绝后更新界面；其他执行错误仍显示失败。
 - `createAppleContactsCache` 是 core 导出的内存组件，只供 desktop RPC 适配器使用。没有数据库表、磁盘联系人缓存、网络请求、MCP 工具或 AI 上下文入口。Mailbox 的服务端联系人与 AI 路径不接入此快照。
-- 地址建议合并及名称优先级见 [parity 的 C15 行](parity.md#撰写)。Apple 来源使用进程内缓存，服务端／邮件历史沿用 Store 的查询。
+- 地址建议合并及名称优先级见 [parity 的 C15 行](parity.md#composing)。Apple 来源使用进程内缓存，服务端／邮件历史沿用 Store 的查询。
 - Apple 联系人组每人只展开一个邮箱。CNContactStore 没有分发列表首选地址 API；完整授权后通过公开的 `ABGroup.distributionIdentifier(forProperty:person:)` 读取组偏好，退回个人首选邮箱，再退回第一个有效邮箱。组成员只请求标识符和邮箱。部分授权只使用 CNContactStore 可见联系人，不访问 Address Book。失效偏好和重复组成员由 core 处理。
 - “Open in Contacts” 只接受 UUID 或 UUID:ABPerson 标识符，打开保留冒号的 `addressbook://` URL；拒绝查询、片段、路径和其他记录类型。“Add to Contacts” 仅在点击后生成私有临时 vCard，通过 `/usr/bin/open -b com.apple.AddressBook` 打开 Contacts 的导入确认。helper 没有 CNSaveRequest 或其他写操作。临时文件沿用附件临时目录的权限和清理机制。
 
