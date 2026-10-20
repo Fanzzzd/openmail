@@ -108,6 +108,27 @@ export const cases = [
     "Effect.void",
   ],
   [
+    "search results from the stale list",
+    "Down right after typing|Enter twice while the search loads|an operator with Down|Down keeps an already selected result|Down from a field holding a chip",
+    `${renderer}features/search/results-entry.ts`,
+    '  if (list.loading) return { kind: "wait" };',
+    "",
+  ],
+  [
+    "search results with no rows",
+    "Down right after typing a search with no results",
+    `${renderer}features/search/results-entry.ts`,
+    'if (!first) return list.searchingServer ? { kind: "wait" } : { kind: "drop" };',
+    'if (!first) return { kind: "enter", id: "", kept: false };',
+  ],
+  [
+    "search results request kept after the text changes",
+    "editing the search after Down|Escape after Down while the search loads",
+    `${renderer}features/search/results-entry.ts`,
+    "if (now.search !== request.search || now.active !== request.from)",
+    "if (false)",
+  ],
+  [
     "notification click",
     "notification click",
     `${renderer}app/use-native-menu-bridge.ts`,
@@ -190,8 +211,8 @@ function run() {
         writeFileSync(path, original);
       }
     }
-    if (killed.size !== 42)
-      throw new Error(`Expected all 42 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 50)
+      throw new Error(`Expected all 50 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
