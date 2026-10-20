@@ -1,6 +1,6 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { Reactivity } from "effect/reactivity";
-import { useContext, useEffect, useRef } from "react";
+import { useCallback, useContext, useEffect, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
 import { Keys } from "../state/keys";
 import { historyAtom, locationAtom } from "../state/location";
@@ -29,10 +29,19 @@ export function usePaneNavigation({
   // In the narrow layout the open reader has its own history entry, so the
   // browser's Back (or the iOS edge swipe) returns to the list. This is its index.
   const readerEntry = useRef<number | null>(null);
+  // The route of the entry before the reader's, as it was when the reader's entry was added.
+  const beforeReader = useRef<string | null>(null);
   // The reader's entry that Back left, still ahead in history: Forward onto it opens the reader
   // again. A push drops it, as the browser drops every entry ahead.
   const leftEntry = useRef<{ index: number; viewKey: string } | null>(null);
   const { setReaderViewKey } = layout;
+  const pushReaderEntry = useCallback(() => {
+    // The route as of now: a row's selection may have been written in this same tick.
+    const href = registry.get(locationAtom).href;
+    history.pushSame(href);
+    readerEntry.current = history.index();
+    beforeReader.current = href;
+  }, [history, registry]);
   const readerViewKey = useRef(layout.readerViewKey);
   useEffect(() => {
     readerViewKey.current = layout.readerViewKey;
@@ -67,16 +76,24 @@ export function usePaneNavigation({
   // The reader's entry belongs to the narrow layout. A wider window selects without new entries,
   // so the entry before the reader's can hold an older conversation by the time the window is
   // narrow again; the reader then gets a fresh entry, and Back lands on what it shows.
+  // Leaving the narrow layout on the reader's entry steps back over it while it still holds the
+  // route of the entry before it; otherwise each pass through the narrow layout would leave an
+  // entry that Back steps through with nothing changing. An entry whose route moved on, as after
+  // the next conversation or a pick while wide, stays: Back from it still changes the screen.
   const narrowReader = layout.mode === "narrow" && shown.reader;
   useEffect(() => {
+    const entry = readerEntry.current;
     if (layout.mode !== "narrow") {
       readerEntry.current = null;
       leftEntry.current = null;
-    } else if (narrowReader && readerEntry.current === null) {
-      history.pushSame(registry.get(locationAtom).href);
-      readerEntry.current = history.index();
-    }
-  }, [layout.mode, narrowReader, history, registry]);
+      if (
+        entry !== null &&
+        history.index() === entry &&
+        registry.get(locationAtom).href === beforeReader.current
+      )
+        history.back();
+    } else if (narrowReader && entry === null) pushReaderEntry();
+  }, [layout.mode, narrowReader, history, registry, pushReaderEntry]);
   return {
     shown,
     /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */
@@ -84,11 +101,7 @@ export function usePaneNavigation({
       layout.setReaderViewKey(viewKey);
       if (layout.mode !== "narrow") return;
       const entry = readerEntry.current;
-      if (entry === null || history.index() < entry) {
-        // The route as of now: the row's selection was written in this same tick.
-        history.pushSame(registry.get(locationAtom).href);
-        readerEntry.current = history.index();
-      }
+      if (entry === null || history.index() < entry) pushReaderEntry();
       focusReader();
     },
     /** Back from the reader to the list in the narrow layout, focus on the same row. */

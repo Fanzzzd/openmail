@@ -203,6 +203,42 @@ it("Back from a narrow reader lands on the conversation picked while the window 
   expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("two")}`);
 });
 
+it("passing through the narrow layout leaves no Back step that changes nothing", async () => {
+  width = 1200;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const title = () => screen.getByRole("heading", { level: 1 }).textContent;
+  const mailboxes = () => screen.getAllByRole("navigation", { name: "Mailboxes" })[0]!;
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  await eventually(() => expect(title()).toBe("Sent"));
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: /^Inbox/ }));
+  await eventually(() => expect(title()).toBe("Inbox"));
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  for (let pass = 0; pass < 3; pass++) {
+    resize(520);
+    await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+    // Widening may step back through history; the next pass starts once that step lands.
+    const stepped = new Promise<unknown>((resolve) => {
+      window.addEventListener("popstate", resolve, { once: true });
+      setTimeout(resolve, 1000);
+    });
+    resize(1200);
+    await eventually(() =>
+      expect(document.querySelector('[data-mail-pane="list"]')).not.toBeNull(),
+    );
+    await act(() => stepped);
+  }
+  expect(title()).toBe("Inbox");
+  // The first Back leaves Inbox for Sent, as it did before the window narrowed.
+  key("[", { metaKey: true }, document.body);
+  await eventually(() => expect(title()).toBe("Sent"));
+  key("]", { metaKey: true }, document.body);
+  await eventually(() => expect(title()).toBe("Inbox"));
+  expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("one")}`);
+});
+
 it("Cmd+] after Cmd+[ in a narrow window opens the reader again", async () => {
   width = 520;
   current = await flow({ windowHistory: true });

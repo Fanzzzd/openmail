@@ -254,6 +254,13 @@ export const cases = [
     ": routeSearchText(q);",
     ": q;",
   ],
+  [
+    "widening steps back over an unchanged reader entry",
+    "leaves no Back step that changes nothing",
+    `${renderer}app/use-pane-navigation.ts`,
+    "      )\n        history.back();\n",
+    "      )\n        void 0;\n",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -355,8 +362,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 66)
-      throw new Error(`Expected all 66 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 67)
+      throw new Error(`Expected all 67 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
