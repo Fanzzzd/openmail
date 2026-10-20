@@ -18,8 +18,14 @@ export function usePanelLayout({
   const paneMode = !hasAccounts ? "empty" : view.space === OVERVIEW ? "overview" : "mail";
   // Sidebar widths persist per pane mode, separately from the list/reader orientation.
   const sizesKey = `openmail:pane-sizes:${paneMode}`;
+  // Where builds before pixel sizes saved the docked layout, in percent (see SavedGroup).
+  const content = paneMode === "mail" ? "mail" : "main";
+  const legacyKeys = [
+    `react-resizable-panels:openmail:panes:${paneMode}:sidebar:${content}`,
+    `react-resizable-panels:openmail:panes:${paneMode}:${content}:sidebar`,
+  ];
   const mailOrientation: "vertical" | "horizontal" =
     prefs.readingPanePosition === "bottom" ? "vertical" : "horizontal";
 
-  return { docked, paneMode, sizesKey, mailOrientation };
+  return { docked, paneMode, sizesKey, legacyKeys, mailOrientation };
 }

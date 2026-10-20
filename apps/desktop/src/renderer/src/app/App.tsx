@@ -262,7 +262,7 @@ export function App({ composeId }: { composeId?: string }) {
   const hasAccounts = accountList.length > 0;
   const { viewAccount, title } = useViewTitle(view, accountList, labelMap);
 
-  const { docked, paneMode, sizesKey, mailOrientation } = usePanelLayout({
+  const { docked, paneMode, sizesKey, legacyKeys, mailOrientation } = usePanelLayout({
     prefs,
     hasAccounts,
     view,
@@ -520,6 +520,7 @@ export function App({ composeId }: { composeId?: string }) {
           <SavedGroup
             key={`${paneMode}:${docked}`}
             storageKey={sizesKey}
+            legacy={{ keys: legacyKeys, wide: layout.mode === "wide" }}
             role={layoutIsMain ? "main" : undefined}
             className="min-w-0 flex-1"
             resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
@@ -545,6 +546,7 @@ export function App({ composeId }: { composeId?: string }) {
               <MailPanels
                 position={prefs.readingPanePosition}
                 readerVisible={prefs.readingPaneVisible}
+                wide={layout.mode === "wide"}
               >
                 <SavedPanel
                   id="list"

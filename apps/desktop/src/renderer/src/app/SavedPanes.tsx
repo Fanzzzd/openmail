@@ -2,6 +2,7 @@ import { createContext, use, useMemo, useRef, useState, type ComponentProps } fr
 import {
   Group,
   Panel,
+  usePanelRef,
   type Layout,
   type LayoutChangedMeta,
   type PanelSize,
@@ -52,37 +53,79 @@ export function pixelSizes(
   );
 }
 
-const SizesContext = createContext<{
-  saved: Sizes;
-  measure: (size: PanelSize, id: string | number | undefined) => void;
-} | null>(null);
+/**
+ * The first layout saved by earlier builds, in percent, under any of `keys`. Builds before pixel
+ * sizes saved one through react-resizable-panels' useDefaultLayout.
+ */
+function readLegacyLayout(storage: Pick<Storage, "getItem">, keys: readonly string[]) {
+  for (const key of keys) {
+    const sizes = readSizes(storage, key);
+    if (Object.keys(sizes).length > 0) return sizes;
+  }
+  return null;
+}
 
-/** A Group whose `SavedPanel`s open at the pixel sizes saved under `storageKey`. */
+type Measure = (size: PanelSize, id: string, resize: (pixels: number) => void) => void;
+const SizesContext = createContext<{ saved: Sizes; measure: Measure } | null>(null);
+
+/**
+ * A Group whose `SavedPanel`s open at the pixel sizes saved under `storageKey`.
+ *
+ * `legacy` names the keys an earlier build saved this group's layout under, in percent. Once,
+ * on the first mount in the wide layout, a pane with no saved pixel size takes its old percentage
+ * of the group's measured size, which is saved in pixels; the old keys are then removed. Once the
+ * group has pixel sizes saved, the old keys are not read. A narrower window would clamp the
+ * panes, so there the old keys are neither read nor removed.
+ */
 export function SavedGroup({
   storageKey,
   storage = localStorage,
+  legacy,
   ...props
 }: Omit<ComponentProps<typeof Group>, "defaultLayout" | "onLayoutChanged"> & {
   storageKey: string;
-  storage?: Pick<Storage, "getItem" | "setItem">;
+  storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
+  legacy?: { keys: readonly string[]; wide: boolean };
 }) {
   // Read once per mount: the group remounts whenever its panes change.
   const [saved] = useState(() => readSizes(storage, storageKey));
-  const measured = useRef(new Map<string, PanelSize>());
-  const value = useMemo(
-    () => ({
-      saved,
-      measure: (size: PanelSize, id: string | number | undefined) => {
-        if (id !== undefined) measured.current.set(String(id), size);
-      },
-    }),
-    [saved],
+  // Pixel sizes saved for this group, by a drag or a conversion, mean the old keys are done with.
+  const [legacyKeys] = useState(() =>
+    legacy?.wide && Object.keys(saved).length === 0 ? legacy.keys : [],
   );
+  const [legacyLayout] = useState(() => readLegacyLayout(storage, legacyKeys));
+  const measured = useRef(new Map<string, PanelSize>());
+  const legacyPending = useRef(legacyLayout !== null);
+  const value = useMemo(() => {
+    const write = (sizes: Sizes) => {
+      try {
+        storage.setItem(
+          storageKey,
+          JSON.stringify({ ...readSizes(storage, storageKey), ...sizes }),
+        );
+      } catch {
+        // Storage may be full or unavailable; the panes keep their sizes for this session.
+      }
+    };
+    const measure: Measure = (size, id, resize) => {
+      measured.current.set(id, size);
+      if (!legacyPending.current || !legacyLayout || size.inPixels <= 0) return;
+      legacyPending.current = false;
+      for (const key of legacyKeys) storage.removeItem(key);
+      const percent = legacyLayout[id];
+      if (saved[id] !== undefined || percent === undefined || size.asPercentage <= 0) return;
+      const pixels = Math.round((percent / 100) * ((size.inPixels / size.asPercentage) * 100));
+      write({ [id]: pixels });
+      // Resizing from inside the library's resize notice would nest layout updates.
+      queueMicrotask(() => resize(pixels));
+    };
+    return { saved, measure };
+  }, [saved, legacyLayout, legacyKeys, storage, storageKey]);
   const save = (layout: Layout, meta: LayoutChangedMeta) => {
     if (!meta.isUserInteraction) return;
-    const sizes = { ...readSizes(storage, storageKey), ...pixelSizes(layout, measured.current) };
+    const sizes = pixelSizes(layout, measured.current);
     try {
-      storage.setItem(storageKey, JSON.stringify(sizes));
+      storage.setItem(storageKey, JSON.stringify({ ...readSizes(storage, storageKey), ...sizes }));
     } catch {
       // Storage may be full or unavailable; the panes keep their sizes for this session.
     }
@@ -98,13 +141,19 @@ export function SavedGroup({
 export function SavedPanel({
   defaultSize,
   ...props
-}: Omit<ComponentProps<typeof Panel>, "onResize"> & { id: string }) {
+}: Omit<ComponentProps<typeof Panel>, "onResize" | "panelRef"> & { id: string }) {
   const sizes = use(SizesContext);
+  const panel = usePanelRef();
   return (
     <Panel
       {...props}
+      panelRef={panel}
       defaultSize={sizes?.saved[props.id] ?? defaultSize}
-      onResize={sizes?.measure}
+      onResize={
+        sizes
+          ? (size) => sizes.measure(size, props.id, (px) => panel.current?.resize(px))
+          : undefined
+      }
     />
   );
 }

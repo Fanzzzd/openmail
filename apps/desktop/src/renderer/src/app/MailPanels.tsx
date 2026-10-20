@@ -6,10 +6,13 @@ import { SavedGroup } from "./SavedPanes";
 export function MailPanels({
   position,
   readerVisible,
+  wide,
   children,
 }: {
   position: "right" | "bottom";
   readerVisible: boolean;
+  /** The window has the wide layout, where an earlier build's saved widths may be converted. */
+  wide: boolean;
   children?: ReactNode;
 }) {
   return (
@@ -20,6 +23,17 @@ export function MailPanels({
           readerVisible
             ? `openmail:mail-pane-sizes:${position}`
             : `openmail:mail-pane-sizes:${position}:list`
+        }
+        legacy={
+          readerVisible
+            ? {
+                keys: [
+                  `react-resizable-panels:openmail:mail-panes:${position}:list:reader`,
+                  `react-resizable-panels:openmail:mail-panes:${position}:reader:list`,
+                ],
+                wide,
+              }
+            : undefined
         }
         orientation={position === "bottom" ? "vertical" : "horizontal"}
         className="h-full"
