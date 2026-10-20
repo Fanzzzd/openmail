@@ -98,14 +98,14 @@ The trigram index can only answer terms of three characters or more. A search fo
 
 Terms are generated in JavaScript. Triggers only write new, changed or pre-migration rows to `search_bigram_pending`, and delete the old terms immediately on change or delete. A background loop after startup and a task debounced 2 s after each change write 200 rows per batch, one transaction per batch. Rows still in the queue are searched with LIKE, so results are complete at all times; an unfinished backfill is only slower. As with trigram, a common term whose probe exceeds 2048 hits switches to checking row by row along the date index.
 
-Ten messages in the 100k fixture contain “鲸鱼” (whale). On 2026-10-13 the four items ran on the same fixture, median of five warm runs, in ms; `OPENMAIL_PERF_MEASURE` takes several names separated by commas. The one-minute load was 10–29, above 12, so the results are only for comparison:
+Ten messages in the 100k fixture contain “鲸鱼” (whale). On 2026-10-13 the four items ran on the same fixture, median of five warm runs, in ms; `OPENMAIL_PERF_MEASURE` takes several names separated by commas. The one-minute load was 10–29, above 12, so the results are only for comparison: <!-- cjk-ok -->
 
 | Measurement                             | Before | After |
 | --------------------------------------- | -----: | ----: |
-| rare two-character “鲸鱼” (whale)       |  127.1 |   4.5 |
-| rare one-character “鲸” (whale)         |  123.7 |   3.6 |
-| common two-character “预算” (budget)    |   28.2 |  15.4 |
-| common one-character “会” (meeting/can) |   30.1 |  16.0 |
+| rare two-character “鲸鱼” (whale)       |  127.1 |   4.5 | <!-- cjk-ok --> |
+| rare one-character “鲸” (whale)         |  123.7 |   3.6 | <!-- cjk-ok --> |
+| common two-character “预算” (budget)    |   28.2 |  15.4 | <!-- cjk-ok --> |
+| common one-character “会” (meeting/can) |   30.1 |  16.0 | <!-- cjk-ok --> |
 
 ```sh
 OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK common 2-char,search CJK common 1-char" pnpm test:perf
@@ -172,7 +172,7 @@ Measured on 2026-10-17 on the reviewer's copy of the 100k fixture (`seedMailbox(
 | `weekly`                             |     32 |    30 |
 | `we*`                                |     63 |    63 |
 | `pe*`                                |    107 |   107 |
-| `预算` (budget)                      |     17 |    17 |
+| `预算` (budget)                      |     17 |    17 | <!-- cjk-ok --> |
 | has:drive                            |     12 |    11 |
 | `in:inbox`                           |     12 |    13 |
 | Inbox list                           |     11 |    13 |
@@ -242,7 +242,7 @@ Fixture P, before and after:
 | `invoice OR weekly` count        |  21536 |   161 |
 | `invoice OR weekly` flat count   |  20181 |    95 |
 | `invoice OR zzzzunmatched`       |  17617 |    65 |
-| `weekly OR 鲸鱼` (whale)         |    103 |    98 |
+| `weekly OR 鲸鱼` (whale)         |    103 |    98 | <!-- cjk-ok --> |
 
 Counts also use the page filter, so the count for `invoice OR weekly` dropped from 21.5 s to 161 ms. The OR part of search-operator-plans.test.ts covers ordinary words, combinations with `is:`, words only in attachment text, negation and `subject:`. Pages with attachment hits are sorted by relevance, so only the thread sets are compared. It checks that the query plan for attachment text has no per-row probe on `derived_chunks_message (message_id=? AND rowid=?)`, and that the statement adding attachment hits writes `+m.id IN`. A small database does not pick the old bad plan even without statistics, so the second check only inspects the statement text. `search OR`, `search OR is:unread` and `search attachment word OR common` in `performance-large.test.ts` have a 200 ms budget.
 
