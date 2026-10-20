@@ -8,6 +8,7 @@ import type { OutgoingAttachment } from "../../../../shared/api";
 export const DIAGNOSTICS_TIMEOUT = "10 seconds";
 import { isEmailAddress } from "@openmail/core/schema";
 import { openMailLink } from "../../state/desktop";
+import { useCopyText } from "../../state/clipboard";
 import { useRunMail, withMail } from "../../state/mail";
 import { Alert, AlertCancel, alertPrimary } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
@@ -36,6 +37,7 @@ export function Feedback({
 }) {
   const { t } = useLingui();
   const run = useRunMail();
+  const copyText = useCopyText();
   const [address, setAddress] = useState("");
   const [category, setCategory] = useState("Bug report");
   const [body, setBody] = useState("");
@@ -195,10 +197,7 @@ export function Feedback({
             onClick={() => {
               if (!preview) return;
               setCopyFailed(false);
-              navigator.clipboard.writeText(preview).then(
-                () => setCopied(true),
-                () => setCopyFailed(true),
-              );
+              copyText(preview, (done) => (done ? setCopied(true) : setCopyFailed(true)));
             }}
           >
             {copied ? <Trans>Copied</Trans> : <Trans>Copy diagnostics</Trans>}

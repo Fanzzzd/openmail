@@ -343,6 +343,7 @@ export async function flow(
       CheckForUpdates: unsupported,
       SwitchWindow: unsupported,
       ClipboardText: unsupported,
+      CopyText: unsupported,
       OpenSettings: () => Effect.void,
       OpenComposeWindow: unsupported,
       ComposeWindowDraft: ({ id }) =>

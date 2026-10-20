@@ -199,7 +199,7 @@ A hidden run handles each of these as follows:
 - It answers each dialog and panel as if the person cancelled it, and writes the question of a message box to stderr.
 - It pops no menu and runs the menu's `callback` as if the person dismissed it.
 - It opens nothing in another app. `openPath` resolves to `""` as Electron does on success, and each skipped open is logged to stderr. A URL is logged by scheme and host only, since a mail link can carry a token.
-- It keeps clipboard writes in memory. Reads in the same run return them and are empty before the first write, so the run neither overwrites nor reads the clipboard of the person at the keyboard.
+- It keeps clipboard writes in memory. Reads in the same run return them and are empty before the first write, so the run neither overwrites nor reads the clipboard of the person at the keyboard. Renderer copies reach the same path: they go through `copyText` in [clipboard.ts](../apps/desktop/src/renderer/src/state/clipboard.ts), which calls the `CopyText` RPC on the Mac and writes `navigator.clipboard` only in the web build, where the clipboard belongs to the browser's device. [clipboard-writes.test.ts](../apps/desktop/src/renderer/src/tests/clipboard-writes.test.ts) fails on any other renderer write to `navigator.clipboard`, `ClipboardItem` or `execCommand("copy")`.
 
 [reveal.test.ts](../apps/desktop/src/main/windows/reveal.test.ts) parses every main-process file with the TypeScript compiler. Outside reveal.ts it fails on:
 

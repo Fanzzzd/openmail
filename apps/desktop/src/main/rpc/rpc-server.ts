@@ -251,6 +251,7 @@ const Handlers = MailRpcs.toLayer(
         }),
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
       ClipboardText: () => Effect.promise(() => readClipboardText()),
+      CopyText: ({ text }) => Effect.promise(() => writeClipboardText(text)),
       OpenMailLink: ({ url }) =>
         Effect.gen(function* () {
           const target = externalUrl(url);

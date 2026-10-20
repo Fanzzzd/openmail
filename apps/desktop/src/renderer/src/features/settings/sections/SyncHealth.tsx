@@ -4,6 +4,7 @@ import { Disclosure } from "../../../ui/Disclosure";
 import { redactSyncHealth, type HealthVerdict, type SyncHealth } from "@openmail/core/schema";
 import { Effect } from "effect";
 import { useState } from "react";
+import { useCopyText } from "../../../state/clipboard";
 import { useRunMail, withMail } from "../../../state/mail";
 
 import { buttonLink, settingsHint } from "../../../ui/styles";
@@ -13,6 +14,7 @@ const cell = "px-2 py-1 align-top";
 export function SyncHealthCheck({ accountId, email }: { accountId: string; email: string }) {
   const { t } = useLingui();
   const run = useRunMail();
+  const copyText = useCopyText();
   const [report, setReport] = useState<SyncHealth | null>(null);
   const [waiting, setWaiting] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -45,10 +47,7 @@ export function SyncHealthCheck({ accountId, email }: { accountId: string; email
   };
   const copy = () => {
     if (!report) return;
-    void navigator.clipboard.writeText(JSON.stringify(redactSyncHealth(report), null, 2)).then(
-      () => setCopied(true),
-      () => setCopied(false),
-    );
+    copyText(JSON.stringify(redactSyncHealth(report), null, 2), setCopied);
   };
   const days = (value: number | null) =>
     value === null ? t`All mail` : t`${plural(value, { one: "# day", other: "# days" })}`;

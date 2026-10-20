@@ -22,6 +22,7 @@ import { ADDRESS_SEPARATOR, formatAddress, parseAddresses } from "../draft";
 import type { AppError } from "../../../lib/errors";
 import { removesSuggestion } from "../../../lib/delete-key";
 import { displayName } from "../../../lib/format";
+import { useCopyText } from "../../../state/clipboard";
 import { Keys } from "../../../state/keys";
 import { setContactHiddenAtom } from "../../../state/mutations";
 import {
@@ -87,6 +88,7 @@ export function RecipientField({
   const touch = isTouchWeb();
   const fieldRef = useRef<HTMLDivElement>(null);
   const [copyError, setCopyError] = useState(false);
+  const copyText = useCopyText();
   const [announcement, setAnnouncement] = useState("");
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
@@ -271,12 +273,7 @@ export function RecipientField({
                   label={touch ? recipientLabel(address, showFullAddresses) : undefined}
                   address={address}
                   fieldName={fieldName}
-                  onCopy={() => {
-                    void navigator.clipboard.writeText(address.address).then(
-                      () => setCopyError(false),
-                      () => setCopyError(true),
-                    );
-                  }}
+                  onCopy={() => copyText(address.address, (done) => setCopyError(!done))}
                   onEdit={() => {
                     setTyped(text);
                     emit(

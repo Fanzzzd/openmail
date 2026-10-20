@@ -11,14 +11,19 @@ import { SyncHealthCheck } from "./SyncHealth";
 const fixture = vi.hoisted(() => {
   vi.resetModules();
   const calls: string[] = [];
-  return { calls };
+  const copied: string[] = [];
+  return { calls, copied };
 });
 vi.mock("../../../state/mail", () => ({
   useRunMail: () => (effect: Effect.Effect<unknown>) => Effect.runPromise(effect),
   withMail: (
-    invoke: (call: (tag: string) => Effect.Effect<SyncHealth>) => Effect.Effect<unknown>,
+    invoke: (
+      call: (tag: string, payload?: { text?: string }) => Effect.Effect<SyncHealth | void>,
+    ) => Effect.Effect<unknown>,
   ) =>
-    invoke((tag) => {
+    invoke((tag, payload) => {
+      if (tag === "CopyText")
+        return Effect.sync(() => void fixture.copied.push(payload?.text ?? ""));
       fixture.calls.push(tag);
       return Effect.succeed({
         provider: "gmail",
@@ -44,11 +49,9 @@ vi.mock("../../../state/mail", () => ({
 afterEach(() => {
   cleanup();
   fixture.calls.length = 0;
-  vi.unstubAllGlobals();
+  fixture.copied.length = 0;
 });
 it("account sync health is explicit, renders offline counts and copies a redacted report", async () => {
-  const writeText = vi.fn().mockResolvedValue(undefined);
-  vi.stubGlobal("navigator", { clipboard: { writeText } });
   const i18n = setupI18n({ locale: "en", messages: {} });
   render(
     h(
@@ -72,9 +75,9 @@ it("account sync health is explicit, renders offline counts and copies a redacte
   const report = screen.getByRole("textbox", { name: "Redacted report" });
   expect(report.getAttribute("readonly")).not.toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Copy redacted report" }));
-  await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
-  expect(writeText.mock.calls[0]?.[0]).toContain('"scope": "folder:1"');
-  expect(writeText.mock.calls[0]?.[0]).not.toContain("@");
+  await waitFor(() => expect(fixture.copied).toHaveLength(1));
+  expect(fixture.copied[0]).toContain('"scope": "folder:1"');
+  expect(fixture.copied[0]).not.toContain("@");
 });
 
 afterAll(() => {

@@ -33,6 +33,8 @@ export const DesktopRpcs = [
     },
   }),
   Rpc.make("ClipboardText", { success: Schema.String }),
+  /** Copies text to the Mac's clipboard; a hidden run keeps it in memory. */
+  Rpc.make("CopyText", { payload: { text: Schema.String } }),
   Rpc.make("ClaimInlineDraft", {
     payload: { id: Schema.NullOr(Schema.String) },
     success: Schema.Boolean,

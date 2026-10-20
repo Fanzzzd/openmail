@@ -9,6 +9,7 @@ import type { RemoteAccessProblem, RemoteAccessView } from "../../../../../share
 import { resultError } from "../../../lib/errors";
 import { threadDate } from "../../../lib/format";
 import { openMailLink } from "../../../state/desktop";
+import { useCopyText } from "../../../state/clipboard";
 import { useRunMail } from "../../../state/mail";
 import {
   refreshRemoteAccessAtom,
@@ -177,6 +178,7 @@ function Status({ view }: { view: RemoteAccessView }) {
 function Address({ url }: { url: string }) {
   const { t } = useLingui();
   const [copied, setCopied] = useState(false);
+  const copyText = useCopyText();
   return (
     <div className="flex flex-wrap items-start gap-4 px-3 py-3">
       <QrCode value={url} label={t`QR code for ${url}`} />
@@ -188,7 +190,11 @@ function Address({ url }: { url: string }) {
         <button
           type="button"
           className={buttonSecondary}
-          onClick={() => void navigator.clipboard.writeText(url).then(() => setCopied(true))}
+          onClick={() =>
+            copyText(url, (done) => {
+              if (done) setCopied(true);
+            })
+          }
         >
           <Copy className="size-3.5" />
           {copied ? <Trans>Copied</Trans> : <Trans>Copy address</Trans>}

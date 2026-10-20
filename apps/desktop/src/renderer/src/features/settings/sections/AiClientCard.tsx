@@ -5,6 +5,7 @@ import { useState } from "react";
 
 import { type AiClientChange, type AiClientView } from "../../../../../shared/ai-clients";
 import { threadDate } from "../../../lib/format";
+import { useCopyText } from "../../../state/clipboard";
 import { Disclosure } from "../../../ui/Disclosure";
 import {
   buttonLink,
@@ -58,12 +59,17 @@ function StateText({ client }: { client: AiClientView }) {
 
 function CopyButton({ text, label }: { text: string; label: string }) {
   const [copied, setCopied] = useState(false);
+  const copyText = useCopyText();
   return (
     <button
       type="button"
       aria-label={label}
       className={buttonSecondary}
-      onClick={() => void navigator.clipboard.writeText(text).then(() => setCopied(true))}
+      onClick={() =>
+        copyText(text, (done) => {
+          if (done) setCopied(true);
+        })
+      }
     >
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
       {copied ? <Trans>Copied</Trans> : <Trans>Copy</Trans>}

@@ -52,7 +52,7 @@ const MUST_DENY = [
   "SetAiAccount", "SetAiModel", "SetAgentWriteMode", "CheckForUpdates",
   "RequestNotificationPermission", "OpenNotificationSettings",
   "BecomeDefaultMailClient", "SetAppleContacts", "OpenAppleContact", "AddAppleContact",
-  "ClipboardText", "ClipboardAttachments", "CopyMessageLink", "ShareMessageLink",
+  "ClipboardText", "CopyText", "ClipboardAttachments", "CopyMessageLink", "ShareMessageLink",
   "PickNativeImages", "CheckNativeGrammar", "NativeEdit", "NewWindow", "OpenThreadWindow",
   "OpenMessageWindow", "OpenComposeWindow", "ComposeWindowDraft", "CloseComposeWindow",
   "OpenSettings", "SwitchWindow", "ComposeNew", "ComposeMessage", "TextMenuCommand",

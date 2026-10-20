@@ -61,11 +61,13 @@ it("diagnostics that never answer time out instead of loading forever", async ()
 });
 
 it("without a feedback address, the diagnostics can be copied for a GitHub issue", async () => {
-  const writeText = vi.fn().mockResolvedValue(undefined);
-  Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
+  const copied: string[] = [];
+  let refuse = false;
   const opened: string[] = [];
   const h = (current = await flow({
     handlers: {
+      CopyText: ({ text }) =>
+        refuse ? Effect.die(new Error("denied")) : Effect.sync(() => void copied.push(text)),
       FeedbackAddress: () => Effect.succeed(""),
       Diagnostics: () => Effect.succeed('{"event":"snapshot"}'),
       OpenMailLink: ({ url }) => Effect.sync(() => void opened.push(url)),
@@ -80,7 +82,7 @@ it("without a feedback address, the diagnostics can be copied for a GitHub issue
   expect(continueButton()).toHaveProperty("disabled", true);
   vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
   fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
-  await eventually(() => expect(writeText).toHaveBeenCalledWith('{"event":"snapshot"}'));
+  await eventually(() => expect(copied).toEqual(['{"event":"snapshot"}']));
   await eventually(() => expect(screen.getByRole("button", { name: "Copied" })).toBeTruthy());
   // Copied goes back to the button's label, so a second copy confirms again.
   await advance(2_000);
@@ -89,7 +91,7 @@ it("without a feedback address, the diagnostics can be copied for a GitHub issue
   );
   vi.useRealTimers();
   // A clipboard that refuses says so in the dialog.
-  writeText.mockRejectedValueOnce(new Error("denied"));
+  refuse = true;
   fireEvent.click(screen.getByRole("button", { name: "Copy diagnostics" }));
   await eventually(() =>
     expect(screen.getByText("Couldn't copy diagnostics").getAttribute("role")).toBe("alert"),

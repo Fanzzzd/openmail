@@ -7,6 +7,7 @@ import { useState } from "react";
 
 import { resultError } from "../../lib/errors";
 import { canCall } from "../../lib/platform";
+import { useCopyText } from "../../state/clipboard";
 import { rawMessageAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
 import { useSaveMessage } from "./reader-actions";
@@ -34,12 +35,15 @@ export function RawMessageDialog({
   const raw = AsyncResult.isSuccess(result) ? result.value : null;
   const [headersOpen, setHeadersOpen] = useState(true);
   const [copied, setCopied] = useState(false);
+  const copyText = useCopyText();
   const parts = raw === null ? null : splitRawMessage(raw);
   const body = parts?.body ?? "";
 
   const copy = () => {
     if (raw === null) return;
-    void navigator.clipboard.writeText(raw).then(() => setCopied(true));
+    copyText(raw, (done) => {
+      if (done) setCopied(true);
+    });
   };
 
   return (
