@@ -3,7 +3,7 @@ import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import axe from "axe-core";
-import { clickButton, eventually, flow, incoming, key, row } from "./harness";
+import { clickButton, eventually, flow, incoming, key, row, wait } from "./harness";
 import { mailHref } from "../../../shared/routes";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -197,7 +197,7 @@ it("Back from a narrow reader lands on the conversation picked while the window 
   await eventually(() => expect(reader()).toBeNull());
   await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
   // The landing entry is read back a moment later; it must hold the same pick.
-  await new Promise((resolve) => setTimeout(resolve, 400));
+  await wait(400);
   expect(selected("two")).toBe(true);
   expect(selected("one")).toBe(false);
   expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("two")}`);
