@@ -10,6 +10,20 @@ import type { KeyEvent } from "../../../shared/shortcuts";
 export function usesDeletePreference(event: KeyEvent): boolean {
   return (event.key === "Backspace" || event.key === "Delete") && !event.metaKey && !event.ctrlKey;
 }
+/**
+ * Forward Delete (Fn-Delete on a Mac keyboard) in a field with a highlighted suggestion removes
+ * that suggestion, as Chrome removes an autofill entry. Shift-Delete always does. Plain Delete
+ * does only at the end of the text, where it would delete nothing; before that it edits the
+ * text. Backspace, with or without Shift, always edits the text.
+ */
+export function removesSuggestion(
+  event: KeyEvent,
+  input: { value: string; selectionStart: number | null; selectionEnd: number | null },
+): boolean {
+  if (event.key !== "Delete" || event.metaKey || event.ctrlKey || event.altKey) return false;
+  if (event.shiftKey) return true;
+  return input.selectionStart === input.value.length && input.selectionEnd === input.value.length;
+}
 interface DeleteContext {
   mailbox?: MailboxView;
   currentLabel?: string;

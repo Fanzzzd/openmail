@@ -52,6 +52,20 @@ export const cases = [
     "",
   ],
   [
+    "recipient suggestion removal key",
+    "Shift-Backspace edits the text",
+    `${renderer}features/compose/components/RecipientField.tsx`,
+    "highlightedAddress && removesSuggestion(e, e.currentTarget)",
+    'highlightedAddress && e.shiftKey && (e.key === "Backspace" || e.key === "Delete")',
+  ],
+  [
+    "recipient suggestion undo",
+    "Shift-Backspace edits the text",
+    `${renderer}features/compose/components/RecipientField.tsx`,
+    "payload: { address: address.address, hidden: false }",
+    "payload: { address: address.address, hidden: true }",
+  ],
+  [
     "organization",
     "archive advances|trash advances|Gmail labels|offline archive|moves to one folder|provider latency",
     shared,
@@ -250,8 +264,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 51)
-      throw new Error(`Expected all 51 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 52)
+      throw new Error(`Expected all 52 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

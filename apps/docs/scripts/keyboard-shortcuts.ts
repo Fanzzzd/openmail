@@ -234,6 +234,18 @@ export function renderShortcutsPage(names: Map<string, string>): string {
       .filter((item): item is MenuShortcut => Object.hasOwn(MENU_NAMES, item))
       .map((item) => `| ${cell(MENU_NAMES[item])} | ${cell(menuShortcutText(item))} |`),
   );
+  lines.push(
+    "",
+    "## Suggestions",
+    "",
+    "In a field that shows suggestions, ⌦ removes the highlighted one. On a Mac keyboard without ⌦, press fn⌫. ⌫ and ⇧⌫ always edit the text.",
+    "",
+    "| Action | Shortcut |",
+    "| --- | --- |",
+    "| Stop suggesting the highlighted address in To, Cc or Bcc | ⌦ / fn⌫ |",
+    "",
+    "After you stop suggesting an address, the field shows it with an **Undo** button.",
+  );
   const mailboxes = NUMBERED_MAILBOXES.map(
     (mailbox, index) => `${MAILBOX_NAMES[mailbox]} (${index + 1})`,
   ).join(", ");

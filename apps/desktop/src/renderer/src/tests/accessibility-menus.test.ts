@@ -229,7 +229,7 @@ it("Close window closes the recipient suggestions before the window", async () =
 
 // The list's name sat on Base UI's presentation popup (aria-prohibited-attr), and each option held
 // a Stop suggesting button (nested-interactive) with no keyboard path of its own.
-it("recipient suggestions pass axe, and Shift-Delete stops suggesting the highlighted one", async () => {
+it("recipient suggestions pass axe, and forward Delete stops suggesting the highlighted one", async () => {
   fixture.values.set("suggestionsAtom", [{ name: "Bob", address: "bob@example.com" }]);
   const Field = () => {
     const [value, setValue] = useState("");
@@ -248,7 +248,7 @@ it("recipient suggestions pass axe, and Shift-Delete stops suggesting the highli
   expect(screen.getByRole("listbox", { name: "To suggestions" })).toBeTruthy();
   expect(option.getAttribute("aria-describedby")).toBeTruthy();
   expect(document.getElementById(option.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
-    "Press Shift-Delete to stop suggesting this address.",
+    "Press Fn-Delete to stop suggesting this address.",
   );
   // The popup portals to body, outside the landmarks, so the region rule is left out here.
   const result = await axe.run(document.body, {
@@ -257,11 +257,14 @@ it("recipient suggestions pass axe, and Shift-Delete stops suggesting the highli
   expect(result.violations.map((issue) => issue.id)).toEqual([]);
   await waitFor(() => expect(input.getAttribute("aria-activedescendant")).toBe(option.id));
   fireEvent.keyDown(input, { key: "Backspace", shiftKey: true });
+  expect(fixture.decide).not.toHaveBeenCalled();
+  fireEvent.keyDown(input, { key: "Delete", shiftKey: true });
   expect(fixture.decide).toHaveBeenCalledWith(
     expect.objectContaining({ payload: { address: "bob@example.com", hidden: true } }),
   );
   expect(input).toHaveProperty("value", "bo");
-  expect(await screen.findByText("Stopped suggesting bob@example.com")).toBeTruthy();
+  expect(await screen.findAllByText("Stopped suggesting bob@example.com")).toHaveLength(2);
+  expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
 });
 
 it("marks the space name invalid and points it at the error while one shows", async () => {

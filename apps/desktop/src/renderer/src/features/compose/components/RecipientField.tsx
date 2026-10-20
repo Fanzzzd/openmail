@@ -20,6 +20,7 @@ import { type Ref, useId, useRef, useState } from "react";
 import type { Address } from "../../../../../shared/api";
 import { ADDRESS_SEPARATOR, formatAddress, parseAddresses } from "../draft";
 import type { AppError } from "../../../lib/errors";
+import { removesSuggestion } from "../../../lib/delete-key";
 import { displayName } from "../../../lib/format";
 import { Keys } from "../../../state/keys";
 import { setContactHiddenAtom } from "../../../state/mutations";
@@ -65,8 +66,9 @@ const serialize = (chips: readonly string[], typed: string) => {
  * highlighted, and what a screen reader hears, is what they do. Without a suggestion, Enter
  * turns typed text into a chip and Tab moves on, which does the same on blur.
  * A separator turns typed text into a chip, and Backspace in an empty field
- * removes the last chip. The × on a suggestion, or Shift-Delete on the
- * highlighted one, hides that address from suggestions.
+ * removes the last chip. The × on a suggestion, or forward Delete on the
+ * highlighted one (see removesSuggestion), hides that address from suggestions;
+ * the field then shows what it stopped suggesting with an Undo button.
  */
 export function RecipientField({
   label,
@@ -93,6 +95,9 @@ export function RecipientField({
   const [chose, setChose] = useState(false);
   const hide = useAtomSet(setContactHiddenAtom);
   const hideHint = useId();
+  /** The address the last hide stopped suggesting, shown with Undo until focus leaves both. */
+  const [stopped, setStopped] = useState<Address | null>(null);
+  const undoRef = useRef<HTMLButtonElement>(null);
 
   // The value is the source of truth. The last token is still being typed
   // only while it matches what this field holds as typed text.
@@ -132,7 +137,15 @@ export function RecipientField({
 
   const stopSuggesting = (address: Address) => {
     hide({ payload: { address: address.address, hidden: true }, reactivityKeys: [Keys.contacts] });
+    setStopped(address);
     setAnnouncement(t`Stopped suggesting ${address.address}`);
+  };
+
+  const undoStop = (address: Address) => {
+    hide({ payload: { address: address.address, hidden: false }, reactivityKeys: [Keys.contacts] });
+    setStopped(null);
+    setAnnouncement(t`Suggesting ${address.address} again`);
+    fieldRef.current?.querySelector("input")?.focus();
   };
 
   const type = (text: string) => {
@@ -288,8 +301,8 @@ export function RecipientField({
           onKeyDown={(e) => {
             if (e.metaKey || e.ctrlKey || e.altKey) return;
             const highlightedAddress = listed && highlighted ? byText.get(highlighted) : undefined;
-            if (e.shiftKey && (e.key === "Backspace" || e.key === "Delete") && highlightedAddress) {
-              // Shift-Delete on Mac, as the search field removes a recent search.
+            if (highlightedAddress && removesSuggestion(e, e.currentTarget)) {
+              // The same key as the search field's removal of a recent search.
               e.preventDefault();
               e.preventBaseUIHandler();
               stopSuggesting(highlightedAddress);
@@ -305,12 +318,37 @@ export function RecipientField({
               e.preventBaseUIHandler();
             }
           }}
-          onBlur={() => {
+          onBlur={(event) => {
             commit();
+            if (event.relatedTarget !== undoRef.current) setStopped(null);
           }}
           className="h-[22px] min-w-24 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted"
         />
       </Combobox.Chips>
+      {stopped && (
+        <span className="flex h-9 max-w-56 shrink-0 items-center gap-1.5 text-footnote text-a11y-muted coarse:h-11">
+          <span className="min-w-0 truncate">{t`Stopped suggesting ${stopped.address}`}</span>
+          <button
+            ref={undoRef}
+            type="button"
+            // A click keeps focus in the field, so its typed text stays text instead of a chip.
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => undoStop(stopped)}
+            onBlur={(event) => {
+              if (
+                !(
+                  event.relatedTarget instanceof Node &&
+                  fieldRef.current?.contains(event.relatedTarget)
+                )
+              )
+                setStopped(null);
+            }}
+            className="shrink-0 rounded font-medium text-a11y-accent hover:underline dark:text-blue-400"
+          >
+            {t`Undo`}
+          </button>
+        </span>
+      )}
       <output aria-live="polite" aria-atomic="true" className="sr-only">
         {announcement}
       </output>
@@ -327,9 +365,9 @@ export function RecipientField({
           >
             <span id={hideHint} hidden>
               {t({
-                message: "Press Shift-Delete to stop suggesting this address.",
+                message: "Press Fn-Delete to stop suggesting this address.",
                 comment:
-                  "Screen reader hint on a recipient suggestion. Shift-Delete is the key combination that hides the highlighted suggestion.",
+                  "Screen reader hint on a recipient suggestion. Fn-Delete is forward delete on a Mac keyboard (⌦ on a full keyboard); it hides the highlighted suggestion.",
               })}
             </span>
             <Combobox.List aria-label={t`${label} suggestions`}>
@@ -365,7 +403,7 @@ export function RecipientField({
                         {a.address}
                       </span>
                     </span>
-                    {/* Pointer only, so the option holds no control: keyboard users press Shift-Delete. */}
+                    {/* Pointer only, so the option holds no control: keyboard users press forward Delete. */}
                     <span
                       aria-hidden
                       title={t`Stop suggesting ${a.address}`}

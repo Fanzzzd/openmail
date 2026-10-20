@@ -8,12 +8,15 @@ let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
   await current?.dispose();
   current = undefined;
+  hidden.clear();
 });
 
 const work = { name: "Jordan Lee", address: "jordan.lee@work.example" };
 const home = { name: "Jordan Lee", address: "jordan@home.example" };
 const chip = (text: string) => screen.queryByRole("button", { name: `Remove ${text}` });
 const to = () => screen.getByRole("combobox", { name: "To" });
+/** Addresses the user stopped suggesting, as SetContactHidden left them. */
+const hidden = new Set<string>();
 
 /**
  * Opens a composer whose contact suggestions arrive 50 ms after each query. Typing at 120 ms a
@@ -24,9 +27,16 @@ async function composer() {
   current = await flow({
     handlers: {
       SuggestContacts: ({ query }) =>
-        Effect.succeed(query.toLowerCase().startsWith("j") ? [work, home] : []).pipe(
-          Effect.delay("50 millis"),
-        ),
+        Effect.succeed(
+          query.toLowerCase().startsWith("j")
+            ? [work, home].filter((a) => !hidden.has(a.address))
+            : [],
+        ).pipe(Effect.delay("50 millis")),
+      SetContactHidden: ({ address, hidden: hide }) =>
+        Effect.sync(() => {
+          if (hide) hidden.add(address);
+          else hidden.delete(address);
+        }),
     },
   });
   const h = current;
@@ -123,4 +133,30 @@ it("the Cc/Bcc button moves focus to the Cc field", async () => {
   await eventually(() =>
     expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Cc" })),
   );
+});
+
+// Shift-Backspace with Shift still held from a capital letter hid the highlighted suggestion for
+// good, with only a screen reader announcement and no way back.
+it("Shift-Backspace edits the text; forward Delete stops suggesting, shows it and can be undone", async () => {
+  const user = await composer();
+  await typeAndWait(user, "jor");
+  await eventually(() => expect(to().getAttribute("aria-activedescendant")).toBeTruthy());
+  await user.keyboard("{Shift>}{Backspace}{/Shift}");
+  await eventually(() => expect(to()).toHaveProperty("value", "jo"));
+  expect(hidden.size).toBe(0);
+  await typeAndWait(user, "r");
+  await eventually(() => expect(to().getAttribute("aria-activedescendant")).toBeTruthy());
+  await user.keyboard("{Delete}");
+  await eventually(() => expect(hidden).toEqual(new Set([work.address])));
+  expect(to()).toHaveProperty("value", "jor");
+  const status = screen.getAllByText(`Stopped suggesting ${work.address}`);
+  expect(status.some((element) => !element.closest(".sr-only"))).toBe(true);
+  await eventually(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+  await user.click(screen.getByRole("button", { name: "Undo" }));
+  await eventually(() => expect(hidden.size).toBe(0));
+  expect(document.activeElement).toBe(to());
+  // The click left the field's text as it was, not turned into a chip.
+  expect(to()).toHaveProperty("value", "jor");
+  expect(chip("jor")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });

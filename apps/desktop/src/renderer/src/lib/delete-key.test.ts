@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { deleteKeyOp, usesDeletePreference } from "./delete-key";
+import { deleteKeyOp, removesSuggestion, usesDeletePreference } from "./delete-key";
 import type { Provider } from "../../../shared/api";
 import type { KeyEvent } from "../../../shared/shortcuts";
 const key = (metaKey = false, ctrlKey = false): KeyEvent => ({
@@ -42,4 +42,20 @@ it("no applicable label falls back to trash with explanation; Trash/Spam retain 
   for (const mailbox of ["trash", "spam"] as const)
     for (const action of ["trash", "archive", "removeLabel"] as const)
       expect(deleteKeyOp(action, { mailbox })).toEqual({ op: { kind: "trash" }, fallback: false });
+});
+it("only forward Delete removes a suggestion, and plain Delete only at the end of the text", () => {
+  const at = (caret: number) => ({ value: "Jor", selectionStart: caret, selectionEnd: caret });
+  const stroke = (key: string, shiftKey = false): KeyEvent => ({
+    key,
+    shiftKey,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+  });
+  expect(removesSuggestion(stroke("Delete"), at(3))).toBe(true);
+  expect(removesSuggestion(stroke("Delete", true), at(1))).toBe(true);
+  expect(removesSuggestion(stroke("Delete"), at(1))).toBe(false);
+  expect(removesSuggestion(stroke("Backspace"), at(3))).toBe(false);
+  expect(removesSuggestion(stroke("Backspace", true), at(3))).toBe(false);
+  expect(removesSuggestion({ ...stroke("Delete"), altKey: true }, at(3))).toBe(false);
 });

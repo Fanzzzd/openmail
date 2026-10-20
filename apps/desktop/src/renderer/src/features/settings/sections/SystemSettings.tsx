@@ -465,6 +465,9 @@ interface ShortcutRow {
   keys: string;
 }
 
+/** Forward Delete, typed as Fn-Delete on a Mac keyboard without the key; see removesSuggestion. */
+const SUGGESTION_REMOVAL_KEYS = "⌦ / fn⌫";
+
 const navigation = (id: string, label: string, keys: string): ShortcutRow => ({
   id,
   group: "navigation",
@@ -509,6 +512,16 @@ function useShortcutRows(set: ShortcutSet): ShortcutRow[] {
     ),
     navigation("panes", t`Move focus between panes`, "← / →"),
     navigation("spaces", t`Switch spaces`, set === "gmail" ? "⌘1…9" : "⌃⌘1…9"),
+    {
+      id: "stop-suggesting",
+      group: "compose",
+      label: t({
+        message: "Stop suggesting the highlighted address",
+        comment:
+          "Keyboard shortcuts help: in a To, Cc or Bcc field, hides the highlighted address from suggestions.",
+      }),
+      keys: SUGGESTION_REMOVAL_KEYS,
+    },
   ];
 }
 
