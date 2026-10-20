@@ -191,6 +191,13 @@ export const cases = [
     "navigation.openLink(event.href);",
     "void event.href;",
   ],
+  [
+    "narrow Back after a wide pick",
+    "lands on the conversation picked while the window was wide",
+    `${renderer}app/use-pane-navigation.ts`,
+    '    if (layout.mode !== "narrow") readerEntry.current = null;',
+    "",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -292,8 +299,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 56)
-      throw new Error(`Expected all 56 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 57)
+      throw new Error(`Expected all 57 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

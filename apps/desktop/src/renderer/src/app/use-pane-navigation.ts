@@ -35,13 +35,25 @@ export function usePaneNavigation({
       }),
     [history, setReaderViewKey],
   );
+  const shown = visiblePanes(layout.mode, {
+    readingPane: prefs.readingPaneVisible,
+    readerViewKey: layout.readerViewKey,
+    viewKey,
+    selectedId,
+  });
+  // The reader's entry belongs to the narrow layout. A wider window selects without new entries,
+  // so the entry before the reader's can hold an older conversation by the time the window is
+  // narrow again; the reader then gets a fresh entry, and Back lands on what it shows.
+  const narrowReader = layout.mode === "narrow" && shown.reader;
+  useEffect(() => {
+    if (layout.mode !== "narrow") readerEntry.current = null;
+    else if (narrowReader && readerEntry.current === null) {
+      history.pushSame(registry.get(locationAtom).href);
+      readerEntry.current = history.index();
+    }
+  }, [layout.mode, narrowReader, history, registry]);
   return {
-    shown: visiblePanes(layout.mode, {
-      readingPane: prefs.readingPaneVisible,
-      readerViewKey: layout.readerViewKey,
-      viewKey,
-      selectedId,
-    }),
+    shown,
     /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */
     openReader: () => {
       layout.setReaderViewKey(viewKey);

@@ -178,6 +178,31 @@ it("Back from a narrow reader selects and focuses the conversation it opened, by
   await backTo("two", "one");
 });
 
+it("Back from a narrow reader lands on the conversation picked while the window was wide", async () => {
+  width = 520;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const selected = (id: string) => row(h.id(id)).getAttribute("aria-selected") === "true";
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  // Wide, a click selects without a new entry; narrow again, the reader shows that pick.
+  resize(1200);
+  fireEvent.click(row(h.id("two")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  resize(520);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  expect(reader()?.textContent).toContain("Original two");
+  key("Escape", {}, document.body);
+  await eventually(() => expect(reader()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  // The landing entry is read back a moment later; it must hold the same pick.
+  await new Promise((resolve) => setTimeout(resolve, 400));
+  expect(selected("two")).toBe(true);
+  expect(selected("one")).toBe(false);
+  expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("two")}`);
+});
+
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {
   width = 800;
   current = await flow();
