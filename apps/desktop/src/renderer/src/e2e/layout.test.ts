@@ -180,27 +180,33 @@ it("Back from a narrow reader selects and focuses the conversation it opened, by
 
 it("Back from a narrow reader lands on the conversation picked while the window was wide", async () => {
   width = 520;
-  current = await flow({ windowHistory: true });
+  current = await flow({
+    windowHistory: true,
+    messages: [incoming("one"), incoming("two"), incoming("three", { date: Date.now() - 3000 })],
+  });
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   const selected = (id: string) => row(h.id(id)).getAttribute("aria-selected") === "true";
   fireEvent.click(row(h.id("one")));
   await eventually(() => expect(reader()?.textContent).toContain("Original one"));
-  // Wide, a click selects without a new entry; narrow again, the reader shows that pick.
-  resize(1200);
-  fireEvent.click(row(h.id("two")));
+  // The next conversation moves the reader's entry on, so widening leaves that entry in place.
+  key("ArrowDown", {}, document.body);
   await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  resize(1200);
+  // Wide, a click selects without a new entry; narrow again, the reader shows that pick.
+  fireEvent.click(row(h.id("three")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original three"));
   resize(520);
   await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
-  expect(reader()?.textContent).toContain("Original two");
+  expect(reader()?.textContent).toContain("Original three");
   key("Escape", {}, document.body);
   await eventually(() => expect(reader()).toBeNull());
-  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("three"))));
   // The landing entry is read back a moment later; it must hold the same pick.
   await wait(400);
-  expect(selected("two")).toBe(true);
+  expect(selected("three")).toBe(true);
   expect(selected("one")).toBe(false);
-  expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("two")}`);
+  expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("three")}`);
 });
 
 it("passing through the narrow layout leaves no Back step that changes nothing", async () => {
@@ -237,6 +243,35 @@ it("passing through the narrow layout leaves no Back step that changes nothing",
   key("]", { metaKey: true }, document.body);
   await eventually(() => expect(title()).toBe("Inbox"));
   expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("one")}`);
+});
+
+it("widening after a narrow pick leaves no Back step that changes nothing", async () => {
+  width = 1200;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const title = () => screen.getByRole("heading", { level: 1 }).textContent;
+  const mailboxes = () => screen.getAllByRole("navigation", { name: "Mailboxes" })[0]!;
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  await eventually(() => expect(title()).toBe("Sent"));
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: /^Inbox/ }));
+  await eventually(() => expect(title()).toBe("Inbox"));
+  resize(520);
+  await eventually(() => expect(reader()).toBeNull());
+  // The pick pushes the reader's entry, and the reader then writes the message it shows.
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  await eventually(() => expect(decodeURIComponent(window.location.hash)).toContain("message="));
+  const stepped = new Promise<unknown>((resolve) => {
+    window.addEventListener("popstate", resolve, { once: true });
+    setTimeout(resolve, 1000);
+  });
+  resize(1200);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).not.toBeNull());
+  await act(() => stepped);
+  expect(title()).toBe("Inbox");
+  key("[", { metaKey: true }, document.body);
+  await eventually(() => expect(title()).toBe("Sent"));
 });
 
 it("the reader takes focus when it becomes the only pane by narrowing or by Back", async () => {

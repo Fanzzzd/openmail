@@ -4,13 +4,26 @@ import { Reactivity } from "effect/reactivity";
 import { useCallback, useContext, useEffect, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
 import { Keys } from "../state/keys";
-import { historyAtom, locationAtom } from "../state/location";
+import { historyAtom, locationAtom, locationOf } from "../state/location";
+import { mailHref } from "../../../shared/routes";
 import { useRunMail, withMail } from "../state/mail";
 import type { useMailSelection } from "./use-mail-selection";
 
 const focusReaderNow = () =>
   document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus();
 const focusReader = () => requestAnimationFrame(focusReaderNow);
+
+/**
+ * A route without the message picked in the open thread. The reader writes that pick into its
+ * own entry once it shows, so the entry before it never has it, yet Back to it shows the same
+ * conversation.
+ */
+function withoutMessage(href: string) {
+  const { route } = locationOf(href);
+  if (route.kind !== "mail") return href;
+  const { message: _message, ...state } = route.state;
+  return mailHref(route.view, state);
+}
 
 /** Moving between the sidebar, list and reader in whichever layout the window has. */
 export function usePaneNavigation({
@@ -29,7 +42,8 @@ export function usePaneNavigation({
   // In the narrow layout the open reader has its own history entry, so the
   // browser's Back (or the iOS edge swipe) returns to the list. This is its index.
   const readerEntry = useRef<number | null>(null);
-  // The route of the entry before the reader's, as it was when the reader's entry was added.
+  // The route of the entry before the reader's, as it was when the reader's entry was added,
+  // without the picked message.
   const beforeReader = useRef<string | null>(null);
   // The reader's entry that Back left, still ahead in history: Forward onto it opens the reader
   // again. A push drops it, as the browser drops every entry ahead.
@@ -40,7 +54,7 @@ export function usePaneNavigation({
     const href = registry.get(locationAtom).href;
     history.pushSame(href);
     readerEntry.current = history.index();
-    beforeReader.current = href;
+    beforeReader.current = withoutMessage(href);
   }, [history, registry]);
   const readerViewKey = useRef(layout.readerViewKey);
   useEffect(() => {
@@ -77,9 +91,10 @@ export function usePaneNavigation({
   // so the entry before the reader's can hold an older conversation by the time the window is
   // narrow again; the reader then gets a fresh entry, and Back lands on what it shows.
   // Leaving the narrow layout on the reader's entry steps back over it while it still holds the
-  // route of the entry before it; otherwise each pass through the narrow layout would leave an
-  // entry that Back steps through with nothing changing. An entry whose route moved on, as after
-  // the next conversation or a pick while wide, stays: Back from it still changes the screen.
+  // route of the entry before it, apart from the message the reader picked; otherwise each pass
+  // through the narrow layout would leave an entry that Back steps through with nothing changing.
+  // An entry whose route moved on, as after the next conversation or a pick while wide, stays:
+  // Back from it still changes the screen.
   const narrowReader = layout.mode === "narrow" && shown.reader;
   useEffect(() => {
     const entry = readerEntry.current;
@@ -89,7 +104,7 @@ export function usePaneNavigation({
       if (
         entry !== null &&
         history.index() === entry &&
-        registry.get(locationAtom).href === beforeReader.current
+        withoutMessage(registry.get(locationAtom).href) === beforeReader.current
       )
         history.back();
     } else if (narrowReader && entry === null) pushReaderEntry();

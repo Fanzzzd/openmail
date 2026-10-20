@@ -262,6 +262,13 @@ export const cases = [
     "      )\n        void 0;\n",
   ],
   [
+    "widening ignores the message the narrow reader picked",
+    "widening after a narrow pick leaves no Back step",
+    `${renderer}app/use-pane-navigation.ts`,
+    "withoutMessage(registry.get(locationAtom).href) === beforeReader.current",
+    "registry.get(locationAtom).href === beforeReader.current",
+  ],
+  [
     "the reader takes focus when it becomes the only pane",
     "the reader takes focus when it becomes the only pane",
     `${renderer}app/use-pane-navigation.ts`,
@@ -383,8 +390,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 70)
-      throw new Error(`Expected all 70 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 71)
+      throw new Error(`Expected all 71 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
