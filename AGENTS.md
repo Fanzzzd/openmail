@@ -1,43 +1,43 @@
 # Repository Guidelines
 
-`CLAUDE.md` 是这个文件的软链接，只改这里。
+`CLAUDE.md` is a symlink to this file. Edit only this file.
 
-## 架构约束
+## Architecture constraints
 
-- `packages/core` 是唯一碰网络和数据库的地方。desktop 主进程、CLI、MCP 都只调用 core 导出的函数，不自己写 SQL 或调 provider API。
-- core 的 Node 实现只放在 `packages/core/src/platform/node/`。其他源码不得导入 `node:`、Node 内置模块或 Node 专用包；运行时能力通过 Effect 平台服务提供，不得读取隐式 Node 全局；仅 `platform/bytes.ts` 可在初始化时探测一次 `globalThis.Buffer`。手机端使用 `@openmail/core/portable`，桌面兼容入口和 `@openmail/core/node` 使用 Node Layer。修改平台代码时读取 `docs/platform-inventory.md`。
-- 数据库用 `node:sqlite`，不要换成 better-sqlite3。它随 Node 和 Electron 一起发行，app 和 CLI 不需要为不同 ABI 重编原生模块。
-- 迁移在 `packages/core/src/db/migrations.ts` 的 `MIGRATIONS` 数组里，只追加，不改已有条目。
-- `messages_fts` 是外部内容 FTS 表，按 rowid 对齐。写消息只能用 `upsertMessage`（`ON CONFLICT DO UPDATE`），不要用 `INSERT OR REPLACE`，否则 rowid 变化会让索引失配。
-- refresh token 只进系统钥匙串（`packages/core/src/platform/node/secrets.ts`），不进数据库和日志。
-- 只碰用户名下账户、用 openmail 自己注册的 client 或用户自己注册的 client、走官方授权页拿 token。不复用别的 app 的凭证和 client ID，不借第一方 client ID，不从别的 app 的钥匙串项里读 token。Outlook 只走 `consumers` 租户（个人账户）；公司 M365 需要租户管理员授权应用，不绕过。
-- 邮件 HTML 是不可信内容。渲染层的 iframe 必须保持 `sandbox` 不含 `allow-scripts`。iframe 内的 CSP 拦截远程资源，只有用户的远程图片设置放行该消息时才加载图片。默认设置是加载，已知跟踪器在任何设置下都移除。
-- MCP 工具默认只读。新增会改动邮件的工具时，要有显式开关，发送必须经过 app 内人工确认。
-- 改别的应用的 MCP 配置（Claude Code、Codex、Claude、Cursor）只在用户点击并看过 diff 后进行：优先用该应用自己的 CLI，经 `execFile` 固定 argv；只动 `openmail` 条目，重新连接只改 `command`、`args` 和 `env.OPENMAIL_HOME`，保留用户自己的键；直接改文件时先在旁边备份，临时文件加 rename 原子写入，改完解析前后两份，除 `openmail` 外必须完全相同。配置里不放 token。开发和测试不碰真实的 `~/.claude.json`、`~/.codex/config.toml` 和 Claude 配置，用临时 HOME 和假 CLI。见 `docs/security.md#connecting-ai-apps`。
-- 打包 app 的 RunAsNode fuse 保持关闭。MCP 由 `OpenMail --mcp` 在主进程入口提供，不靠 `ELECTRON_RUN_AS_NODE`。
-- 远程访问默认关闭。服务只绑定 127.0.0.1，由 Tailscale Serve 转发，不用 Funnel。每个请求都要有 Tailscale-User-Login 且在允许列表内，并校验 Host、WebSocket 的 Origin 和会话 cookie。远程 RPC 走 `shared/remote-policy.ts` 的显式表（`main/remote/remote-rpcs.ts` 据此建 RPC 组），未列出的 RPC 一律拒绝；新增 RPC 时默认不加进去。web 构建里调用 RPC 的控件用 `canCall(tag)` 判断是否显示。碰本机文件、系统、浏览器、OAuth、钥匙串、MCP/AI key、窗口或剪贴板的 RPC 不进远程表。见 `docs/security.md#remote-access`。
+- `packages/core` is the only place that touches the network and the database. The desktop main process, the CLI and MCP only call functions that core exports. They do not write their own SQL or call provider APIs.
+- core's Node implementation lives only in `packages/core/src/platform/node/`. Other source must not import `node:`, Node built-in modules or Node-only packages. Runtime capabilities come from Effect platform services, and code must not read implicit Node globals. Only `platform/bytes.ts` may probe `globalThis.Buffer`, once, at initialization. Mobile uses `@openmail/core/portable`. The desktop compatibility entry and `@openmail/core/node` use the Node Layer. Read `docs/platform-inventory.md` when you change platform code.
+- The database uses `node:sqlite`. Do not switch to better-sqlite3. `node:sqlite` ships with Node and Electron, so the app and the CLI do not need native modules rebuilt for different ABIs.
+- Migrations live in the `MIGRATIONS` array in `packages/core/src/db/migrations.ts`. Only append. Do not change existing entries.
+- `messages_fts` is an external-content FTS table aligned by rowid. Write messages only with `upsertMessage` (`ON CONFLICT DO UPDATE`). Do not use `INSERT OR REPLACE`: it changes the rowid and the index falls out of step.
+- Refresh tokens go only into the system keychain (`packages/core/src/platform/node/secrets.ts`). They never go into the database or logs.
+- Only touch accounts the user owns. Only use a client that openmail registered or that the user registered, and only get tokens through the official authorization page. Do not reuse another app's credentials or client ID, do not borrow a first-party client ID, and do not read tokens from another app's keychain items. Outlook uses only the `consumers` tenant (personal accounts). A company M365 account needs a tenant admin to authorize the app. Do not work around that.
+- Mail HTML is untrusted content. The renderer's iframe must keep `sandbox` without `allow-scripts`. The CSP inside the iframe blocks remote resources. Images load only when the user's remote image setting allows them for that message. The default setting loads them. Known trackers are removed under every setting.
+- MCP tools are read-only by default. A new tool that changes mail needs an explicit switch, and sending must go through human confirmation in the app.
+- Change another app's MCP config (Claude Code, Codex, Claude, Cursor) only after the user clicks and has seen the diff. Prefer that app's own CLI, called through `execFile` with a fixed argv. Touch only the `openmail` entry. Reconnecting changes only `command`, `args` and `env.OPENMAIL_HOME`, and keeps the user's own keys. When you edit the file directly, first write a backup next to it, then write atomically with a temp file and rename. After the change, parse the old and new versions; apart from `openmail` they must be identical. Never put tokens in the config. Development and tests must not touch the real `~/.claude.json`, `~/.codex/config.toml` or Claude config. Use a temporary HOME and fake CLIs. See `docs/security.md#connecting-ai-apps`.
+- The packaged app keeps the RunAsNode fuse off. `OpenMail --mcp` serves MCP from the main process entry. It does not rely on `ELECTRON_RUN_AS_NODE`.
+- Remote access is off by default. The server binds only to 127.0.0.1, and Tailscale Serve forwards to it. Do not use Funnel. Every request must carry Tailscale-User-Login with a login on the allowlist, and the server checks Host, the WebSocket Origin and the session cookie. Remote RPCs go through the explicit table in `shared/remote-policy.ts` (`main/remote/remote-rpcs.ts` builds the RPC group from it). Any RPC not listed is rejected. A new RPC is not added to the table by default. In the web build, controls that call an RPC use `canCall(tag)` to decide whether to show. An RPC that touches local files, the system, the browser, OAuth, the keychain, MCP/AI keys, windows or the clipboard never goes into the remote table. See `docs/security.md#remote-access`.
 
 ## Electron
 
-- 主进程入口是 ESM。不要在顶层 `await app.whenReady()`：Electron 要等入口模块求值结束才发 `ready`，会死锁。用 `app.once("ready", …)`。
-- preload 开了 sandbox，必须输出 CJS（见 `electron.vite.config.ts`）。
-- electron-vite 5 只支持 vite ≤ 7。
+- The main process entry is ESM. Do not `await app.whenReady()` at the top level. Electron emits `ready` only after the entry module finishes evaluating, so it deadlocks. Use `app.once("ready", …)`.
+- preload runs with sandbox on, so it must output CJS (see `electron.vite.config.ts`).
+- electron-vite 5 supports only vite ≤ 7.
 
-## 检查
+## Checks
 
-提交前跑：
+Run before committing:
 
 ```sh
 pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxfmt --check .
 ```
 
-lint 用 `.oxlintrc.json` 里的 type-aware oxlint 配置。`no-unsafe-type-assertion` 是 error，只允许出现在 IO 边界（SQLite 行、HTTP JSON、IPC 和 RPC 帧），每处加 disable 注释写明原因。
+Lint uses the type-aware oxlint config in `.oxlintrc.json`. `no-unsafe-type-assertion` is an error. It is allowed only at IO boundaries (SQLite rows, HTTP JSON, IPC and RPC frames), and each one needs a disable comment that states the reason.
 
-界面文案用 Lingui，代码里写英文原文，翻译在 `apps/desktop/src/renderer/src/locales/{locale}/messages.po`。新增文案后跑 `pnpm --filter @openmail/desktop i18n:extract`，补齐 zh-CN、cs、nl、fr、de、it、ja、ru、es 的全部 `msgstr`，保留 ICU 参数、复数和组件标记。用 `pnpm --filter @openmail/desktop i18n:missing` 列出各语言漏译。`pnpm test` 会检查目录同步、每个目录的翻译完整性及参数；任何语言漏译都会失败。
+UI text uses Lingui. Code holds the English source text, and translations live in `apps/desktop/src/renderer/src/locales/{locale}/messages.po`. After adding text, run `pnpm --filter @openmail/desktop i18n:extract` and fill every `msgstr` for zh-CN, cs, nl, fr, de, it, ja, ru and es. Keep ICU arguments, plurals and component tags. `pnpm --filter @openmail/desktop i18n:missing` lists missing translations per language. `pnpm test` checks catalog sync, translation completeness and arguments for every catalog. A missing translation in any language fails it.
 
-界面文案的大小写：产品名一律写 OpenMail，所有语言都不翻译、不改大小写；`openmail` 只出现在标识符里（配置项名、文件名、`svc:openmail`）。标题、按钮、菜单项、标签和正文都用句首大写（sentence case），专有名词保留大写：品牌和产品名（Gmail、Outlook、iCloud）、文件夹名（Inbox、Trash、Spam、Focused、Other、All Mail）和 macOS 的功能名（Finder、Quick Look、Writing Tools、System Settings、Contacts）、app 自己的设置页名 AI Access（glossary 里的术语）。现有文案约 830 条是句首大写、60 条是标题大写，所以选句首大写；Apple HIG 要求 macOS 菜单项和按钮用标题大写，这里有意不跟，菜单栏也一样，保持 app 内外同一条规则。
+Capitalization of UI text: always write the product name as OpenMail. Do not translate it or change its case in any language. `openmail` appears only in identifiers (setting names, file names, `svc:openmail`). Titles, buttons, menu items, labels and body text all use sentence case. Proper nouns keep their capitals: brand and product names (Gmail, Outlook, iCloud), folder names (Inbox, Trash, Spam, Focused, Other, All Mail), macOS feature names (Finder, Quick Look, Writing Tools, System Settings, Contacts), and the app's own settings page name AI Access (a glossary term). About 830 existing strings use sentence case and 60 use title case, so sentence case wins. Apple HIG asks for title case on macOS menu items and buttons. This repo deliberately does not follow it, the menu bar included, so one rule holds inside and outside the app.
 
-翻译邮件术语时读取 `apps/desktop/src/renderer/src/locales/glossary.json`；正文用“消息文本”的表达，引用按钮时插入该按钮的翻译值，并注明 Lingui context/comment。新增语言文案须通过术语一致性和严格 ICU 解析测试；日语复数只用 `other`，数值分支仍可保留。
+When translating mail terms, read `apps/desktop/src/renderer/src/locales/glossary.json`. Refer to the message body with the "message text" wording ("消息文本" in zh-CN). When text refers to a button, insert that button's translated value and note it in the Lingui context/comment. New language strings must pass the terminology consistency test and the strict ICU parse test. Japanese plurals use only `other`. Numeric value branches may stay. <!-- cjk-ok -->
 
 ## Agent skills
 
