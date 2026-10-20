@@ -278,6 +278,11 @@ msgstr "{name} 会启动 OpenMail 的 MCP 服务器，读取你允许的账户�
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {# 个对话}}"
 
+#. A pane divider's value for screen readers: the width or height of the pane it resizes.
+#: src/renderer/src/app/PaneLayout.tsx
+msgid "{pixels, plural, one {# pixel} other {# pixels}}"
+msgstr "{pixels, plural, other {# 像素}}"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {# 个追踪像素}}"

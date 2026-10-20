@@ -268,6 +268,11 @@ msgstr "{name} は OpenMail の MCP サーバーを起動し、許可したア�
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, other {#件のスレッド}}"
 
+#. A pane divider's value for screen readers: the width or height of the pane it resizes.
+#: src/renderer/src/app/PaneLayout.tsx
+msgid "{pixels, plural, one {# pixel} other {# pixels}}"
+msgstr "{pixels, plural, other {# ピクセル}}"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, other {#個のトラッキングピクセル}}"

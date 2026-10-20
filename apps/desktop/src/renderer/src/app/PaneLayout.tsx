@@ -1,4 +1,7 @@
-import { useCallback, useState, type ComponentProps } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
+import { plural } from "@lingui/core/macro";
+import { constVoid } from "effect/Function";
+import { useLingui } from "@lingui/react/macro";
 import { BatchActions } from "../features/mail-list/BatchActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import { Separator } from "react-resizable-panels";
@@ -54,8 +57,35 @@ export function ResizeHandle({
   label: string;
   orientation?: "horizontal" | "vertical";
 }) {
+  const { t } = useLingui();
+  const ref = useRef<HTMLDivElement>(null);
+  // The library reports the pane's share of the group as a raw percentage, such as
+  // 17.589000701904297. Screen readers read the pane's width (or height) in pixels instead.
+  const [pixels, setPixels] = useState<number | null>(null);
+  useEffect(() => {
+    const pane = ref.current?.previousElementSibling;
+    if (!pane) return constVoid;
+    const measure = () => {
+      const rect = pane.getBoundingClientRect();
+      setPixels(Math.round(orientation === "vertical" ? rect.height : rect.width));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(pane);
+    return () => observer.disconnect();
+  }, [orientation]);
   return (
     <Separator
+      elementRef={ref}
+      aria-valuetext={
+        pixels === null
+          ? undefined
+          : t({
+              message: plural(pixels, { one: "# pixel", other: "# pixels" }),
+              comment:
+                "A pane divider's value for screen readers: the width or height of the pane it resizes.",
+            })
+      }
       aria-label={label}
       className={`no-drag ${orientation === "vertical" ? "h-px" : "w-px"} bg-black/5 transition-colors focus-ring relative focus-visible:z-10 data-[separator=active]:bg-blue-500 data-[separator=focus]:bg-blue-500 data-[separator=hover]:bg-blue-500/60 dark:bg-white/5`}
     />

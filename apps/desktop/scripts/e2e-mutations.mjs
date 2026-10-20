@@ -304,6 +304,13 @@ export const cases = [
     "",
   ],
   [
+    "pane dividers read their width in pixels",
+    "pane dividers are named and resize",
+    `${renderer}app/PaneLayout.tsx`,
+    "      aria-valuetext={",
+    "      data-valuetext={",
+  ],
+  [
     "hint stays quiet after a recent search removal",
     "leaves its announcement the only live change",
     `${renderer}features/search/SearchField.tsx`,
@@ -411,8 +418,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 74)
-      throw new Error(`Expected all 74 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 75)
+      throw new Error(`Expected all 75 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

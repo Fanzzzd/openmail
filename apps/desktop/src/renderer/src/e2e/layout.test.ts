@@ -1,6 +1,6 @@
 import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import axe from "axe-core";
 import { clickButton, eventually, flow, incoming, key, row, wait } from "./harness";
@@ -1158,6 +1158,15 @@ it("the list says when the computer is offline", async () => {
 
 it("pane dividers are named and resize their panes with the arrow keys", async () => {
   width = 1200;
+  // jsdom lays nothing out: the sidebar and the list report the widths a window would give them.
+  const widths: Record<string, number> = { sidebar: 232.4, list: 379.6 };
+  const rect = vi
+    .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+    .mockImplementation(function (this: HTMLElement) {
+      const pane = this.getAttribute("data-mail-pane");
+      return DOMRect.fromRect({ width: (pane && widths[pane]) || 0, height: 600 });
+    });
+  onTestFinished(() => rect.mockRestore());
   current = await flow();
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
@@ -1168,6 +1177,9 @@ it("pane dividers are named and resize their panes with the arrow keys", async (
   expect(sidebar.tabIndex).toBe(0);
   expect(list.tabIndex).toBe(0);
   expect(list.getAttribute("aria-orientation")).toBe("vertical");
+  // Screen readers hear the pane's width, not the library's raw percentage.
+  expect(sidebar.getAttribute("aria-valuetext")).toBe("232 pixels");
+  expect(list.getAttribute("aria-valuetext")).toBe("380 pixels");
   // Keyboard focus shows the 3:1 focus ring above the panes, not only a 1 px colour change.
   for (const separator of [sidebar, list]) {
     expect(separator.className).toContain("focus-ring");

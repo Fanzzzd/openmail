@@ -268,6 +268,11 @@ msgstr "{name} lancera le serveur MCP d’OpenMail et lira les comptes que vous 
 msgid "{op} {count, plural, one {# conversation} other {# conversations}}"
 msgstr "{op} {count, plural, one {# conversation} other {# conversations}}"
 
+#. A pane divider's value for screen readers: the width or height of the pane it resizes.
+#: src/renderer/src/app/PaneLayout.tsx
+msgid "{pixels, plural, one {# pixel} other {# pixels}}"
+msgstr "{pixels, plural, one {# pixel} other {# pixels}}"
+
 #: src/renderer/src/features/reader/body/MessageBody.tsx
 msgid "{pixels, plural, one {# tracking pixel} other {# tracking pixels}}"
 msgstr "{pixels, plural, one {# pixel de suivi} other {# pixels de suivi}}"
