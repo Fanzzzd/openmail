@@ -1,6 +1,6 @@
-# 邮件语料检查
+# Mail corpus check
 
-`corpus-check` 对本地缓存副本逐封运行邮件处理代码，输出汇总诊断或单封结构诊断。无需 Electron、登录、网络、钥匙串或模型。
+`corpus-check` runs the mail processing code over each message in a local cache copy and prints summary diagnostics or per-message structure diagnostics. It needs no Electron, sign-in, network, keychain or model.
 
 ```sh
 pnpm build
@@ -8,94 +8,94 @@ pnpm cli corpus-check --db /path/to/mailbox-copy.db
 pnpm cli corpus-check --db /path/to/mailbox-copy.db --limit 1000 --json > /tmp/corpus-report.json
 ```
 
-`--db` 必填。只处理 `body_cached=1` 的邮件，按日期倒序、相同日期按 ID 排序。`--limit` 默认全部，0 只检查数据库是否可读。输出不含数据库路径、主题、姓名、地址、消息文本、URL、文件名或原始邮件头。
+`--db` is required. Only mail with `body_cached=1` is processed, in descending date order, with ties sorted by ID. `--limit` defaults to all, and 0 only checks that the database is readable. The output contains no database path, subject, name, address, message text, URL, file name or raw header.
 
-## 单封结构诊断与运行密钥
+## Per-message structure diagnostics and run keys
 
-需要后续定位单封时，用 `--explain-ready` 扫描。密钥保存到报告之外的 0600 文件，文件路径仅写入 stderr；JSON 和文本报告均不含密钥或路径：
+When you will need to locate single messages later, scan with `--explain-ready`. The key is saved to a 0600 file outside the report, and the file path goes only to stderr. Neither the JSON nor the text report contains the key or the path:
 
 ```sh
 pnpm cli corpus-check --db /path/to/mailbox-copy.db --explain-ready --json > /tmp/corpus-report.json
-# HASH 取自报告 samples；RUN_KEY 填 stderr 中的 Run key file 路径。
-HASH='在此填入样本的 hash'
+# HASH comes from the report's samples; RUN_KEY is the Run key file path from stderr.
+HASH='put the sample hash here'
 RUN_KEY='/path/from/stderr/run.key'
 pnpm cli corpus-check --db /path/to/mailbox-copy.db --explain "$HASH" --run-key "$RUN_KEY" --json
-# 使用同一份缓存副本和密钥重跑汇总，比较相同消息：
+# Rerun the summary with the same cache copy and key to compare the same messages:
 pnpm cli corpus-check --db /path/to/mailbox-copy.db --run-key "$RUN_KEY" --json
 ```
 
-`--explain` 接受 64 位 hex 哈希，必须同时提供 `--run-key`，不能与 `--limit` 或 `--explain-ready` 合用；找不到哈希时返回固定错误，不回退到另一封。`--run-key` 可复用现有 0600 普通文件；汇总模式也可指定尚不存在的文件路径以创建密钥。拒绝符号链接、非 0600 权限、错误长度或内容。普通扫描不指定这两个选项时，随机密钥仅保留在内存，结束后无法用该报告定位单封。
+`--explain` takes a 64-character hex hash and requires `--run-key`. It cannot be combined with `--limit` or `--explain-ready`. When the hash is not found, it returns a fixed error and does not fall back to another message. `--run-key` can reuse an existing 0600 regular file. Summary mode can also name a file path that does not exist yet, and the key is created there. Symlinks, permissions other than 0600, and wrong length or content are rejected. When an ordinary scan specifies neither option, the random key stays only in memory, and the report cannot be used to locate a single message after the run.
 
-样本 `hash = HMAC-SHA256(key=32 字节随机密钥, data=UTF-8 十进制 messages.rowid)`。哈希不再基于消息 ID；报告版本为 2，旧版 `--salt` 报告不能直接复用。定位时必须保留同一份缓存副本，重建数据库可能改变 rowid。密钥文件不会随扫描结束删除；完成诊断后自行删除，需要分享时只分享报告。报告仍是敏感诊断材料，不保证匿名化。
+Sample `hash = HMAC-SHA256(key=32-byte random key, data=UTF-8 decimal messages.rowid)`. The hash is no longer based on the message ID. The report version is 2, and old reports made with `--salt` cannot be reused directly. Locating a message requires keeping the same cache copy, because rebuilding the database can change rowids. The key file is not deleted when the scan ends. Delete it yourself after the diagnosis, and share only the report if you need to share anything. The report is still sensitive diagnostic material and is not guaranteed to be anonymous.
 
-单封模式只解析选中的缓存行，复用相同的只读副本、MIME 解码、清洗、可见文本路径和 worker 限额。输出为 JSON，省略 `--json` 时也用 JSON；没有消息文本、class／ID 名、属性值、CSS 声明值、URL、文件名或原始堆栈。
+Single-message mode parses only the selected cache row and reuses the same read-only copy, MIME decoding, sanitizing, visible text path and worker limits. The output is JSON, also when `--json` is omitted. It contains no message text, class/ID names, attribute values, CSS declaration values, URLs, file names or raw stacks.
 
-- `mode=explain`，`sample` 沿用哈希、provider、大小桶和 MIME 结构。
-- `status` 为 `complete`、`failed`、`timeout`、`aborted` 或 `size-limit`。失败只带固定异常类、阶段和代码入口；诊断未完成时 `diagnostics=null`。
-- `textPlainNonEmpty` 表示缓存的 `body_text` 去空白后非空；`decodedTextPlainNonEmpty` 表示重解码后的状态。缓存不保存原始 MIME part 来源，不能由这两个字段证明原始 text/plain part 存在。
-- `cachedHtml` 是原缓存 HTML 的结构。`original` 从重解码 HTML 开始，`sanitized` 从 reader-sanitize 阶段输出开始；两者的可见文本均最终经过阅读器清洗、参考 shell 和 HTML5 解析。两者差异检查重复清洗的稳定性，不是未清洗文本与阅读器文本的比较。
-- `structure` 包含元素总数、固定 HTML 标签计数、文本节点数及字符数、注释与 MSO 条件注释数、最大深度、head 内的文本数量、body 是否位于 head 内、style 块和内联 style 属性数。自定义标签统一计入 `other`。
-- `stylesheetSelectorShapes` 仅计选择器类型和白名单语法，如 `class-selector`、`id-selector`、`attribute-selector`、`:not`、`:has`、组合器和 `@media`。未知伪类仅计 `pseudo-class`，未知 at-rule 计 `@other`；解析失败仅计数。
-- `removedByRule` 是实际过滤分支丢弃的文本节点数和字符数，覆盖 hidden／aria-hidden、display:none、visibility、opacity、零／极小字体、近似同色、负偏移、缩放、zoom、content-visibility、未能确定的 CSS、裁剪、filter opacity、绘制不确定、定位遮挡和 OMIT 标签。`removedBySource` 按 HTML 属性、内联样式、stylesheet 规则、继承值、OMIT、注释汇总同一批移除。两组是不同维度，不能相加。
-- 每个被剪掉的 DOM 子树只统计一次，归因于第一个触发的规则；被祖先剪掉后不继续给后代规则计数。font-size／visibility 则在文本叶节点上按有效继承值计数，允许后代覆盖；规则见[邮件内容保护](security.md#mail-content-protection)。MSO／普通注释不生成 DOM 文本节点，单独解析其惰性内容并统计潜在文本节点与字符，计入对应注释类别。这部分不能与实际 DOM 节点总数直接比较。
-- 字符数采用 UTF-16 code unit，包含空白和 OMIT 标签中的 style／script 文本。`retainedTextNodes`、`retainedCharacters` 是保留节点的原始计数；`visibleCharacters` 是空白规范化后的文本长度。规范化消耗的空白不归入隐藏规则。
-- `budgetExceeded`、`cssRuleBudgetHits`、`nestingDepthLimitHits` 来自实际可见性检查。结构和选择器统计不执行浏览器布局，不读取外部 CSS。
+- `mode=explain`. `sample` carries the hash, provider, size bucket and MIME structure.
+- `status` is `complete`, `failed`, `timeout`, `aborted` or `size-limit`. A failure carries only the fixed exception class, stage and code entry point. When diagnostics did not finish, `diagnostics=null`.
+- `textPlainNonEmpty` means the cached `body_text` is non-empty after trimming whitespace. `decodedTextPlainNonEmpty` is the same check after re-decoding. The cache does not keep the source of the original MIME part, so these two fields cannot prove that an original text/plain part exists.
+- `cachedHtml` is the structure of the originally cached HTML. `original` starts from the re-decoded HTML, and `sanitized` starts from the reader-sanitize stage output. The visible text of both finally goes through reader sanitizing, the reference shell and HTML5 parsing. The difference between the two checks that repeated sanitizing is stable. It is not a comparison of unsanitized text with reader text.
+- `structure` holds the total element count, counts for a fixed set of HTML tags, text node count and character count, comment and MSO conditional comment counts, maximum depth, the number of texts inside head, whether body sits inside head, and the number of style blocks and inline style attributes. Custom tags all count as `other`.
+- `stylesheetSelectorShapes` counts only selector types and allowlisted syntax, such as `class-selector`, `id-selector`, `attribute-selector`, `:not`, `:has`, combinators and `@media`. Unknown pseudo-classes count only as `pseudo-class`, unknown at-rules as `@other`. Parse failures are only counted.
+- `removedByRule` is the number of text nodes and characters dropped by the filter branch that actually fired. It covers hidden/aria-hidden, display:none, visibility, opacity, zero/tiny font, near-identical color, negative offset, scale, zoom, content-visibility, undetermined CSS, clipping, filter opacity, uncertain painting, positioned occlusion and OMIT tags. `removedBySource` totals the same removals by HTML attribute, inline style, stylesheet rule, inherited value, OMIT and comment. The two groups are different dimensions and cannot be added together.
+- Each pruned DOM subtree counts once and is attributed to the first rule that fired. Once an ancestor is pruned, descendant rules are not counted. font-size/visibility are counted on text leaves by effective inherited value, so a descendant can override them. The rules are in [mail content protection](security.md#mail-content-protection). MSO and ordinary comments produce no DOM text nodes. Their inert content is parsed separately, and the potential text nodes and characters count under the matching comment category. This part cannot be compared directly with the actual DOM node total.
+- Character counts use UTF-16 code units and include whitespace and the style/script text inside OMIT tags. `retainedTextNodes` and `retainedCharacters` are raw counts of kept nodes. `visibleCharacters` is the text length after whitespace normalization. Whitespace consumed by normalization is not attributed to hiding rules.
+- `budgetExceeded`, `cssRuleBudgetHits` and `nestingDepthLimitHits` come from the actual visibility check. Structure and selector statistics do no browser layout and read no external CSS.
 
-## 输入与只读边界
+## Input and read-only boundary
 
-扫描始终先将 DB 和现有 WAL 复制到权限为 0700 的临时目录，文件权限为 0600；不复制配置、钥匙串或附件文件，不打开源库的 SQLite 连接，也不创建源库的 SHM 或锁文件。复制前后比对文件身份、大小、修改时间和状态变更时间；源文件变化时最多重试三次，仍变化则拒绝扫描。持续写入的库须先由用户取得稳定副本。副本以 `DatabaseSync({ readOnly: true, allowExtension: false })` 打开，并检查 `query_only=ON`；不运行迁移、回填或缓存维护。结束、异常或取消后删除临时目录。
+A scan always first copies the DB and any existing WAL into a temporary directory with mode 0700, with files at 0600. It does not copy config, keychain or attachment files, does not open a SQLite connection to the source database, and does not create the source's SHM or lock files. Before and after the copy it compares file identity, size, modification time and status change time. If the source file changed, it retries up to three times, and refuses to scan if it still changes. For a database under continuous writes, the user must first take a stable copy. The copy opens with `DatabaseSync({ readOnly: true, allowExtension: false })` and is checked for `query_only=ON`. No migrations, backfills or cache maintenance run. The temporary directory is deleted at the end, on an exception or on cancel.
 
-普通 OpenMail 缓存只保存解码后的消息文本，没有原始 MIME 或完整 MIME 树。`mimeSource=reconstructed-cached-utf8` 表示将缓存文本重建为 UTF-8 MIME，经过 `normalizeMimeCharsets`、Node MailCodec 和 `compatibleMime`，再用 `withDecodedBody` 生成文本。它可以发现缓存内容触发的兼容解析问题，不能重现原始传输编码、丢失的字符或签名附件解包问题。字符替换诊断统计缓存及重解码输出中现存的 U+FFFD，不证明错误发生在哪次解码。
+An ordinary OpenMail cache keeps only decoded message text, with no raw MIME or full MIME tree. `mimeSource=reconstructed-cached-utf8` means the cached text is rebuilt as UTF-8 MIME, passed through `normalizeMimeCharsets`, Node MailCodec and `compatibleMime`, and then turned into text with `withDecodedBody`. This can find compatibility parsing problems that the cached content triggers. It cannot reproduce the original transfer encoding, lost characters or problems unpacking signed attachments. The charset replacement diagnostic counts the U+FFFD present in the cache and the re-decoded output. It does not prove which decoding introduced the error.
 
-## 报告字段
+## Report fields
 
-- `version`：报告格式版本，当前为 2。密钥及其文件路径不属于报告字段。
-- `processed`：取出的缓存行数，含失败、超时和大小上限跳过的行。
-- `source`：固定为 `temporary-read-only-snapshot`。
-- `limits`：消息处理期限默认 2000 ms，worker 启动期限 15000 ms，单封缓存字段总字节上限 16 MiB，worker 老生代堆上限 96 MiB，每种异常及每阶段失败分类最多保留 5 个样本。
-- `stages`：各阶段的 `count` 为开始次数，`completed` 为返回次数，`failures` 按固定异常类和代码入口汇总。代码入口是调用位置，不是原始堆栈或根因行号。超时归入最后开始但未完成的阶段。缓存解析失败后的阶段不会执行；大小上限跳过的行没有阶段计时。
-- `timeMs`：p50、p95 为固定对数直方图估计的上界，误差最多为实值的 5% 加 0.00005 ms；max 是实际最大值。包含失败和超时耗时，不含复制、读行、worker 启动及消息传递成本。总处理期限覆盖所有阶段，独立主线程计时器可终止同步解析。
-- `anomalies`：顶层按异常汇总计数和样本；阶段内仅有计数。同一邮件在不同阶段触发同类异常会分别计数。链接及事件计数按发现的数量，其余按阶段观察次数。样本按扫描顺序取前五个不同消息。
+- `version`: report format version, currently 2. The key and its file path are not report fields.
+- `processed`: cache rows read, including rows that failed, timed out or were skipped by the size limit.
+- `source`: always `temporary-read-only-snapshot`.
+- `limits`: message processing deadline 2000 ms by default, worker startup deadline 15000 ms, 16 MiB cap on the total bytes of a message's cached fields, 96 MiB worker old-generation heap cap, and at most 5 samples kept per anomaly and per stage failure class.
+- `stages`: each stage's `count` is the number of starts, `completed` the number of returns, and `failures` totals by fixed exception class and code entry point. The code entry point is the call site, not a raw stack or the line number of the root cause. A timeout is assigned to the last stage that started but did not finish. Stages after a failed cache parse do not run. Rows skipped by the size limit have no stage timings.
+- `timeMs`: p50 and p95 are upper bounds estimated from a fixed log histogram, with error of at most 5% of the true value plus 0.00005 ms. max is the actual maximum. The times include failures and timeouts, and exclude copying, row reads, worker startup and message passing. The total processing deadline covers all stages, and a separate main-thread timer can stop a synchronous parse.
+- `anomalies`: the top level totals counts and samples per anomaly. Within stages there are only counts. The same mail triggering the same anomaly in different stages counts once per stage. Link and event counts are by number found, and the rest by stage observations. Samples are the first five distinct messages in scan order.
 
-每个样本仅有 `hash`、固定枚举 `provider`、`sizeBucket` 和 `contentTypeStructure`。大小优先使用 provider 缓存的消息大小，缺失时使用缓存字段字节数。结构只允许固定 MIME 类型，未知类型写为 `other`，参数全部丢弃；最多列出 16 个附件类型。这是由顶层 Content-Type、缓存文本和附件元数据推导的结构，不是完整原始 MIME 树。缓存解析未完成时结构为 `other[]`。超限行也可通过 rowid 哈希保留样本，无需读取完整消息 ID。
+Each sample has only `hash`, a fixed-enum `provider`, `sizeBucket` and `contentTypeStructure`. Size prefers the message size the provider cached, and falls back to the byte count of the cached fields. The structure allows only a fixed set of MIME types. Unknown types are written as `other`, all parameters are dropped, and at most 16 attachment types are listed. This structure is derived from the top-level Content-Type, the cached text and the attachment metadata. It is not the full raw MIME tree. When the cache parse did not finish, the structure is `other[]`. Oversized rows can also keep samples through the rowid hash without reading the full message ID.
 
-## 阶段与异常
+## Stages and anomalies
 
-| 阶段               | 执行路径                                                                                       |
-| ------------------ | ---------------------------------------------------------------------------------------------- |
-| cache-decode       | Schema 校验 SQLite 缓存行，不输出解析错误详情                                                  |
-| mime-decode        | 重建 MIME、mime-compat、Node MailCodec、withDecodedBody                                        |
-| reader-sanitize    | prepareMessageHtml 后运行 sanitizeReaderHtml，远程资源关闭                                     |
-| visible-text       | 原 HTML 与阅读器清洗后 HTML 的 visibleHtmlText                                                 |
-| model-text         | modelContext，包括隐藏文本过滤、引用裁剪及上下文字节预算                                       |
-| link-security      | 同一可见文本遍历收集清洗后链接标签，linkDisplayMismatch                                        |
-| message-security   | 缓存 Authentication-Results 及账户显式 authserv-id 的 messageSecurity；检查 Date 与 Message-ID |
-| structured-events  | 原 HTML 的 structuredMailEvents，保留 JSON-LD 检测路径                                         |
-| snippet-plain-text | htmlToText 与 withDecodedBody 的纯文本和 snippet 生成                                          |
-| fts-tokenize       | SQLite 的 trigram、unicode61，subject/body 使用与生产索引相同的 tokenizer                      |
+| Stage              | Code path                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------- |
+| cache-decode       | Schema validation of the SQLite cache row; parse error details are not output                                       |
+| mime-decode        | Rebuilt MIME, mime-compat, Node MailCodec, withDecodedBody                                                          |
+| reader-sanitize    | sanitizeReaderHtml after prepareMessageHtml, with remote resources off                                              |
+| visible-text       | visibleHtmlText on the original HTML and on the reader-sanitized HTML                                               |
+| model-text         | modelContext, including hidden text filtering, quote trimming and the context byte budget                           |
+| link-security      | Collects sanitized link labels in the same visible text walk; linkDisplayMismatch                                   |
+| message-security   | messageSecurity on cached Authentication-Results and the account's explicit authserv-id; checks Date and Message-ID |
+| structured-events  | structuredMailEvents on the original HTML, keeping the JSON-LD detection path                                       |
+| snippet-plain-text | Plain text and snippet generation from htmlToText and withDecodedBody                                               |
+| fts-tokenize       | SQLite trigram and unicode61; subject/body use the same tokenizers as the production index                          |
 
-FTS 阶段使用独立 `:memory:` 数据库的临时索引，每封处理后清空。只有这个易失内存索引执行插入和删除，邮箱数据库及其副本不执行任何写入。
+The FTS stage uses a temporary index in a separate `:memory:` database and clears it after each message. Only this volatile in-memory index sees inserts and deletes. The mailbox database and its copy receive no writes.
 
-| 异常                    | 含义                                                                                                                                                                          |
-| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| sanitizer-text-loss     | 对阶段清洗结果重复应用阅读器管道后，可见字符数不足首次结果的 10%                                                                                                              |
-| empty-visible-text      | HTML 非空但清洗后可见文本为空                                                                                                                                                 |
-| budget-exceeded         | 可见性检查耗尽预算、模型文本拒绝复杂消息，或结构化事件超过其 100 万字符输入上限                                                                                               |
-| charset-replacements    | 解码后消息文本与 HTML 的 U+FFFD 占 Unicode 字符数超过 1%                                                                                                                      |
-| css-rule-budget         | 实际耗尽 visibleHtmlText 的 CSS 规则预算，来自解析器诊断钩子                                                                                                                  |
-| oversized-html          | HTML 的 UTF-8 字节数大于 1 MiB                                                                                                                                                |
-| nesting-depth-limit     | 实际触发可见文本提取的 512 层扁平化限制                                                                                                                                       |
-| link-display-mismatch   | 整个可见标签本身为 URL／域名，且注册域与目标不同；普通词语、夹杂 URL 的句子、隐藏链接不计。CSS 预算耗尽时不计无法确认可见的链接。阅读器仍检查句子内嵌域名；不会访问重定向目标 |
-| failed-date-parse       | 缓存时间戳无法转换为日期，或现有 Date 头解析失败；缺少 Date 头不计失败                                                                                                        |
-| missing-message-id      | 缓存 RFC Message-ID 和现有 Message-ID 头均为空或缺失                                                                                                                          |
-| structured-events-found | 识别出的结构化事件数                                                                                                                                                          |
-| timeout                 | 单封总处理期限耗尽，worker 被终止；core 调用方取消时也会中断当前邮件                                                                                                          |
-| message-size-limit      | 缓存字段超过 16 MiB，在 SQL 投影处跳过大字段，不读取其完整内容                                                                                                                |
+| Anomaly                 | Meaning                                                                                                                                                                                                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| sanitizer-text-loss     | After the reader pipeline is applied again to the stage's sanitized result, the visible character count is below 10% of the first result                                                                                                                                                                                                                      |
+| empty-visible-text      | The HTML is non-empty but the visible text after sanitizing is empty                                                                                                                                                                                                                                                                                          |
+| budget-exceeded         | The visibility check ran out of budget, model text rejected a complex message, or structured events exceeded their 1 million character input cap                                                                                                                                                                                                              |
+| charset-replacements    | U+FFFD makes up more than 1% of the Unicode characters in the decoded message text and HTML                                                                                                                                                                                                                                                                   |
+| css-rule-budget         | visibleHtmlText actually ran out of its CSS rule budget, reported by the parser diagnostic hook                                                                                                                                                                                                                                                               |
+| oversized-html          | The HTML is larger than 1 MiB in UTF-8 bytes                                                                                                                                                                                                                                                                                                                  |
+| nesting-depth-limit     | Visible text extraction actually hit the 512-level flattening limit                                                                                                                                                                                                                                                                                           |
+| link-display-mismatch   | The whole visible label is itself a URL/domain and its registrable domain differs from the target. Ordinary words, sentences with an embedded URL and hidden links do not count. When the CSS budget runs out, links that cannot be confirmed visible do not count. The reader still checks domains embedded in sentences. Redirect targets are never visited |
+| failed-date-parse       | The cached timestamp cannot be converted to a date, or an existing Date header fails to parse. A missing Date header does not count as a failure                                                                                                                                                                                                              |
+| missing-message-id      | Both the cached RFC Message-ID and any existing Message-ID header are empty or missing                                                                                                                                                                                                                                                                        |
+| structured-events-found | Number of structured events recognized                                                                                                                                                                                                                                                                                                                        |
+| timeout                 | The per-message total processing deadline ran out and the worker was terminated; a cancel from the core caller also interrupts the current message                                                                                                                                                                                                            |
+| message-size-limit      | The cached fields exceed 16 MiB; the SQL projection skips the large fields and never reads their full content                                                                                                                                                                                                                                                 |
 
-响应式邮件分别在 720px 和 1080px 参考阅读宽度计算级联，只保留所有环境场景和两个宽度都可见的同一文本节点。解除隐藏还须覆盖 0–8000 整数 CSS px；light／dark 等媒体环境独立求级联，动态伪类不能建立显示信任。具体媒体条件和不确定环境的处理见[邮件内容保护](security.md#mail-content-protection)。只在 600px 以下隐藏的桌面版本可保留；默认隐藏、仅在窄屏显示的移动版本被排除。诊断计数按 DOM 节点统计一次，不累加两个宽度的结果。
+For responsive mail, the cascade is computed at reference reading widths of 720px and 1080px, and only text nodes visible in every environment scenario and at both widths are kept. Unhiding must also cover integer CSS px from 0 to 8000. Media environments such as light/dark get separate cascades, and dynamic pseudo-classes cannot establish trust that content is shown. The specific media conditions and the handling of uncertain environments are in [mail content protection](security.md#mail-content-protection). A desktop version hidden only below 600px can be kept. A mobile version hidden by default and shown only on narrow screens is excluded. Diagnostic counts count each DOM node once and do not add the results of the two widths.
 
-读取使用 SQLite iterator，一次只发送一行、等待处理结束再继续。统计采用固定直方图，报告样本和失败类数量有上限；不积累邮件、链接、token 或逐封耗时。超时或 worker 失败后终止并重新创建 worker，继续下一封。解析器有独立 V8 堆上限，该限制不等于整个进程的 RSS 上限。
+Reading uses a SQLite iterator that sends one row at a time and waits for processing to finish before continuing. Statistics use fixed histograms, and the number of report samples and failure classes is capped. The check does not accumulate mail, links, tokens or per-message timings. After a timeout or a worker failure, it terminates and recreates the worker and continues with the next message. The parser has its own V8 heap cap, which is not a cap on the RSS of the whole process.
 
-验证使用合成缓存、恶意 HTML、坏 JSON 和开启 WAL 的临时库，检查所有阶段、只读源文件、超时、样本上限及内容泄漏。CLI fixture 的汇总及 explain JSON 对每个主题、地址、消息文本词与私有 selector／tag 名逐一断言不存在；回归验证用私有密钥文件定位单封及跟踪链接的普通词语标签不计域名不符。真实缓存副本仅在用户明确授权后运行只读汇总检查，不输出邮件内容。
+Verification uses synthetic caches, malicious HTML, bad JSON and a temporary database with WAL on, and checks every stage, the read-only source file, timeouts, sample caps and content leaks. For the CLI fixture's summary and explain JSON, the tests assert one by one that every subject, address, message text word and private selector/tag name is absent. Regressions check locating a single message with a private key file, and that ordinary-word labels on tracking links do not count as domain mismatches. A real cache copy gets a read-only summary check only with the user's explicit permission, and no mail content is output.
 
-API 与 tokenizer 行为参考 [Node SQLite](https://nodejs.org/api/sqlite.html)、[Node Worker](https://nodejs.org/api/worker_threads.html)、[SQLite FTS5](https://sqlite.org/fts5.html) 和 [htmlparser2](https://github.com/fb55/htmlparser2)。
+API and tokenizer behavior follow [Node SQLite](https://nodejs.org/api/sqlite.html), [Node Worker](https://nodejs.org/api/worker_threads.html), [SQLite FTS5](https://sqlite.org/fts5.html) and [htmlparser2](https://github.com/fb55/htmlparser2).
