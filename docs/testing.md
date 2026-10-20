@@ -185,6 +185,26 @@ The `accessibility-*.test.ts` files in [tests](../apps/desktop/src/renderer/src/
 pnpm --filter @openmail/desktop exec vitest run accessibility
 ```
 
+## Windows in automated runs
+
+Automated runs must not put windows on the screen of the person at the keyboard. A development build reads two variables at startup; packaged builds ignore both:
+
+- `OPENMAIL_HIDDEN_WINDOWS=1` creates and loads every window but never shows or focuses it. The app runs as a macOS accessory app with no Dock icon and posts no notifications. Windows keep their normal size (1320 by 860 for the main window), so breakpoints and the virtualized list behave as in a shown window, and background throttling is off, so timers, animation frames and `IntersectionObserver` keep running. CDP works as usual, including `Page.captureScreenshot`.
+- `OPENMAIL_BACKGROUND_WINDOWS=1` shows windows with `showInactive()` and never takes focus. The windows are still on screen.
+
+[reveal.ts](../apps/desktop/src/main/windows/reveal.ts) applies both. Every show, focus, maximize, full-screen and tab call in the main process goes through it, and [reveal.test.ts](../apps/desktop/src/main/windows/reveal.test.ts) fails when another main-process file calls one of them directly. Native dialogs, Quick Look and the print panel are not covered, so a hidden run must not open them.
+
+A harness that only needs a working renderer (DOM, RPC and screenshots over CDP) uses the hidden mode. A harness that needs a visible window (real window geometry, the traffic lights, drag-resize, screenshots of native chrome, or a packaged app, which ignores both variables) runs only on agent-screen, another virtual display or a CI runner. It refuses to start and exits with code 2 unless `OPENMAIL_VISIBLE_WINDOWS_OK=1` is set. [smoke-ui.test.ts](../apps/desktop/src/renderer/src/tests/smoke-ui.test.ts) checks that every script that launches the app is in one of the two groups.
+
+| Harness                                                                                                       | Window                                                          | Why                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| [smoke.mjs](../apps/desktop/scripts/smoke.mjs)                                                                | Hidden                                                          | Drives the DOM over CDP only.                                                                                          |
+| [titlebar-resize.mjs](../apps/desktop/scripts/titlebar-resize.mjs)                                            | Visible, needs `OPENMAIL_VISIBLE_WINDOWS_OK=1`                  | Resizes a real window and reads the native titlebar area. `--port` attaches to an app you started and skips the check. |
+| [smoke-dist.mjs](../scripts/smoke-dist.mjs)                                                                   | Visible for the GUI step, needs `OPENMAIL_VISIBLE_WINDOWS_OK=1` | Starts a packaged app. `--no-gui` skips the window and the check.                                                      |
+| `reader-frame.test.ts`, `phone-web.test.ts`, `web-shot.test.ts` in [remote](../apps/desktop/src/main/remote/) | Never shown                                                     | Their Electron drivers create windows with `show: false` and run as accessory apps.                                    |
+
+The Package and Release workflows set `OPENMAIL_VISIBLE_WINDOWS_OK=1` for these steps: the runner's screen belongs to the job. On a development Mac, open a display with agent-screen first. Run anything else that shows a window, such as `pnpm dev` for a manual check, on agent-screen too when an agent drives it.
+
 ## Desktop production build smoke test
 
 After building, run from the repo root:
@@ -196,7 +216,7 @@ node apps/desktop/scripts/smoke.mjs --db /path/to/mail.db
 
 The script starts the Electron production build and, over a local CDP connection, checks the main window, the first cached conversation, the composer, Settings and the sync health report. It sends no mail. The implementation is in [smoke.mjs](../apps/desktop/scripts/smoke.mjs), [smoke-ui.mjs](../apps/desktop/scripts/smoke-ui.mjs) and core [smoke.ts](../packages/core/src/platform/node/smoke.ts).
 
-Before you pass `--db`, close every process that writes to the original database. The script copies only the database, its WAL if there is one, and `config.json` from the same directory. It stops if a file changes during the copy. It opens only the temporary copy and migrates it to the current version. The copy forces manual mark-as-read and the English UI, turns off the first-run Profiles suggestion, sets every swipe action to none and makes the Delete key ask first. The original files do not change. The script sets `OPENMAIL_BACKGROUND_WINDOWS=1`, so a development build shows its windows with `showInactive()` and does not take focus. Stray keystrokes and trackpad swipes still go to the app you were using. Packaged builds ignore this variable. Keychain items are not copied; the copy reads secrets and refreshes tokens the usual way. Without `config.json`, the copy may ask you to configure an OAuth client. That does not mean you need to sign in again.
+Before you pass `--db`, close every process that writes to the original database. The script copies only the database, its WAL if there is one, and `config.json` from the same directory. It stops if a file changes during the copy. It opens only the temporary copy and migrates it to the current version. The copy forces manual mark-as-read and the English UI, turns off the first-run Profiles suggestion, sets every swipe action to none and makes the Delete key ask first. The original files do not change. The script sets `OPENMAIL_HIDDEN_WINDOWS=1`, so the development build creates and paints its windows but never shows them, has no Dock icon and never takes focus. Nothing appears on your screen; see [windows in automated runs](#windows-in-automated-runs). Keychain items are not copied; the copy reads secrets and refreshes tokens the usual way. Without `config.json`, the copy may ask you to configure an OAuth client. That does not mean you need to sign in again.
 
 The smoke test is offline by default. It starts with `OPENMAIL_OFFLINE=1`, so every core provider method fails at once without sending a request: sync, server counts in the health check, contacts, token refresh and IMAP connections. The report's `network` is then false, and `syncHealth` has only local counts for each account. Add `--network` to let the copy connect to the real providers. Offline mode does not block message images that the reader loads under the remote-image setting.
 
@@ -231,7 +251,7 @@ pnpm build
 pnpm --filter @openmail/desktop test:titlebar
 ```
 
-The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs](../scripts/demo-data.mjs), starts the preview offline, read-only and with `OPENMAIL_BACKGROUND_WINDOWS=1`, and drives the main window over a local CDP connection. It runs these checks:
+The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs](../scripts/demo-data.mjs), starts the preview offline, read-only and with `OPENMAIL_BACKGROUND_WINDOWS=1`, and drives the main window over a local CDP connection. The window is visible, so the check runs only on agent-screen, another virtual display or a CI runner, with `OPENMAIL_VISIBLE_WINDOWS_OK=1` set (see [windows in automated runs](#windows-in-automated-runs)). It runs these checks:
 
 - It narrows the window to 600 px, resizes it in 20 px steps and back with `window.resizeTo`, and records the left edge of the toggle and the search field once per painted frame. The sampler is a `ResizeObserver` created after the app's own, so it sees each frame's layout after the app's observers have run.
 - It hides and shows the sidebar in a 1320 px window (narrower when the screen is) and fails on any frame that is in neither state.
@@ -240,7 +260,7 @@ The script seeds demo data into a temporary `OPENMAIL_HOME` with [demo-data.mjs]
 
 Options:
 
-- `--app <path to OpenMail.app>` starts that packaged app on the same demo profile instead of the preview. The Package workflow runs it this way after the unsigned build. A packaged app ignores `OPENMAIL_BACKGROUND_WINDOWS`, so its window takes focus.
+- `--app <path to OpenMail.app>` starts that packaged app on the same demo profile instead of the preview. The Package workflow runs it this way after the unsigned build. A packaged app ignores `OPENMAIL_BACKGROUND_WINDOWS`, so its window takes focus. The workflow step sets `OPENMAIL_VISIBLE_WINDOWS_OK=1`.
 - `--port <n>` attaches to a development build that is already running with `--remote-debugging-port=<n>` instead of starting one.
 - `--timeout <ms>` (default 120000) bounds each attempt.
 - `--report <path>` also writes the JSON report to a file. The Package workflow uploads that file as the `titlebar-resize` artifact, also when the step fails.

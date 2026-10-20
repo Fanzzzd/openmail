@@ -26,16 +26,44 @@ export function isBlockedSmokeImage(source, text) {
  * The preview's environment. Offline unless `--network` asks for provider calls: the copied
  * database keeps real accounts and the keychain still has their tokens, so a default run
  * would sync, refresh tokens and fetch contacts against Gmail, Outlook and IMAP servers.
+ *
+ * `windows` is "hidden" for harnesses that only drive the renderer over CDP: a development build
+ * then creates and paints its windows but never shows them. "background" is for harnesses that
+ * need a visible window; they show without focus and must run on a virtual display (see
+ * `requireVisibleWindows`).
  */
-export function smokeEnvironment(base, directory, network = false) {
-  const env = {
-    ...base,
-    OPENMAIL_READ_ONLY: "1",
-    OPENMAIL_HOME: directory,
-    // Development builds open windows without taking focus from the person's work.
-    OPENMAIL_BACKGROUND_WINDOWS: "1",
-  };
+export function smokeEnvironment(base, directory, network = false, windows = "hidden") {
+  const env = { ...base, OPENMAIL_READ_ONLY: "1", OPENMAIL_HOME: directory };
+  delete env.OPENMAIL_HIDDEN_WINDOWS;
+  delete env.OPENMAIL_BACKGROUND_WINDOWS;
+  if (windows === "hidden") env.OPENMAIL_HIDDEN_WINDOWS = "1";
+  else env.OPENMAIL_BACKGROUND_WINDOWS = "1";
   if (network) delete env.OPENMAIL_OFFLINE;
   else env.OPENMAIL_OFFLINE = "1";
   return env;
+}
+
+/** The variable that acknowledges a harness will put windows on the current screen. */
+export const VISIBLE_WINDOWS_OK = "OPENMAIL_VISIBLE_WINDOWS_OK";
+
+/**
+ * Stops a harness that shows real windows unless the caller set OPENMAIL_VISIBLE_WINDOWS_OK=1,
+ * which says the run is on agent-screen, another virtual display or a CI runner, never on the
+ * screen of someone at work. Returns the refusal message, or null when the run may go on.
+ */
+export function visibleWindowsRefusal(env, harness, reason) {
+  if (env[VISIBLE_WINDOWS_OK] === "1") return null;
+  return [
+    `${harness} shows real windows on the current screen: ${reason}.`,
+    "Run it on agent-screen or another virtual display, or on a CI runner, and set",
+    `${VISIBLE_WINDOWS_OK}=1 to confirm. See docs/testing.md#windows-in-automated-runs.`,
+  ].join("\n");
+}
+
+/** Exits with code 2 and the refusal message when `visibleWindowsRefusal` refuses. */
+export function requireVisibleWindows(harness, reason) {
+  const refusal = visibleWindowsRefusal(process.env, harness, reason);
+  if (!refusal) return;
+  process.stderr.write(`${refusal}\n`);
+  process.exit(2);
 }

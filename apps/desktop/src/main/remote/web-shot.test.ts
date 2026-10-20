@@ -85,6 +85,8 @@ const labels = JSON.parse(labelsJson);
 const timing = JSON.parse(timingJson);
 // Keep running between windows; quit only when done.
 app.on("window-all-closed", () => {});
+// No Dock icon; the windows are never shown.
+if (process.platform === "darwin") app.setActivationPolicy("accessory");
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const fs = require("fs");
 const path = require("path");

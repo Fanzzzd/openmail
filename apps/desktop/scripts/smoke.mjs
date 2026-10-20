@@ -130,7 +130,8 @@ try {
     ],
     {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
-      env: smokeEnvironment(process.env, directory, values.network),
+      // Hidden windows: the run drives the renderer over CDP only, so nothing appears on screen.
+      env: smokeEnvironment(process.env, directory, values.network, "hidden"),
       stdio: ["ignore", "ignore", "pipe"],
       detached: process.platform !== "win32",
     },

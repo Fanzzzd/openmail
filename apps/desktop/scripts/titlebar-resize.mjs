@@ -16,7 +16,7 @@ import { tmpdir } from "node:os";
 import { dirname, join, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { smokeEnvironment } from "./smoke-ui.mjs";
+import { requireVisibleWindows, smokeEnvironment } from "./smoke-ui.mjs";
 
 const { values } = parseArgs({
   options: {
@@ -26,6 +26,14 @@ const { values } = parseArgs({
     report: { type: "string" },
   },
 });
+// The check reads the native titlebar and resizes a real window frame by frame, so the window must
+// be on a screen. A launched app runs only where that is allowed; `--port` attaches to an app the
+// caller already started.
+if (!values.port)
+  requireVisibleWindows(
+    "The titlebar resize check",
+    "it resizes a real window and reads the traffic lights' native titlebar area",
+  );
 const sleep = (ms) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
@@ -64,7 +72,7 @@ const record = (chunk) => {
 function launch(port) {
   const flags = [`--remote-debugging-port=${port}`, `--user-data-dir=${directory}`];
   const options = {
-    env: smokeEnvironment(process.env, directory),
+    env: smokeEnvironment(process.env, directory, false, "background"),
     stdio: /** @type {const} */ (["ignore", "pipe", "pipe"]),
     detached: true,
   };

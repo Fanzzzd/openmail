@@ -197,13 +197,11 @@ async function main() {
   fs.writeFileSync(outPath, JSON.stringify(out, null, 2));
 }
 
-// A test run should not put an icon in the Dock.
+// A test run should not put an icon in the Dock. Its windows are never shown.
+if (process.platform === "darwin") app.setActivationPolicy("accessory");
 app
   .whenReady()
-  .then(() => {
-    app.dock?.hide();
-    return main();
-  })
+  .then(() => main())
   .catch((error) => {
     console.error(error);
     process.exitCode = 1;

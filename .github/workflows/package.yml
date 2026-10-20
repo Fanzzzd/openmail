@@ -104,9 +104,11 @@ jobs:
       - name: Check bundled licenses
         run: node scripts/check-licenses.mjs
 
+      # The runner's screen belongs to this job, so the GUI check may show windows on it.
       - name: Launch the packaged arm64 app
         env:
           OPENMAIL_DIST_REPORT_DIR: ${{ runner.temp }}/dist-smoke
+          OPENMAIL_VISIBLE_WINDOWS_OK: "1"
         run: node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app
 
       # The runner has a logged-in macOS session, so the window opens as in the smoke step. The
@@ -116,6 +118,8 @@ jobs:
       # only when both attempts fail; each attempt gets its own 3 minute limit.
       - name: Check the titlebar controls during resize
         timeout-minutes: 8
+        env:
+          OPENMAIL_VISIBLE_WINDOWS_OK: "1"
         run: >-
           pnpm --filter @openmail/desktop test:titlebar
           --app release/mac-arm64/OpenMail.app --timeout 180000

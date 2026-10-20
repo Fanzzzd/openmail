@@ -312,8 +312,8 @@ async function main() {
   // behind a later assertion on missing results.
   app.exit(process.exitCode ?? 0);
 }
-// A test run should not put an icon in the Dock.
+// A test run should not put an icon in the Dock. Its windows are never shown.
+if (process.platform === "darwin") app.setActivationPolicy("accessory");
 app.on("ready", () => {
-  app.dock?.hide();
   void main();
 });

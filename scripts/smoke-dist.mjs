@@ -6,6 +6,8 @@
 //      read-only tool set, writes only JSON-RPC frames to stdout, and exits 0 when stdin closes.
 //   4. Contents/Resources/licenses/electron/ has Electron's license and Chromium's notices.
 //   5. The GUI starts: renderer, preload and core, then a screenshot. Skip with --no-gui.
+//      A packaged app ignores OPENMAIL_HIDDEN_WINDOWS, so its window appears on the current
+//      screen: the GUI step runs only with OPENMAIL_VISIBLE_WINDOWS_OK=1 (CI, agent-screen).
 //
 //   node scripts/smoke-dist.mjs apps/desktop/release/mac-arm64/OpenMail.app [--no-gui]
 //
@@ -19,10 +21,16 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { connectCdp, listTargets } from "../apps/desktop/scripts/cdp.mjs";
+import { requireVisibleWindows } from "../apps/desktop/scripts/smoke-ui.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const args = process.argv.slice(2);
 const gui = !args.includes("--no-gui");
+if (gui)
+  requireVisibleWindows(
+    "The packaged app GUI check",
+    "a packaged app ignores OPENMAIL_HIDDEN_WINDOWS and opens its window in front (pass --no-gui to skip it)",
+  );
 const bundle = path.resolve(
   args.find((arg) => !arg.startsWith("--")) ?? "apps/desktop/release/mac-arm64/OpenMail.app",
 );

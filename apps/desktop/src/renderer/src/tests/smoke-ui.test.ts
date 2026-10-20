@@ -1,10 +1,14 @@
+import { readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { runInNewContext } from "node:vm";
 import { expect, it } from "vitest";
 import {
   smokeClickExpression,
   isBlockedSmokeImage,
   smokeEnvironment,
+  visibleWindowsRefusal,
 } from "../../../../scripts/smoke-ui.mjs";
+import { desktopRoot } from "../test-support/paths";
 import { testDom } from "../test-support/test-dom";
 
 it("smoke re-queries after a replaced list row and stops clicking once the reader appears", () => {
@@ -78,4 +82,48 @@ it("smoke runs offline unless --network opts in to provider calls", () => {
   const online = smokeEnvironment(base, "/tmp/smoke", true);
   expect(online.OPENMAIL_OFFLINE).toBeUndefined();
   expect(online.OPENMAIL_READ_ONLY).toBe("1");
+});
+
+it("smoke windows are hidden by default and background only when a harness asks", () => {
+  const base = { OPENMAIL_BACKGROUND_WINDOWS: "1", OPENMAIL_HIDDEN_WINDOWS: "0" };
+  const hidden = smokeEnvironment(base, "/tmp/smoke");
+  expect(hidden.OPENMAIL_HIDDEN_WINDOWS).toBe("1");
+  expect(hidden.OPENMAIL_BACKGROUND_WINDOWS).toBeUndefined();
+  const background = smokeEnvironment(base, "/tmp/smoke", false, "background");
+  expect(background.OPENMAIL_BACKGROUND_WINDOWS).toBe("1");
+  expect(background.OPENMAIL_HIDDEN_WINDOWS).toBeUndefined();
+});
+
+it("harnesses that show windows refuse to run without OPENMAIL_VISIBLE_WINDOWS_OK=1", () => {
+  const refusal = visibleWindowsRefusal({}, "The check", "it resizes a window");
+  expect(refusal).toContain("The check shows real windows on the current screen");
+  expect(refusal).toContain("OPENMAIL_VISIBLE_WINDOWS_OK=1");
+  expect(visibleWindowsRefusal({ OPENMAIL_VISIBLE_WINDOWS_OK: "0" }, "x", "y")).not.toBeNull();
+  expect(visibleWindowsRefusal({ OPENMAIL_VISIBLE_WINDOWS_OK: "1" }, "x", "y")).toBeNull();
+});
+
+/** Every harness that launches the app with a window, and how it keeps the window off the user's screen. */
+it("every Electron harness either hides its windows or requires a virtual display", () => {
+  const repo = path.join(desktopRoot, "../..");
+  const scripts = [path.join(desktopRoot, "scripts"), path.join(repo, "scripts")].flatMap((dir) =>
+    readdirSync(dir)
+      .filter((name) => name.endsWith(".mjs"))
+      .map((name) => path.join(dir, name)),
+  );
+  const launches = /remote-debugging-port|electron-vite", "preview"|Contents\/MacOS\/OpenMail/;
+  const modes: Record<string, string> = {};
+  for (const file of scripts) {
+    const text = readFileSync(file, "utf8");
+    if (!launches.test(text)) continue;
+    modes[path.relative(repo, file)] = text.includes("requireVisibleWindows(")
+      ? "visible on a virtual display"
+      : /smokeEnvironment\([^)]*"hidden"\)/.test(text)
+        ? "hidden"
+        : "unguarded";
+  }
+  expect(modes).toEqual({
+    "apps/desktop/scripts/smoke.mjs": "hidden",
+    "apps/desktop/scripts/titlebar-resize.mjs": "visible on a virtual display",
+    "scripts/smoke-dist.mjs": "visible on a virtual display",
+  });
 });

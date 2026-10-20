@@ -128,6 +128,8 @@ jobs:
       - name: Launch the packaged apps
         env:
           REPORT_DIR: ${{ runner.temp }}/dist-smoke
+          # The runner's screen belongs to this job, so the GUI check may show windows on it.
+          OPENMAIL_VISIBLE_WINDOWS_OK: "1"
         run: |
           smoke() { OPENMAIL_DIST_REPORT_DIR="$REPORT_DIR/$1" node scripts/smoke-dist.mjs "apps/desktop/release/$2/OpenMail.app"; }
           smoke arm64 mac-arm64
