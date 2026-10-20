@@ -275,6 +275,13 @@ export const cases = [
     "      if (focus && !row) revealRowRef.current?.(focus);\n",
     "",
   ],
+  [
+    "hint stays quiet after a recent search removal",
+    "leaves its announcement the only live change",
+    `${renderer}features/search/SearchField.tsx`,
+    "    setQuietHint(true);\n",
+    "",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -376,8 +383,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 69)
-      throw new Error(`Expected all 69 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 70)
+      throw new Error(`Expected all 70 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

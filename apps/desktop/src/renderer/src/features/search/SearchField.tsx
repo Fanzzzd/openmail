@@ -140,9 +140,14 @@ export function SearchField({
   // Says what Fn-Delete or the × took out of the list. Live regions stay exposed while the
   // popup is open (see useKeepPageExposed).
   const [announcement, setAnnouncement] = useState("");
+  // Removing the last recent search brings up the hint. Its live region would speak over the
+  // removal, so the hint stays quiet until the popup closes.
+  const [quietHint, setQuietHint] = useState(false);
+  if (quietHint && !open) setQuietHint(false);
   const removeRecent = (query: string) => {
     recentSearches.remove(query);
     setAnnouncement(t`Removed ${query} from recent searches`);
+    setQuietHint(true);
   };
   const run = useRunMail();
   const removeHint = useId();
@@ -362,7 +367,10 @@ export function SearchField({
           >
             <Combobox.Popup className={`w-(--anchor-width) min-w-72 p-1 ${popupSurface}`}>
               {hint && (
-                <Combobox.Empty className="flex items-center gap-2 px-2 py-1 text-footnote text-a11y-muted">
+                <Combobox.Empty
+                  {...(quietHint ? { role: "none", "aria-live": "off" } : {})}
+                  className="flex items-center gap-2 px-2 py-1 text-footnote text-a11y-muted"
+                >
                   <span className="flex-1">{t`Try from:name or has:attachment`}</span>
                   <button
                     type="button"

@@ -466,6 +466,51 @@ it("Fn-Delete on a recent search removes it and says so", async () => {
   }
 });
 
+it("removing the last recent search leaves its announcement the only live change", async () => {
+  localStorage.setItem("openmail.recentSearches", JSON.stringify(["Lunch on Friday"]));
+  try {
+    current = await flow();
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+    field.focus();
+    key("ArrowDown", {}, field);
+    await eventually(() => expect(field.getAttribute("aria-expanded")).toBe("true"));
+    await eventually(() =>
+      expect(
+        document.getElementById(field.getAttribute("aria-activedescendant") ?? "")?.textContent,
+      ).toBe("Lunch on Friday"),
+    );
+    // Every text change inside a live region, in order.
+    const spoken: string[] = [];
+    const live = (node: Node | null) =>
+      (node instanceof Element ? node : node?.parentElement)?.closest(
+        '[aria-live]:not([aria-live="off"]), [role="status"], [role="alert"], [role="log"]',
+      );
+    const observer = new MutationObserver((records) => {
+      for (const record of records) {
+        const region = live(record.target);
+        if (region?.textContent && region.textContent !== spoken.at(-1))
+          spoken.push(region.textContent);
+      }
+    });
+    observer.observe(document.body, { subtree: true, childList: true, characterData: true });
+    try {
+      key("Delete", {}, field);
+      // The empty field with no history now shows the hint.
+      await eventually(() =>
+        expect(document.body.textContent).toContain("Try from:name or has:attachment"),
+      );
+      await wait(300);
+    } finally {
+      observer.disconnect();
+    }
+    expect(spoken).toEqual(["Removed Lunch on Friday from recent searches"]);
+  } finally {
+    localStorage.removeItem("openmail.recentSearches");
+  }
+});
+
 it("the search popup leaves the rest of the window exposed to screen readers", async () => {
   current = await flow();
   const h = current;
