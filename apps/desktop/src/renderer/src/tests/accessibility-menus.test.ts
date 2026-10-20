@@ -263,7 +263,10 @@ it("recipient suggestions pass axe, and forward Delete stops suggesting the high
     expect.objectContaining({ payload: { address: "bob@example.com", hidden: true } }),
   );
   expect(input).toHaveProperty("value", "bo");
-  expect(await screen.findAllByText("Stopped suggesting bob@example.com")).toHaveLength(2);
+  expect(await screen.findAllByText("Stopped suggesting bob@example.com")).toHaveLength(1);
+  expect(
+    screen.getByText("Stopped suggesting bob@example.com. Undo follows this field."),
+  ).toBeTruthy();
   expect(screen.getByRole("button", { name: "Undo" })).toBeTruthy();
 });
 
