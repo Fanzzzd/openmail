@@ -45,6 +45,7 @@ import { listQueryAtom } from "../../state/threads";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 import { useOpenSurface } from "../../ui/open-surfaces";
+import { useKeepPageExposed } from "../../ui/keep-page-exposed";
 import { Select } from "../../ui/Select";
 import { Tip } from "../../ui/Tip";
 import { isTouchWeb } from "../../lib/platform";
@@ -136,8 +137,8 @@ export function SearchField({
   const dateTarget = target && operatorGroup(target.operator) === "dates" ? target : null;
   const dateLabels = { today: t`Today`, yesterday: t`Yesterday`, last7Days: t`Last 7 days` };
   const recents = useRecentSearches();
-  // The popup hides the rest of the window from screen readers but keeps live regions, so this
-  // one says what Fn-Delete or the × took out of the list.
+  // Says what Fn-Delete or the × took out of the list. Live regions stay exposed while the
+  // popup is open (see useKeepPageExposed).
   const [announcement, setAnnouncement] = useState("");
   const removeRecent = (query: string) => {
     recentSearches.remove(query);
@@ -166,6 +167,7 @@ export function SearchField({
   const hint = !value.trim() && recents.length === 0;
   const shown = open && (items.length > 0 || hint);
   useOpenSurface(shown, () => setOpen(false));
+  useKeepPageExposed(shown);
   const groupNames: Record<SearchSuggestionGroup, string> = {
     recent: t`Recent`,
     people: t`People`,

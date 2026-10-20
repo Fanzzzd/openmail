@@ -465,3 +465,21 @@ it("Fn-Delete on a recent search removes it and says so", async () => {
     localStorage.removeItem("openmail.recentSearches");
   }
 });
+
+it("the search popup leaves the rest of the window exposed to screen readers", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+  field.focus();
+  fireEvent.input(field, { target: { value: "fro" }, inputType: "insertText" });
+  await eventually(() => expect(field.getAttribute("aria-expanded")).toBe("true"));
+  await wait(50);
+  // The list and its title stay readable, so nothing focusable sits in hidden content and the
+  // window keeps its h1.
+  expect(screen.getByRole("heading", { level: 1 })).toBeTruthy();
+  expect(screen.getByRole("navigation", { name: "Mailboxes" })).toBeTruthy();
+  expect(
+    document.querySelector('[aria-hidden="true"] [tabindex="0"], [aria-hidden="true"] button'),
+  ).toBeNull();
+});
