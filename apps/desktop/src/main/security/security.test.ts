@@ -284,5 +284,5 @@ it("AI/MCP docs match the budget placeholder and semantic snippet policy", async
     "utf8",
   );
   expect(tools).toContain("Message snippets are omitted.");
-  expect(documents[1]).toContain("无消息 snippet");
+  expect(documents[1]).toContain("with no message snippet");
 });
