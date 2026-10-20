@@ -1,7 +1,7 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
 import { constVoid } from "effect/Function";
 import { Reactivity } from "effect/reactivity";
-import { useCallback, useContext, useEffect, useRef } from "react";
+import { useCallback, useContext, useEffect, useEffectEvent, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
 import { Keys } from "../state/keys";
 import { historyAtom, locationAtom, locationOf } from "../state/location";
@@ -136,6 +136,34 @@ export function usePaneNavigation({
     });
     return () => cancelAnimationFrame(frame);
   }, [narrowReader]);
+  // Leaving the narrow layout moves the list and the reader into the panes, and the focused
+  // element leaves the document for a moment, so focus falls to the page. It goes back to the
+  // reader if the reader had it, else to the selected row.
+  const focusedPane = useRef<string | null>(null);
+  useEffect(() => {
+    const remember = (event: FocusEvent) => {
+      if (!(event.target instanceof Element)) return;
+      focusedPane.current =
+        event.target.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null;
+    };
+    document.addEventListener("focusin", remember);
+    return () => document.removeEventListener("focusin", remember);
+  }, []);
+  const restoreFocus = useEffectEvent(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && !active.closest("[hidden]")) return;
+    if (focusedPane.current === "reader" && shown.reader) focusReaderNow();
+    else if (focusedPane.current === "reader" || focusedPane.current === "list")
+      focusList(selectedId);
+  });
+  const wasNarrow = useRef(layout.mode === "narrow");
+  useEffect(() => {
+    const left = wasNarrow.current && layout.mode !== "narrow";
+    wasNarrow.current = layout.mode === "narrow";
+    if (!left) return constVoid;
+    const frame = requestAnimationFrame(restoreFocus);
+    return () => cancelAnimationFrame(frame);
+  }, [layout.mode]);
   return {
     shown,
     /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */

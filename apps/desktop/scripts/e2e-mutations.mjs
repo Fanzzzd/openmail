@@ -276,6 +276,13 @@ export const cases = [
     "        if (false) {",
   ],
   [
+    "widening restores focus that fell to the page",
+    "widening keeps focus on the reader or the row",
+    `${renderer}app/use-pane-navigation.ts`,
+    "    const frame = requestAnimationFrame(restoreFocus);",
+    "    const frame = 0;",
+  ],
+  [
     "the reader takes focus when it becomes the only pane",
     "the reader takes focus when it becomes the only pane",
     `${renderer}app/use-pane-navigation.ts`,
@@ -397,8 +404,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 72)
-      throw new Error(`Expected all 72 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 73)
+      throw new Error(`Expected all 73 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

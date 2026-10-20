@@ -309,6 +309,30 @@ it("Next view never lands on the reader entry that widening stepped back over", 
   await eventually(() => expect(title()).toBe("Sent"));
 });
 
+it("widening keeps focus on the reader or the row that had it", async () => {
+  width = 520;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  resize(1200);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).not.toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  // Narrow again with the list shown and a row focused: widening keeps that row.
+  resize(520);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  key("Escape", {}, document.body);
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
+  resize(1200);
+  await eventually(() => expect(reader()).not.toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
+});
+
 it("the reader takes focus when it becomes the only pane by narrowing or by Back", async () => {
   width = 1200;
   current = await flow({ windowHistory: true });
