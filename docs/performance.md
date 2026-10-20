@@ -1,480 +1,480 @@
-# 性能
+# Performance
 
-真实邮件缓存副本的内容脱敏检查见 [corpus-check](corpus-check.md)。
+The redaction check of the content in cached copies of real mail is in [corpus-check](corpus-check.md).
 
-本页维护本地性能预算及复现命令。使用 Node 和 `node:sqlite`，不测量 Electron、模型下载或真实账户端到端时延。
+This page maintains the local performance budgets and the commands that reproduce them. It uses Node and `node:sqlite`. It does not measure Electron, model downloads or end-to-end latency on real accounts.
 
-## 10 万封邮件预算
+## 100k-message budget
 
-运行真实迁移和 `Store.upsertMessage`，临时数据库包含 100,000 封邮件、3 个账户、200 个标签／文件夹、20,000 个会话，其中 100 个长会话各有 204 封邮件。消息文本含 CJK 和引用历史，HTML 使用仓库中的 newsletter、Outlook Word fixture；独立解析测试输入为 200 KiB UTF-8，含内联 CSS、隐藏内容和 JSON-LD 事件。数据库生成在系统临时目录，Layer 关闭后删除。SQLite 页缓存 8 MiB，Node 堆上限 192 MiB；Effect 时钟固定为 2026-10-03，缓存窗口不受测试运行日期影响。
+The suite runs the real migrations and `Store.upsertMessage`. The temporary database holds 100,000 messages, 3 accounts, 200 labels/folders and 20,000 threads, of which 100 long threads have 204 messages each. Message text contains CJK and quoted history. HTML uses the repo's newsletter and Outlook Word fixtures. The separate parsing test input is 200 KiB of UTF-8 with inline CSS, hidden content and JSON-LD events. The database is created in the system temp directory and deleted after the Layer closes. The SQLite page cache is 8 MiB and the Node heap limit is 192 MiB. The Effect clock is fixed at 2026-10-03, so the cache window does not depend on the date the tests run.
 
-fixture 默认不运行 `ANALYZE`，预算按新安装、还没有规划器统计时测量。设置 `OPENMAIL_PERF_ANALYZE=1` 测量有统计的情况。应用打开数据库时运行 `PRAGMA optimize=0x10002`（`analysis_limit=400`），同步循环每小时运行一次 `PRAGMA optimize`，见 `packages/core/src/db/migrate.ts`。
+The fixture does not run `ANALYZE` by default, so the budgets are measured as on a new install with no planner statistics yet. Set `OPENMAIL_PERF_ANALYZE=1` to measure with statistics. The app runs `PRAGMA optimize=0x10002` (`analysis_limit=400`) when it opens the database, and the sync loop runs `PRAGMA optimize` once an hour; see `packages/core/src/db/migrate.ts`.
 
 ```sh
 OPENMAIL_PERF=1 pnpm test:perf
-# 可指定完整 SQL、查询计划和测量结果的输出位置：
+# Choose where the full SQL, query plans and measurements are written:
 OPENMAIL_PERF=1 OPENMAIL_PERF_REPORT=/tmp/openmail-performance.json pnpm test:perf
 ```
 
-大数据套件是 `packages/core/src/platform/node/performance-large.test.ts`，默认 `pnpm test` 排除它。默认套件中的 `performance-plans.test.ts` 集中检查真实 Store 查询。同步健康与分页用例只写 120 封邮件；联系人用例保留原有候选规模。它们检查索引使用、分页回绕、孤立草稿去重和 Unicode ID 顺序。150k 迁移用例仅在 `OPENMAIL_PERF=1` 时执行。MCP 测量调用真实 Toolkit handler 与 Mailbox，provider 使用进程内 fake，不发网络请求。
+The large-data suite is `packages/core/src/platform/node/performance-large.test.ts`. The default `pnpm test` excludes it. `performance-plans.test.ts` in the default suite checks the real Store queries in one place. The sync health and paging cases write only 120 messages; the contacts cases keep their existing candidate counts. They check index use, paging wraparound, orphaned draft deduplication and Unicode ID order. The 150k migration case runs only with `OPENMAIL_PERF=1`. The MCP measurement calls the real Toolkit handlers and Mailbox. The provider is an in-process fake and sends no network requests.
 
-`pnpm test:perf` 也运行 `visible-text-cost.test.ts`、`performance-plans.test.ts`（含 150k 迁移用例）、`src/domain/cache.test.ts`（含 10 万会话分页用例）、`recovery-safety.test.ts`（四个进程同时首次打开，每个须在 1 s 内拿到共享锁）和 `migration37-performance.test.ts`（100k 消息上的迁移 37，见下文）。随后它运行 `pnpm --filter @openmail/cli test:perf`，即设置 `OPENMAIL_PERF=1` 跑 CLI 的 `mcp-server.test.ts`：另一个进程持有写锁时，`list_accounts` 调用的中位耗时须低于 500 ms × `OPENMAIL_PERF_FACTOR`。perf.yml 因此也覆盖这些用例。
+`pnpm test:perf` also runs `visible-text-cost.test.ts`, `performance-plans.test.ts` (including the 150k migration case), `src/domain/cache.test.ts` (including the 100k-thread paging case), `recovery-safety.test.ts` (four processes open the database for the first time at once, and each must get the shared lock within 1 s) and `migration37-performance.test.ts` (migration 37 on 100k messages; see below). It then runs `pnpm --filter @openmail/cli test:perf`, which runs the CLI's `mcp-server.test.ts` with `OPENMAIL_PERF=1`: while another process holds the write lock, the median time of a `list_accounts` call must be under 500 ms × `OPENMAIL_PERF_FACTOR`. perf.yml therefore covers these cases too.
 
-CI 中由 [perf.yml](../.github/workflows/perf.yml) 运行：每周一 06:00 UTC 定时，可在 Actions 页手动触发（workflow_dispatch），[release.yml](../.github/workflows/release.yml) 也通过 `workflow_call` 调用它，打 tag 发版前必须通过。它不在每次 push 的 check 中运行，push 时由下面写入速率预算的增长断言把关。job 在 macos-latest 上先用 `pnpm build --filter=@openmail/cli...` 构建 core 和 CLI（同步测量从 `dist/` 加载 HTML worker，MCP 测量启动构建好的 CLI），再执行 `pnpm test:perf`。套件只用 Node 和 `node:sqlite`，不开 Electron 窗口，不需要显示器或网络。共享 runner 噪声较大，job 设 `OPENMAIL_PERF_FACTOR=2`，所有墙钟预算乘以该系数；本地默认系数为 1，取值小于 1 或不是数字时按 1 处理。三份 JSON 报告（`OPENMAIL_PERF_REPORT`、`OPENMAIL_SPARSE_PERF_REPORT`、`OPENMAIL_SYNC_REPORT`）作为 `performance-report` artifact 上传，失败时也上传。长尾词表用例把各次时延和中位数写进 `OPENMAIL_PERF_REPORT` 同目录下的 `openmail-vocabulary-performance.json`，所以也在这个 artifact 里。系数实现见 `packages/core/test-support/perf-budget.ts`。日常套件的计时规则见[负载下的测试](testing.md#tests-under-load)。
+In CI, [perf.yml](../.github/workflows/perf.yml) runs it: on a schedule every Monday at 06:00 UTC, by hand from the Actions page (workflow_dispatch), and from [release.yml](../.github/workflows/release.yml) through `workflow_call`, where it must pass before a tagged release. It does not run in the check on every push; on push, the growth assertion of the write-rate budget below guards instead. The job runs on macos-latest. It first builds core and the CLI with `pnpm build --filter=@openmail/cli...` (the sync measurement loads the HTML worker from `dist/`, and the MCP measurement starts the built CLI), then runs `pnpm test:perf`. The suite uses only Node and `node:sqlite`. It opens no Electron window and needs no display or network. Shared runners are noisy, so the job sets `OPENMAIL_PERF_FACTOR=2` and every wall-clock budget is multiplied by that factor. The local default factor is 1; a value below 1 or not a number counts as 1. The three JSON reports (`OPENMAIL_PERF_REPORT`, `OPENMAIL_SPARSE_PERF_REPORT`, `OPENMAIL_SYNC_REPORT`) are uploaded as the `performance-report` artifact, also on failure. The long-tail vocabulary case writes each run's latency and the median to `openmail-vocabulary-performance.json` in the same directory as `OPENMAIL_PERF_REPORT`, so it is in this artifact too. The factor is implemented in `packages/core/test-support/perf-budget.ts`. Timing rules for the everyday suite are in [tests under load](testing.md#tests-under-load).
 
-每项先执行一次并单独采集 `EXPLAIN QUERY PLAN`，再取五次热运行中位数；remap、invalidate 和实际淘汰取三次。写入每次在事务末尾回滚，重复测量使用相同状态。断言中位数低于下表预算，JSON 同时保留各次时延、最大值和测量结束时的一／五／十五分钟负载。fixture 生成、查询计划采集及索引完整性检查不计入时延。
+Each item runs once first, with `EXPLAIN QUERY PLAN` collected separately, then takes the median of five warm runs; remap, invalidate and actual eviction take three. Each write rolls back at the end of its transaction, so repeated measurements use the same state. The tests assert that the median is under the budget in the table below. The JSON also keeps every run's latency, the maximum and the 1/5/15-minute load at the end of the measurement. Fixture creation, query plan collection and index integrity checks are not counted in the latency.
 
-| 路径                                         | 预算 ms |
-| -------------------------------------------- | ------: |
-| provider ID 不命中查找                       |       5 |
-| sync-health 标签本地计数／观察标签           |     150 |
-| sync-health IMAP 本地计数                    |     100 |
-| stale sweep 标签／IMAP 的 100 条候选页       |     100 |
-| stale sweep claim 与游标保存                 |      25 |
-| reset 账户七日窗口                           |     200 |
-| reset 标签／IMAP 三十日窗口                  |     150 |
-| reset 候选持久化                             |      50 |
-| 未读账户／标签徽标                           |     100 |
-| list_threads 首页 50 个会话                  |      75 |
-| 常见词／CJK／运算符搜索，50 个会话           |     150 |
-| 稀有一／二字 CJK 搜索，50 个会话             |      50 |
-| 常见一／二字 CJK 搜索，50 个会话             |     150 |
-| 输入中的前缀与双词搜索，50 个会话            |     150 |
-| has:drive／has:spreadsheet，50 个会话        |      50 |
-| label: 搜索（ID、名称、加常见词），50 个会话 |     200 |
-| 标签列表视图（全部账户／单账户），50 个会话  |     200 |
-| 消息文本＋OCR 搜索，200 个会话               |     100 |
-| OCR 摘要搜索，50 个会话                      |     150 |
-| AROUND 0 搜索，50 个会话                     |     500 |
-| AROUND 3 搜索，50 个会话                     |     475 |
-| AROUND 精确命中稀疏，100k 消息               |     500 |
-| AROUND 深页游标，100k 会话                   |    1500 |
-| getThread，204 封长会话                      |     100 |
-| 长会话模型文本                               |     500 |
-| 200 KiB HTML 可见文本                        |     150 |
-| 200 KiB HTML 清洗                            |     200 |
-| 200 KiB 结构化事件检测                       |     100 |
-| MCP list_threads／search                     |     200 |
-| remap 100 个身份                             |     250 |
-| invalidate IMAP 文件夹                       |     500 |
-| 各账户消息文本字节数                         |     150 |
-| 消息文本预算全保护扫描                       |    5000 |
-| 消息文本预算淘汰 1 MiB                       |     500 |
-| 消息文本预算小时门控                         |      25 |
+| Path                                                     | Budget ms |
+| -------------------------------------------------------- | --------: |
+| provider ID lookup miss                                  |         5 |
+| sync-health label local counts / observed labels         |       150 |
+| sync-health IMAP local counts                            |       100 |
+| stale sweep label/IMAP page of 100 candidates            |       100 |
+| stale sweep claim and cursor save                        |        25 |
+| reset account seven-day window                           |       200 |
+| reset label/IMAP thirty-day window                       |       150 |
+| reset candidate persistence                              |        50 |
+| unread account/label badges                              |       100 |
+| list_threads first page of 50 threads                    |        75 |
+| common word / CJK / operator search, 50 threads          |       150 |
+| rare one/two-character CJK search, 50 threads            |        50 |
+| common one/two-character CJK search, 50 threads          |       150 |
+| prefix and two-word search while typing, 50 threads      |       150 |
+| has:drive / has:spreadsheet, 50 threads                  |        50 |
+| label: search (ID, name, plus common word), 50 threads   |       200 |
+| label list view (all accounts / one account), 50 threads |       200 |
+| message text + OCR search, 200 threads                   |       100 |
+| OCR snippet search, 50 threads                           |       150 |
+| AROUND 0 search, 50 threads                              |       500 |
+| AROUND 3 search, 50 threads                              |       475 |
+| AROUND sparse exact hits, 100k messages                  |       500 |
+| AROUND deep-page cursor, 100k threads                    |      1500 |
+| getThread, 204-message long thread                       |       100 |
+| long thread model text                                   |       500 |
+| 200 KiB HTML visible text                                |       150 |
+| 200 KiB HTML sanitizing                                  |       200 |
+| 200 KiB structured event detection                       |       100 |
+| MCP list_threads / search                                |       200 |
+| remap 100 identities                                     |       250 |
+| invalidate IMAP folder                                   |       500 |
+| message text bytes per account                           |       150 |
+| message text budget full protection scan                 |      5000 |
+| message text budget evicting 1 MiB                       |       500 |
+| message text budget hourly gate                          |        25 |
 
-MCP 测量先为三个 fixture 账户打开 AI 权限，并断言 list_threads 和 search 都返回会话。此前没有授权，两项都返回空结果，测得 0.3 ms；授权后中位数约为 16 ms 和 75 ms。
+The MCP measurement first turns on AI access for the three fixture accounts and asserts that list_threads and search both return threads. Before that, without access, both returned empty results and measured 0.3 ms. With access the medians are about 16 ms and 75 ms.
 
-fixture 中千分之一的邮件含 Google Sheet 链接，has:drive 和 has:spreadsheet 都要跳过大量不匹配行。迁移 45 在 `message_search_meta.search_flags` 记录 Drive 链接、附件类型和 `cid:` 内联图片，写入消息时由触发器计算；迁移前的行为 NULL，后台按批回填，查询只对这些行扫描消息文本和附件清单。改动前 has:drive 中位数 161 ms，has:spreadsheet 3021 ms；改动后分别约 12 ms 和 4 ms。附件类型规则冻结在 `SEARCH_FLAG_ATTACHMENT_TYPES_45`，测试要求它与 `ATTACHMENT_TYPES` 相同，规则变化须追加迁移。
+One in a thousand fixture messages contains a Google Sheet link, so has:drive and has:spreadsheet both have to skip many non-matching rows. Migration 45 records Drive links, attachment types and `cid:` inline images in `message_search_meta.search_flags`. A trigger computes them when a message is written. Rows from before the migration are NULL and are backfilled in batches in the background; the query scans message text and the attachment list only for those rows. Before the change has:drive had a median of 161 ms and has:spreadsheet 3021 ms; after it they are about 12 ms and 4 ms. The attachment type rules are frozen in `SEARCH_FLAG_ATTACHMENT_TYPES_45`. A test requires it to equal `ATTACHMENT_TYPES`, so a rule change needs a new migration.
 
-预算淘汰测试将 INBOX 保留窗口设为 30 天，并断言实际淘汰了消息文本。小时门控测试在一次检查后再次调用；两者均回滚。完整预算扫描仍允许保留星标、草稿和无限窗口内的消息文本。
+The budget eviction test sets the INBOX retention window to 30 days and asserts that message text was actually evicted. The hourly gate test calls again after one check. Both roll back. The full budget scan still keeps message text that is starred, a draft, or inside an unlimited window.
 
-迁移 35 增加读取索引。扩展 provider ID 索引以覆盖 `ORDER BY date DESC,id`，避免不命中查找遍历整个账户；新增 IMAP 路径索引、远程草稿部分索引和消息文本字节数覆盖索引。索引定义已按下节的写入与空间验收缩减。stale sweep 从每个来源按 provider ID 取有界页，再按 SQLite BINARY 顺序合并；游标结束时回绕。日期分页使用覆盖元数据索引，先排除已有更近匹配的消息，再检查该行的全文条件。零距离 AROUND 按日期分页读取；非零距离先按日期读取 NEAR 候选窗口，只对窗口内消息计算词位置和分组；取得结果页后停止；最多两个候选窗口，超过后走全库查询。消息文本预算分页使用时间下界和 `(COALESCE(body_opened_at,date),id)` 继续定位，见 [SQLite 行值分页](https://www.sqlite.org/rowvalue.html#scrolling_window_queries)。索引维护增加写入和磁盘成本。
+Migration 35 adds read indexes. It extends the provider ID index to cover `ORDER BY date DESC,id`, so a lookup miss does not walk the whole account. It adds an IMAP path index, a partial index for remote drafts and a covering index for message text byte sizes. The index definitions were trimmed after the write and space acceptance in the next section. Stale sweep takes a bounded page by provider ID from each source, then merges them in SQLite BINARY order; the cursor wraps around when it ends. Date paging uses the covering metadata index. It first excludes messages that already have a newer match, then checks the row's full-text condition. Zero-distance AROUND reads by date paging. Non-zero distance first reads a window of NEAR candidates by date, computes word positions and groups only for the messages in the window, and stops once it has a result page. It uses at most two candidate windows, then falls back to the whole-database query. Message text budget paging uses a time lower bound and continues from `(COALESCE(body_opened_at,date),id)`; see [SQLite row-value paging](https://www.sqlite.org/rowvalue.html#scrolling_window_queries). Index maintenance adds write and disk cost.
 
-保留的扫描包括账户内标签 JSON、紧凑徽标投影、消息文本大小覆盖索引和 FTS 命中集合；它们不读取全部 HTML。reset 返回窗口内所有候选，`COUNT(DISTINCT thread_id)` 和已选长会话可使用临时排序。每条实际执行 SQL 的计划保存在临时 JSON；默认测试禁止裸扫大型 messages 表，并检查 stale 页没有全量 ORDER BY 排序。
+The remaining scans are the label JSON within an account, the compact badge projection, the message text size covering index and FTS hit sets. They do not read all HTML. Reset returns every candidate in the window, and `COUNT(DISTINCT thread_id)` and the chosen long threads may use a temporary sort. The plan of every SQL statement actually run is saved in a temporary JSON. The default tests forbid bare scans of the large messages table and check that stale pages have no full ORDER BY sort.
 
-## 写入速率预算
+## Write-rate budget
 
-`seed-rate.test.ts` 在默认 `pnpm test` 中运行，所以每次 push 的 Check 都会跑增长断言。`pnpm test:perf` 也包含它，perf.yml 在那里断言总时间。它用真实打开路径（迁移加打开时的规划器统计刷新）新建一个文件数据库，再通过 `Store.upsertMessage` 写入 1 万封 fixture 邮件，每 500 封一个事务，每个事务单独计时，每 2,000 封为一段。每个事务前后各跑一次 CPU 校准切片（`perf-calibration.ts` 循环的三分之一，参考机约 11 ms），事务时间除以两个比值中较小的一个。取较小的，是因为只打在切片上、没打在事务上的突发负载会把事务时间除得过小。两条断言：
+`seed-rate.test.ts` runs in the default `pnpm test`, so the Check on every push runs the growth assertion. `pnpm test:perf` also includes it, and perf.yml asserts the total time there. It creates a file database through the real open path (migrations plus the planner statistics refresh at open), then writes 10,000 fixture messages through `Store.upsertMessage`, 500 per transaction. Each transaction is timed on its own, and every 2,000 messages form a phase. Before and after each transaction it runs a CPU calibration slice (one third of the `perf-calibration.ts` loop, about 11 ms on the reference machine) and divides the transaction time by the smaller of the two ratios. It takes the smaller one because a burst of load that hits a slice but not the transaction would divide the transaction time down too far. Two assertions:
 
-- 增长：最后 2,000 封各事务校准后时间的中位数，与前 2,000 封的中位数之比低于 2.5。参考机上是 1.1。中位数去掉单个被突发负载打中的事务或切片。默认套件只断言这一条。在 16 核机器负载 29–43 下连跑三次，增长是 1.09、0.65、1.34；按段求和的旧算法同样三次是 1.11、0.20、1.26，0.20 那次第一段有一个 3.9 s 的突发。
-- 总时间：低于 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)，校准比取完整校准和各切片中的最大值。参考机上约 3.7 s。只在设置了 `OPENMAIL_PERF=1` 时断言，即 `pnpm test:perf` 和 perf.yml。Check 的共享 runner 上它在 6 次 push 中失败 2 次，同期增长只有 1.17 倍，所以 Check 不断言它。
+- Growth: the median calibrated transaction time of the last 2,000 messages divided by that of the first 2,000 is below 2.5. On the reference machine it is 1.1. The median drops a single transaction or slice hit by a burst. The default suite asserts only this one. Three runs in a row on a 16-core machine at load 29–43 gave growth of 1.09, 0.65 and 1.34. The old per-phase-sum method gave 1.11, 0.20 and 1.26 on the same three runs; in the 0.20 run the first phase had a 3.9 s burst.
+- Total time: below 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, calibration ratio), where the calibration ratio is the largest of the full calibration and every slice. On the reference machine it is about 3.7 s. It is asserted only when `OPENMAIL_PERF=1` is set, that is in `pnpm test:perf` and perf.yml. On Check's shared runners it failed 2 of 6 pushes while growth over the same period was only 1.17×, so Check does not assert it.
 
-失败信息写出总时间、预算、校准比和每段时间。打开时的 `PRAGMA optimize` 曾给空 FTS5 表记了统计（`d5194310` 修复）。把这个回归放回去后，同一台机器上总时间是 12.8 s，最后一段是第一段的 4.9 倍。按事务校准、取中位数后，在负载约 40 下复测两次是 5.07 倍和 5.74 倍，总时间 21.8 s 和 17.2 s，增长断言失败。
+The failure message gives the total time, the budget, the calibration ratio and each phase's time. `PRAGMA optimize` at open once recorded statistics for empty FTS5 tables (fixed in `d5194310`). With that regression put back, the total time on the same machine was 12.8 s and the last phase was 4.9× the first. With per-transaction calibration and the median, two reruns at load about 40 gave 5.07× and 5.74×, total times 21.8 s and 17.2 s, and the growth assertion failed.
 
-## 校准比
+## Calibration ratio
 
-共享 runner 的速度每次不同，单看毫秒数无法比较两次 CI 运行。本地交替测量 `a4d1e203` 和 `53688a59`，10 万封写入都约 40.5 s，CI 上两者却差一倍，差距来自 runner 负载。性能套件开始时先在空闲进程里跑一段固定工作（`packages/core/test-support/perf-calibration.ts`）：
+Shared runner speed differs from run to run, so milliseconds alone cannot compare two CI runs. Measured alternately on a local machine, `a4d1e203` and `53688a59` both wrote 100k messages in about 40.5 s, yet on CI they differed by 2×; the gap came from runner load. At the start, the performance suite runs a fixed amount of work in an idle process (`packages/core/test-support/perf-calibration.ts`):
 
-- `cpuMs`：3,000 万次整数哈希的纯 JS 循环，取三次中位数。
-- `sqliteMs`：在临时文件数据库（WAL）里向带索引的表插入 20,000 行，每 2,000 行一个事务，取三次中位数。
+- `cpuMs`: a pure JS loop of 30 million integer hashes, median of three.
+- `sqliteMs`: insert 20,000 rows into an indexed table in a temporary file database (WAL), 2,000 rows per transaction, median of three.
 
-`ratio` 是两者相对参考机（Apple M3 Max，Node 24：CPU 33 ms，SQLite 35 ms）的几何平均。2 表示这台机器跑同样的固定工作慢一倍。
+`ratio` is the geometric mean of the two relative to the reference machine (Apple M3 Max, Node 24: CPU 33 ms, SQLite 35 ms). 2 means this machine runs the same fixed work twice as slowly.
 
-三份报告都带 `calibration`。`openmail-performance.json` 还有 `seedPhases`（写邮件、OCR 文本块、词索引回填、二元组索引、ANALYZE 各阶段毫秒数）和 `calibratedSeedPhases`，每条查询结果有 `calibratedMs`。`calibratedMs = medianMs / ratio`，即换算到参考机的耗时。比较两次运行时看 `calibratedMs`：原始时间翻倍而 `calibratedMs` 不变，是 runner 变慢；`calibratedMs` 也翻倍，是代码变慢。预算断言仍按原始毫秒和 `OPENMAIL_PERF_FACTOR` 判断，校准比只用来读报告。例外是上面的写入速率预算，它的预算乘以校准比。
+All three reports carry `calibration`. `openmail-performance.json` also has `seedPhases` (milliseconds for writing messages, OCR text chunks, word index backfill, bigram index and ANALYZE) and `calibratedSeedPhases`, and each query result has `calibratedMs`. `calibratedMs = medianMs / ratio`, the time converted to the reference machine. Compare two runs by `calibratedMs`: if the raw time doubles and `calibratedMs` stays the same, the runner got slower; if `calibratedMs` doubles too, the code got slower. Budget assertions still use raw milliseconds and `OPENMAIL_PERF_FACTOR`; the calibration ratio is only for reading reports. The exception is the write-rate budget above, whose budget is multiplied by the calibration ratio.
 
-## 一／二字 CJK 搜索
+## One/two-character CJK search
 
-trigram 索引只能回答三个字符以上的词。一或两个汉字、假名、韩文或泰文等字符的搜索原先对每封邮件的主题、发件人和消息文本跑 LIKE，并对全部派生文本跑 LIKE。迁移 48（user_version 48）新增两个无内容 FTS5 表 `messages_bigrams` 和 `derived_bigrams`，`ascii` tokenizer，`detail=column`，`prefix='1'`。`search-bigrams.ts` 把这些文字的每个字符写成一个词：与下一个同类字符组成二字词，连续段末尾的字符单独成词。二字搜索查完全相同的词，一字搜索查以该字开头的词，结果与 LIKE 相同。无内容表不保存文本，开启 `contentless_delete`，SQLite 须为 3.43 及以上；Node、Electron 和 op-sqlite 内置的版本均满足。
+The trigram index can only answer terms of three characters or more. A search for one or two Han, kana, Hangul, Thai or similar characters used to run LIKE on each message's subject, sender and message text, and LIKE on all derived text. Migration 48 (user_version 48) adds two contentless FTS5 tables, `messages_bigrams` and `derived_bigrams`, with the `ascii` tokenizer, `detail=column` and `prefix='1'`. `search-bigrams.ts` writes each character of these scripts as a term: it pairs with the next character of the same kind into a two-character term, and the last character of a run becomes a term on its own. A two-character search looks up the exact term and a one-character search looks up terms starting with that character, with the same results as LIKE. Contentless tables store no text and turn on `contentless_delete`, which needs SQLite 3.43 or later; the versions bundled with Node, Electron and op-sqlite all meet it.
 
-词在 JavaScript 里生成，触发器只把新增、改动或迁移前的行写入 `search_bigram_pending`，改动或删除时立即删掉旧词。启动后的后台循环和每次变更后 2 秒的去抖任务按每批 200 行写入，每批一个事务。队列中的行仍用 LIKE 查，因此任何时刻结果都完整，回填未完成时只是更慢。与 trigram 相同，探测超过 2048 条命中的常见词改为沿日期索引逐行检查。
+Terms are generated in JavaScript. Triggers only write new, changed or pre-migration rows to `search_bigram_pending`, and delete the old terms immediately on change or delete. A background loop after startup and a task debounced 2 s after each change write 200 rows per batch, one transaction per batch. Rows still in the queue are searched with LIKE, so results are complete at all times; an unfinished backfill is only slower. As with trigram, a common term whose probe exceeds 2048 hits switches to checking row by row along the date index.
 
-100k fixture 中十封邮件含“鲸鱼”。2026-10-13 在同一 fixture 上运行四项，五次热运行中位数，单位 ms；`OPENMAIL_PERF_MEASURE` 可用逗号分隔多个名称。一分钟负载 10–29，高于 12，结果只作对比：
+Ten messages in the 100k fixture contain “鲸鱼” (whale). On 2026-10-13 the four items ran on the same fixture, median of five warm runs, in ms; `OPENMAIL_PERF_MEASURE` takes several names separated by commas. The one-minute load was 10–29, above 12, so the results are only for comparison:
 
-| 测量           | 修复前 | 修复后 |
-| -------------- | -----: | -----: |
-| 稀有二字“鲸鱼” |  127.1 |    4.5 |
-| 稀有一字“鲸”   |  123.7 |    3.6 |
-| 常见二字“预算” |   28.2 |   15.4 |
-| 常见一字“会”   |   30.1 |   16.0 |
+| Measurement                             | Before | After |
+| --------------------------------------- | -----: | ----: |
+| rare two-character “鲸鱼” (whale)       |  127.1 |   4.5 |
+| rare one-character “鲸” (whale)         |  123.7 |   3.6 |
+| common two-character “预算” (budget)    |   28.2 |  15.4 |
+| common one-character “会” (meeting/can) |   30.1 |  16.0 |
 
 ```sh
 OPENMAIL_PERF_MEASURE="search CJK rare 2-char,search CJK rare 1-char,search CJK common 2-char,search CJK common 1-char" pnpm test:perf
 ```
 
-## 输入中的前缀搜索
+## Prefix search while typing
 
-搜索框把未输完的最后一个词按前缀查，`we` 查 `we*`。`messages_words` 没有 prefix 索引，前缀查询每次都要合并所有以它开头的词的 doclist。常见词沿日期索引逐行检查时，原先对每行开一次 MATCH，前缀因此每行都合并一遍：100k fixture 上 `pe*` 查 200 个会话要 5.9 s。现在行内检查的前缀改为判断 rowid 是否在该前缀的命中集合里，集合每条语句只建一次，写成 `(m.rowid+0) IN (...)`，不让集合驱动日期遍历。精确词仍逐行探测。几个普通词同时出现在多数邮件里时（如 `weekly de*`），`planTextPage` 也探测组合 MATCH，超过 2048 条命中就走日期遍历；原先从第一个词的全部 rowid 出发，`weekly delivery` 查 50 个会话要 67 s。附件命中的代表邮件按 id 查，不再沿用常见词的日期遍历。
+The search box searches the unfinished last word as a prefix: `we` searches `we*`. `messages_words` has no prefix index, so each prefix query merges the doclists of every term that starts with it. When a common term was checked row by row along the date index, the code opened one MATCH per row, so the prefix was merged again for each row: `pe*` for 200 threads took 5.9 s on the 100k fixture. Now the in-row check for a prefix tests whether the rowid is in the prefix's hit set. The set is built once per statement and written as `(m.rowid+0) IN (...)`, so the set does not drive the date walk. Exact terms are still probed row by row. When several ordinary terms appear together in most messages (such as `weekly de*`), `planTextPage` also probes the combined MATCH and switches to the date walk above 2048 hits. Before, it started from every rowid of the first term, and `weekly delivery` for 50 threads took 67 s. The representative message for an attachment hit is looked up by id and no longer follows the common term's date walk.
 
-2026-10-16 在同一份数据上测，Node v24.21.0，五次热运行中位数，一分钟负载 4–15，单位 ms，50 个会话：
+Measured on 2026-10-16 on the same data, Node v24.21.0, median of five warm runs, one-minute load 4–15, in ms, 50 threads:
 
-| 测量                 | 修复前 | 修复后 |
-| -------------------- | -----: | -----: |
-| fixture `we*`        |    376 |     77 |
-| fixture `pe*`        |   1654 |    131 |
-| fixture `weekly de*` |  69417 |    111 |
-| fixture `weekly`     |     34 |     34 |
-| 长尾词表 `co*`       |    973 |     80 |
-| 长尾词表 `re*`       |   1227 |     86 |
+| Measurement                | Before | After |
+| -------------------------- | -----: | ----: |
+| fixture `we*`              |    376 |    77 |
+| fixture `pe*`              |   1654 |   131 |
+| fixture `weekly de*`       |  69417 |   111 |
+| fixture `weekly`           |     34 |    34 |
+| long-tail vocabulary `co*` |    973 |    80 |
+| long-tail vocabulary `re*` |   1227 |    86 |
 
-几乎每封邮件都命中的前缀另有用例。长尾词表里 `se` 开头的音节有 se 和 sel 两个，`se*` 约对应 2,500 个词，10 万封邮件全部命中。原先结果页每次都对选中邮件跑一次 BM25，`MATCH` 用全部高亮词，前缀要展开它开头的每个词：`se* co*` 共 157 ms，其中 BM25 占 47 ms。BM25 只用来在附件文字也命中时给邮件排序，现在 `loadRelevance` 只在页里有附件命中时运行。2026-10-16 同一份数据，五次热运行中位数，单位 ms，50 个会话：
+Prefixes that hit almost every message have their own cases. In the long-tail vocabulary, two syllables start with `se`, se and sel, so `se*` matches about 2,500 terms and hits all 100k messages. Before, every result page ran BM25 on the chosen messages with `MATCH` over all highlight terms, and the prefix expanded to every term it starts: `se* co*` took 157 ms in total, 47 ms of it BM25. BM25 only ranks messages when attachment text also hits, so `loadRelevance` now runs only when the page has an attachment hit. Same data on 2026-10-16, median of five warm runs, in ms, 50 threads:
 
-| 测量       | 修复前（负载约 22） | 修复后（负载约 10） |
-| ---------- | ------------------: | ------------------: |
-| `se*`      |                  88 |                  62 |
-| `se*` flat |                  64 |                  37 |
-| `se* co*`  |                 157 |                 111 |
-| `a*` flat  |                  41 |                  25 |
+| Measurement | Before (load about 22) | After (load about 10) |
+| ----------- | ---------------------: | --------------------: |
+| `se*`       |                     88 |                    62 |
+| `se*` flat  |                     64 |                    37 |
+| `se* co*`   |                    157 |                   111 |
+| `a*` flat   |                     41 |                    25 |
 
-这些用例的预算都是 150 ms。[search-relevance.test.ts](../packages/core/src/store/search-relevance.test.ts) 在默认套件里检查没有附件命中时不跑 BM25，有附件命中时主题命中排在正文命中前面。
+All these cases have a 150 ms budget. [search-relevance.test.ts](../packages/core/src/store/search-relevance.test.ts) in the default suite checks that BM25 does not run without an attachment hit, and that with an attachment hit a subject hit ranks ahead of a body hit.
 
-长尾词表用例在 `performance-large.test.ts` 里另建 100k 邮件，词从 5 万个合成词中按重头长尾分布抽取。默认套件的 `search-prefix-plans.test.ts` 用 3,000 封邮件对照按消息文本直接计算的参考结果，覆盖前缀、精确词、双词、翻页和账户范围，并检查前缀没有逐行 MATCH。prefix 索引能把 `co*` 的 MATCH 从约 13 ms 降到 2 ms，但词索引变为 2.4 倍，升级时要重建，暂不加。
+The long-tail vocabulary case builds a separate 100k-message set in `performance-large.test.ts`, with words drawn from 50,000 synthetic words in a heavy-head, long-tail distribution. `search-prefix-plans.test.ts` in the default suite uses 3,000 messages and compares against reference results computed directly from message text. It covers prefixes, exact terms, two-word queries, paging and account scope, and checks that prefixes do not run MATCH row by row. A prefix index would cut the MATCH for `co*` from about 13 ms to 2 ms, but the word index would grow 2.4× and need a rebuild on upgrade, so it is not added for now.
 
-## label: 搜索与标签列表
+## label: search and label lists
 
-第 18 轮让 `label:` 按名称不分大小写匹配后，100k fixture 上一次 `label:Folder_5` 要 20 s。原因有两个：
+After round 18 made `label:` match names case-insensitively, one `label:Folder_5` took 20 s on the 100k fixture. There were two causes:
 
-- 名称分支写成 `j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=? COLLATE NOCASE)`。子查询引用 `m.account_id`，SQLite 为每封邮件重建一次 IN 列表。100k 行计数用时 912 ms，不引用 `m` 时 143 ms。
-- 会话页的过滤先写 newest-in-thread 检查（`NOT EXISTS (SELECT 1 FROM candidates n …)`），再写该行自己的条件。日期遍历的每一行都先跑这个检查，检查又对会话里每封更新的邮件跑完整过滤，标签判断合计约 200 万次。
+- The name branch was written as `j.value IN (SELECT id FROM labels WHERE account_id=m.account_id AND name=? COLLATE NOCASE)`. The subquery refers to `m.account_id`, so SQLite rebuilt the IN list for each message. Counting 100k rows took 912 ms, against 143 ms without the reference to `m`.
+- The thread page filter put the newest-in-thread check (`NOT EXISTS (SELECT 1 FROM candidates n …)`) before the row's own condition. Each row of the date walk ran this check first, and the check ran the full filter on every newer message in the thread, about 2 million label tests in total.
 
-改动：
+Changes:
 
-- 名称查找改成 `(m.account_id,j.value) IN (SELECT account_id,id FROM labels WHERE name=? COLLATE NOCASE)`，每条语句只建一次列表。ID 和系统标签的匹配不变。
-- 日期遍历（`listIndex` 给出索引时）先判断该行自己的过滤，再做 newest-in-thread 检查：`CASE WHEN 过滤 THEN newestMatch ELSE 0 END`。不走日期遍历时写成 `过滤 AND newestMatch`。全部套 CASE 会让规划器看不到 `m.id IN (…)` 和搜索标志位：has:drive 从 15 ms 变成 320 ms，CJK 从 3.4 ms 变成 371 ms。
-- `label:` 加常见词（`label:Folder_5 weekly`）原先从 `weekly` 的全部 rowid 出发，读 100k 行再排序，约 1.5 s。`planTextPage` 现在允许只带 `label:` 的搜索走日期遍历：遍历时先判断标签和可搜索性，再做 newest-in-thread 检查，最后才对候选会话头逐行 MATCH。乐观的 `recent` 窗口也先判断该行条件。`messages_list_date_id` 覆盖 `labels_json`，标签判断不读表。其他运算符仍不走这条路。计数不能在文字索引上判断标签，`countThreads` 对带 `label:` 的搜索按行计数。
-- 单账户的标签列表和 Inbox 以外的邮箱视图（如 Starred）也走 `messages_list_date_id`。原先走 `messages_account_list_date_id`，这个索引不含 `labels_json`，遍历的每一行都要读表，一个占 1/67 邮件的文件夹要 600 ms。单账户 Inbox 仍走账户索引。
+- The name lookup is now `(m.account_id,j.value) IN (SELECT account_id,id FROM labels WHERE name=? COLLATE NOCASE)`, so the list is built once per statement. Matching by ID and system labels is unchanged.
+- The date walk (when `listIndex` provides an index) tests the row's own filter first, then does the newest-in-thread check: `CASE WHEN filter THEN newestMatch ELSE 0 END`. Without the date walk it is written as `filter AND newestMatch`. Wrapping everything in CASE would hide `m.id IN (…)` and the search flags from the planner: has:drive went from 15 ms to 320 ms and CJK from 3.4 ms to 371 ms.
+- `label:` plus a common word (`label:Folder_5 weekly`) used to start from every rowid of `weekly`, read 100k rows and sort them, about 1.5 s. `planTextPage` now lets searches with only `label:` take the date walk: the walk tests the label and searchability first, then the newest-in-thread check, and only then runs MATCH row by row on the candidate thread heads. The optimistic `recent` window also tests the row's condition first. `messages_list_date_id` covers `labels_json`, so the label test does not read the table. Other operators still do not take this path. A count cannot test labels on the word index, so `countThreads` counts by row for searches with `label:`.
+- Single-account label lists and mailbox views other than Inbox (such as Starred) also use `messages_list_date_id`. They used `messages_account_list_date_id`, which does not contain `labels_json`, so every walked row read the table, and a folder holding 1/67 of the messages took 600 ms. Single-account Inbox still uses the account index.
 
-2026-10-17 在评审者的 100k fixture 副本上测（`seedMailbox(100_000)`，未运行 ANALYZE），Node v24.21.0，三次热运行中位数，50 个会话，单位 ms。修复前一分钟负载 11–64（16 核），修复后约 11：
+Measured on 2026-10-17 on the reviewer's copy of the 100k fixture (`seedMailbox(100_000)`, no ANALYZE), Node v24.21.0, median of three warm runs, 50 threads, in ms. One-minute load was 11–64 before the fix (16 cores) and about 11 after:
 
-| 测量                             | 修复前 | 修复后 |
-| -------------------------------- | -----: | -----: |
-| `label:Folder_5`                 |  20390 |     16 |
-| `label:"folder 5"`               |  20150 |     20 |
-| `is:unread label:Folder_7`       |   2085 |     13 |
-| `label:Folder_5 OR from:person7` |  17828 |     39 |
-| `label:Folder_5 weekly`          |  30076 |     36 |
-| `label:Folder_5 we*`             |  33903 |     66 |
-| `label:INBOX weekly`             |  57539 |     35 |
-| `label:Folder_5`，单账户         |   7216 |     25 |
-| `label:Folder_5 weekly`，单账户  |   8078 |     68 |
-| Starred 列表（0 个结果）         |   1184 |     34 |
-| 标签列表，全部账户               |   1721 |     22 |
-| 标签列表，单账户                 |    575 |     21 |
-| `weekly`                         |     32 |     30 |
-| `we*`                            |     63 |     63 |
-| `pe*`                            |    107 |    107 |
-| `预算`                           |     17 |     17 |
-| has:drive                        |     12 |     11 |
-| `in:inbox`                       |     12 |     13 |
-| Inbox 列表                       |     11 |     13 |
+| Measurement                          | Before | After |
+| ------------------------------------ | -----: | ----: |
+| `label:Folder_5`                     |  20390 |    16 |
+| `label:"folder 5"`                   |  20150 |    20 |
+| `is:unread label:Folder_7`           |   2085 |    13 |
+| `label:Folder_5 OR from:person7`     |  17828 |    39 |
+| `label:Folder_5 weekly`              |  30076 |    36 |
+| `label:Folder_5 we*`                 |  33903 |    66 |
+| `label:INBOX weekly`                 |  57539 |    35 |
+| `label:Folder_5`, one account        |   7216 |    25 |
+| `label:Folder_5 weekly`, one account |   8078 |    68 |
+| Starred list (0 results)             |   1184 |    34 |
+| label list, all accounts             |   1721 |    22 |
+| label list, one account              |    575 |    21 |
+| `weekly`                             |     32 |    30 |
+| `we*`                                |     63 |    63 |
+| `pe*`                                |    107 |   107 |
+| `预算` (budget)                      |     17 |    17 |
+| has:drive                            |     12 |    11 |
+| `in:inbox`                           |     12 |    13 |
+| Inbox list                           |     11 |    13 |
 
-两边的结果页、第二页和计数逐项相同。只做前两项时，`label:Folder_5 weekly` 取 200 个会话仍要 1.5 s；加上第三项后为 68–91 ms。
+The result page, second page and count match item by item on both sides. With only the first two changes, `label:Folder_5 weekly` for 200 threads still took 1.5 s; with the third added it took 68–91 ms.
 
-[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) 在默认套件里用 3,000 封邮件对照按标签和消息文本直接计算的参考结果。它覆盖标签 ID、名称和大小写、两个账户同名不同 ID 和同 ID 不同名、系统标签、否定、OR、与词和 `is:` 组合、会话与平铺、单账户、第二页和计数，也覆盖标签列表和 Important 视图。它还检查查询计划里标签查找前面没有 `CORRELATED`，日期遍历先判断标签再找会话里更新的匹配，MATCH 排在这个检查之后。`performance-large.test.ts` 的 `search label:` 三项和 `list label view` 两项预算为 200 ms，`OPENMAIL_PERF=1` 跑一次的中位数为 15、17、35、19、21 ms。
+[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) in the default suite uses 3,000 messages and compares against reference results computed directly from labels and message text. It covers label IDs, names and case, two accounts with the same name but different IDs and with the same ID but different names, system labels, negation, OR, combinations with words and `is:`, threads and flat, one account, the second page and counts, and also label lists and the Important view. It also checks that no `CORRELATED` precedes the label lookup in the query plan, that the date walk tests the label before looking for newer matches in the thread, and that MATCH comes after that check. The three `search label:` items and the two `list label view` items in `performance-large.test.ts` have a 200 ms budget; one run with `OPENMAIL_PERF=1` gave medians of 15, 17, 35, 19 and 21 ms.
 
-试过把 `messages_account_list_date_id` 扩成覆盖 `labels_json` 的索引。没有统计时规划器换了计划，单账户标签列表从 578 ms 变成 23 s，单账户 Inbox 从 15 ms 变成 2.5 s，所以没有加迁移。标签列表现在已在 30 ms 内，`message_labels(account_id,label,row_id)` 副表也不再需要。
+Extending `messages_account_list_date_id` into an index covering `labels_json` was tried. Without statistics the planner changed plans: the single-account label list went from 578 ms to 23 s and the single-account Inbox from 15 ms to 2.5 s, so no migration was added. Label lists are now within 30 ms, and a `message_labels(account_id,label,row_id)` side table is no longer needed.
 
-找不到结果的运算符搜索见下一节的“to:、cc:、filename:、list:”。
+Operator searches that find no results are covered under “to:, cc:, filename:, list:” in the next section.
 
-## subject:、OR 与运算符搜索
+## subject:, OR and operator search
 
-2026-10-17 评审者在两份数据上测出三类慢搜索。fixture P 是上面的 100k fixture（`seedMailbox(100_000)`，含 10k 个 OCR chunk）。fixture R 是一个 Gmail 账户的 100k 封约 10 KB 的邮件加一个 Outlook 账户的 2k 封，数据库 2.3 GB，分有和没有规划器统计两份。下面的数字都在 Node v24.21.0 上测，取 50 个会话，单位 ms，三次热运行取中位数；“冷”是进程打开数据库后的第一次。修复前后的结果页、第二页、未读／星标、会话数和计数逐项相同。
+On 2026-10-17 the reviewer found three kinds of slow search on two data sets. Fixture P is the 100k fixture above (`seedMailbox(100_000)`, with 10k OCR chunks). Fixture R is 100k messages of about 10 KB in one Gmail account plus 2k in one Outlook account, a 2.3 GB database, in two copies with and without planner statistics. All numbers below were measured on Node v24.21.0 with 50 threads, in ms, median of three warm runs; “cold” is the first run after the process opens the database. The result page, second page, unread/starred flags, thread count and count match item by item before and after the fixes.
 
-### subject: 常见词
+### Common words with subject:
 
-`subject:report` 在 fixture P 上要 53 s，单账户 19.8 s。两个原因：
+`subject:report` took 53 s on fixture P and 19.8 s for one account. Two causes:
 
-- 会话页的 `page` CTE 在 select 列表里算未读和星标（两个 EXISTS 查 `flag_candidates`），排在 `ORDER BY … LIMIT` 前面。页从文字索引的 rowid 出发时，SQLite 对每个匹配行都算一次，每行约 1 ms。
-- `subject:` 给查询设了 criteria，`planTextPage` 提前返回，不走日期遍历，只能从 `subject : "report"` 的 100k 个 rowid 出发。
+- The thread page's `page` CTE computed unread and starred in its select list (two EXISTS on `flag_candidates`), before `ORDER BY … LIMIT`. When the page started from the word index's rowids, SQLite computed them for every matching row, about 1 ms per row.
+- `subject:` set criteria on the query, so `planTextPage` returned early and did not take the date walk. It could only start from the 100k rowids of `subject : "report"`.
 
-改动：
+Changes:
 
-- 未读和星标移到外层 SELECT，只对 `page` 选出的最多 limit 行计算。
-- `planTextPage` 让 `subject:` 和 `label:` 一样可以走日期遍历：把 `(subject : "report")` 和其他词用 AND 拼进 `commonTerm` 的探测，超过 2048 行就遍历日期索引，每行按 rowid 探测 MATCH。计数仍用文字索引。
-- 会话页的 unsearched 超集去掉 `subject:`，和普通词一样。保留时，newest-in-thread 检查对每个遍历行的每封更新回复都探测一次 MATCH。fixture P 最新的 20k 封邮件属于 100 个 204 封的长会话，单账户约 3 万次探测，900 ms。
+- Unread and starred moved to the outer SELECT and are computed only for the at most limit rows `page` selects.
+- `planTextPage` lets `subject:` take the date walk like `label:`: it ANDs `(subject : "report")` with the other terms into the `commonTerm` probe, walks the date index above 2048 rows, and probes MATCH by rowid on each row. Counts still use the word index.
+- The thread page's unsearched superset drops `subject:`, the same as ordinary words. If kept, the newest-in-thread check probes MATCH once for every newer reply of every walked row. The newest 20k messages of fixture P belong to 100 long threads of 204 messages, so a single account needed about 30,000 probes, 900 ms.
 
-带其他运算符的 `subject:`（如 `subject:report -from:person1`）仍从 rowid 出发，只得到第一项改动：48 s 到 329 ms。
+`subject:` with other operators (such as `subject:report -from:person1`) still starts from rowids and gets only the first change: 48 s to 329 ms.
 
-fixture P，修复前后（未运行 ANALYZE）：
+Fixture P, before and after (no ANALYZE):
 
-| 测量                               | 修复前 | 修复后 |
-| ---------------------------------- | -----: | -----: |
-| `subject:report`                   |  54770 |     18 |
-| `subject:report`，单账户           |  20331 |     65 |
-| `subject:"weekly report"`          |  52537 |     18 |
-| `subject:"weekly report"`，单账户  |  20804 |     65 |
-| `subject:weekly is:unread`，单账户 |  20015 |     86 |
-| `subject:report -from:person1`     |  48282 |    329 |
-| `-to:nobody weekly`                |  53985 |    483 |
-| `subject:report`，平铺             |    134 |      7 |
+| Measurement                             | Before | After |
+| --------------------------------------- | -----: | ----: |
+| `subject:report`                        |  54770 |    18 |
+| `subject:report`, one account           |  20331 |    65 |
+| `subject:"weekly report"`               |  52537 |    18 |
+| `subject:"weekly report"`, one account  |  20804 |    65 |
+| `subject:weekly is:unread`, one account |  20015 |    86 |
+| `subject:report -from:person1`          |  48282 |   329 |
+| `-to:nobody weekly`                     |  53985 |   483 |
+| `subject:report`, flat                  |    134 |     7 |
 
-`-to:nobody weekly` 也从 rowid 出发，同样只受益于第一项。
+`-to:nobody weekly` also starts from rowids and likewise benefits only from the first change.
 
-计数不能用文字索引时（带 `is:unread` 等条件）按行计数。原来它沿用页面的逐行 MATCH 探测，对 100k 封邮件每封探测一次；现在计数改用文字索引的 rowid 集合，每个匹配都要读，集合更省。fixture P 上 `subject:weekly is:unread` 的计数 288 ms 到 77 ms，`weekly is:unread` 288 ms 到 76 ms，`weekly delivery is:unread` 559 ms 到 89 ms，数值不变。
+When a count cannot use the word index (with conditions such as `is:unread`), it counts by row. It used to reuse the page's per-row MATCH probe, probing once for each of the 100k messages. Now the count uses the word index's rowid set; every match has to be read anyway, and the set is cheaper. On fixture P the count for `subject:weekly is:unread` went from 288 ms to 77 ms, `weekly is:unread` from 288 ms to 76 ms and `weekly delivery is:unread` from 559 ms to 89 ms, with the same values.
 
-[search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) 在默认套件里用 3,000 封邮件（含一个 60 封的长会话）对照按存储的字段直接计算的参考结果，覆盖单词、短语、大小写、前缀、与普通词和 `is:` 组合、否定、会话与平铺、单账户、第二页和计数。它还检查 `page` CTE 里没有 `flag_candidates`，常见 `subject:` 词的 `recent` 窗口走日期索引且不含 `messages_words`，按行计数的语句不按 rowid 逐行探测。`performance-large.test.ts` 的 `search subject: common` 和 `search subject: phrase` 预算 200 ms。
+[search-operator-plans.test.ts](../packages/core/src/store/search-operator-plans.test.ts) in the default suite uses 3,000 messages (including one long thread of 60 messages) and compares against reference results computed directly from stored fields. It covers single words, phrases, case, prefixes, combinations with ordinary words and `is:`, negation, threads and flat, one account, the second page and counts. It also checks that the `page` CTE has no `flag_candidates`, that the `recent` window for a common `subject:` word uses the date index and contains no `messages_words`, and that statements counting by row do not probe by rowid row by row. `search subject: common` and `search subject: phrase` in `performance-large.test.ts` have a 200 ms budget.
 
-### OR 与附件文字
+### OR and attachment text
 
-OCR 和 PDF 文字建好索引后，fixture P 上的 OR 搜索要 13–18 s。两处相同的毛病：一个对 chunk 的条件按邮件逐个探测。
+Once OCR and PDF text were indexed, OR searches on fixture P took 13–18 s. Both places had the same flaw: a condition on chunks was probed message by message.
 
-- 给返回的会话补附件命中的语句（`store-search-matches.ts`）写 `m.id IN (选中会话的邮件 id)`。没有统计时规划器从 `derived_words MATCH` 出发，每个匹配 chunk 都按每个选中 id 探测一次 `derived_chunks_message`。改成 `+m.id IN (…)` 后，chunk 按自己的 rowid 找到邮件。评审者单测这条语句：13,016 ms 到 25 ms；`weekly OR alpha` 整个请求 14,752 ms 到 89 ms。
-- 页面过滤里每个词对附件文字写成 `EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND d.id IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ?))`。IN 列表是全部匹配 chunk，SQLite 对每封被检查的邮件按列表里的每个 chunk id 探测一次索引。`invoice OR weekly` 里 invoice 在全部 10k 个 chunk 中，只改上一项时仍要 4.3 s。现在每条语句只建一次邮件 id 集合：`+m.id IN (SELECT d.message_id FROM derived_chunks d WHERE d.id IN (MATCH))`，和前缀词的 `(m.rowid+0) IN (…)` 一样不让集合驱动遍历。词索引和 trigram 索引走这个集合；bigram 队列中的行和 LIKE 仍逐封判断。
+- The statement that adds attachment hits to the returned threads (`store-search-matches.ts`) wrote `m.id IN (ids of messages in the chosen threads)`. Without statistics the planner started from `derived_words MATCH` and probed `derived_chunks_message` once per chosen id for each matching chunk. With `+m.id IN (…)`, each chunk finds its message by its own rowid. The reviewer measured this statement alone at 13,016 ms before and 25 ms after; the whole `weekly OR alpha` request went from 14,752 ms to 89 ms.
+- The page filter wrote each term's attachment text check as `EXISTS(SELECT 1 FROM derived_chunks d WHERE d.message_id=m.id AND d.id IN (SELECT rowid FROM derived_words WHERE derived_words MATCH ?))`. The IN list is every matching chunk, so for each message checked SQLite probed the index once per chunk id in the list. In `invoice OR weekly`, invoice is in all 10k chunks, and with only the previous change it still took 4.3 s. Now each statement builds the message id set once: `+m.id IN (SELECT d.message_id FROM derived_chunks d WHERE d.id IN (MATCH))`. Like `(m.rowid+0) IN (…)` for prefix terms, this keeps the set from driving the walk. The word index and the trigram index use this set; rows in the bigram queue and LIKE are still tested message by message.
 
-fixture P，修复前后：
+Fixture P, before and after:
 
-| 测量                             | 修复前 | 修复后 |
-| -------------------------------- | -----: | -----: |
-| `weekly OR alpha`                |  13284 |     91 |
-| `weekly OR alpha`，单账户        |   9437 |     82 |
-| `(weekly OR delivery) is:unread` |  13389 |     81 |
-| `invoice OR weekly`              |  17805 |    104 |
-| `invoice OR weekly`，单账户      |  12055 |     96 |
-| `invoice OR weekly` 计数         |  21536 |    161 |
-| `invoice OR weekly` 平铺计数     |  20181 |     95 |
-| `invoice OR zzzzunmatched`       |  17617 |     65 |
-| `weekly OR 鲸鱼`                 |    103 |     98 |
+| Measurement                      | Before | After |
+| -------------------------------- | -----: | ----: |
+| `weekly OR alpha`                |  13284 |    91 |
+| `weekly OR alpha`, one account   |   9437 |    82 |
+| `(weekly OR delivery) is:unread` |  13389 |    81 |
+| `invoice OR weekly`              |  17805 |   104 |
+| `invoice OR weekly`, one account |  12055 |    96 |
+| `invoice OR weekly` count        |  21536 |   161 |
+| `invoice OR weekly` flat count   |  20181 |    95 |
+| `invoice OR zzzzunmatched`       |  17617 |    65 |
+| `weekly OR 鲸鱼` (whale)         |    103 |    98 |
 
-计数也用页面过滤，所以 `invoice OR weekly` 的计数从 21.5 s 降到 161 ms。search-operator-plans.test.ts 的 OR 部分覆盖普通词、`is:` 组合、只在附件文字里的词、否定和 `subject:`，有附件命中的页按相关度排序，只比较会话集合。它检查附件文字的查询计划里没有按 `derived_chunks_message (message_id=? AND rowid=?)` 的逐行探测，补附件命中的语句写 `+m.id IN`。小数据库在没有统计时也不会选中旧的坏计划，所以后一项只检查语句文本。`performance-large.test.ts` 的 `search OR`、`search OR is:unread` 和 `search attachment word OR common` 预算 200 ms。
+Counts also use the page filter, so the count for `invoice OR weekly` dropped from 21.5 s to 161 ms. The OR part of search-operator-plans.test.ts covers ordinary words, combinations with `is:`, words only in attachment text, negation and `subject:`. Pages with attachment hits are sorted by relevance, so only the thread sets are compared. It checks that the query plan for attachment text has no per-row probe on `derived_chunks_message (message_id=? AND rowid=?)`, and that the statement adding attachment hits writes `+m.id IN`. A small database does not pick the old bad plan even without statistics, so the second check only inspects the statement text. `search OR`, `search OR is:unread` and `search attachment word OR common` in `performance-large.test.ts` have a 200 ms budget.
 
-### to:、cc:、filename:、list:
+### to:, cc:, filename:, list:
 
-找不到结果的 `to:`、`cc:`、`filename:`、`list:` 要检查每封邮件：读出这一行，再对 `to_json`、`cc_json`、`attachments_json` 或 `headers_json` 跑 `json_each`。`to_json` 和 `cc_json` 在 `body_text` 前面，`attachments_json` 和 `headers_json` 在后面。成本主要是逐行随机读页加 `json_each`。fixture P 上 1–2 s，评审者在 2.3 GB 的 fixture R 上冷读最多 6 s。
+`to:`, `cc:`, `filename:` and `list:` searches that find no results have to check every message: read the row, then run `json_each` on `to_json`, `cc_json`, `attachments_json` or `headers_json`. `to_json` and `cc_json` come before `body_text`; `attachments_json` and `headers_json` come after it. The cost is mostly random page reads per row plus `json_each`. It took 1–2 s on fixture P, and up to 6 s cold on the reviewer's 2.3 GB fixture R.
 
-迁移 57 加了副表 `message_operator_text(row_id, to_text, cc_text, file_text, list_id_text, list_post_text)`，每封邮件一行，SQL 在 `packages/core/src/db/operator-text.ts`：
+Migration 57 adds a side table `message_operator_text(row_id, to_text, cc_text, file_text, list_id_text, list_post_text)`, one row per message. The SQL is in `packages/core/src/db/operator-text.ts`:
 
-- 每列用 char(30) 连接多个值，姓名和地址之间用 char(31)。不含这两个字符的 LIKE 模式只能在一个值内命中，和原来逐个 `json_each` 值判断相同。搜索值含这两个字符或为空时仍用原来的逐行判断。
-- `messages` 上的 INSERT、UPDATE、DELETE 触发器维护这张表，先删后插。UPDATE 触发器只在四个 JSON 列真的变了时执行，只改标签的同步不写副表。`json_valid` 和 `type='object'` 跳过坏 JSON，写入不会因此失败。
-- 迁移本身不回填：在 2.3 GB 上一次回填要 13.7 s，而迁移在启动窗口里同步运行。`message_operator_text_backfill` 记下迁移时的最大 rowid，后台循环（`mailbox-live.ts`，在词索引和 has: 标志之后）每批 200 行提交一次，可中断、可续。回填完成前，这几个运算符继续用原来的逐行判断，结果不变；完成后改成 `(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE to_text LIKE ? ESCAPE '\')`，`+0` 不让集合驱动遍历。新安装时迁移看到空表，直接标记完成。
+- Each column joins multiple values with char(30), and separates name and address with char(31). A LIKE pattern without those two characters can only hit within one value, the same as the old per-`json_each`-value test. When the search value contains those characters or is empty, the old per-row test is still used.
+- INSERT, UPDATE and DELETE triggers on `messages` maintain the table, deleting before inserting. The UPDATE trigger runs only when one of the four JSON columns actually changed, so a sync that only changes labels does not write the side table. `json_valid` and `type='object'` skip bad JSON, so writes do not fail because of it.
+- The migration itself does not backfill: one backfill took 13.7 s on 2.3 GB, and migrations run synchronously in the startup window. `message_operator_text_backfill` records the maximum rowid at migration time. A background loop (`mailbox-live.ts`, after the word index and has: flags) commits 200 rows per batch and can be interrupted and resumed. Until the backfill finishes, these operators keep the old per-row test with the same results. After it finishes they switch to `(m.rowid+0) IN (SELECT row_id FROM message_operator_text WHERE to_text LIKE ? ESCAPE '\')`; `+0` keeps the set from driving the walk. On a new install the migration sees an empty table and marks itself done.
 
-写入成本：1 万封带收件人、附件和 List-Id 的邮件，插入从 2.75 s 到 2.84 s（+3%），只改标签的再次写入从 2.15 s 到 2.17 s。回填每批 200 行，和词索引的默认批量相同：
+Write cost: for 10,000 messages with recipients, attachments and List-Id, insert went from 2.75 s to 2.84 s (+3%), and a rewrite that only changes labels from 2.15 s to 2.17 s. The backfill uses 200 rows per batch, the same as the word index default:
 
-| 数据                   | 总时间 | 批数 | 每批 p50 | 每批 p95 | 最慢一批 |
-| ---------------------- | -----: | ---: | -------: | -------: | -------: |
-| fixture P（600 MB）    |  1.9 s |  500 |     3 ms |     5 ms |    38 ms |
-| fixture R（2.3 GB）    | 17.2 s |  510 |    27 ms |    35 ms |   402 ms |
-| fixture R，每批 500 行 | 14.4 s |  204 |    63 ms |   100 ms |   249 ms |
+| Data                          | Total time | Batches | p50 per batch | p95 per batch | Slowest batch |
+| ----------------------------- | ---------: | ------: | ------------: | ------------: | ------------: |
+| fixture P (600 MB)            |      1.9 s |     500 |          3 ms |          5 ms |         38 ms |
+| fixture R (2.3 GB)            |     17.2 s |     510 |         27 ms |         35 ms |        402 ms |
+| fixture R, 500 rows per batch |     14.4 s |     204 |         63 ms |        100 ms |        249 ms |
 
-每批 500 行时 p95 到 100 ms，写锁占得更久，所以用 200。两种批量的最慢一批都是零星的 250–400 ms，出现在中途，和批量无关。
+At 500 rows per batch, p95 reaches 100 ms and the write lock is held longer, so the batch size is 200. In both batch sizes the slowest batches are scattered 250–400 ms ones partway through, unrelated to batch size.
 
-fixture P，修复前后：
+Fixture P, before and after:
 
-| 测量                                | 修复前 | 修复后 |
-| ----------------------------------- | -----: | -----: |
-| `to:nobody@example.com`             |   1926 |     20 |
-| `to:nobody@example.com`，单账户     |    685 |     11 |
-| `cc:nobody`                         |   1034 |     18 |
-| `filename:none.pdf`                 |   1117 |     19 |
-| `list:nolist`                       |    926 |     22 |
-| `to:nobody OR cc:nobody`            |    177 |     27 |
-| `to:recipient`（每封都命中）        |     13 |     63 |
-| `to:recipient`，平铺                |    0.3 |     13 |
-| `filename:report.pdf`（1/10 命中）  |     49 |     26 |
-| `-filename:report.pdf from:person1` |     22 |     42 |
-| `to:recipient filename:report`      |     80 |     78 |
+| Measurement                          | Before | After |
+| ------------------------------------ | -----: | ----: |
+| `to:nobody@example.com`              |   1926 |    20 |
+| `to:nobody@example.com`, one account |    685 |    11 |
+| `cc:nobody`                          |   1034 |    18 |
+| `filename:none.pdf`                  |   1117 |    19 |
+| `list:nolist`                        |    926 |    22 |
+| `to:nobody OR cc:nobody`             |    177 |    27 |
+| `to:recipient` (every message hits)  |     13 |    63 |
+| `to:recipient`, flat                 |    0.3 |    13 |
+| `filename:report.pdf` (1/10 hit)     |     49 |    26 |
+| `-filename:report.pdf from:person1`  |     22 |    42 |
+| `to:recipient filename:report`       |     80 |    78 |
 
-代价在常见命中：原来日期遍历的前几十行就填满一页，现在每条语句要先扫一遍副表建集合。会话页的 `candidates`、`flag_candidates` 和 `page` 各扫一次，fixture P 上每次约 15–20 ms，所以 `to:recipient` 从 13 ms 变成 63 ms。找不到结果和稀疏命中从秒级降到 20 ms 左右，所以接受这个代价。
+The cost is on common hits. Before, the first few dozen rows of the date walk filled a page; now each statement first scans the side table to build the set. The thread page's `candidates`, `flag_candidates` and `page` each scan once, about 15–20 ms each on fixture P, so `to:recipient` went from 13 ms to 63 ms. No-result and sparse searches dropped from seconds to about 20 ms, so this cost is accepted.
 
-search-operator-plans.test.ts 的运算符部分覆盖四个运算符、大小写、`_` 转义、空收件人和 NULL 头部、否定、OR、组合、会话与平铺、单账户、第二页和计数，并在四种状态下对照参考结果：新库（无需回填）、模拟的旧库（三分之一的行没有副表行，回填未开始）、回填一半、回填完成，以及通过 `upsertMessage` 改收件人、附件和头部、只改标志、`deleteMessage` 删除和新写入之后。每种状态都检查查询用的是副表还是逐行判断，并把副表和按 `operatorTextValues("m")` 重新计算的结果逐行比较。另一个测试从 user_version 56 的库升级，确认迁移不回填、搜索在回填前后结果相同。`performance-large.test.ts` 的四个 `no match` 测量预算 200 ms。
+The operator part of search-operator-plans.test.ts covers the four operators, case, `_` escaping, empty recipients and NULL headers, negation, OR, combinations, threads and flat, one account, the second page and counts. It compares against reference results in four states: a new database (no backfill needed), a simulated old database (a third of the rows have no side table row and the backfill has not started), half backfilled and fully backfilled. It also compares after changing recipients, attachments and headers through `upsertMessage`, changing only flags, deleting with `deleteMessage`, and writing new messages. In each state it checks whether the query used the side table or the per-row test, and compares the side table row by row with values recomputed by `operatorTextValues("m")`. Another test upgrades from a user_version 56 database and confirms that the migration does not backfill and that search results are the same before and after the backfill. The four `no match` measurements in `performance-large.test.ts` have a 200 ms budget.
 
 ### fixture R
 
-2.3 GB 的 fixture R 没有 OCR chunk，所以 OR 本来就快。“单账户”是 2k 封的 Outlook 账户。数据库文件是复制的新副本，但系统页缓存没有清空，表里“修复前”的运算符数字比评审者冷读的 6 s 低。修复后的数据库先跑完回填再计时。
+The 2.3 GB fixture R has no OCR chunks, so OR was already fast. “One account” is the 2k-message Outlook account. The database file was a fresh copy, but the system page cache was not cleared, so the “before” operator numbers in the table are lower than the reviewer's 6 s cold reads. The fixed database finished its backfill before timing.
 
-| 测量                             | 无统计 修复前 | 无统计 修复后 | 有统计 修复前 | 有统计 修复后 |
-| -------------------------------- | ------------: | ------------: | ------------: | ------------: |
-| `subject:report`                 |         99271 |           126 |        102633 |           131 |
-| `subject:report`，单账户         |          2450 |           134 |          2610 |           146 |
-| `subject:"weekly report"`        |         93070 |           122 |         96238 |           128 |
-| `-to:nobody weekly`              |         92186 |           925 |         94752 |          1184 |
-| `weekly OR alpha`                |           154 |           145 |           147 |           149 |
-| `to:nobody@example.com`          |           354 |            18 |           362 |            19 |
-| `cc:nobody`                      |           282 |            17 |           284 |            18 |
-| `filename:none.pdf`              |           480 |            17 |           493 |            17 |
-| `list:nolist`                    |           227 |            21 |           244 |            21 |
-| `to:me3@example.com`（2% 命中）  |            10 |            24 |            11 |            23 |
-| `filename:report3.pdf`（无命中） |           469 |            18 |           835 |            17 |
+| Measurement                     | No stats before | No stats after | Stats before | Stats after |
+| ------------------------------- | --------------: | -------------: | -----------: | ----------: |
+| `subject:report`                |           99271 |            126 |       102633 |         131 |
+| `subject:report`, one account   |            2450 |            134 |         2610 |         146 |
+| `subject:"weekly report"`       |           93070 |            122 |        96238 |         128 |
+| `-to:nobody weekly`             |           92186 |            925 |        94752 |        1184 |
+| `weekly OR alpha`               |             154 |            145 |          147 |         149 |
+| `to:nobody@example.com`         |             354 |             18 |          362 |          19 |
+| `cc:nobody`                     |             282 |             17 |          284 |          18 |
+| `filename:none.pdf`             |             480 |             17 |          493 |          17 |
+| `list:nolist`                   |             227 |             21 |          244 |          21 |
+| `to:me3@example.com` (2% hit)   |              10 |             24 |           11 |          23 |
+| `filename:report3.pdf` (no hit) |             469 |             18 |          835 |          17 |
 
-36 种查询形状的结果页、第二页、标志、会话数和计数在两份数据库上都逐项相同。
+For 36 query shapes, the result page, second page, flags, thread count and count match item by item on both databases.
 
-带否定的常见词搜索和 OR 计数后来也改了，见下面两节。
+Common-word searches with negation and OR counts were changed later too; see the next two sections.
 
-### 运算符加常见词
+### Operators plus a common word
 
-`planTextPage` 原先只让带 `label:`、`subject:` 的搜索走日期遍历，其他运算符一出现就从常见词的全部 rowid 出发。`-to:nobody weekly`、`from:person1 weekly`、`has:attachment weekly` 在 fixture R 上要读 `weekly` 的约 10 万行再排序，0.4–0.8 s，而只搜 `weekly` 是 128 ms。
+`planTextPage` used to let only searches with `label:` or `subject:` take the date walk; any other operator made it start from every rowid of the common word. `-to:nobody weekly`, `from:person1 weekly` and `has:attachment weekly` on fixture R read about 100k rows of `weekly` and sorted them, 0.4–0.8 s, while `weekly` alone took 128 ms.
 
-现在只要每个运算符都能在遍历到的行上判断，就走日期遍历：
+Now a search takes the date walk whenever every operator can be tested on the walked row:
 
-- `from:`、`is:unread`、`is:starred`、`is:important`、`has:attachment`，以及原有的 `label:` 和 `subject:`。`is_unread`、`is_starred`、`labels_json` 在 `messages_list_date_id` 里；`from_name`、`from_addr` 在消息文本前面；`has:attachment` 读 `attachments_json`，在消息文本后面，但遍历在页填满时就停。
-- `to:`、`cc:`、`filename:`、`list:` 只在 `message_operator_text` 回填完成后加入，这时它们每条语句只读一次副表。回填完成前它们逐行跑 `json_each`，仍从 rowid 出发。
-- 否定（`-to:`、`-from:` 等）用同样的列表，但不含 `subject:` 和 `label:`。
+- `from:`, `is:unread`, `is:starred`, `is:important`, `has:attachment`, plus the existing `label:` and `subject:`. `is_unread`, `is_starred` and `labels_json` are in `messages_list_date_id`. `from_name` and `from_addr` come before the message text. `has:attachment` reads `attachments_json`, which comes after the message text, but the walk stops once the page is full.
+- `to:`, `cc:`, `filename:` and `list:` join only after `message_operator_text` is fully backfilled, when each statement reads the side table once. Before the backfill finishes they run `json_each` row by row and still start from rowids.
+- Negations (`-to:`, `-from:` and so on) use the same list, but without `subject:` and `label:`.
 
-`countThreads` 的 `message_search_meta` 捷径只按文字索引的 MATCH 计数，不看 criteria。原来走到这里的只有 `subject:`（它在 MATCH 里），现在 `planTextPage` 对 `from:` 等也设 `textPage`，所以捷径限定为 criteria 只有 `subject:` 或为空，其余按行计数。没有这个限制时 `to:r3 weekly` 计数为 1542，正确值是 350。
+The `message_search_meta` shortcut in `countThreads` counts only by the word index's MATCH and ignores criteria. Before, only `subject:` reached it (it is inside the MATCH). Now `planTextPage` also sets `textPage` for `from:` and others, so the shortcut is limited to criteria that are only `subject:` or empty; everything else counts by row. Without this limit the count for `to:r3 weekly` was 1542; the correct value is 350.
 
-最坏的情况是没有命中的发件人：`from:nobody weekly` 要把日期索引走完一遍。原来会话模式要走两遍，见下面“没有命中的日期遍历”。
+The worst case is a sender with no hits: `from:nobody weekly` has to walk the whole date index once. Thread mode used to walk it twice; see “Date walks with no match” below.
 
-fixture R，无统计，修复前后（ms，三次热运行中位数；计数各跑一次）：
+Fixture R, no stats, before and after (ms, median of three warm runs; counts run once each):
 
-| 测量                           | 修复前 | 修复后 |
-| ------------------------------ | -----: | -----: |
-| `-to:nobody weekly`            |    829 |    148 |
-| `-to:nobody weekly`，单账户    |    431 |    165 |
-| `-from:nobody weekly`          |    823 |    129 |
-| `from:person1 weekly`          |    443 |    130 |
-| `has:attachment weekly`        |    618 |    130 |
-| `-has:attachment weekly`       |    791 |    128 |
-| `is:important weekly`          |    871 |    137 |
-| `to:me3@example.com weekly`    |    406 |    150 |
-| `-filename:report weekly`      |    770 |    139 |
-| `-cc:nobody -to:nobody weekly` |    840 |    172 |
-| `-from:person1 subject:weekly` |    725 |    139 |
-| `-to:nobody alpha`             |    842 |    140 |
-| `to:nobody weekly`             |    118 |     74 |
-| `from:nobody weekly`（最坏）   |    125 |    247 |
-| `-to:nobody weekly` 计数       |    424 |    175 |
-| `-from:nobody weekly` 计数     |    420 |    177 |
+| Measurement                       | Before | After |
+| --------------------------------- | -----: | ----: |
+| `-to:nobody weekly`               |    829 |   148 |
+| `-to:nobody weekly`, one account  |    431 |   165 |
+| `-from:nobody weekly`             |    823 |   129 |
+| `from:person1 weekly`             |    443 |   130 |
+| `has:attachment weekly`           |    618 |   130 |
+| `-has:attachment weekly`          |    791 |   128 |
+| `is:important weekly`             |    871 |   137 |
+| `to:me3@example.com weekly`       |    406 |   150 |
+| `-filename:report weekly`         |    770 |   139 |
+| `-cc:nobody -to:nobody weekly`    |    840 |   172 |
+| `-from:person1 subject:weekly`    |    725 |   139 |
+| `-to:nobody alpha`                |    842 |   140 |
+| `to:nobody weekly`                |    118 |    74 |
+| `from:nobody weekly` (worst case) |    125 |   247 |
+| `-to:nobody weekly` count         |    424 |   175 |
+| `-from:nobody weekly` count       |    420 |   177 |
 
-28 种搜索各取会话、单账户、平铺三种形状，共 84 例，结果页、第二页、标志、会话数和计数逐项相同。
+28 searches, each in thread, one-account and flat shapes, 84 cases in all: the result page, second page, flags, thread count and count match item by item.
 
-search-operator-plans.test.ts 的“operators with a common word”对 13 种搜索（含否定、无命中的发件人、`has:attachment` 和多个否定）对照参考结果，并检查每种的 `recent` 窗口走 `messages_list_date_id`、计数不走 `message_search_meta_threads`；回填未完成时 `to:r3 weekly` 不走日期遍历。operator-text-diff.test.ts 把评审者的随机差分测试移进默认套件：每轮 40 次随机写入（新邮件、改写、标志、本地操作、删除、改 provider id、补头部、淘汰消息文本、删 Spam、删账户），之后把副表和重新计算的结果逐行比较，并对 25 个运算符搜索在用副表和逐行判断两种状态下比较结果页和计数。默认 10 轮，`OPENMAIL_PERF=1` 跑 50 轮，`OPENMAIL_DIFF_SEED` 换随机序列。`performance-large.test.ts` 新增 `search -to: and common word`、`search from: and common word`、`search has:attachment and common word` 预算 200 ms，`search from: no match and common word` 预算 350 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 72、30、33、155 ms。
+“operators with a common word” in search-operator-plans.test.ts compares 13 searches (including negation, a sender with no hits, `has:attachment` and multiple negations) against reference results. It checks that each one's `recent` window uses `messages_list_date_id` and that the count does not use `message_search_meta_threads`, and that `to:r3 weekly` does not take the date walk while the backfill is unfinished. operator-text-diff.test.ts moves the reviewer's randomized differential test into the default suite. Each round does 40 random writes (new messages, rewrites, flags, local operations, deletes, provider id changes, added headers, evicted message text, deleted Spam, deleted accounts), then compares the side table row by row with recomputed values, and compares the result pages and counts of 25 operator searches with the side table and with the per-row test. It runs 10 rounds by default and 50 with `OPENMAIL_PERF=1`; `OPENMAIL_DIFF_SEED` changes the random sequence. `performance-large.test.ts` adds `search -to: and common word`, `search from: and common word` and `search has:attachment and common word` with a 200 ms budget, and `search from: no match and common word` with a 350 ms budget. One run with `OPENMAIL_PERF=1` on 2026-10-17 gave medians of 72, 30, 33 and 155 ms in that order.
 
-### is:important 加常见词
+### is:important plus a common word
 
-r21 让 `is:important` 加常见词走日期遍历后，平铺模式变慢了。`messagePage` 把 `listFilter(q)` 直接用 AND 连起来，`is:important` 编译成一个裸的 `json_each` EXISTS，SQLite 把按行探测的 `EXISTS (… messages_words MATCH ?)` 排在标签检查前面，遍历到的每一行都查一次词索引。会话模式没有这个问题：`headFilter` 用 CASE 先判断行自己的条件。
+After r21 let `is:important` plus a common word take the date walk, flat mode got slower. `messagePage` joined `listFilter(q)` directly with AND. `is:important` compiles to a bare `json_each` EXISTS, and SQLite put the per-row `EXISTS (… messages_words MATCH ?)` before the label check, so it queried the word index once for every walked row. Thread mode did not have this problem: `headFilter` uses CASE to test the row's own condition first.
 
-现在 `messagePage` 在有 `textPage` 时也用 `CASE WHEN listFilter(不含词的查询) THEN listFilter(q) ELSE 0 END`，账户范围留在 CASE 外面，账户索引仍能用它。不含词的查询由 `unsearchedQuery` 生成，会话模式共用。
+Now `messagePage` also uses `CASE WHEN listFilter(query without words) THEN listFilter(q) ELSE 0 END` when it has a `textPage`. The account scope stays outside the CASE, so the account index can still use it. `unsearchedQuery` generates the query without words, shared with thread mode.
 
-单账户还有第二个问题：`listIndex` 给单账户的文字页选 `messages_account_list_date_id`，它不含 `labels_json`，每个遍历到的行都要回表读 `labels_json`。现在文字页只要判断标签（`is:important`、`label:`、它们的否定、列表筛选的 Important 和 In Inbox、按文件夹搜索），单账户也走覆盖 `labels_json` 的 `messages_list_date_id`，和标签视图的规则一致。
+One account had a second problem. `listIndex` chose `messages_account_list_date_id` for single-account text pages, which does not contain `labels_json`, so each walked row went back to the table to read `labels_json`. Now, whenever a text page tests labels (`is:important`, `label:`, their negations, the list filters Important and In Inbox, search by folder), single-account pages also use `messages_list_date_id`, which covers `labels_json`, matching the rule for label views.
 
-50k 封邮件的 fixture（2 个账户，1/1000 带 IMPORTANT，`weekly` 在每封邮件里），无统计，热缓存，四次运行取后三次中位数（ms）。“行集合”是 `CommonTermRows` 设为 1e9、从词索引 rowid 出发的计划，作参考：
+A 50k-message fixture (2 accounts, 1/1000 with IMPORTANT, `weekly` in every message), no stats, warm cache, median of the last three of four runs (ms). “Row set” is the plan with `CommonTermRows` set to 1e9, starting from word index rowids, for reference:
 
-| 测量                                         | 修复前 | 修复后 | 行集合 |
-| -------------------------------------------- | -----: | -----: | -----: |
-| `is:important weekly`，平铺                  |    863 |     30 |    237 |
-| `is:important weekly`，平铺，单账户          |   1092 |     30 |    245 |
-| `is:read is:important weekly`，平铺          |    645 |     26 |    194 |
-| 列表筛选 Important 加 `weekly`，平铺         |    857 |     27 |    236 |
-| `is:important weekly`，会话，单账户          |    237 |     30 |      - |
-| `is:important weekly`，会话                  |     32 |     29 |    422 |
-| `is:important weekly`，单账户，1k 封的小账户 |     22 |     19 |      - |
+| Measurement                                          | Before | After | Row set |
+| ---------------------------------------------------- | -----: | ----: | ------: |
+| `is:important weekly`, flat                          |    863 |    30 |     237 |
+| `is:important weekly`, flat, one account             |   1092 |    30 |     245 |
+| `is:read is:important weekly`, flat                  |    645 |    26 |     194 |
+| list filter Important plus `weekly`, flat            |    857 |    27 |     236 |
+| `is:important weekly`, threads, one account          |    237 |    30 |       - |
+| `is:important weekly`, threads                       |     32 |    29 |     422 |
+| `is:important weekly`, one account, small 1k account |     22 |    19 |       - |
 
-列表筛选 Important 加常见词的平铺搜索（r21 之前 841 ms）也由同一处修好。小账户走全局索引要读别的账户的索引项，但不回表，没有变慢。
+The flat search for the list filter Important plus a common word (841 ms before r21) is fixed by the same change. A small account using the global index reads other accounts' index entries but does not go back to the table, so it did not get slower.
 
-search-operator-plans.test.ts 的“is:important with a common word tests the label before the word index”对照参考结果检查 `is:important weekly`、`is:read is:important weekly`、`-is:important weekly` 的会话、平铺和单账户形状，以及平铺的列表筛选 Important 加 `weekly`。它检查每条同时有词索引探测和标签检查的语句，查询计划里 `SCAN json_each` 在 `SCAN messages_words` 前面；平铺页（含单账户）走 `messages_list_date_id`。改动前这个测试在两处都失败。
+“is:important with a common word tests the label before the word index” in search-operator-plans.test.ts compares `is:important weekly`, `is:read is:important weekly` and `-is:important weekly` in thread, flat and one-account shapes, plus the flat list filter Important with `weekly`, against reference results. For every statement that has both a word index probe and a label check, it checks that `SCAN json_each` comes before `SCAN messages_words` in the query plan, and that flat pages (including one account) use `messages_list_date_id`. Before the change this test failed in both places.
 
-walk-plan-diff.test.ts 是评审者的随机差分测试：2 个账户、1,500 封随机生成的邮件，随机组合运算符、否定、OR、单账户、按文件夹、列表筛选和 `is:unread` 开关，分别在 `CommonTermRows=0`（能走日期遍历的都走）和 `1e9`（都从 rowid 出发）下比较第一页、第二页、标志和计数，副表回填完成和未完成各比一次。默认 60 次搜索（120 次比较），`OPENMAIL_PERF=1` 用 3,000 封和 300 次搜索，`OPENMAIL_DIFF_SEED` 换随机序列。测试要求至少四分之一的比较走日期遍历，且有走到空页的。
+walk-plan-diff.test.ts is the reviewer's randomized differential test: 2 accounts and 1,500 randomly generated messages, with random combinations of operators, negation, OR, one account, by folder, list filters and the `is:unread` toggle. It compares the first page, second page, flags and count under `CommonTermRows=0` (date walk wherever possible) and `1e9` (always start from rowids), once with the side table backfilled and once without. By default it runs 60 searches (120 comparisons); `OPENMAIL_PERF=1` uses 3,000 messages and 300 searches, and `OPENMAIL_DIFF_SEED` changes the random sequence. The test requires that at least a quarter of the comparisons take the date walk and that some reach an empty page.
 
-`performance-large.test.ts` 的 fixture 给 1/1000 的邮件加了 IMPORTANT，新增 `search is:important and common word, flat`、`search is:important and common word, flat, one account`、`search Important list filter and common word, flat` 三项，预算 200 ms。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 32、52、30 ms。
+The `performance-large.test.ts` fixture adds IMPORTANT to 1/1000 of the messages and adds three items, `search is:important and common word, flat`, `search is:important and common word, flat, one account` and `search Important list filter and common word, flat`, with a 200 ms budget. One run with `OPENMAIL_PERF=1` on 2026-10-17 gave medians of 32, 52 and 30 ms in that order.
 
-### 没有命中的日期遍历
+### Date walks with no match
 
-`threadPage` 的快速路径先取 `recent`：按日期取最新的 `limit` 个不含词条件的会话头，再看它们是否匹配完整查询。原来只要结果少于 `limit` 就再跑完整查询。没有命中时两条语句都要把日期索引走完，`-is:important -has:attachment from:nobody weekly` 是两条约 200 ms 的语句。
+The fast path of `threadPage` first takes `recent`: the newest `limit` thread heads by date without the word conditions, then checks whether they match the full query. Before, whenever there were fewer than `limit` results it ran the full query as well. With no match, both statements walked the whole date index: `-is:important -has:attachment from:nobody weekly` was two statements of about 200 ms each.
 
-每个匹配都满足不含词的条件。`recent` 少于 `limit` 行时，它就是全部不含词的会话头。一个会话的不含词会话头如果匹配完整查询，它就是这个会话最新的匹配。所以 `recent` 没有截断、其中每一行都匹配时，快速路径的结果就是完整结果；`recent` 为空时结果为空。快速语句现在用 `(SELECT COUNT(*) AS recent_count FROM recent) r LEFT JOIN page c` 返回窗口大小，没有命中时也返回一行。结果行数少于 `recent_count` 才跑完整查询。
+Every match satisfies the conditions without words. When `recent` has fewer than `limit` rows, it holds all thread heads without words. If a thread's head without words matches the full query, it is that thread's newest match. So when `recent` is not truncated and every row in it matches, the fast path's result is the full result; when `recent` is empty, the result is empty. The fast statement now returns the window size with `(SELECT COUNT(*) AS recent_count FROM recent) r LEFT JOIN page c`, which returns one row even with no match. The full query runs only when there are fewer result rows than `recent_count`.
 
-50k 封邮件的 fixture，同上（ms）：
+The same 50k-message fixture (ms):
 
-| 测量                                                       | 修复前 | 修复后 |
-| ---------------------------------------------------------- | -----: | -----: |
-| `-is:important -has:attachment from:nobody weekly`         |    404 |    197 |
-| `-is:important -has:attachment from:nobody weekly`，单账户 |    396 |    197 |
-| `from:nobody weekly`                                       |    120 |     56 |
+| Measurement                                                     | Before | After |
+| --------------------------------------------------------------- | -----: | ----: |
+| `-is:important -has:attachment from:nobody weekly`              |    404 |   197 |
+| `-is:important -has:attachment from:nobody weekly`, one account |    396 |   197 |
+| `from:nobody weekly`                                            |    120 |    56 |
 
-两个账户的 `from:nobody weekly` 平铺本来就是一条语句，56 ms 不变。
+Flat `from:nobody weekly` across two accounts was already one statement and stays at 56 ms.
 
-search-operator-plans.test.ts 的“a date walk with no match or a short window of matching heads runs once”对 4 种没有命中的搜索和 1 种只有几个会话的搜索（`from:s3 is:starred weekly`），在全部账户和单账户下检查只有一条带 `page AS MATERIALIZED` 的语句，且它含 `recent`，结果对照参考结果。walk-plan-diff.test.ts 的前 5 次搜索只命中几个会话；测试要求会话模式的日期遍历里既有空结果、也有非空的短结果只跑快速路径。7 个种子各 300 次搜索（`OPENMAIL_PERF=1`，共 4,200 次比较）没有差异。`performance-large.test.ts` 新增 `search negations, no match and common word`，预算 350 ms，和 `from:nobody weekly` 一致。2026-10-17 `OPENMAIL_PERF=1` 跑一次，它的中位数为 91 ms，`search from: no match and common word` 从上面的 155 ms 降到 89 ms。
+“a date walk with no match or a short window of matching heads runs once” in search-operator-plans.test.ts takes 4 searches with no match and 1 search that hits only a few threads (`from:s3 is:starred weekly`). For all accounts and for one account, it checks that there is only one statement with `page AS MATERIALIZED`, that it contains `recent`, and that the results match the reference. The first 5 searches of walk-plan-diff.test.ts hit only a few threads; the test requires that thread-mode date walks include both empty results and non-empty short results that ran only the fast path. 7 seeds of 300 searches each (`OPENMAIL_PERF=1`, 4,200 comparisons in all) showed no differences. `performance-large.test.ts` adds `search negations, no match and common word` with a 350 ms budget, the same as `from:nobody weekly`. One run with `OPENMAIL_PERF=1` on 2026-10-17 gave it a median of 91 ms, and `search from: no match and common word` dropped from the 155 ms above to 89 ms.
 
-### 计数排除 Spam 和 Trash
+### Counts excluding Spam and Trash
 
-OR 和运算符搜索的计数用 `NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) …)` 排除垃圾邮件和废纸篓。`labels_json` 在 `body_text`、`body_html` 后面，每个计数的行都要读溢出页链。评审者在 fixture R 上冷读 `weekly OR alpha` 计数 3.4 s，41 万次缺页，读 1.6 GB。
+Counts for OR and operator searches excluded spam and trash with `NOT EXISTS (SELECT 1 FROM json_each(m.labels_json) …)`. `labels_json` comes after `body_text` and `body_html`, so every counted row read its overflow page chain. On fixture R the reviewer measured a cold `weekly OR alpha` count at 3.4 s, with 410,000 page faults and 1.6 GB read.
 
-`countThreads` 现在给计数设 `metaEligible`，`listFilter` 改用文字页已经在用的 `EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`。`eligible` 由迁移 30 的触发器按同样的 SPAM/TRASH 规则维护，结果不变。
+`countThreads` now sets `metaEligible` for counts, and `listFilter` uses `EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`, which text pages already use. The migration 30 triggers maintain `eligible` with the same SPAM/TRASH rules, so the results are unchanged.
 
-fixture R，无统计，热缓存，计数各跑一次（ms）：
+Fixture R, no stats, warm cache, counts run once each (ms):
 
-| 测量                             | 修复前 | 修复后 |
-| -------------------------------- | -----: | -----: |
-| `weekly OR alpha`                |    442 |     68 |
-| `weekly OR alpha`，平铺          |     73 |     43 |
-| `to:nobody OR weekly`            |    438 |     64 |
-| `to:nobody OR weekly`，平铺      |     80 |     51 |
-| `(weekly OR delivery) is:unread` |     43 |     33 |
-| `is:important weekly`            |    401 |    361 |
+| Measurement                      | Before | After |
+| -------------------------------- | -----: | ----: |
+| `weekly OR alpha`                |    442 |    68 |
+| `weekly OR alpha`, flat          |     73 |    43 |
+| `to:nobody OR weekly`            |    438 |    64 |
+| `to:nobody OR weekly`, flat      |     80 |    51 |
+| `(weekly OR delivery) is:unread` |     43 |    33 |
+| `is:important weekly`            |    401 |   361 |
 
-84 例的结果页、第二页和计数仍逐项相同。这台机器不能清空系统页缓存，所以没有冷读数字；评审者在冷缓存下测得 `weekly OR alpha` 计数 3412 ms 到 54 ms，`to:nobody OR weekly` 426 ms 到 61 ms。
+The result page, second page and count of the 84 cases still match item by item. This machine cannot clear the system page cache, so there are no cold numbers; the reviewer measured cold `weekly OR alpha` counts at 3412 ms before and 54 ms after, and `to:nobody OR weekly` at 426 ms and 61 ms.
 
-`has:attachment` 的计数没有改，fixture R 上仍约 340 ms：它读 `attachments_json`，同样在消息文本后面。现有列都不能代替它：`search_flags` 只有按类型的位，没有“有附件”；`message_operator_text.file_text` 对只有一个无文件名附件的邮件是空串，和没有附件分不开。要快需要新迁移加一个标志位并回填。`is:important weekly` 的计数也仍约 360 ms，`IMPORTANT` 标签要读 `labels_json`。
+The `has:attachment` count is unchanged at about 340 ms on fixture R: it reads `attachments_json`, which also comes after the message text. No existing column can replace it. `search_flags` only has per-type bits, with no “has attachment” bit. `message_operator_text.file_text` is an empty string for a message whose only attachment has no file name, which cannot be told apart from no attachment. Making it fast needs a new migration that adds a flag bit and backfills it. The `is:important weekly` count also stays at about 360 ms, because the `IMPORTANT` label needs `labels_json`.
 
-search-operator-plans.test.ts 的 OR 部分和“operators with a common word”检查每条按行计数的语句含 `s.row_id=m.rowid AND s.eligible=1`、不含 `json_each(m.labels_json)`。`performance-large.test.ts` 新增 `count OR`、`count operator OR common word`、`count -to: and common word` 三项，预算 250 ms，热缓存。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数依次为 55、64、110 ms。
+The OR part and “operators with a common word” in search-operator-plans.test.ts check that every statement counting by row contains `s.row_id=m.rowid AND s.eligible=1` and does not contain `json_each(m.labels_json)`. `performance-large.test.ts` adds `count OR`, `count operator OR common word` and `count -to: and common word` with a 250 ms budget, warm cache. One run with `OPENMAIL_PERF=1` on 2026-10-17 gave medians of 55, 64 and 110 ms in that order.
 
-### 标签视图里按当前文件夹搜索
+### Search in the current folder from a label view
 
-在标签视图里把搜索范围切到“Current folder”，再输入常见词，桌面端发出 `{search, searchScope:"folder", label, mailbox}`（`apps/desktop/src/renderer/src/state/threads.ts`）。`planTextPage` 原先对 `q.label && q.searchScope === "folder"` 直接返回，不设 `textPage`，查询从 `weekly` 的全部 `messages_words` rowid 出发，再用临时 B 树按日期排序（`SCAN messages_words VIRTUAL TABLE INDEX 0:M4`，`USE TEMP B-TREE FOR ORDER BY`）。
+When the user switches search scope to “Current folder” in a label view and types a common word, the desktop app sends `{search, searchScope:"folder", label, mailbox}` (`apps/desktop/src/renderer/src/state/threads.ts`). `planTextPage` used to return early for `q.label && q.searchScope === "folder"` without setting `textPage`, so the query started from every `messages_words` rowid of `weekly` and sorted by date in a temporary B-tree (`SCAN messages_words VIRTUAL TABLE INDEX 0:M4`, `USE TEMP B-TREE FOR ORDER BY`).
 
-这个提前返回是 `60f0d7e9` 第一版 `planTextPage` 加的。当时日期遍历每一行先做 newest-in-thread 检查再判断标签，`messages_list_date_id` 也还不用于带标签的文字页，稀疏标签加日期遍历会很慢。上面“label: 搜索与标签列表”一节已经改掉这两点：遍历先判断行自己的标签，`messages_list_date_id` 覆盖 `labels_json`。`label:Folder_5 weekly` 从那时起就走日期遍历，按文件夹搜索的标签视图走的是同一个过滤，只是标签来自视图。
+The first version of `planTextPage` in `60f0d7e9` added this early return. At the time, the date walk did the newest-in-thread check before testing the label on each row, and `messages_list_date_id` was not yet used for text pages with labels, so a sparse label plus a date walk would be slow. The “label: search and label lists” section above changed both: the walk tests the row's own label first, and `messages_list_date_id` covers `labels_json`. `label:Folder_5 weekly` has taken the date walk since then, and a label view searched by folder uses the same filter, with the label taken from the view.
 
-改动：
+Changes:
 
-- 去掉 `planTextPage` 里的这个条件。
-- `testsLabels` 原先只在 `mailbox` 不是 `all` 时算按文件夹搜索判断标签，漏了 `q.label`。单账户、`mailbox: "all"` 的标签视图因此会遍历不含 `labels_json` 的 `messages_account_list_date_id`，每行回表。现在条件是 `searchScope === "folder" && (mailbox 不是 all || 有 label)`，这类查询走 `messages_list_date_id`。
+- Remove this condition from `planTextPage`.
+- `testsLabels` used to count search by folder as a label test only when `mailbox` was not `all`, and missed `q.label`. A single-account label view with `mailbox: "all"` therefore walked `messages_account_list_date_id`, which does not contain `labels_json`, and went back to the table for every row. The condition is now `searchScope === "folder" && (mailbox is not all || label is set)`, and such queries use `messages_list_date_id`.
 
-100k fixture（`seedMailbox(100_000)`，Folder_5 在 1/67 的邮件上，未运行 ANALYZE），Node v24.21.0，`performance-large.test.ts` 的五次热运行中位数，50 个会话，单位 ms。修复前一分钟负载 8–23（16 核），修复后是完整 `OPENMAIL_PERF=1` 运行里的数字，负载 52–63，只作对比：
+100k fixture (`seedMailbox(100_000)`, Folder_5 on 1/67 of the messages, no ANALYZE), Node v24.21.0, median of five warm runs in `performance-large.test.ts`, 50 threads, in ms. One-minute load was 8–23 before the fix (16 cores). The after numbers come from a full `OPENMAIL_PERF=1` run at load 52–63 and are only for comparison:
 
-| 测量                                   | 修复前 | 修复后 |
-| -------------------------------------- | -----: | -----: |
-| `weekly`，Folder_5，`mailbox: "all"`   |   2159 |     27 |
-| `subject:weekly alpha`，同上           |   2460 |     25 |
-| `weekly`，同上，平铺                   |    151 |     13 |
-| `weekly`，Folder_5，`mailbox: "inbox"` |   1824 |     31 |
+| Measurement                            | Before | After |
+| -------------------------------------- | -----: | ----: |
+| `weekly`, Folder_5, `mailbox: "all"`   |   2159 |    27 |
+| `subject:weekly alpha`, same           |   2460 |    25 |
+| `weekly`, same, flat                   |    151 |    13 |
+| `weekly`, Folder_5, `mailbox: "inbox"` |   1824 |    31 |
 
-评审者在自己的 fixture 副本上测得修复前 498、586、132、336 ms，修复后 9、11、6、10 ms。
+On their own copy of the fixture the reviewer measured 498, 586, 132 and 336 ms before the fix and 9, 11, 6 and 10 ms after.
 
-[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) 在默认套件里对 `Label_1` 和 `IMPORTANT` 两个标签、`all`／`inbox`／`important` 三个邮箱、三种搜索，在会话和平铺、全部账户和单账户下对照参考结果。它还检查每条页面语句的计划里有 `SCAN m USING … INDEX messages_list_date_id`，并按 rowid 探测词索引；平铺页的计划里没有 `SCAN messages_words VIRTUAL TABLE INDEX 0:M`，也没有 `USE TEMP B-TREE FOR ORDER BY`。去掉修复后这几项都失败；只去掉 `testsLabels` 那一半时，单账户 `mailbox: "all"` 的计划检查失败。[walk-plan-diff.test.ts](../packages/core/src/store/walk-plan-diff.test.ts) 的随机搜索给标签视图加上随机邮箱，并在随机搜索后固定跑一轮：7 个标签（用户标签、INBOX、IMPORTANT、STARRED、CATEGORY_SOCIAL，以及 Gmail 和 Outlook 判断方式不同的 CATEGORY_PERSONAL）× 5 种邮箱（不设、inbox、all、starred、important）× 会话和平铺，共 70 次比较，每次都要求走日期遍历，再和从 rowid 出发的计划比较两页、标志和计数。`OPENMAIL_PERF=1` 下种子 1–4 和 11 没有差异。`performance-large.test.ts` 新增四项 `search current folder in label view…`，预算 200 ms。
+[search-label-plans.test.ts](../packages/core/src/store/search-label-plans.test.ts) in the default suite compares two labels (`Label_1` and `IMPORTANT`), three mailboxes (`all`/`inbox`/`important`) and three searches, in thread and flat and for all accounts and one account, against reference results. It also checks that every page statement's plan has `SCAN m USING … INDEX messages_list_date_id` and probes the word index by rowid, and that flat page plans have neither `SCAN messages_words VIRTUAL TABLE INDEX 0:M` nor `USE TEMP B-TREE FOR ORDER BY`. With the fix removed these items fail; with only the `testsLabels` half removed, the plan check for single-account `mailbox: "all"` fails. The random searches in [walk-plan-diff.test.ts](../packages/core/src/store/walk-plan-diff.test.ts) give label views a random mailbox, and after the random searches a fixed round runs: 7 labels (a user label, INBOX, IMPORTANT, STARRED, CATEGORY_SOCIAL and CATEGORY_PERSONAL, which Gmail and Outlook test differently) × 5 mailboxes (unset, inbox, all, starred, important) × threads and flat, 70 comparisons in all. Each must take the date walk and is then compared with the plan that starts from rowids on both pages, flags and count. With `OPENMAIL_PERF=1`, seeds 1–4 and 11 show no differences. `performance-large.test.ts` adds four `search current folder in label view…` items with a 200 ms budget.
 
 ### performance-large.test.ts
 
-新加的九项测量都设 200 ms，和 `label:` 搜索一致。2026-10-17 `OPENMAIL_PERF=1` 跑一次的中位数（ms）：`search subject: common` 15、`search subject: phrase` 18、`search OR` 94、`search OR is:unread` 85、`search attachment word OR common` 108、`search to: no match` 24、`search cc: no match` 20、`search filename: no match` 20、`search list: no match` 26。OR 三项离预算只有约 2 倍，它们每次都要建附件文字的邮件 id 集合并给页补附件命中，所以没有收紧到 150 ms；其余各项远低于预算，200 ms 是回归线而不是目标。
+The nine new measurements all use 200 ms, the same as `label:` search. Medians from one `OPENMAIL_PERF=1` run on 2026-10-17 (ms): `search subject: common` 15, `search subject: phrase` 18, `search OR` 94, `search OR is:unread` 85, `search attachment word OR common` 108, `search to: no match` 24, `search cc: no match` 20, `search filename: no match` 20, `search list: no match` 26. The three OR items are only about 2× under the budget, because every run has to build the message id set for attachment text and add attachment hits to the page, so they were not tightened to 150 ms. The others are far under the budget; 200 ms is a regression line, not a target.
 
-### 慢 RPC
+### Slow RPCs
 
-桌面主进程的 RPC 协议（`apps/desktop/src/main/rpc/rpc-security.ts`，本机窗口和远程访问共用）记下每个请求的开始时间。`TIMED_RPCS` 里的请求在 1 s 或更久后才返回时，用 `logWarning` 写一条 `rpc-slow`：只有 RPC 名称和耗时，例如 `RPC Threads took 2400 ms`，不含查询文字和参数。诊断文件只记代码 `rpc-slow`。同一个 RPC 每分钟最多一条，一阵慢搜索只留一行。客户端中断的请求不计。
+The desktop main process's RPC protocol (`apps/desktop/src/main/rpc/rpc-security.ts`, shared by local windows and remote access) records each request's start time. When a request in `TIMED_RPCS` returns after 1 s or longer, it writes one `rpc-slow` line with `logWarning`. The line holds only the RPC name and duration, for example `RPC Threads took 2400 ms`, with no query text or arguments. The diagnostics file records only the code `rpc-slow`. Each RPC writes at most one line per minute, so a burst of slow searches leaves one line. Requests the client aborts do not count.
 
-`TIMED_RPCS` 只列读本地数据库和内存状态的 RPC，如 `Threads`、`ThreadCount`、`Thread`、`UnreadCounts`、`UnreadByLabel`、`Labels`、`KnownSenders`、`Accounts`、`Prefs`。它们正常几毫秒返回，超过 1 s 就是本机卡住。原来每个非流 RPC 都计时，`AwaitUndoSend` 每次发送都要等撤销时间（约 5.5 s），`Connect`、`Reauth` 等浏览器登录，`AskAi`、`Summarize`、`ComposeAi`、`AiTriage` 等模型，`Send`、`Sync`、`SearchServer`、`CheckForUpdates`、`CompactCache` 走网络或磁盘，`SaveAttachmentsTo` 这类对话框等用户，这些都写 `rpc-slow`，把真正的本机卡顿淹没了。`InlineImages` 第一次打开要下载邮件原文，`SyncHealth` 要问 provider，所以也不在表里。`Thread` 在表里：它读存储的会话，只在缓存淘汰了消息文本时才重新下载。`Events`、`Downloads` 这类流不在表里。
+`TIMED_RPCS` lists only RPCs that read the local database and in-memory state, such as `Threads`, `ThreadCount`, `Thread`, `UnreadCounts`, `UnreadByLabel`, `Labels`, `KnownSenders`, `Accounts` and `Prefs`. They normally return in a few milliseconds, so over 1 s means the local machine is stuck. Before, every non-stream RPC was timed. `AwaitUndoSend` waits for the undo time on every send (about 5.5 s), `Connect` and `Reauth` wait for browser sign-in, `AskAi`, `Summarize`, `ComposeAi` and `AiTriage` wait for the model, `Send`, `Sync`, `SearchServer`, `CheckForUpdates` and `CompactCache` go to the network or disk, and dialogs like `SaveAttachmentsTo` wait for the user. All of these wrote `rpc-slow` and buried the real local stalls. `InlineImages` downloads the raw message the first time it opens, and `SyncHealth` asks the provider, so they are not in the table either. `Thread` is in the table: it reads the stored thread and only downloads again when the cache has evicted the message text. Streams such as `Events` and `Downloads` are not in the table.
 
-## 消息文本与附件检索排名
+## Message text and attachment ranking
 
-普通词查询分别选取日期窗口内的消息文本候选和 FTS 排名靠前的附件候选，再合并。消息文本窗口为请求 limit，附件窗口同样为 limit；这是有界候选排名，不保证整个邮箱的全局相关度顺序。布尔、排除和 AROUND 查询沿用原条件选择候选，再给返回的会话补附件来源。消息文本和主题使用 [FTS5 BM25](https://sqlite.org/fts5.html#the_bm25_function) `bm25(index,4,0,0,1)`，主题权重 4、消息文本权重 1、发件人权重 0；附件使用 `bm25(derived_words)`。两个消息 FTS 都按缓存的原始 `body_text` 建外部内容索引；可见消息文本只存在于语义向量项，未建可供 BM25 查询的 FTS。复用现有消息 FTS 计算候选顺序，避免在只读搜索中改索引或重写消息文本；来源分类、摘要和精确短语信号始终取经过可见性提取的消息文本，隐藏内容不成为邮件命中信号。负分越小越相关。词索引未完成或 CJK 子串查询使用 trigram 索引，无法提供 FTS 分数的短词保留日期顺序。
+An ordinary word query selects message text candidates within a date window and the top FTS-ranked attachment candidates separately, then merges them. The message text window is the request limit, and the attachment window is also the limit. This is bounded candidate ranking and does not guarantee a global relevance order across the whole mailbox. Boolean, exclusion and AROUND queries select candidates with the original conditions, then add attachment sources to the returned threads. Message text and subject use [FTS5 BM25](https://sqlite.org/fts5.html#the_bm25_function) `bm25(index,4,0,0,1)`: subject weight 4, message text weight 1, sender weight 0. Attachments use `bm25(derived_words)`. Both message FTS tables are external-content indexes built on the cached raw `body_text`. Visible message text exists only in semantic vector entries; there is no FTS on it that BM25 can query. Reusing the existing message FTS for candidate order avoids changing indexes or rewriting message text during a read-only search. Source classification, snippets and the exact phrase signal always use message text that went through visibility extraction, so hidden content is never a message hit signal. A more negative score is more relevant. When the word index is unfinished, or for CJK substring queries, search uses the trigram index; short terms that cannot get an FTS score keep date order.
 
-存在附件文本命中时，对各路候选先按 BM25 排序，再计算 `score(m) = (w_mail + p × exact_mail)/(60+r_mail) + (1 + p × exact_attachment)/(60+r_attachment)`。排名从 1 开始，exact 为 0 或 1，缺席的一路贡献为零；`w_mail = max(2, (60+N_mail)/60)`，N 为消息文本候选数；普通附件权重为 1。任一路含连续多词短语时加同一个 `p = 1.5 × w_mail - 1`：消息文本／主题精确命中的权重为 `w_mail + p`，附件精确命中的权重为 `1 + p`。主题和可见消息文本分别检查，不把两个字段拼成短语。这样同为精确短语时仍保留邮件优先，附件精确短语仍可超过分散的邮件词命中。两路都命中的会话相加，每路每个会话只计一次，不因页数或 OCR chunk 数量增加得分；同分按日期降序。没有附件文本命中时保留原日期分页顺序。桌面排名搜索通过扩大候选窗口加载更多，避免用相关度末行的日期翻页。消息文本权重下限 2 让普通主题／消息文本命中优先；候选超过 60 时按窗口扩大权重，保证最后一个消息文本候选仍优于普通附件首位，连续短语允许附件越过分散的消息文本命中。RRF 避免直接比较消息文本与附件两个语料库的 BM25 数值。固定排序与隐藏文本回归见 `search-snippets.test.ts`。
+When there are attachment text hits, each list of candidates is first sorted by BM25, then `score(m) = (w_mail + p × exact_mail)/(60+r_mail) + (1 + p × exact_attachment)/(60+r_attachment)` is computed. Ranks start at 1, exact is 0 or 1, and a missing list contributes zero. `w_mail = max(2, (60+N_mail)/60)`, where N is the number of message text candidates; the ordinary attachment weight is 1. If either list contains a consecutive multi-word phrase, the same `p = 1.5 × w_mail - 1` is added: a message text/subject exact hit weighs `w_mail + p` and an attachment exact hit weighs `1 + p`. Subject and visible message text are checked separately and are not joined into one phrase. So when both are exact phrases, mail still wins, and an exact attachment phrase can still beat scattered word hits in mail. A thread hit by both lists adds the two. Each list counts each thread once, so more pages or OCR chunks do not raise the score. Ties sort by date descending. Without attachment text hits, the original date paging order stays. Ranked desktop search loads more by enlarging the candidate window, so it does not page by the date of the last relevance row. The message text weight floor of 2 puts ordinary subject/message text hits first. Above 60 candidates the weight grows with the window, so the last message text candidate still beats the first ordinary attachment; a consecutive phrase lets an attachment pass scattered message text hits. RRF avoids comparing raw BM25 values from the two corpora, message text and attachments. The fixed ordering and hidden text regressions are in `search-snippets.test.ts`.
 
-摘要在有界结果窗口生成，只从 `messageModelText` 的可见消息文本取词，不使用 provider preview 或语义索引中旧的消息文本 chunk。派生文本含 HTML 时也走可见文本提取；纯 OCR／PDF 提取文本作为不可信字符串。摘要约 240 个 UTF-16 单位，围绕首个命中截取，保留完整的长短语；词索引未完成时，标记也按对应的 trigram／LIKE 子串规则生成；字段包含 `source`、`messageId`、附件名／索引、纯文本 `snippet` 和 UTF-16 `highlights`。React 用文本节点和 `mark` 显示，MCP 和 CLI 仍放在 `untrusted_mail` 封装内。阅读器展开命中的邮件，并按附件索引标记附件，重名文件不混淆。阅读器现有 PDF 页码和 OCR 图片区域入口保留。十种语言新增附件来源提示；本轮不启动 Electron。
+Snippets are generated for the bounded result window. They take words only from the visible message text of `messageModelText`, not from the provider preview or old message text chunks in the semantic index. Derived text that contains HTML also goes through visible text extraction; plain OCR/PDF extracted text is treated as an untrusted string. A snippet is about 240 UTF-16 units, cut around the first hit, and keeps long phrases whole. When the word index is unfinished, the marks follow the matching trigram/LIKE substring rules too. Fields include `source`, `messageId`, attachment name/index, plain-text `snippet` and UTF-16 `highlights`. React shows them with text nodes and `mark`; MCP and the CLI still put them inside the `untrusted_mail` wrapper. The reader expands the hit message and marks the attachment by its index, so files with the same name are not confused. The reader's existing entry points for PDF page numbers and OCR image regions stay. Ten languages got a new attachment source hint. This round did not start Electron.
 
-100k fixture 给每个附件加入一个 OCR chunk，共 10,000 个，四类长度、词频和词间距不同的固定文本会实际影响 BM25。`search mixed body+OCR 200` 按桌面首个搜索窗口查 200 个混合结果，预算 100 ms；加载更多仍通过扩大并重新查询窗口。`search OCR snippet` 通过真实 Store 查 50 个结果，并检查附件名与标记范围，预算 150 ms。宽词搜索和派生候选通过已维护的 `message_search_meta.eligible` 排除垃圾邮件／废纸篓，避免逐命中两次解析标签 JSON。主题均有可见命中、消息文本窗口已满且只有一个词时，普通 OCR 独占命中按上述权重无法进入结果页，因此只读取该窗口内会话的附件命中。多词、短语和消息文本不足一页时仍查询独立附件候选。FTS 路径直接在命中游标上计算附件 BM25；会话先按排名选一封最新匹配的代表消息，再读取摘要与参与者，未读／星标仍按所有匹配消息聚合，不读取每个 chunk 对应的完整摘要；消息分数用物化 CTE 一次计算，先按候选 rowid 的最小／最大值限制游标范围，再以数值表达式筛选 rowid，避免 FTS 对每个 rowid 重开游标并重算语料统计；只读取结果代表消息与确需复核可见性的消息文本 chunk。避免逐行子查询反复扫描 FTS 集合。宽词列表用 CASE 先排除已有较新匹配的回复，再对候选会话头检查 MATCH；未读和星标通过匹配消息上的短路 EXISTS 生成，两路候选共用已取得的会话计数与参与者。可见消息文本只读取实际生成摘要的邮件，不重复读取未使用的附件代表消息。复杂表达式先筛派生文本命中，再核对原条件。同一请求中相同消息文本／HTML 的可见文本结果、相同 chunk 的摘要与标记范围复用，不跨请求缓存；同一对象的命中列表合并也跳过去重序列化。
+The 100k fixture adds one OCR chunk to each attachment, 10,000 in all. Four kinds of fixed text with different lengths, word frequencies and word gaps actually affect BM25. `search mixed body+OCR 200` queries 200 mixed results, the desktop's first search window, with a 100 ms budget; load more still enlarges and reruns the window. `search OCR snippet` queries 50 results through the real Store and checks attachment names and mark ranges, with a 150 ms budget. Broad word searches and derived candidates exclude spam/trash through the maintained `message_search_meta.eligible`, so they do not parse label JSON twice per hit. When every subject has a visible hit, the message text window is full and there is only one word, an ordinary OCR-only hit cannot reach the result page under the weights above, so only attachment hits for threads in that window are read. Multiple words, phrases and message text short of a page still query separate attachment candidates. The FTS path computes attachment BM25 directly on the hit cursor. A thread first picks one newest matching representative message by rank, then reads its snippet and participants. Unread/starred are still aggregated over all matching messages, and the full snippet for every chunk is not read. Message scores are computed once in a materialized CTE. The cursor range is first limited by the min/max candidate rowid, then rowids are filtered with a numeric expression, so FTS does not reopen the cursor and recompute corpus statistics for each rowid. Only the result representative messages and the message text chunks whose visibility must be rechecked are read. This avoids per-row subqueries scanning the FTS set again and again. The broad word list uses CASE to first exclude replies that already have a newer match, then checks MATCH on candidate thread heads. Unread and starred come from short-circuit EXISTS on the matching messages, and both candidate lists share the thread counts and participants already fetched. Visible message text is read only for messages that actually get a snippet, and unused attachment representative messages are not read again. Complex expressions first filter derived text hits, then recheck the original conditions. Within one request, visible text results for identical message text/HTML and snippets and mark ranges for identical chunks are reused; nothing is cached across requests. Merging the hit lists for the same object also skips dedup serialization.
 
-混合搜索剖析工具见 [search-profile.test.ts](../packages/core/src/platform/node/search-profile.test.ts)，按每条 SQL 和内存步骤计时，并在计时外采集完整查询计划。主 SQL 从 91.10 降至 28.72 ms，整条请求从 157.09 降至 76.52 ms。常见词第一页整页会话头命中时跳过全库 FTS 集合，缺少命中或使用游标时回退；追加迁移为参与者和星标查询提供覆盖索引。 同步执行相同 schema 解码，保留全部边界验证。
+The mixed search profiler is [search-profile.test.ts](../packages/core/src/platform/node/search-profile.test.ts). It times each SQL statement and in-memory step, and collects the full query plans outside the timing. The main SQL dropped from 91.10 to 28.72 ms and the whole request from 157.09 to 76.52 ms. When every thread head on the first page of a common word is a hit, it skips the whole-database FTS set, and falls back when hits are missing or a cursor is used. An appended migration adds covering indexes for the participant and starred queries. The same schema decoding runs synchronously and keeps all boundary validation.
 
 ```sh
 OPENMAIL_SEARCH_PROFILE=1 NODE_OPTIONS=--max-old-space-size=192 pnpm --filter @openmail/core exec vitest run src/platform/node/search-profile.test.ts
 ```
 
-剖析默认使用 `/tmp/openmail-search-profile.db`，空库生成真实 100k fixture。默认库在连接关闭后删除，成功、失败和中断均执行清理；显式指定的其他测试库保留，便于多轮比较。预热两次后取七次中位数，热运行的 SQL prepare 全部命中缓存。`OPENMAIL_PROFILE_DATABASE` 和 `OPENMAIL_PROFILE_REPORT` 可指定测试库及报告位置。原始计时与查询计划留在临时目录，不提交生成报告。
+The profiler uses `/tmp/openmail-search-profile.db` by default and creates the real 100k fixture in an empty database. The default database is deleted after the connection closes, on success, failure and interrupt. Another test database given explicitly is kept, for comparing several rounds. It warms up twice and takes the median of seven; every SQL prepare in warm runs hits the cache. `OPENMAIL_PROFILE_DATABASE` and `OPENMAIL_PROFILE_REPORT` set the test database and the report location. Raw timings and query plans stay in the temp directory; generated reports are not committed.
 
-## 2026-10-06 回归定位
+## 2026-10-06 regression bisect
 
-在 `d0d820a` 至 `7438fba` 间二分，并核对候选提交两侧。每点先 `pnpm install --frozen-lockfile` 和构建 core，再运行只保留 AROUND 与长线程模型文本的临时预算测试。环境与 `test:perf` 相同：Node v24.21.0、`OPENMAIL_PERF=1`、`OPENMAIL_LOW_MEMORY_TESTS=1`、192 MiB 堆、8 MiB SQLite 页缓存。每点连续测三轮，每轮单独预热并取五次中位数；计时排除查询计划采集。系统负载约 6–11，因此小幅差异不作为回归证据。
+Bisected between `d0d820a` and `7438fba`, and checked both sides of each candidate commit. At each point it first ran `pnpm install --frozen-lockfile` and built core, then ran a temporary budget test that kept only AROUND and long-thread model text. The environment matched `test:perf`: Node v24.21.0, `OPENMAIL_PERF=1`, `OPENMAIL_LOW_MEMORY_TESTS=1`, 192 MiB heap, 8 MiB SQLite page cache. Each point was measured three rounds in a row, each round warmed up on its own and took the median of five; query plan collection was excluded from the timing. System load was about 6–11, so small differences are not evidence of a regression.
 
-两个端点及 `7fbce29` 各自生成完整 fixture。其余点复制 `7fbce29` 完成词索引并 truncate WAL 后的同一份 100k 数据库，再运行各提交的迁移和 `ANALYZE`；这些提交在迁移 37 前的 schema 相同。测量串行执行。以下为三轮中位数，单位 ms。
+The two endpoints and `7fbce29` each generated a full fixture. The other points copied the same 100k database from `7fbce29` after its word index finished and the WAL was truncated, then ran that commit's migrations and `ANALYZE`; these commits have the same schema before migration 37. Measurements ran serially. The table shows the medians of the three rounds, in ms.
 
-| 提交      |            search AROUND | thread model text long chain |
+| Commit    |            search AROUND | thread model text long chain |
 | --------- | -----------------------: | ---------------------------: |
 | `d0d820a` | 601.91 / 595.27 / 583.36 |     133.17 / 124.14 / 133.57 |
 | `24e3b58` | 608.13 / 632.76 / 601.80 |      111.44 / 100.46 / 97.44 |
@@ -487,115 +487,115 @@ OPENMAIL_SEARCH_PROFILE=1 NODE_OPTIONS=--max-old-space-size=192 pnpm --filter @o
 | `4ccf97d` | 634.88 / 597.96 / 593.48 |     425.29 / 406.34 / 411.03 |
 | `7438fba` | 611.38 / 610.64 / 616.83 |     443.58 / 379.75 / 378.03 |
 
-AROUND 在起点已超过 500 ms，十个历史点的实际 `EXPLAIN QUERY PLAN` 完全一致，未发现本区间内引入该问题的提交。迁移 37 没有改变此计划，保留原索引及迁移。开销来自距离为零时仍物化候选词位置、自连接和去重。修复将距离为零的有序查询编译成一个 [FTS5 短语](https://www.sqlite.org/fts5.html#fts5_phrases)，无序查询匹配两个方向的短语；非零距离仍使用原位置检查，索引未完成时仍走 AND 回退。计划测试要求零距离不读取词位置表，非零距离只读取一次。
+AROUND was already over 500 ms at the start point, and the actual `EXPLAIN QUERY PLAN` was identical at all ten historical points, so no commit in this range introduced the problem. Migration 37 did not change this plan, and the original indexes and migrations stay. The cost came from still materializing candidate word positions, a self-join and deduplication when the distance is zero. The fix compiles an ordered zero-distance query into one [FTS5 phrase](https://www.sqlite.org/fts5.html#fts5_phrases), and an unordered query matches the phrase in both directions. Non-zero distance still uses the original position check, and an unfinished index still takes the AND fallback. The plan tests require that zero distance does not read the word position table and that non-zero distance reads it only once.
 
-长线程文本回归来自 `94ecc1b`：其父提交 `99cd1ef` 约 110 ms，该提交约 351 ms。HTML5 清洗、多个参考宽度与媒体场景的可见性检查增加了逐封提取成本。fixture 的 204 封长线程只有两组相同的纯文本／HTML，却重复提取 204 次。修复在单次 `toModelThread` 调用内按完整纯文本和 HTML 复用结果；仍逐封处理引用边界、标志和文本预算。无跨调用缓存，全部消息文本均不同的线程不会获得这项复用收益。存储拆分、引用边界修改和可见文本阶段重构没有显示同等幅度的独立回归。
+The long-thread text regression came from `94ecc1b`: its parent `99cd1ef` took about 110 ms and it took about 351 ms. HTML5 sanitizing and visibility checks across several reference widths and media scenarios added per-message extraction cost. The fixture's 204-message long thread has only two distinct plain text/HTML pairs, yet it extracted 204 times. The fix reuses results by full plain text and HTML within one `toModelThread` call. Quote boundaries, flags and the text budget are still handled per message. There is no cross-call cache, and a thread whose messages all have different text gets no benefit from this reuse. The storage split, quote boundary changes and the visible text stage refactor showed no independent regression of similar size.
 
-在同一份快照上比较 `7438fba` 与修复，每格按三轮列出中位数，括号内为该轮最大值，单位 ms。两个预算均保持 500 ms。
+On the same snapshot, `7438fba` against the fix: each cell lists the medians of the three rounds, with that round's maximum in parentheses, in ms. Both budgets stay at 500 ms.
 
-| 测量                         |                                              修复前 |                                              修复后 |
+| Measurement                  |                                              Before |                                               After |
 | ---------------------------- | --------------------------------------------------: | --------------------------------------------------: |
 | search AROUND                | 611.38 (717.91) / 610.64 (710.98) / 616.83 (632.50) | 365.57 (403.08) / 371.92 (376.95) / 372.83 (380.32) |
 | thread model text long chain | 443.58 (465.15) / 379.75 (428.80) / 378.03 (406.81) |       91.04 (95.74) / 89.89 (90.59) / 88.73 (88.92) |
 
-## 2026-10-07 AROUND 分页回归排查（slice 89）
+## 2026-10-07 AROUND paging regression investigation (slice 89)
 
-在 `/tmp` 的独立 worktree 测量 `1b7a975..6c04688`，每个提交先安装冻结依赖并构建 core。过滤测量只执行真实 Store 的 `listThreads({ search: '"alpha AROUND 0 beta"', limit: 50 })`，环境与 `test:perf` 相同：Node v24.21.0、`OPENMAIL_PERF=1`、`OPENMAIL_LOW_MEMORY_TESTS=1`、192 MiB 堆、8 MiB SQLite 页缓存。每点连续三轮，每轮预热一次后取五次中位数；另采集实际 SQL 的 `EXPLAIN QUERY PLAN`，不计入测量。每轮前后记录一分钟、五分钟、十五分钟负载，表中列出一分钟范围。测量串行执行。
+Measured `1b7a975..6c04688` in a separate worktree under `/tmp`; each commit first installed frozen dependencies and built core. The filtered measurement ran only the real Store's `listThreads({ search: '"alpha AROUND 0 beta"', limit: 50 })`, in the same environment as `test:perf`: Node v24.21.0, `OPENMAIL_PERF=1`, `OPENMAIL_LOW_MEMORY_TESTS=1`, 192 MiB heap, 8 MiB SQLite page cache. Each point ran three rounds in a row; each round warmed up once and took the median of five. The `EXPLAIN QUERY PLAN` of the actual SQL was collected separately and not counted. The 1, 5 and 15-minute loads were recorded before and after each round, and the table lists the one-minute range. Measurements ran serially.
 
-初次独立生成 `6c04688` fixture 得到 530.17 / 512.37 / 472.33 ms，负载约 9。另在 `1b7a975` 和 `cea6d24` 分别生成完整 fixture 并完成词索引，truncate WAL 后保存快照。迁移 37 的快照用于较早提交，迁移 38 的快照含 slice 79 新增的 10k OCR chunk，用于该提交及后续提交；每点复制快照，再运行该提交自身的迁移和 `ANALYZE`。
+The first fixture generated on its own for `6c04688` gave 530.17 / 512.37 / 472.33 ms at load about 9. Full fixtures were also generated at `1b7a975` and `cea6d24`, the word index finished and the WAL truncated, and snapshots saved. The migration 37 snapshot is used for earlier commits. The migration 38 snapshot contains the 10k OCR chunks added in slice 79 and is used for that commit and later ones. Each point copies a snapshot, then runs that commit's own migrations and `ANALYZE`.
 
-先测区间中点 `b39a8b5`，再核对三个候选提交及其两侧。起点也超过预算，无法用 500 ms 稳定区分 good/bad；本区间未找到可证明引入回归的提交。
+The midpoint `b39a8b5` was measured first, then the three candidate commits and both sides of each. The start point was also over budget, so 500 ms could not reliably separate good from bad; no commit in this range was shown to introduce a regression.
 
-| 提交      |  AROUND 三轮中位数（ms） | 一分钟负载范围 |
-| --------- | -----------------------: | -------------: |
-| `1b7a975` | 472.56 / 535.39 / 416.41 |     9.69–10.35 |
-| `b39a8b5` | 556.33 / 482.89 / 517.36 |     9.44–10.20 |
-| `3d1cd3f` | 567.97 / 566.34 / 586.03 |      7.80–7.95 |
-| `cea6d24` | 648.79 / 557.77 / 512.90 |      9.27–9.46 |
-| `450894d` | 650.22 / 575.99 / 529.56 |      9.04–9.59 |
-| `81b69ee` | 471.47 / 531.91 / 520.67 |      8.21–8.34 |
-| `6c04688` | 519.87 / 576.53 / 616.87 |      7.41–7.65 |
+| Commit    | AROUND medians of three rounds (ms) | One-minute load range |
+| --------- | ----------------------------------: | --------------------: |
+| `1b7a975` |            472.56 / 535.39 / 416.41 |            9.69–10.35 |
+| `b39a8b5` |            556.33 / 482.89 / 517.36 |            9.44–10.20 |
+| `3d1cd3f` |            567.97 / 566.34 / 586.03 |             7.80–7.95 |
+| `cea6d24` |            648.79 / 557.77 / 512.90 |             9.27–9.46 |
+| `450894d` |            650.22 / 575.99 / 529.56 |             9.04–9.59 |
+| `81b69ee` |            471.47 / 531.91 / 520.67 |             8.21–8.34 |
+| `6c04688` |            519.87 / 576.53 / 616.87 |             7.41–7.65 |
 
-所有点的 AROUND 主查询都物化全部匹配消息，再按会话分组、建自动索引和排序，最后才取 50 个结果。该路径始于 `6fab95b`，在 `7fbce29` 移入 `store-threads.ts`；`1b7a975` 将零距离编译为 FTS 短语后仍保留这条全库聚合路径。slice 79 的迁移 38 只使参与者子查询改用覆盖索引；新增的摘要与排名在单独剖析中合计不到 10 ms。slice 86 的分类过滤不作用于这个无分类条件的搜索，迁移 39 只重置 Outlook 同步状态。slice 88 的徽标查询不在过滤测量内，迁移 40 的写入触发器不在只读查询中执行。轮次波动大于候选提交间的稳定差异，负载数据不足以单独归因。
+At every point the main AROUND query materialized all matching messages, then grouped by thread, built an automatic index and sorted, and only then took 50 results. That path began in `6fab95b` and moved into `store-threads.ts` in `7fbce29`. `1b7a975` compiled zero distance into an FTS phrase but kept this whole-database aggregation path. Migration 38 in slice 79 only switched the participant subquery to a covering index; the new snippets and ranking together took under 10 ms in a separate profile. The category filter in slice 86 does not apply to this search, which has no category condition, and migration 39 only resets Outlook sync state. The badge query in slice 88 is not in the filtered measurement, and the write triggers of migration 40 do not run in read-only queries. Round-to-round variation was larger than any stable difference between candidate commits, and the load data is not enough to attribute it on its own.
 
-修复让零距离 AROUND 使用现有日期分页路径：FTS 验证短语，按索引排除同会话的较旧匹配，取得有界结果页后再读取摘要与参与者。非零距离的后续优化见下节。计划断言要求零距离使用全局日期与会话日期索引，只物化 `page`，没有 `MATERIALIZE matches`、词位置读取或 GROUP BY 临时排序；旧实现已触发断言失败。行为测试覆盖有序／无序短语、带前导零的距离、同日 ID 分页、较新的不匹配回复，以及匹配消息的未读／星标聚合。
+The fix makes zero-distance AROUND use the existing date paging path: FTS verifies the phrase, the index excludes older matches in the same thread, and snippets and participants are read only after a bounded result page is found. Later optimization for non-zero distance is in the next section. The plan assertions require that zero distance uses the global date and thread date indexes, materializes only `page`, and has no `MATERIALIZE matches`, word position reads or GROUP BY temporary sort; the old implementation made the assertion fail. Behavior tests cover ordered/unordered phrases, distances with leading zeros, same-day ID paging, newer non-matching replies, and unread/starred aggregation over matching messages.
 
-以下比较使用同一份迁移 38 快照，在相同 `6c04688` 代码上先运行原实现，再运行修复。每格为三轮中位数，括号为该轮最大值，单位 ms。预算仍为 500 ms，目标为不超过 400 ms。
+The comparison below uses the same migration 38 snapshot and runs the original implementation, then the fix, on the same `6c04688` code. Each cell is the median of three rounds, with that round's maximum in parentheses, in ms. The budget is still 500 ms and the target is at most 400 ms.
 
-| 实现   |                         AROUND 三轮中位数（最大值） | 一分钟负载范围 |
-| ------ | --------------------------------------------------: | -------------: |
-| 修复前 | 588.83 (683.79) / 552.89 (643.73) / 516.34 (829.30) |      8.35–8.79 |
-| 修复后 |       87.25 (88.37) / 86.68 (90.08) / 86.19 (87.29) |      7.84–7.84 |
+| Implementation |            AROUND medians of three rounds (maximum) | One-minute load range |
+| -------------- | --------------------------------------------------: | --------------------: |
+| Before         | 588.83 (683.79) / 552.89 (643.73) / 516.34 (829.30) |             8.35–8.79 |
+| After          |       87.25 (88.37) / 86.68 (90.08) / 86.19 (87.29) |             7.84–7.84 |
 
-独立逐步骤剖析的总中位数为 455.22 → 89.74 ms，主 SQL 为 445.19 → 79.55 ms；摘要与排名没有出现同等幅度的变化。结果保留日期与 ID 顺序、匹配消息的标志聚合和附件命中语义，未修改预算、迁移或索引。
+A separate step-by-step profile gave a total median of 455.22 → 89.74 ms and main SQL of 445.19 → 79.55 ms; snippets and ranking showed no change of similar size. Results keep date and ID order, flag aggregation over matching messages and attachment hit semantics. Budgets, migrations and indexes were not changed.
 
-## 非零距离 AROUND 分页
+## Non-zero-distance AROUND paging
 
-Slice 90 新增 `search AROUND 3`，调用 `listThreads({ search: "alpha AROUND 3 beta", limit: 50 })`。这些词来自 100k fixture 的消息文本。先按日期索引取一个最多 50 个会话或消息的未搜索窗口。FTS NEAR 和位置检查只处理这个窗口。精确位置检查和未读／星标聚合只物化该窗口的消息。词位置虚表仍按词读取实例流，但仅保留窗口内位置。FTS 范围用 `(rowid+0) IN (...)`，避免每封候选消息重开 MATCH 游标。首个窗口没有精确命中或仍不能确定整页时，丢弃局部结果，以原查询和原游标执行一次旧全库路径。该上限也约束深页游标的前缀重放；计数保留全库路径。
+Slice 90 adds `search AROUND 3`, which calls `listThreads({ search: "alpha AROUND 3 beta", limit: 50 })`. The words come from the 100k fixture's message text. It first takes an unsearched window of at most 50 threads or messages by the date index. FTS NEAR and the position check handle only this window. The exact position check and unread/starred aggregation materialize only the window's messages. The word position virtual table still reads the instance stream by term, but keeps only positions within the window. The FTS range uses `(rowid+0) IN (...)`, so the MATCH cursor is not reopened for each candidate message. When the first window has no exact hit or still cannot settle the whole page, the partial result is discarded and the old whole-database path runs once with the original query and cursor. This limit also bounds the prefix replay of deep-page cursors. Counts keep the whole-database path.
 
-NEAR 可能命中顺序或重叠不符的较新回复，因此精确会话头可能较旧。分页保留这些会话，并在下一候选头早于当前结果页尾时停止；调用方游标在精确头解析后应用。否定的 AROUND 分支不能直接否定 NEAR 超集，留给窗口内的精确检查。索引未就绪仍走原 AND 回退，不写索引。`around-pages.test.ts` 用三个随机种子对照直接扫描 fixture 文本的参考实现，不调用 Store 的 SQL 条件生成器，覆盖有序／无序、短语、重复词、布尔组合、分块、四种索引就绪状态、账户与文件夹范围、匹配头、标志、Unicode ID 并列和游标；`performance-plans.test.ts` 检查候选日期索引、窗口内消息 ID 检索及共享 MATCH 游标。
+NEAR can hit newer replies whose order or overlap does not fit, so the exact thread head may be older. Paging keeps these threads and stops when the next candidate head is older than the tail of the current result page; the caller's cursor applies after exact heads are resolved. A negated AROUND branch cannot directly negate the NEAR superset, so it is left to the exact check within the window. When the index is not ready it still takes the original AND fallback and does not write the index. `around-pages.test.ts` uses three random seeds and compares against a reference implementation that scans the fixture text directly, without calling the Store's SQL condition generator. It covers ordered/unordered, phrases, repeated words, boolean combinations, chunking, four index readiness states, account and folder scope, matching heads, flags, Unicode ID ties and cursors. `performance-plans.test.ts` checks the candidate date index, message ID lookup within the window and the shared MATCH cursor.
 
-2026-10-07，在同一份临时 100k fixture 上串行比较 `71c9c0c` 的线程查询与修复版本。Node v24.21.0，默认 Node 堆上限，8 MiB SQLite 页缓存；正式预算套件仍使用 192 MiB 堆上限。每轮预热一次，取五次热运行中位数；查询计划和 fixture 生成不计时。负载在每轮结束时读取，列序为一／五／十五分钟。
+On 2026-10-07, the thread query of `71c9c0c` and the fixed version were compared serially on the same temporary 100k fixture. Node v24.21.0, default Node heap limit, 8 MiB SQLite page cache; the official budget suite still uses the 192 MiB heap limit. Each round warmed up once and took the median of five warm runs; query plans and fixture generation were not timed. Load was read at the end of each round, in the order 1/5/15 minutes.
 
-| 实现   | 轮次 | 中位数 ms | 负载均值                |
-| ------ | ---: | --------: | ----------------------- |
-| 修复前 |    1 |    851.98 | 21.93 / 124.83 / 211.39 |
-| 修复前 |    2 |    889.21 | 20.25 / 121.08 / 209.05 |
-| 修复前 |    3 |    871.82 | 20.63 / 119.48 / 207.97 |
-| 修复后 |    1 |    236.60 | 20.52 / 96.09 / 191.09  |
-| 修复后 |    2 |    250.16 | 20.52 / 96.09 / 191.09  |
-| 修复后 |    3 |    215.47 | 20.52 / 96.09 / 191.09  |
+| Implementation | Round | Median ms | Load average            |
+| -------------- | ----: | --------: | ----------------------- |
+| Before         |     1 |    851.98 | 21.93 / 124.83 / 211.39 |
+| Before         |     2 |    889.21 | 20.25 / 121.08 / 209.05 |
+| Before         |     3 |    871.82 | 20.63 / 119.48 / 207.97 |
+| After          |     1 |    236.60 | 20.52 / 96.09 / 191.09  |
+| After          |     2 |    250.16 | 20.52 / 96.09 / 191.09  |
+| After          |     3 |    215.47 | 20.52 / 96.09 / 191.09  |
 
-额外的 20k 和 100k 稀疏 fixture 包含每封邮件一个会话：除三封外，消息文本均为 `beta one alpha`，三封为 `alpha one beta`。有序 `"alpha AROUND 2 beta"` 的 NEAR 预筛选命中全库，精确匹配仅三封。预算套件分别验证会话、消息、否定查询的 500 ms 上限，以及第 40 页游标的 1500 ms 上限；结果写入 `/tmp/openmail-around-sparse-performance.json`，可用 `OPENMAIL_SPARSE_PERF_REPORT` 改路径。20k 报告另存为上述路径加 `.20000.json`。默认测试用 5000 封版本断言候选窗口实际执行不超过一次，同时核对三封结果和深页结果。该次数断言避免只依赖机器负载下的时延。
+Extra 20k and 100k sparse fixtures have one thread per message. Except for three messages, the message text is `beta one alpha`; the three are `alpha one beta`. The NEAR prefilter of ordered `"alpha AROUND 2 beta"` hits the whole database, while only three messages match exactly. The budget suite checks a 500 ms limit for thread, message and negated queries, and a 1500 ms limit for a page-40 cursor. Results are written to `/tmp/openmail-around-sparse-performance.json`; `OPENMAIL_SPARSE_PERF_REPORT` changes the path. The 20k report is saved at that path plus `.20000.json`. The default tests use a 5000-message version and assert that the candidate window actually runs at most once, and check the three results and the deep-page results. This count assertion avoids depending only on latency under machine load.
 
-对首窗无命中回退的追加比较使用 `44ca8ff` 的旧线程查询。两种实现共用同一临时 SQLite 连接和 fixture，192 MiB Node 堆、8 MiB SQLite 缓存。预热后交替执行新旧查询各 15 次，取中位数；每个用例先比较完整返回对象。简单 AROUND 的 ASCII 窗口且没有派生块时，可用与 unicode61 相同的词边界排除整个窗口，省去额外实例流扫描；Unicode、派生块、布尔组合和未完成索引保留 SQLite 检查。单消息会话候选全部落在游标排除范围时直接回退；垃圾邮件资格读取已由触发器维护的 `message_search_meta.eligible`。原查询和游标保持不变。
+An added comparison for the fallback when the first window has no hit uses the old thread query from `44ca8ff`. Both implementations share the same temporary SQLite connection and fixture, a 192 MiB Node heap and an 8 MiB SQLite cache. After warmup, new and old queries ran alternately 15 times each, and the median was taken; each case first compared the full returned objects. For an ASCII window of a simple AROUND with no derived chunks, the same word boundaries as unicode61 can exclude the whole window, which saves an extra instance stream scan. Unicode, derived chunks, boolean combinations and unfinished indexes keep the SQLite check. When all candidates of single-message threads fall in the cursor's excluded range, it falls back directly. Spam eligibility reads `message_search_meta.eligible`, which triggers already maintain. The original query and cursor stay unchanged.
 
-| 规模 | 用例        | 旧路径 ms | 新路径 ms | 负载一／五／十五分钟  |
-| ---: | ----------- | --------: | --------: | --------------------- |
-|  20k | sparse      |     51.64 |     46.04 | 17.24 / 21.76 / 29.96 |
-|  20k | sparse flat |     52.59 |     46.23 | 16.42 / 21.52 / 29.83 |
-|  20k | negated     |     55.78 |     50.41 | 16.42 / 21.52 / 29.83 |
-|  20k | deep        |    125.94 |    122.68 | 16.39 / 21.43 / 29.75 |
-| 100k | sparse      |    301.15 |    267.33 | 15.18 / 21.00 / 29.50 |
-| 100k | sparse flat |    292.80 |    259.05 | 14.15 / 20.59 / 29.25 |
-| 100k | negated     |    321.75 |    294.79 | 16.18 / 20.71 / 29.14 |
-| 100k | deep        |    759.10 |    705.08 | 19.49 / 21.00 / 29.00 |
+| Size | Case        | Old path ms | New path ms | Load 1/5/15 min       |
+| ---: | ----------- | ----------: | ----------: | --------------------- |
+|  20k | sparse      |       51.64 |       46.04 | 17.24 / 21.76 / 29.96 |
+|  20k | sparse flat |       52.59 |       46.23 | 16.42 / 21.52 / 29.83 |
+|  20k | negated     |       55.78 |       50.41 | 16.42 / 21.52 / 29.83 |
+|  20k | deep        |      125.94 |      122.68 | 16.39 / 21.43 / 29.75 |
+| 100k | sparse      |      301.15 |      267.33 | 15.18 / 21.00 / 29.50 |
+| 100k | sparse flat |      292.80 |      259.05 | 14.15 / 20.59 / 29.25 |
+| 100k | negated     |      321.75 |      294.79 | 16.18 / 20.71 / 29.14 |
+| 100k | deep        |      759.10 |      705.08 | 19.49 / 21.00 / 29.00 |
 
-所有用例的新路径中位数均低于旧路径。
+The new path's median is below the old path's in every case.
 
-三轮中位数从 871.82 ms 降至 236.60 ms，预算设为 475 ms，约为修复后中位数的两倍，低于 500 ms 上限。更早的一轮基线在负载 191.77 / 184.53 / 183.37 下测得 3121.36 ms；不将该轮作为同负载比较。完整测量仍用 `pnpm test:perf`；只复现该项可用：
+The median of three rounds dropped from 871.82 ms to 236.60 ms. The budget is set to 475 ms, about twice the fixed median and below the 500 ms limit. An earlier baseline round measured 3121.36 ms at load 191.77 / 184.53 / 183.37; that round is not used as a same-load comparison. The full measurement still uses `pnpm test:perf`; to reproduce only this item:
 
 ```sh
 OPENMAIL_PERF_MEASURE="search AROUND 3" OPENMAIL_PERF_REPORT=/tmp/openmail-around3.json pnpm test:perf
 ```
 
-## 同步时的主线程阻塞（slice 97）
+## Main thread blocking during sync (slice 97)
 
-原因：真实 Outlook 首次同步（3,787 封 HTML）的前 60 s 里，主进程最长阻塞 670 ms。provider 解析在主线程调用 `htmlToText`，合计 37.9 s；每批写入事务含 200 条变更，在主线程一次跑完，真实库每事务 100 封时 CPU 最长 509 ms。
+Cause: in the first 60 s of a real Outlook first sync (3,787 HTML messages), the main process blocked for up to 670 ms. Provider parsing called `htmlToText` on the main thread, 37.9 s in total. Each write transaction held 200 changes and ran in one go on the main thread; on the real database, at 100 messages per transaction, CPU time peaked at 509 ms.
 
-修复：HTML 提取改走 `HtmlText` 服务，Node 用 worker 池（见[平台清单](platform-inventory.md)），真实库 3,799 封的输出与当前线程逐字节相同；`WRITE_BATCH` 降到 20 条变更，事务之间让出事件循环，每事务 10 封时 CPU 最长 104 ms。批次边界原本就按时间切，Cursor 仍只与之前的全部变更一起提交。
+Fix: HTML extraction goes through the `HtmlText` service, which on Node uses a worker pool (see the [platform inventory](platform-inventory.md)). For 3,799 messages from the real database the output is byte-for-byte the same as on the current thread. `WRITE_BATCH` drops to 20 changes, and the event loop yields between transactions; at 10 messages per transaction CPU time peaks at 104 ms. Batch boundaries were already cut by time, and the cursor is still committed only together with all earlier changes.
 
-`sync-performance.test.ts`（`test:perf`）经 Node worker 池和磁盘 WAL 数据库同步 2,000 封 HTML，断言 p99 阻塞低于 50 ms、最长阻塞低于 300 ms，负载低于 CPU 数时还要求没有超过 50 ms 的阻塞。三轮中位数（2026-10-08，串行，一分钟负载 36–52；修复前为当前线程提取加 200 条批次）：
+`sync-performance.test.ts` (`test:perf`) syncs 2,000 HTML messages through the Node worker pool into an on-disk WAL database. It asserts p99 blocking under 50 ms and the longest block under 300 ms, and when load is below the CPU count it also requires no block over 50 ms. Median of three rounds (2026-10-08, serial, one-minute load 36–52; before the fix means extraction on the current thread plus 200-change batches):
 
-| 实现   | 同步耗时 s | 最长阻塞 ms | p99 阻塞 ms | 超过 50 ms 的阻塞 |
-| ------ | ---------: | ----------: | ----------: | ----------------: |
-| 修复前 |       37.1 |         527 |         387 |               241 |
-| 修复后 |       17.3 |          48 |         7.8 |                 0 |
+| Implementation | Sync time s | Longest block ms | p99 block ms | Blocks over 50 ms |
+| -------------- | ----------: | ---------------: | -----------: | ----------------: |
+| Before         |        37.1 |              527 |          387 |               241 |
+| After          |        17.3 |               48 |          7.8 |                 0 |
 
-## 写入与磁盘成本
+## Write and disk cost
 
 ```sh
 pnpm --filter @openmail/core build
 OPENMAIL_PERF=1 OPENMAIL_PERF_BASELINE_REF=dfe3a46 pnpm perf:cost
 ```
 
-脚本使用真实 Store 写入同一份 10 万封快照，并比较历史 schema 与当前索引。生产设置为 WAL、FULL 同步、1000 页自动 checkpoint、8 MiB WAL 保留上限及页缓存。写入取五次热运行中位数，计时包含提交；未变 upsert 必须满足 `total_changes()=0`。写入回退超过 25% 或相同阶段 DB+WAL 增长超过 15% 时失败。空间同时记录提交后及 truncate 后的 DB+WAL。
+The script writes the same 100k-message snapshot through the real Store and compares the historical schema with the current indexes. The production settings are WAL, FULL synchronous, automatic checkpoint at 1000 pages, and an 8 MiB WAL retention limit and page cache. Writes take the median of five warm runs, and the timing includes the commit; an unchanged upsert must satisfy `total_changes()=0`. It fails when writes regress by more than 25% or DB+WAL grows more than 15% at the same stage. Space records DB+WAL both after commit and after truncate.
 
-## 条件与复现
+## Conditions and reproduction
 
-合成数据库运行真实迁移，通过 `Store.upsertMessage` 写入 150,000 封邮件、3 个账户、50,001 个会话、20 个自定义标签、3,000 个公司／联系人快照和 15,000 项附件元数据。包含两个 FTS 索引、往来及服务端联系人候选、1,000 条邀请响应、1,500 条邀请历史和提醒。消息文本与 HTML 约 1 KiB。SQLite 页缓存 8 MiB，Node 堆上限 192 MiB。
+The synthetic database runs the real migrations and writes, through `Store.upsertMessage`, 150,000 messages, 3 accounts, 50,001 threads, 20 custom labels, 3,000 company/contact snapshots and 15,000 attachment metadata items. It includes two FTS indexes, correspondent and server contact candidates, 1,000 invitation responses, 1,500 invitation history entries and reminders. Message text and HTML are about 1 KiB. SQLite page cache is 8 MiB and the Node heap limit is 192 MiB.
 
-SQL 基准为 main `1434a8b`，含迁移 26。读取取五次热运行中位数，写入取三次中位数；完整缓存清理只测一次。查询计划来自真实 Store SQL，单独采集，不计入读写时间。
+The SQL baseline is main `1434a8b`, including migration 26. Reads take the median of five warm runs, writes the median of three; the full cache clear is measured once. Query plans come from the real Store SQL, are collected separately and are not counted in read or write times.
 
 ```sh
 pnpm --filter @openmail/core build
@@ -605,97 +605,97 @@ OPENMAIL_LOW_MEMORY_TESTS=1 node --expose-gc packages/core/scripts/sync-memory.m
 OPENMAIL_LOW_MEMORY_TESTS=1 node --expose-gc packages/core/scripts/idle-memory.mjs
 ```
 
-JSON 报告包含实际 SQL 和 `EXPLAIN QUERY PLAN`；脚本结束时清理临时数据库。
+The JSON report contains the actual SQL and `EXPLAIN QUERY PLAN`. The scripts clean up the temporary database when they finish.
 
-## 内存与启动
+## Memory and startup
 
-IMAP 通过 ImapFlow iterator 逐封解析并控制消费速度，批次保留元数据和消息文本，不累计全部原始 MIME 与附件字节。内存支架在模拟响应间执行 GC，区分保留对象与 GC 调度。Outlook 每次保留一个 50 封 delta 页、六个并发转换和最多 16 个事件；跨页仅保留 ID。回归覆盖顺序、移动优先于删除及最终检查点，任一页或重启失败时不清掉旧缓存。core 每批最多提交 200 个事件。
+IMAP parses message by message through the ImapFlow iterator with controlled consumption speed. A batch keeps metadata and message text and does not accumulate all raw MIME and attachment bytes. The memory harness runs GC between simulated responses to tell retained objects apart from GC scheduling. Outlook keeps one 50-message delta page, six concurrent conversions and at most 16 events at a time; across pages it keeps only IDs. Regressions cover ordering, move taking precedence over delete, and the final checkpoint. If any page or restart fails, the old cache is not cleared. core commits at most 200 events per batch.
 
-拼写菜单的 Set 在窗口关闭时移除监听器与闭包。原始 MIME 和会话查询的闲置 TTL 为零，读者卸载后释放；内嵌与派生图片保留两分钟。内存附件 LRU 上限 16 MiB、八封邮件，附件树按请求管理。持久磁盘附件缓存是另一层，容量与清理见[发布说明](release.md#old-mail-and-cache)。
+The spelling menu's Set removes its listeners and closures when the window closes. Raw MIME and thread queries have an idle TTL of zero and are released after the reader unmounts; inline and derived images stay for two minutes. The in-memory attachment LRU is capped at 16 MiB and eight messages, and the attachment tree is managed per request. The persistent on-disk attachment cache is a separate layer; its size and cleanup are in the [release notes](release.md#old-mail-and-cache).
 
-迁移和恢复检查在 core 就绪前完成。Vision 版本检查、搜索回填、媒体／语义批次与初次自动同步等任一窗口 `ready-to-show` 后启动。Node 测试验证首窗口关闭后第二窗口仍可释放等待，以及监听器清理。Electron 实测见下一节。Apple Contacts 的进程内快照和清理限制见 [Apple Contacts](apple-contacts.md)，通用验证入口见[测试](testing.md)。
+Migrations and recovery checks finish before core is ready. The Vision version check, search backfill, media/semantic batches and the first automatic sync start after any window's `ready-to-show`. Node tests verify that a second window can still release the wait after the first window closes, and that listeners are cleaned up. Electron measurements are in the next section. The in-process snapshot and cleanup limits for Apple Contacts are in [Apple Contacts](apple-contacts.md), and the general verification entry points are in [testing](testing.md).
 
-### 桌面冷启动与内存实测（slice 102）
+### Desktop cold start and memory measurements (slice 102)
 
-真实邮箱只读副本：4,065 封邮件，2 个账户，数据库 238 MB。启动命令为 `OPENMAIL_READ_ONLY=1 electron-vite preview`，改动前后的构建交替冷启动，各 7 次取中位数，系统负载 8–12。基线为 `fc49dd3`。时间从 Electron 主进程启动算起，单位 ms。主进程和 renderer 的临时 performance mark 及 RPC 日志只在测量时加入，未提交。未打包的启动多一次约 70 ms 的 Dock 图标设置，前后两组都包含。
+A read-only copy of a real mailbox: 4,065 messages, 2 accounts, a 238 MB database. The launch command is `OPENMAIL_READ_ONLY=1 electron-vite preview`. Builds before and after the change were cold-started alternately, 7 times each, taking the median, at system load 8–12. The baseline is `fc49dd3`. Times count from the start of the Electron main process, in ms. Temporary performance marks and RPC logs in the main process and renderer were added only for measurement and are not committed. An unpackaged launch does one extra Dock icon setup of about 70 ms, included in both groups.
 
-| 指标                          |  改动前 |  改动后 |
-| ----------------------------- | ------: | ------: |
-| 主进程模块求值完成            |     479 |     456 |
-| 主窗口 `ready-to-show`        |     944 |     852 |
-| renderer 起点到入口脚本执行完 |     211 |     130 |
-| 首批列表行绘制                |    1098 |    1009 |
-| 启动时 `Threads` 请求次数     |       3 |       1 |
-| `Labels` RPC                  |   44–56 |       4 |
-| renderer 入口块（未压缩）     | 4.20 MB | 4.01 MB |
+| Metric                              |  Before |   After |
+| ----------------------------------- | ------: | ------: |
+| main process module evaluation done |     479 |     456 |
+| main window `ready-to-show`         |     944 |     852 |
+| renderer start to entry script done |     211 |     130 |
+| first list rows painted             |    1098 |    1009 |
+| `Threads` requests at startup       |       3 |       1 |
+| `Labels` RPC                        |   44–56 |       4 |
+| renderer entry chunk (uncompressed) | 4.20 MB | 4.01 MB |
 
-改动如下：
+The changes:
 
-- `listLabels` 的 Outlook 分类查询原先按 `messages_body_sizes` 扫描每行邮件，读取 `labels_json` 时要越过正文溢出页。查询现改用覆盖索引 `messages_thread_labels`（迁移 46 起为 `messages_thread_state`，user_version 46），耗时从 58 ms 降到 2 ms。它在首屏前执行，主线程 SQLite 串行，后续 RPC 原先都排在它后面。一次冷启动测到 1.4 s。`performance-plans.test.ts` 断言该计划。
-- 首次同步 2,000 封 HTML Outlook 邮件时，事件循环最长阻塞原先在 62 ms 到 1.27 s 之间（5 次，负载 11–14）。阻塞来自两条同步 SQL：重置候选查询读 `labels_json` 和 `rfc_message_id`，同步健康检查读 `labels_json` 和 `is_unread`。这些列排在正文列之后，按行读取要走完每封邮件的正文溢出页，冷缓存下一次查询最长 1.27 s。迁移 46（user_version 46）把同步健康检查和 `listLabels` 改到覆盖索引 `messages_thread_state`，`messages_account_date` 加上 `provider_id`。重置候选先从索引列出标识，只为真正的候选读整行。改后 5 次最长阻塞 25–61 ms，p95 事件循环延迟 2.6–3.2 ms。这组数在负载 33–43 下测得（16 核），测试报告见 `sync-performance.test.ts`。
-- 同步的写事务原先每次最多 20 条变更。20 封约 105 KB 的 HTML 邮件连同 FTS 和 `search_flags` 触发器在一次提交里写完，负载高时单次阻塞超过 50 ms。`mailbox-sync.ts` 现在还按正文大小切分，每个事务约 200 KB 正文，事务之间 `Effect.yieldNow`。改后 `pnpm test:perf` 跑 3 次，最长阻塞 33、19、29 ms，p99 9.1、8.2、7.8 ms，没有超过 50 ms 的阻塞，1 分钟负载 8.4、10.8、9.3（16 核）。`blocksOver50Ms` 断言只在 1 分钟负载低于核数一半时生效。
-- `pagedList` 原先由 `Atom.family` 返回包装对象。family 只弱引用成员，GC 回收包装对象后，下一次读取会新建列表 atom，从第一页重新请求。启动时因此发出三次相同的 `Threads`。旧 atom 带着已加载的页保留 5 分钟闲置 TTL。现在每个 family 直接返回 atom，`threads-paging.test.ts` 在 GC 后检查挂载中的列表不变。
-- `electron-updater` 的 GitHub provider 改为首次检查更新时加载。主进程启动时加载约 1,100 个 ES 模块。Node compile cache 曾使模块求值提前约 70 ms，因安全原因不启用，见[安全说明](security.md)。
-- `openmail-app` 协议开启 `codeCache`。Chromium 第二次加载生成入口脚本的字节码缓存，第三次启动起使用。新构建的前两次启动仍约 211 ms。
-- core 声明 `"sideEffects": false`。ical.js 在导入时执行代码，原先经 schema 入口被打进 renderer。`bundle-split.test.ts` 检查构建产物：入口不含 ical.js 和语言目录，按需页面各自成块。
+- The Outlook category query in `listLabels` used to scan every message row through `messages_body_sizes`, and reading `labels_json` meant stepping over the body overflow pages. The query now uses the covering index `messages_thread_labels` (`messages_thread_state` from migration 46, user_version 46), and its time dropped from 58 ms to 2 ms. It runs before the first screen, main-thread SQLite is serial, and later RPCs used to queue behind it. One cold start measured 1.4 s. `performance-plans.test.ts` asserts this plan.
+- During a first sync of 2,000 HTML Outlook messages, the longest event loop block was between 62 ms and 1.27 s (5 runs, load 11–14). The blocks came from two synchronous SQL statements: the reset candidate query read `labels_json` and `rfc_message_id`, and the sync health check read `labels_json` and `is_unread`. These columns come after the body columns, so reading them per row walks every message's body overflow pages, and one query took up to 1.27 s with a cold cache. Migration 46 (user_version 46) moves the sync health check and `listLabels` to the covering index `messages_thread_state`, and adds `provider_id` to `messages_account_date`. Reset candidates are first listed from the index, and only real candidates read the full row. After the change the longest block over 5 runs was 25–61 ms and the p95 event loop delay 2.6–3.2 ms. These numbers were measured at load 33–43 (16 cores); the test report is in `sync-performance.test.ts`.
+- Sync write transactions used to hold up to 20 changes each. 20 HTML messages of about 105 KB, plus the FTS and `search_flags` triggers, were written in one commit, and under high load a single block exceeded 50 ms. `mailbox-sync.ts` now also splits by body size, about 200 KB of body per transaction, with `Effect.yieldNow` between transactions. After the change, 3 runs of `pnpm test:perf` gave longest blocks of 33, 19 and 29 ms, p99 of 9.1, 8.2 and 7.8 ms, and no blocks over 50 ms, at 1-minute load 8.4, 10.8 and 9.3 (16 cores). The `blocksOver50Ms` assertion applies only when the 1-minute load is below half the core count.
+- `pagedList` used to return a wrapper object from `Atom.family`. The family holds its members only weakly, so after GC collected the wrapper, the next read created a new list atom and requested from the first page again. Startup therefore sent three identical `Threads` requests. The old atom kept its loaded pages for the 5-minute idle TTL. Now each family returns the atom directly, and `threads-paging.test.ts` checks after GC that a mounted list does not change.
+- The GitHub provider of `electron-updater` now loads on the first update check. The main process loads about 1,100 ES modules at startup. Node compile cache once made module evaluation about 70 ms earlier, but it is not enabled for security reasons; see the [security notes](security.md).
+- The `openmail-app` protocol turns on `codeCache`. Chromium generates a bytecode cache for the entry script on the second load, and uses it from the third launch on. The first two launches of a new build still take about 211 ms.
+- core declares `"sideEffects": false`. ical.js runs code on import and used to be bundled into the renderer through the schema entry. `bundle-split.test.ts` checks the build output: the entry contains neither ical.js nor the language catalogs, and on-demand pages each get their own chunk.
 
-改动前主进程 CPU profile 中，`ready` 前约 680 ms 用于 ESM 加载、编译和实例化；BrowserWindow 创建约 100 ms，在原生代码中。改动后首批列表行的关键路径主要是 renderer 首次渲染约 150 ms，主进程响应启动 RPC 均在 10 ms 内。renderer 开启压缩后入口为 1.97 MB，有字节码缓存时启动时间无可测差异，因此未启用。
+In the main process CPU profile before the change, about 680 ms before `ready` went to ESM loading, compiling and instantiation; BrowserWindow creation took about 100 ms, in native code. After the change, the critical path to the first list rows is mainly the renderer's first render, about 150 ms, and the main process answers startup RPCs within 10 ms. With minification on, the renderer entry is 1.97 MB, but with a bytecode cache there is no measurable startup difference, so it is not enabled.
 
-内存在启动后闲置 2 分钟、再依次打开会话后测量。JS 堆在 GC 后读取，RSS 来自 `ps`，单位 MB。改动前后交替各测两次，基线为 `d5dd012`，数值范围相同，合并列出：
+Memory was measured after 2 minutes idle following startup, then while opening threads in turn. The JS heap is read after GC, RSS comes from `ps`, in MB. Before and after were measured alternately twice each, with baseline `d5dd012`; the ranges were the same, so they are listed together:
 
-| 时点           | 主进程 RSS | 主进程堆 | renderer RSS | renderer 堆 |
-| -------------- | ---------: | -------: | -----------: | ----------: |
-| 闲置 2 分钟    |    288–293 |    44–46 |      185–223 |       15–19 |
-| 打开 20 个会话 |    299–311 |    46–51 |      281–296 |       20–26 |
-| 打开 60 个会话 |    305–309 |    47–48 |      327–337 |       21–23 |
-| 再闲置 150 秒  |    306–310 |    47–48 |      329–335 |       21–22 |
+| Point              | Main RSS | Main heap | Renderer RSS | Renderer heap |
+| ------------------ | -------: | --------: | -----------: | ------------: |
+| idle 2 minutes     |  288–293 |     44–46 |      185–223 |         15–19 |
+| 20 threads opened  |  299–311 |     46–51 |      281–296 |         20–26 |
+| 60 threads opened  |  305–309 |     47–48 |      327–337 |         21–23 |
+| idle another 150 s |  306–310 |     47–48 |      329–335 |         21–22 |
 
-改动前另有 4 次带临时日志的测量，其中 2 次 renderer 堆在 20 到 60 个会话后到 40–50 MB，闲置后不回落，与 GC 时机触发的重复列表 atom 相符。改动后 3 次都不超过 26 MB。改动前还有 2 次 renderer RSS 到 0.9 GB，JS 堆仍为 23–29 MB，原因未查明，改动后未出现。
+Before the change there were 4 more measurements with temporary logging. In 2 of them the renderer heap reached 40–50 MB after 20 to 60 threads and did not drop back when idle, which fits the duplicate list atoms triggered by GC timing. After the change it stayed at or below 26 MB in all 3 runs. Before the change, 2 runs also had renderer RSS reach 0.9 GB while the JS heap stayed at 23–29 MB; the cause was not found, and it did not occur after the change.
 
-DOM 节点、文档数和事件监听器在打开 40 个会话后不增长。renderer RSS 随打开的会话上升，增长不在 JS 堆中，推测来自 Blink 的布局和图片解码。`messageBackgroundAtom` 与 `imagesLoadedAtom` 原先按会话保留每封打开过的邮件或会话一项，直到窗口关闭，slice 105 已加上限。
+DOM nodes, document count and event listeners do not grow after opening 40 threads. Renderer RSS rises with the threads opened, and the growth is not in the JS heap; it likely comes from Blink layout and image decoding. `messageBackgroundAtom` and `imagesLoadedAtom` used to keep one entry per message or thread ever opened, until the window closed; slice 105 added a cap.
 
-### 主进程懒加载与阅读器拆块（slice 105）
+### Main process lazy loading and reader chunk split (slice 105)
 
-方法同上一节：同一份真实邮箱只读副本（`.backup` 后由当前迁移升级），改动前后的构建交替冷启动各 7 次取中位数，系统负载 9–28。基线为 `6315d39`。模块数由 `--inspect-brk` 下的 `Debugger.scriptParsed` 计到 `ready-to-show`。时间单位 ms。
+Same method as the previous section: the same read-only copy of the real mailbox (made with `.backup`, then upgraded by the current migrations), builds before and after cold-started alternately 7 times each, median, system load 9–28. The baseline is `6315d39`. Module counts come from `Debugger.scriptParsed` under `--inspect-brk`, counted up to `ready-to-show`. Times in ms.
 
-| 指标                          |  改动前 |  改动后 |
-| ----------------------------- | ------: | ------: |
-| 主进程 ES 模块（到窗口就绪）  |   1,069 |     796 |
-| 主进程模块求值完成            |     465 |     389 |
-| 主窗口 `ready-to-show`        |     867 |     761 |
-| renderer 起点到入口脚本执行完 |     132 |     113 |
-| 首批列表行绘制                |    1020 |     927 |
-| renderer 入口块（未压缩）     | 4.01 MB | 2.99 MB |
+| Metric                                    |  Before |   After |
+| ----------------------------------------- | ------: | ------: |
+| main process ES modules (to window ready) |   1,069 |     796 |
+| main process module evaluation done       |     465 |     389 |
+| main window `ready-to-show`               |     867 |     761 |
+| renderer start to entry script done       |     132 |     113 |
+| first list rows painted                   |    1020 |     927 |
+| renderer entry chunk (uncompressed)       | 4.01 MB | 2.99 MB |
 
-- core 在首次使用时加载 imapflow、nodemailer（SMTP 与 MailComposer）、mailparser 和 `@effect/ai-anthropic`。动态导入失败映射为原操作的错误：IMAP 连接和 SMTP transport 为 `failure()` 的 ProviderError，MIME 构建为 PermanentError，解析为 “Cannot parse MIME message”，AI 请求为原有 ProviderError。semver 改为按函数子路径导入，从 47 个模块降到 10 个。PDF 和模型推理原本就在 worker 中。markdown-it（约 70 个模块，单独导入约 18 ms）仍随启动加载，`renderMarkdown` 及草稿指纹是同步的可移植接口，改成异步要改 drafts 解析和发送路径。
-- renderer 的 `MessageBody` 块包含正文、远程图片提示、追踪器徽章和引用折叠。块加载前显示与 EmailFrame 初始高度（120 px）相同的占位框；判断远程内容需要解析器，提示在块加载后出现。iframe 的 sandbox 与 CSP 未改。块加载失败时正文位置显示“Couldn't load this message.”和 Retry，失败结果不缓存，Retry 重新导入。附件内嵌邮件和导入预览经 `LazyEmailFrame` 使用同一块。入口里的撰写代码经 `draft-loader.ts` 动态加载 `draft.ts`。`applyComposeSignature` 从 `signatures.ts` 移到 `compose-body.ts`：签名 schema 被 RPC 定义引用，原先把整套清理代码带进入口。`bundle-split.test.ts` 断言入口不含 `sanitizeReaderHtml` 和 DOMPurify。
-- `messageBackgroundAtom` 与 `imagesLoadedAtom` 的值存在一个保活的 Map 中，按最近设置的顺序分别保留 200 封邮件和 100 个会话；family 成员只做派生，不再常驻。主窗口同一时间只打开一个会话，打开中的会话的决定不会被挤出，除非在该会话内对超过 200 封邮件分别切换背景。`state/ui.test.ts` 覆盖保留、淘汰和刷新顺序。
+- core loads imapflow, nodemailer (SMTP and MailComposer), mailparser and `@effect/ai-anthropic` on first use. A failed dynamic import maps to the original operation's error: a `failure()` ProviderError for IMAP connections and the SMTP transport, PermanentError for MIME builds, “Cannot parse MIME message” for parsing, and the existing ProviderError for AI requests. semver is now imported by function subpath, down from 47 modules to 10. PDF and model inference were already in workers. markdown-it (about 70 modules, about 18 ms to import on its own) still loads at startup: `renderMarkdown` and the draft fingerprint are synchronous portable interfaces, and making them async would change draft parsing and the send path.
+- The renderer's `MessageBody` chunk contains the body, the remote image prompt, tracker badges and quote folding. Before the chunk loads, it shows a placeholder box the same as the EmailFrame initial height (120 px). Deciding on remote content needs the parser, so the prompt appears after the chunk loads. The iframe sandbox and CSP did not change. If the chunk fails to load, the body area shows “Couldn't load this message.” and Retry; the failure is not cached, and Retry imports again. Messages embedded in attachments and import previews use the same chunk through `LazyEmailFrame`. Compose code in the entry loads `draft.ts` dynamically through `draft-loader.ts`. `applyComposeSignature` moved from `signatures.ts` to `compose-body.ts`: the RPC definitions refer to the signature schema, which used to pull the whole sanitizing code into the entry. `bundle-split.test.ts` asserts that the entry contains neither `sanitizeReaderHtml` nor DOMPurify.
+- The values of `messageBackgroundAtom` and `imagesLoadedAtom` live in a kept-alive Map that keeps 200 messages and 100 threads respectively, in most-recently-set order. Family members only derive from it and no longer stay resident. The main window opens one thread at a time, so the open thread's decisions are not pushed out unless the background is toggled for more than 200 separate messages within that thread. `state/ui.test.ts` covers retention, eviction and refresh order.
 
-## Renderer 构建
+## Renderer build
 
-设置、撰写、编辑器、日历、原始邮件、反馈、账户及提议审批按需加载。执行 `pnpm build` 后检查 `apps/desktop/out/renderer` 的块大小。初始入口包含 Effect 0.86 MB、react-dom 0.65 MB、Base UI 0.61 MB。邮件正文、EmailFrame、DOMPurify 和 core 的 HTML 清理与可见文本代码（parse5、css-tree、entities）在 `MessageBody` 和共享块中，见下一节。tldts（约 0.18 MB）仍在入口，邮件头的发件人仿冒提示和链接确认要用它。
+Settings, compose, the editor, calendar, raw message, feedback, accounts and proposal approval load on demand. After `pnpm build`, check the chunk sizes in `apps/desktop/out/renderer`. The initial entry contains Effect 0.86 MB, react-dom 0.65 MB and Base UI 0.61 MB. The message body, EmailFrame, DOMPurify, and core's HTML sanitizing and visible text code (parse5, css-tree, entities) are in `MessageBody` and shared chunks; see the next section. tldts (about 0.18 MB) is still in the entry, because the sender spoofing hint in message headers and link confirmation use it.
 
-AROUND 回归在 `performance-store.test.ts`：5000 封邮件先完成后台词索引，再执行有序计数、无序计数和列表查询，三次查询合计须低于 3 秒。通过 [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries) 预筛选候选，词位置 CTE 每条查询只读取一次。索引未就绪时请求只执行 AND 回退，不写入或回填索引；这是自动回归上限，不是实机界面时延保证。
+The AROUND regression is in `performance-store.test.ts`: 5000 messages finish the background word index first, then run an ordered count, an unordered count and a list query, and the three queries together must take under 3 seconds. Candidates are prefiltered with [FTS5 NEAR](https://sqlite.org/fts5.html#fts5_near_queries), and the word position CTE reads only once per query. When the index is not ready, the request runs only the AND fallback and does not write or backfill the index. This is an automated regression ceiling, not a guarantee of on-device UI latency.
 
-## 本地缓存管理（T07）
+## Local cache management (T07)
 
-消息文本预算与“openmail 占用上限”默认关闭。整库占用为 `page_count × page_size + WAL + 附件文件 + 恢复副本`，空闲页已包含在数据库内，不重复相加。界面分别显示消息文本、附件、索引及其他数据、空闲页、WAL、恢复副本。消息文本是 UTF-8 逻辑负载，索引及其他数据为使用页减去消息文本的估计值。Node 按实际数据库路径查询所在卷的 `statfs.bavail`，计入 `.corrupt-*`、`.recovery-*` 及其 WAL；跳过符号链接，同一 inode 的硬链接只计一次。恢复副本保留，不因预算自动删除。
+The message text budget and the “Keep OpenMail under” limit are off by default. Total storage is `page_count × page_size + WAL + attachment files + recovery copies`; free pages are already inside the database and are not added twice. The UI shows message text, attachments, indexes and other data, free pages, WAL and recovery copies separately. Message text is the UTF-8 logical payload; indexes and other data are estimated as used pages minus message text. Node queries `statfs.bavail` of the volume holding the actual database path, and counts `.corrupt-*`, `.recovery-*` and their WAL files. It skips symbolic links and counts hard links to the same inode once. Recovery copies are kept and are not deleted automatically for the budget.
 
-有效消息文本预算取手动预算和自适应预算的较小值。自适应预算从当前消息文本大小减去整库超额或磁盘空间缺口的较大值，再抵扣已有可复用页，下限为零。空闲空间低于 `min(5 GiB, 卷容量 × 10%)` 且已启用增量回收时，即使两个手动预算都关闭也执行收紧，并显示提示。旧库未启用回收时不为低磁盘继续淘汰文本，提示先手动压缩；新库在建表前直接启用增量模式。星标、保留窗口内、永久保留标签、草稿、发件箱仍豁免，因此目标可能无法达到。首次后台检查在窗口就绪一分钟后执行，随后每小时或预算变更执行；空间不足时绕过文本预算的小时门控。同步或 flush 占锁时本次检查跳过，下次小时检查重试。
+The effective message text budget is the smaller of the manual budget and the adaptive budget. The adaptive budget is the current message text size minus the larger of the total-storage excess and the disk space shortfall, less reusable pages already present, with a floor of zero. When free space is below `min(5 GiB, volume capacity × 10%)` and incremental reclaim is on, it tightens even with both manual budgets off, and shows a notice. An old database without reclaim does not keep evicting text for low disk; the notice asks for a manual compaction first. A new database turns on incremental mode before creating tables. Starred mail, mail within the retention window, permanently kept labels, drafts and the outbox are still exempt, so the target may not be reachable. The first background check runs one minute after the window is ready, then every hour or when the budget changes. When space is short it bypasses the hourly gate of the text budget. If sync or flush holds the lock, that check is skipped and the next hourly check retries.
 
-迁移 37 将 messages、contact_candidates、contact_organizations 的隐藏 rowid 固定为同值的 `INTEGER PRIMARY KEY`，保留原有索引、触发器及依赖行，不运行 VACUUM。core、op-sqlite、smoke、恢复和当前 schema 的测试 helper 共用迁移外键包装：重建事务前暂关外键，提交前检查外键完整性，退出时恢复原外键设置。新消息继续通过 `upsertMessage` 写入。
+Migration 37 fixes the hidden rowid of messages, contact_candidates and contact_organizations as an `INTEGER PRIMARY KEY` with the same value. It keeps the existing indexes, triggers and dependent rows, and does not run VACUUM. core, op-sqlite, smoke, recovery and the current-schema test helpers share the migration foreign key wrapper: it turns foreign keys off before the rebuild transaction, checks foreign key integrity before commit, and restores the original foreign key setting on exit. New messages are still written through `upsertMessage`.
 
-“立即压缩”取得同步和 flush 的互斥许可，再独占 SQL 连接并升级访问锁，CLI／MCP 的闲置共享锁也会返回 busy。独立 Node worker 用自己的 DatabaseSync 连接执行 VACUUM、增量回收及检查；主进程只等待结果，界面持续显示进行中状态。另以 BEGIN IMMEDIATE 探测未注册的 SQLite writer，SQLITE_BUSY／LOCKED 同样返回 busy。同步、flush、只读会话、无法保证 rowid 的表、FTS 内容错位均拒绝。首次检查磁盘暂存空间、完整 FTS 索引后，运行 `auto_vacuum=INCREMENTAL` 与一次完整 VACUUM；后续只运行 `incremental_vacuum`。UI 显示进行中和结果。自动淘汰后、空闲页达到 1 MiB 或 WAL 达到 8 MiB 的小时检查中，只在已经启用增量模式时按实际 freelist 回收全部空闲页，并执行 `wal_checkpoint(TRUNCATE)`；不会自动执行首次完整 VACUUM。首次压缩前的空闲页仍占文件空间，目标可能需要手动压缩才能达到。
+“Compact now” takes the sync and flush mutex permits, then holds the SQL connection exclusively and upgrades the access lock; an idle shared lock from the CLI/MCP also returns busy. A separate Node worker runs VACUUM, incremental reclaim and the checks on its own DatabaseSync connection; the main process only waits for the result, and the UI keeps showing an in-progress state. It also probes for unregistered SQLite writers with BEGIN IMMEDIATE, and SQLITE_BUSY/LOCKED also return busy. Sync, flush, read-only sessions, tables whose rowid cannot be guaranteed and misaligned FTS content are all refused. The first time, after checking disk staging space and a complete FTS index, it runs `auto_vacuum=INCREMENTAL` and one full VACUUM; later runs only run `incremental_vacuum`. The UI shows progress and the result. After automatic eviction, and in hourly checks where free pages reach 1 MiB or WAL reaches 8 MiB, it reclaims all free pages by the actual freelist and runs `wal_checkpoint(TRUNCATE)`, but only when incremental mode is already on; it never runs the first full VACUUM automatically. Free pages from before the first compaction still take file space, so the target may need a manual compaction to reach.
 
-`platform/node/cache-management.test.ts` 覆盖计量、低磁盘 LRU 与所有豁免、旧库稀疏 rowid 迁移、压缩前后 FTS 搜索与依赖行、同步／flush 互斥、只读和不安全 rowid 拒绝。手机 CacheStorage 默认适配器返回空磁盘统计和零 WAL／恢复副本；不执行低磁盘收紧，详见[手机端说明](../apps/mobile/README.md)。未启动 Electron，未测量实机压缩耗时。整库统计读取 `body_cache_budget.total_bytes`，界面按一分钟或窗口 focus 刷新，线程变更不触发目录扫描。字节数使用各语言的 Intl 长单位复数格式，GB 使用独立单位。
+`platform/node/cache-management.test.ts` covers measurement, low-disk LRU and every exemption, migration of sparse rowids in old databases, FTS search and dependent rows before and after compaction, the sync/flush mutex, and refusal for read-only and unsafe rowids. The phone's default CacheStorage adapter returns empty disk statistics and zero WAL/recovery copy bytes, and does not tighten for low disk; see the [mobile notes](../apps/mobile/README.md). Electron was not started and on-device compaction time was not measured. Total storage reads `body_cache_budget.total_bytes`. The UI refreshes every minute or on window focus, and thread changes do not trigger a directory scan. Byte counts use each language's Intl long unit plural format, with GB as its own unit.
 
-迁移 37 的测量先建出 schema 36 的数据库，再用只含 schema 36 列的 SQL 写入 100k fixture 的消息和 10,000 个 OCR chunk。当前 Store 会查询之后才加的列，所以不经过 Store；schema 36 的触发器照常填 FTS、词表、搜索元数据和联系人候选。消息 rowid 为 `3i + 7`，带空隙。测试接着按顺序运行迁移 37 及之后的全部迁移，只计迁移 37 的时间，然后检查 rowid 未变、外键完整、FTS integrity-check 通过，耗时须低于 12,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, 校准比)。2026-10-16 在 16 核 Mac 上运行两次，一分钟负载 4.7–11：3,407.6 ms（校准比 0.87）和 4,368.7 ms（校准比 0.96），升级前逻辑数据库 580,440,064 字节，Node v24.21.0、8 MiB 页缓存、FULL 同步。给迁移 37 加一段多耗约 12 s 的 SQL 时测试超出预算失败；复制 messages 时不带 rowid 时，rowid 检查失败。该重建也移到 worker；桌面在启动 worker 前绘制“正在升级本地数据库…”窗口，完成或失败后关闭。升级期间的 `window-all-closed` 保活监听器一直保留到 DesktopLive 注册正常关闭逻辑并创建主窗口，手动关闭升级窗口不会退出或取消迁移。已提交升级的 WAL truncate 如因读事务 busy 而延后，只记录警告并继续启动，不重复迁移。预检要求数据卷空闲至少为数据库逻辑大小，不满足时不执行重建并提示释放空间。worker 再检查一次，防止预检后的空间变化。手机的 op-sqlite 使用同一外键包装和原生异步 SQL，但未接入卷空间预检或完整 VACUUM worker；完整压缩明确返回 unavailable。
+The migration 37 measurement first builds a schema 36 database, then writes the 100k fixture's messages and 10,000 OCR chunks with SQL that has only schema 36 columns. The current Store queries columns added later, so it does not go through the Store; the schema 36 triggers fill FTS, the word table, search metadata and contact candidates as usual. Message rowids are `3i + 7`, with gaps. The test then runs migration 37 and every later migration in order, times only migration 37, and checks that rowids are unchanged, foreign keys are intact and FTS integrity-check passes. The time must be under 12,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, calibration ratio). On 2026-10-16 it ran twice on a 16-core Mac at one-minute load 4.7–11: 3,407.6 ms (calibration ratio 0.87) and 4,368.7 ms (calibration ratio 0.96), with a logical database of 580,440,064 bytes before the upgrade, Node v24.21.0, 8 MiB page cache and FULL synchronous. When a SQL step costing about 12 s more was added to migration 37, the test failed the budget; when messages were copied without rowids, the rowid check failed. This rebuild also moved to a worker. Before starting the worker, the desktop app draws an “Upgrading local database…” window and closes it on completion or failure. The `window-all-closed` keep-alive listener during the upgrade stays until DesktopLive registers the normal shutdown logic and creates the main window, so closing the upgrade window by hand does not quit or cancel the migration. If the WAL truncate after a committed upgrade is delayed because a read transaction is busy, it only logs a warning and continues startup without repeating the migration. The preflight requires free space on the data volume of at least the database's logical size; if not met, it does not rebuild and asks the user to free space. The worker checks once more, in case space changed after the preflight. The phone's op-sqlite uses the same foreign key wrapper and native async SQL, but has no volume space preflight or full VACUUM worker; a full compaction explicitly returns unavailable.
 
 ```sh
 OPENMAIL_PERF=1 OPENMAIL_LOW_MEMORY_TESTS=1 pnpm --filter @openmail/core exec vitest run src/platform/node/migration37-performance.test.ts
-# 报告默认 /tmp/openmail-migration37-performance.json，可设 OPENMAIL_MIGRATION_REPORT。
+# The report defaults to /tmp/openmail-migration37-performance.json; set OPENMAIL_MIGRATION_REPORT to change it.
 ```
 
-修正回归包含 FK-on smoke／手机升级保留依赖表、重复压力检查抵扣空闲页、未开启回收时不继续删除、worker 禁止调用方线程执行 VACUUM、心跳响应、真实子进程 CLI 共享锁、直接 SQLite writer、升级空间不足保留数据库字节，以及十种语言的字节复数。
+The fix regressions cover: FK-on smoke and phone upgrades keeping dependent tables, repeated pressure checks deducting free pages, no further deletion when reclaim is off, the worker refusing to run VACUUM on the caller's thread, heartbeat responses, a real child-process CLI shared lock, a direct SQLite writer, an upgrade with too little space keeping the database bytes, and byte plurals in ten languages.
 
-单账户搜索的账户范围：线程快速路径的 `recent` CTE 原来只在 CASE 里判断账户，单账户搜索会扫 `messages_account_list_date_id` 的所有账户并对每行跑 CASE，耗时随整个数据库增长。现在 `WHERE` 先写 `accountScope(…, "m.account_id")`，再接 CASE。评审者在 100k 库上测得：100 封邮件的账户上 `from:nobody weekly` 从 111 ms 降到 0.6 ms，大账户上 `is:unread weekly` 从 131 ms 降到 8 ms。[search-account-scope-plans.test.ts](../packages/core/src/store/search-account-scope-plans.test.ts) 在默认套件里检查单账户会话页的 `recent` 和平铺页的语句：账户过滤写在第一个 CASE 前，计划是 `messages_account_list_date_id (account_id=?`。去掉修复、去掉 `messagePage` 外层的 `accountScope`、把 `labelWalk` 设为 `true`，三种改动各让它失败。`performance-large.test.ts` 新增 `search one account from: no match and common word`（200 ms）、`search one account from: and common word`（200 ms）、`search one account is:unread and common word`（200 ms）、`search one account common word`（150 ms），账户是 fixture 里 33k 封的 gmail 账户。2026-10-17 `OPENMAIL_PERF=1` 各跑一次的中位数，修复前依次为 103、98、126、88 ms，修复后为 48、22、30、33 ms。
+Account scope in single-account search: the `recent` CTE of the thread fast path used to test the account only inside CASE, so a single-account search scanned every account in `messages_account_list_date_id` and ran CASE on every row, and its time grew with the whole database. Now `WHERE` puts `accountScope(…, "m.account_id")` first, then the CASE. On a 100k database the reviewer measured `from:nobody weekly` on a 100-message account dropping from 111 ms to 0.6 ms, and `is:unread weekly` on a large account from 131 ms to 8 ms. [search-account-scope-plans.test.ts](../packages/core/src/store/search-account-scope-plans.test.ts) in the default suite checks the single-account thread page's `recent` and the flat page's statement: the account filter comes before the first CASE, and the plan is `messages_account_list_date_id (account_id=?`. Removing the fix, removing the outer `accountScope` in `messagePage`, or setting `labelWalk` to `true` each makes it fail. `performance-large.test.ts` adds `search one account from: no match and common word` (200 ms), `search one account from: and common word` (200 ms), `search one account is:unread and common word` (200 ms) and `search one account common word` (150 ms), on the fixture's 33k-message gmail account. Medians from one `OPENMAIL_PERF=1` run each on 2026-10-17 were 103, 98, 126 and 88 ms before the fix and 48, 22, 30 and 33 ms after.

@@ -163,4 +163,4 @@ iOS 本地 Expo module `modules/openmail-storage` 在移动目录前和打开数
 
 依据：[Apple 目录与备份](https://developer.apple.com/documentation/foundation/using-the-file-system-effectively)、[Android allowBackup](https://docs.expo.dev/versions/latest/config/app/#allowbackup)、[SecureStore 可访问性](https://docs.expo.dev/versions/v57.0.0/sdk/securestore/)、[Expo native intent](https://docs.expo.dev/router/advanced/native-intent/)。
 
-本地缓存 T07：`CacheStorage` 暂用 core 的默认 no-op，返回 `disk: null`、零 WAL／恢复副本字节。手机尚未接入数据卷剩余空间查询，不触发低磁盘自动收紧；数据库页、消息文本和附件仍由现有服务计量。手机界面尚未暴露整库目标与“立即压缩”。`CacheMaintenance` 暂为 no-op，完整压缩返回 unavailable；没有 Node worker 和卷空间预检。op-sqlite 升级共用 `db/migrate.ts` 的迁移外键包装，异步原生 execute 保留迁移 37 的依赖行；Node shim 回归不替代设备验证。Node 桌面能力及测试见[性能说明](../../docs/performance.md#本地缓存管理t07)。
+本地缓存 T07：`CacheStorage` 暂用 core 的默认 no-op，返回 `disk: null`、零 WAL／恢复副本字节。手机尚未接入数据卷剩余空间查询，不触发低磁盘自动收紧；数据库页、消息文本和附件仍由现有服务计量。手机界面尚未暴露整库目标与“立即压缩”。`CacheMaintenance` 暂为 no-op，完整压缩返回 unavailable；没有 Node worker 和卷空间预检。op-sqlite 升级共用 `db/migrate.ts` 的迁移外键包装，异步原生 execute 保留迁移 37 的依赖行；Node shim 回归不替代设备验证。Node 桌面能力及测试见[性能说明](../../docs/performance.md#local-cache-management-t07)。

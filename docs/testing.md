@@ -59,7 +59,7 @@ The audit needs the npm registry, so it is not part of the offline checks above.
   - One test with a wall-clock budget is in the default `pnpm test`: [seed-rate.test.ts](../packages/core/src/platform/node/seed-rate.test.ts) seeds 10,000 messages into a file database. The default suite checks insert-cost growth only.
   - Each 500-message transaction is timed and divided by the smaller of two CPU calibration slices measured right before and after it. The median of these times for the last 2,000 inserts must stay under 2.5 times the median for the first 2,000. Steady load cancels out in the division, and the median drops one transaction or slice that a burst of load hit.
   - The absolute budget runs only with `OPENMAIL_PERF=1`, so Check does not assert it and the weekly [perf.yml](../.github/workflows/perf.yml) job does. The total must stay under 6,000 ms × `OPENMAIL_PERF_FACTOR` × max(1, calibration ratio), where the ratio is the largest of the full calibration and the slices. `OPENMAIL_PERF_FACTOR=2` relaxes that total locally.
-  - Details are in the [seed-rate section of performance.md](performance.md#写入速率预算).
+  - Details are in the [seed-rate section of performance.md](performance.md#write-rate-budget).
 - Multiply every limit that must use real time by `testTimeScale` from [test-time.ts](../packages/core/test-support/test-time.ts). That covers `vi.waitFor`, `expect.poll`, waiting for a child process, the linear-time bounds in fuzz tests and every per-test or hook timeout.
   - The scale: `CI` set → 3; otherwise round(1-minute load average ÷ CPU count, 1 decimal), kept between 1 and 3.
   - That gives 1 on an idle machine, 2.5 at load 40 on 16 cores and 3 from load 48 up.
