@@ -14,7 +14,7 @@ vi.mock("./rpc", async () => {
     // Slower than the server search's 350 ms wait, so the server answers first.
     "weeken*": { rows: [row("a", 3)], delay: 1000 },
   };
-  const call = (tag: string, payload: { query?: { search?: string } }) => {
+  const call = (tag: string, payload: { query?: { search?: string; before?: number } }) => {
     if (tag === "SearchServer")
       return Effect.succeed({
         threads: state.serverRows,
@@ -22,6 +22,11 @@ vi.mock("./rpc", async () => {
         ignored: [],
         truncated: false,
       });
+    // The inbox: one full page, then an older page that takes 300 ms.
+    if (tag === "Threads" && payload.query?.search === undefined)
+      return payload.query?.before === undefined
+        ? Effect.succeed(Array.from({ length: 100 }, (_, i) => row(`m${i}`, 1000 - i)))
+        : Effect.succeed([]).pipe(Effect.delay(300));
     const found = local[payload.query?.search ?? ""];
     return found ? Effect.succeed(found.rows).pipe(Effect.delay(found.delay)) : Effect.succeed([]);
   };
@@ -108,6 +113,42 @@ it("server rows replace the previous rows while the local query loads", async ()
     await typed(registry, "weeken", 600);
     expect(registry.get(threadListAtom).loading).toBe(true);
     expect(registry.get(threadListAtom).threads.map((t) => t.id)).toEqual(["s"]);
+  } finally {
+    keep();
+    registry.dispose();
+  }
+});
+
+// The footer said "Loading older messages…" for a frame on each keystroke while the new query
+// loaded its first page.
+it("a new query's first page is not an older page", async () => {
+  const registry = setup();
+  const keep = registry.subscribe(threadListAtom, () => null);
+  try {
+    await typed(registry, "weeke", 600);
+    registry.set(searchTextAtom, "weeken");
+    const during = registry.get(threadListAtom);
+    expect(during.loading).toBe(true);
+    expect(during.waiting).toBe(true);
+    expect(during.loadingMore).toBe(false);
+  } finally {
+    keep();
+    registry.dispose();
+  }
+});
+
+it("fetching an older page shows as loading more", async () => {
+  const registry = setup();
+  const keep = registry.subscribe(threadListAtom, () => null);
+  try {
+    await typed(registry, "", 100);
+    expect(registry.get(threadListAtom).threads).toHaveLength(100);
+    expect(registry.get(threadListAtom).canLoadMore).toBe(true);
+    registry.set(threadListAtom, undefined);
+    expect(registry.get(threadListAtom).waiting).toBe(true);
+    expect(registry.get(threadListAtom).loadingMore).toBe(true);
+    await typed(registry, "", 500);
+    expect(registry.get(threadListAtom).loadingMore).toBe(false);
   } finally {
     keep();
     registry.dispose();

@@ -396,6 +396,7 @@ beforeEach(() => {
   state.threads.mockReturnValue({
     threads: [row("one"), row("two"), row("three")],
     loading: false,
+    waiting: false,
     loadingMore: false,
     canLoadMore: false,
     exhausted: true,

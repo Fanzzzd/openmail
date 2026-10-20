@@ -277,7 +277,7 @@ export function useMailSelection({
       scopeKey: string;
       selected: Selection;
       rows: readonly ThreadSummary[];
-      loadingMore: boolean;
+      waiting: boolean;
       canLoadMore: boolean;
     }) => {
       const pending = state.pending;
@@ -289,7 +289,7 @@ export function useMailSelection({
       const target = pending.target;
       if (!target) return;
       if (target.focus && !state.rows.some((row) => row.id === target.focus)) {
-        if (state.loadingMore) return;
+        if (state.waiting) return;
         if (state.canLoadMore) {
           loadMore();
           return;
@@ -315,14 +315,14 @@ export function useMailSelection({
           scopeKey,
           selected: selection,
           rows: list,
-          loadingMore: threads.loadingMore,
+          waiting: threads.waiting,
           canLoadMore: threads.canLoadMore,
         });
     });
     return () => {
       cancelled = true;
     };
-  }, [removalNavigation, scopeKey, selection, list, threads.loadingMore, threads.canLoadMore]);
+  }, [removalNavigation, scopeKey, selection, list, threads.waiting, threads.canLoadMore]);
   const beginRemoval = (before: Selection, fallback: Selection, actionScope: string) =>
     setRemovalNavigation({ scopeKey: actionScope, before, fromList: list, fallback, target: null });
   const settleRemoval = (before: Selection, actionScope: string, target: Selection) =>

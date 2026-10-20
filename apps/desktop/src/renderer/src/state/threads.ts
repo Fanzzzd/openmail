@@ -169,6 +169,9 @@ export interface ThreadList {
   threads: readonly ThreadSummary[];
   /** No result for this query yet; `threads` may still be the previous view's. */
   loading: boolean;
+  /** A request for this list is in flight: its first page, a refresh or an older page. */
+  waiting: boolean;
+  /** An older page than the ones shown is being fetched for this query. */
   loadingMore: boolean;
   /** Older threads exist and no page is in flight. */
   canLoadMore: boolean;
@@ -194,6 +197,7 @@ export interface SearchIgnored {
 const EMPTY: ThreadList = {
   threads: [],
   loading: false,
+  waiting: false,
   loadingMore: false,
   canLoadMore: false,
   exhausted: false,
@@ -231,7 +235,8 @@ export const threadListAtom = Atom.writable(
     if (!query || !local) return EMPTY;
     const invalid = searchInputProblem(query.search ?? "");
     if (invalid) return { ...EMPTY, searchInputInvalid: invalid };
-    const result = get(pagedList(local).loaded);
+    const { loaded: loadedAtom, wanted } = pagedList(local);
+    const result = get(loadedAtom);
     // A search shows no count, and counting one walks every match (1.7 s on 100k messages).
     const total =
       query.search === undefined
@@ -289,7 +294,9 @@ export const threadListAtom = Atom.writable(
         // A failed server search has no rows; keep the previous ones until local rows arrive.
         threads: remoteRows.length > 0 ? remoteRows : shown.threads,
         loading: result._tag === "Initial",
-        loadingMore: result.waiting,
+        waiting: result.waiting,
+        // The new query's first page, not an older one.
+        loadingMore: false,
         canLoadMore: false,
       };
     }
@@ -299,7 +306,9 @@ export const threadListAtom = Atom.writable(
         ? mergeSearchResults(loaded.value.threads, remoteRows, query.flat)
         : loaded.value.threads,
       loading: false,
-      loadingMore: result.waiting,
+      waiting: result.waiting,
+      // A refresh of the loaded pages is not an older page.
+      loadingMore: result.waiting && get(wanted) > loaded.value.requested,
       moreNotLoaded:
         total === null ||
         query.search !== undefined ||
