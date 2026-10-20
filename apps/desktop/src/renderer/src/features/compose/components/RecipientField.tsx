@@ -15,7 +15,7 @@ import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { MoreHorizontal, X } from "lucide-react";
-import { type Ref, useRef, useState } from "react";
+import { type Ref, useId, useRef, useState } from "react";
 
 import type { Address } from "../../../../../shared/api";
 import { ADDRESS_SEPARATOR, formatAddress, parseAddresses } from "../draft";
@@ -65,8 +65,8 @@ const serialize = (chips: readonly string[], typed: string) => {
  * highlighted, and what a screen reader hears, is what they do. Without a suggestion, Enter
  * turns typed text into a chip and Tab moves on, which does the same on blur.
  * A separator turns typed text into a chip, and Backspace in an empty field
- * removes the last chip. The × on a suggestion hides that address from
- * suggestions.
+ * removes the last chip. The × on a suggestion, or Shift-Delete on the
+ * highlighted one, hides that address from suggestions.
  */
 export function RecipientField({
   label,
@@ -92,6 +92,7 @@ export function RecipientField({
   /** The user moved the highlight with the keyboard or pointer, rather than autoHighlight. */
   const [chose, setChose] = useState(false);
   const hide = useAtomSet(setContactHiddenAtom);
+  const hideHint = useId();
 
   // The value is the source of truth. The last token is still being typed
   // only while it matches what this field holds as typed text.
@@ -127,6 +128,11 @@ export function RecipientField({
 
   const emit = (next: string) => {
     if (next !== value) onChange(next);
+  };
+
+  const stopSuggesting = (address: Address) => {
+    hide({ payload: { address: address.address, hidden: true }, reactivityKeys: [Keys.contacts] });
+    setAnnouncement(t`Stopped suggesting ${address.address}`);
   };
 
   const type = (text: string) => {
@@ -281,7 +287,13 @@ export function RecipientField({
           aria-describedby={describedBy}
           onKeyDown={(e) => {
             if (e.metaKey || e.ctrlKey || e.altKey) return;
-            if (e.key === "Escape" && !listed) {
+            const highlightedAddress = listed && highlighted ? byText.get(highlighted) : undefined;
+            if (e.shiftKey && (e.key === "Backspace" || e.key === "Delete") && highlightedAddress) {
+              // Shift-Delete on Mac, as the search field removes a recent search.
+              e.preventDefault();
+              e.preventBaseUIHandler();
+              stopSuggesting(highlightedAddress);
+            } else if (e.key === "Escape" && !listed) {
               // Nothing to close here: let the compose window handle it.
               e.preventBaseUIHandler();
             } else if (e.key === "Tab" && !e.shiftKey && suggestion) {
@@ -311,10 +323,16 @@ export function RecipientField({
           className="z-[60] outline-none"
         >
           <Combobox.Popup
-            aria-label={t`${label} suggestions`}
             className={`max-h-64 w-80 overflow-y-auto p-[5px] data-empty:hidden ${popupSurface} ${popupMotion}`}
           >
-            <Combobox.List>
+            <span id={hideHint} hidden>
+              {t({
+                message: "Press Shift-Delete to stop suggesting this address.",
+                comment:
+                  "Screen reader hint on a recipient suggestion. Shift-Delete is the key combination that hides the highlighted suggestion.",
+              })}
+            </span>
+            <Combobox.List aria-label={t`${label} suggestions`}>
               {(text: string) => {
                 const group = byGroup.get(text);
                 if (group)
@@ -335,29 +353,34 @@ export function RecipientField({
                 const a = byText.get(text);
                 if (!a) return null;
                 return (
-                  <Combobox.Item key={text} value={text} className={`group py-1 pr-1 ${itemClass}`}>
+                  <Combobox.Item
+                    key={text}
+                    value={text}
+                    aria-describedby={hideHint}
+                    className={`group py-1 pr-1 ${itemClass}`}
+                  >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{displayName(a)}</span>
                       <span className="block truncate text-footnote text-a11y-muted group-data-highlighted:text-white">
                         {a.address}
                       </span>
                     </span>
-                    <button
-                      type="button"
-                      aria-label={t`Stop suggesting ${a.address}`}
+                    {/* Pointer only, so the option holds no control: keyboard users press Shift-Delete. */}
+                    <span
+                      aria-hidden
+                      title={t`Stop suggesting ${a.address}`}
                       // Keep focus in the field and don't pick the row.
+                      onPointerDown={(e) => e.preventDefault()}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={(e) => {
+                        e.preventDefault();
                         e.stopPropagation();
-                        hide({
-                          payload: { address: a.address, hidden: true },
-                          reactivityKeys: [Keys.contacts],
-                        });
+                        stopSuggesting(a);
                       }}
-                      className={`rounded p-0.5 opacity-0 group-hover:opacity-80 focus-visible:opacity-100 hover:bg-white/20 hover:opacity-100 coarse:opacity-80 ${touchIcon}`}
+                      className={`rounded p-0.5 opacity-0 group-hover:opacity-80 group-data-highlighted:opacity-80 hover:bg-white/20 hover:opacity-100 coarse:opacity-80 ${touchIcon}`}
                     >
                       <X className="size-3.5" />
-                    </button>
+                    </span>
                   </Combobox.Item>
                 );
               }}

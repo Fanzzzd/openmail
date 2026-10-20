@@ -5585,6 +5585,11 @@ msgstr "Press {help} for all shortcuts."
 msgid "Press Delete to remove it from recent searches."
 msgstr "Press Delete to remove it from recent searches."
 
+#. Screen reader hint on a recipient suggestion. Shift-Delete is the key combination that hides the highlighted suggestion.
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Press Shift-Delete to stop suggesting this address."
+msgstr "Press Shift-Delete to stop suggesting this address."
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Preview {0}"
@@ -7216,6 +7221,11 @@ msgstr "Stop processing more filters"
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "Stop suggesting {0}"
+
+#. placeholder {0}: address.address
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Stopped suggesting {0}"
+msgstr "Stopped suggesting {0}"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

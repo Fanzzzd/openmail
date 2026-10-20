@@ -3,6 +3,7 @@ import { expect, it, onTestFinished, vi } from "vitest";
 import { createElement as h, useState } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import axe from "axe-core";
 import type { Profile } from "../../../shared/api";
 import { UndoHistory } from "../features/undo/UndoHistory";
 import { ProfileEditor } from "../features/accounts/ProfileEditor";
@@ -224,6 +225,43 @@ it("Close window closes the recipient suggestions before the window", async () =
   typeInto(screen.getByRole("combobox", { name: "To" }), "bo");
   await screen.findByRole("option", { name: /bob@example\.com/ });
   await closeSheetClosesFirst("listbox");
+});
+
+// The list's name sat on Base UI's presentation popup (aria-prohibited-attr), and each option held
+// a Stop suggesting button (nested-interactive) with no keyboard path of its own.
+it("recipient suggestions pass axe, and Shift-Delete stops suggesting the highlighted one", async () => {
+  fixture.values.set("suggestionsAtom", [{ name: "Bob", address: "bob@example.com" }]);
+  const Field = () => {
+    const [value, setValue] = useState("");
+    return h(RecipientField, {
+      label: "To",
+      value,
+      onChange: setValue,
+      from: account.email,
+      showFullAddresses: false,
+    });
+  };
+  render(localized(h("main", null, h(Field))));
+  const input = screen.getByRole("combobox", { name: "To" });
+  typeInto(input, "bo");
+  const option = await screen.findByRole("option", { name: /bob@example\.com/ });
+  expect(screen.getByRole("listbox", { name: "To suggestions" })).toBeTruthy();
+  expect(option.getAttribute("aria-describedby")).toBeTruthy();
+  expect(document.getElementById(option.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
+    "Press Shift-Delete to stop suggesting this address.",
+  );
+  // The popup portals to body, outside the landmarks, so the region rule is left out here.
+  const result = await axe.run(document.body, {
+    rules: { "color-contrast": { enabled: false }, region: { enabled: false } },
+  });
+  expect(result.violations.map((issue) => issue.id)).toEqual([]);
+  await waitFor(() => expect(input.getAttribute("aria-activedescendant")).toBe(option.id));
+  fireEvent.keyDown(input, { key: "Backspace", shiftKey: true });
+  expect(fixture.decide).toHaveBeenCalledWith(
+    expect.objectContaining({ payload: { address: "bob@example.com", hidden: true } }),
+  );
+  expect(input).toHaveProperty("value", "bo");
+  expect(await screen.findByText("Stopped suggesting bob@example.com")).toBeTruthy();
 });
 
 it("marks the space name invalid and points it at the error while one shows", async () => {

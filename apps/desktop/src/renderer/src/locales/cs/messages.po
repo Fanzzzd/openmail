@@ -5581,6 +5581,11 @@ msgstr "Stisknutím {help} zobrazíte všechny zkratky."
 msgid "Press Delete to remove it from recent searches."
 msgstr "Stisknutím Delete ji odeberete z nedávných hledání."
 
+#. Screen reader hint on a recipient suggestion. Shift-Delete is the key combination that hides the highlighted suggestion.
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Press Shift-Delete to stop suggesting this address."
+msgstr "Stisknutím Shift-Delete přestanete tuto adresu navrhovat."
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Preview {0}"
@@ -7212,6 +7217,11 @@ msgstr "Zastavit zpracování dalších filtrů"
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "Přestat navrhovat {0}"
+
+#. placeholder {0}: address.address
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Stopped suggesting {0}"
+msgstr "Adresa {0} se už nebude navrhovat"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

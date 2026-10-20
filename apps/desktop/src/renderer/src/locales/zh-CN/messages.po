@@ -5591,6 +5591,11 @@ msgstr "按 {help} 查看全部快捷键。"
 msgid "Press Delete to remove it from recent searches."
 msgstr "按 Delete 键可将其从最近搜索中移除。"
 
+#. Screen reader hint on a recipient suggestion. Shift-Delete is the key combination that hides the highlighted suggestion.
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Press Shift-Delete to stop suggesting this address."
+msgstr "按 Shift-Delete 键可不再建议此地址。"
+
 #. placeholder {0}: file.filename
 #: src/renderer/src/features/reader/attachments/Attachments.tsx
 msgid "Preview {0}"
@@ -7222,6 +7227,11 @@ msgstr "停止处理后续过滤器"
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stop suggesting {0}"
 msgstr "不再建议 {0}"
+
+#. placeholder {0}: address.address
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Stopped suggesting {0}"
+msgstr "已不再建议 {0}"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
