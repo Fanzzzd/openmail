@@ -286,7 +286,8 @@ export const threadListAtom = Atom.writable(
         ...shown,
         ...serverState,
         moreNotLoaded: null,
-        threads: remote ? remoteRows : shown.threads,
+        // A failed server search has no rows; keep the previous ones until local rows arrive.
+        threads: remoteRows.length > 0 ? remoteRows : shown.threads,
         loading: result._tag === "Initial",
         loadingMore: result.waiting,
         canLoadMore: false,
