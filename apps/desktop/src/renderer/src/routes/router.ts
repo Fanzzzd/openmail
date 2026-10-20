@@ -47,6 +47,8 @@ export const initialLocation = (router: AppRouter) => locationOf(hrefOf(router.h
  */
 export const SETTLE_MS = 300;
 
+const moves = { PUSH: "push", REPLACE: "replace", BACK: "back", FORWARD: "forward" } as const;
+
 /**
  * The router behind `historyAtom`. Replaces (selection, message, search,
  * dialog) collapse into one write once they settle; pushes write at once.
@@ -106,6 +108,11 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
       flush();
       if (parseAppHref(href)) router.history.push(href);
     },
-    listen: (listener) => router.history.subscribe(() => listener()),
+    listen: (listener) =>
+      router.history.subscribe(({ action }) =>
+        listener(
+          action.type === "GO" ? (action.index > 0 ? "forward" : "back") : moves[action.type],
+        ),
+      ),
   };
 }

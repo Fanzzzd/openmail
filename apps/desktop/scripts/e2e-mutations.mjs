@@ -195,8 +195,15 @@ export const cases = [
     "narrow Back after a wide pick",
     "lands on the conversation picked while the window was wide",
     `${renderer}app/use-pane-navigation.ts`,
-    '    if (layout.mode !== "narrow") readerEntry.current = null;',
-    "",
+    '    if (layout.mode !== "narrow") {\n      readerEntry.current = null;\n',
+    '    if (layout.mode !== "narrow") {\n',
+  ],
+  [
+    "narrow Forward onto the reader",
+    "in a narrow window opens the reader again",
+    `${renderer}app/use-pane-navigation.ts`,
+    '        if (move === "forward" && left && history.index() === left.index) {',
+    "        if (false) {",
   ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
@@ -299,8 +306,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 57)
-      throw new Error(`Expected all 57 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 58)
+      throw new Error(`Expected all 58 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

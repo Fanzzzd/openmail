@@ -33,8 +33,11 @@ export interface AppHistory {
   /** Adds an entry for `href`, the route already on screen, so Back returns to the entry before it. */
   pushSame(href: string): void;
   /** Runs `listener` after every history change, Back and Forward included. */
-  listen(listener: () => void): () => void;
+  listen(listener: (move: HistoryMove) => void): () => void;
 }
+
+/** How the current entry changed: a new entry, a rewrite of this one, or a step through history. */
+export type HistoryMove = "push" | "replace" | "back" | "forward";
 
 /** The route part of a history location. */
 export const hrefOf = (location: { pathname: string; search: string }) =>

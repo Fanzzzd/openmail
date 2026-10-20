@@ -203,6 +203,29 @@ it("Back from a narrow reader lands on the conversation picked while the window 
   expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("two")}`);
 });
 
+it("Cmd+] after Cmd+[ in a narrow window opens the reader again", async () => {
+  width = 520;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("two")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  key("[", { metaKey: true }, document.body);
+  await eventually(() => expect(reader()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  key("]", { metaKey: true }, document.body);
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  expect(document.querySelector('[data-mail-pane="list"]')).toBeNull();
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  // Back again returns to the list, and the next Forward still has its reader.
+  key("[", { metaKey: true }, document.body);
+  await eventually(() => expect(reader()).toBeNull());
+  key("]", { metaKey: true }, document.body);
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+});
+
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {
   width = 800;
   current = await flow();
