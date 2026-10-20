@@ -59,9 +59,10 @@ const serialize = (chips: readonly string[], typed: string) => {
  * A To, Cc or Bcc field. Finished addresses show as chips; the address being
  * typed gets suggestions from mail history. The first suggestion is
  * highlighted as soon as suggestions arrive, also when they arrive after the
- * last keystroke. Enter or Tab picks the highlighted suggestion, except that
- * typed text that is already one complete address wins over a highlight the
- * user did not move with the keyboard or pointer. Without a suggestion, Enter
+ * last keystroke, unless the typed text is already one complete address: then
+ * nothing is highlighted until the user moves the highlight with the keyboard
+ * or pointer. Enter or Tab picks the highlighted suggestion, so what shows
+ * highlighted, and what a screen reader hears, is what they do. Without a suggestion, Enter
  * turns typed text into a chip and Tab moves on, which does the same on blur.
  * A separator turns typed text into a chip, and Backspace in an empty field
  * removes the last chip. The × on a suggestion hides that address from
@@ -181,7 +182,9 @@ export function RecipientField({
       open={popupOpen}
       onOpenChange={(next) => setOpen(next)}
       openOnInputClick={false}
-      autoHighlight
+      // Each new query empties the list until its suggestions load, which clears the highlight;
+      // a complete address then gets none.
+      autoHighlight={!complete}
       onItemHighlighted={(item, details) => {
         setHighlighted(item);
         setChose(item !== undefined && details.reason !== "none");

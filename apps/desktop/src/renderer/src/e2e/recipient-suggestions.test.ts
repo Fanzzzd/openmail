@@ -65,20 +65,30 @@ it("Down and Up move the highlight through suggestions that arrived late", async
   expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
 });
 
+// A complete typed address showed the first suggestion highlighted, and announced it through
+// aria-activedescendant, while Enter and Tab committed the typed address instead.
 for (const stroke of ["{Enter}", "{Tab}"])
-  it(`${stroke} keeps a complete typed address over the highlighted suggestion`, async () => {
+  it(`${stroke} keeps a complete typed address, which shows no highlighted suggestion`, async () => {
     const user = await composer();
     await typeAndWait(user, "jo@example.org");
+    await wait(100);
+    expect(to().getAttribute("aria-activedescendant")).toBeNull();
+    expect(document.querySelector("[role=option][data-highlighted]")).toBeNull();
     await user.keyboard(stroke);
     await eventually(() => expect(chip("jo@example.org")).toBeTruthy());
     expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
   });
 
-it("Enter after moving the highlight picks the suggestion over a typed address", async () => {
+it("Down from a complete typed address highlights the first suggestion, and Enter picks it", async () => {
   const user = await composer();
   await typeAndWait(user, "jo@example.org");
-  await user.keyboard("{ArrowDown}{Enter}");
-  await eventually(() => expect(chip(`Jordan Lee <${home.address}>`)).toBeTruthy());
+  await user.keyboard("{ArrowDown}");
+  await eventually(() => {
+    const active = to().getAttribute("aria-activedescendant");
+    expect(active && document.getElementById(active)?.textContent).toContain(work.address);
+  });
+  await user.keyboard("{Enter}");
+  await eventually(() => expect(chip(`Jordan Lee <${work.address}>`)).toBeTruthy());
   expect(chip("jo@example.org")).toBeNull();
 });
 
