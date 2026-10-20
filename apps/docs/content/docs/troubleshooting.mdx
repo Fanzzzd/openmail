@@ -54,7 +54,13 @@ The CLI logs only errors by default. The MCP server logs warnings and errors by 
 openmail --log-level warn sync
 ```
 
-With `--log-level warn`, `openmail sync` prints one line for each account that failed for an unknown reason, with the error's type, reason, HTTP status and message, such as `gmail sync failed (full): ProviderError, status 400: …`. `--log-level debug` prints the same line for every other failure, such as a rate limit or a server error. The lines leave out addresses, URL queries and tokens.
+With `--log-level warn`, `openmail sync` prints one line for each account that failed for an unknown reason. The line has the time, the provider, the scope (`full` or `inbox`), the error's type, its reason and HTTP status when it has them, its message, and the log code:
+
+```text
+[10:42:07.311] WARN (#52): gmail sync failed (full): ProviderError, status 400: … { logCode: 'sync-failed' }
+```
+
+`--log-level debug` prints the same line for every other failure, such as a rate limit or a server error. The lines leave out addresses, account hashes, URL queries and tokens.
 
 The log goes to stderr. Paste it into the GitHub issue. The MCP server writes its log to stderr too, and your AI app keeps that as the server's log. To log more, add `--log-level debug` after `mcp` or `--mcp` in the server's arguments in the AI app's config.
 

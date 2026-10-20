@@ -67,7 +67,7 @@ The screenshots and the recording use fake mail from [`scripts/demo-data.mjs`](s
 | Mail path through a vendor's server | No                            | No                | Yes, for some features       | No                             | No                  |
 | Maturity                            | Early testing                 | Mature            | Mature                       | Mature                         | Mature              |
 
-OpenMail is younger than all of these and has rough edges. Mimestream is the reference for its Gmail features; the gaps are tracked in [docs/parity.md](docs/parity.md) (in Chinese). The table reflects the products' public pages as of October 2026. If a cell is wrong, please open an issue.
+OpenMail is younger than all of these and has rough edges. Mimestream is the reference for its Gmail features; the gaps are tracked in [docs/parity.md](docs/parity.md). The table reflects the products' public pages as of October 2026. If a cell is wrong, please open an issue.
 
 ## Install
 

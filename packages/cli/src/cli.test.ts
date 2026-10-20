@@ -834,14 +834,26 @@ describe("expected sync failures", () => {
 
   // --log-level warn showed only fixed diagnostic fields, so no line named the error, and the
   // hint still said to add the flag that was already there.
-  test("--log-level warn names each error and stops pointing at itself", async () => {
+  // It also printed a multi-line SyncFailedDiagnostic per account, while the troubleshooting
+  // page promises one line for each account that failed.
+  test("--log-level warn names each error in one line per account and stops pointing at itself", async () => {
     const sync = await openmail(["--log-level", "warn", "sync"], home.path, offline);
     expect(sync.code).toBe(1);
-    expect(sync.stderr).toContain("SyncFailedDiagnostic");
-    expect(sync.stderr).toContain(
-      "gmail sync failed (full): ProviderError: Network calls are disabled in this offline session",
-    );
-    expect(sync.stderr).toContain("imap sync failed (full): ProviderError");
+    expect(sync.stderr).not.toContain("Diagnostic");
+    const lines = sync.stderr.split("\n").filter((line) => line.trim() !== "");
+    const error =
+      ": ProviderError: Network calls are disabled in this offline session { logCode: 'sync-failed' }";
+    expect(lines).toEqual([
+      "Syncing mail…",
+      expect.stringMatching(/^\[\d\d:\d\d:\d\d\.\d{3}\] WARN \(#\d+\): gmail sync failed \(full\)/),
+      expect.stringMatching(/^\[\d\d:\d\d:\d\d\.\d{3}\] WARN \(#\d+\): imap sync failed \(full\)/),
+      "error: Some accounts did not sync.",
+      "hint: Run it again.",
+    ]);
+    for (const provider of ["gmail", "imap"])
+      expect(
+        lines.filter((line) => line.endsWith(`${provider} sync failed (full)${error}`)),
+      ).toHaveLength(1);
     expect(sync.stderr).not.toContain("alex@example.com");
     expect(sync.stderr).toContain("error: Some accounts did not sync.\nhint: Run it again.\n");
     expect(sync.stdout).toContain("error: Sync could not finish. Run it again.");

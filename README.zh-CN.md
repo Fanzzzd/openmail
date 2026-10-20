@@ -111,7 +111,7 @@ OpenMail 比以上产品都年轻，还有粗糙的地方。Gmail 功能以 Mime
 
 ## 文档
 
-用户文档：**[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**。开发文档在 [`docs/`](docs/)：[架构](docs/architecture.md)、[测试](docs/testing.md)、[发布](docs/release.md)、[安全](docs/security.md)、[术语表](CONTEXT.md)和[更新日志](CHANGELOG.md)。深入说明见[同步正确性](docs/sync-correctness.md)和[性能](docs/performance.md)（英文）。
+用户文档：**[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**。开发文档在 [`docs/`](docs/)，全部用英文写：[架构](docs/architecture.md)、[测试](docs/testing.md)、[发布](docs/release.md)、[安全](docs/security.md)、[术语表](CONTEXT.md)和[更新日志](CHANGELOG.md)。深入说明见[同步正确性](docs/sync-correctness.md)和[性能](docs/performance.md)。
 
 ## 参与贡献
 
