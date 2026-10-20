@@ -54,6 +54,9 @@ export const RemoteAccessLive = Layer.effect(
   RemoteAccess,
   Effect.gen(function* () {
     const mailbox = yield* Mailbox;
+    // Core runs a service method in its caller's fiber, so the RPC server needs the app's
+    // logger and DiagnosticHashKey, or remote calls log to the console without a key.
+    const services = yield* Effect.context<Mailbox>();
     const tailscale = sessionTailscale(process.env);
     const controller = createRemoteAccess({
       mailbox,
@@ -62,13 +65,13 @@ export const RemoteAccessLive = Layer.effect(
       // out/main/index.js → out/web, the renderer's web build.
       webRoot: fileURLToPath(new URL("../web/", import.meta.url)),
       startRpc: (hub) => {
-        const fiber = Effect.runFork(
+        const fiber = Effect.runForkWith(services)(
           Layer.launch(
             remoteRpcServer(hub, {
               denied: (tag) => localLog("rpc-auth-failure", { rpc: tag }),
               failure: (failure) => localLog("rpc-failure", failure),
             }),
-          ).pipe(Effect.provideService(Mailbox, mailbox)),
+          ),
         );
         return () => Effect.runPromise(Fiber.interrupt(fiber).pipe(Effect.asVoid));
       },

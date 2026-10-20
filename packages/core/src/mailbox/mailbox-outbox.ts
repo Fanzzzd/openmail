@@ -23,6 +23,7 @@ import type { StoredDraft } from "../store/service.js";
 import { holdingAcceptedClaim, makeAcceptedSends } from "./mailbox-accepted-sends.js";
 import { providerCapabilities } from "../providers/capabilities.js";
 import { serverSavesSent } from "../providers/imap/imap-settings.js";
+import { redactErrorMessage } from "../sync/sync-failure.js";
 import type { SendOriginal } from "../providers/send-original.js";
 
 /** A finished discard keeps its draft id this long, so a save arriving late can't recreate it. */
@@ -273,9 +274,11 @@ export const makeOutboxMailbox = (
         actor,
       ).pipe(
         Effect.catch((error) =>
-          logWarning("sent-archive-failed", `Sent, but archiving failed: ${error.message}`).pipe(
-            Effect.as(undefined),
-          ),
+          // The message can name an address; every log sink gets it redacted.
+          logWarning(
+            "sent-archive-failed",
+            `Sent, but archiving failed: ${redactErrorMessage(error.message)}`,
+          ).pipe(Effect.as(undefined)),
         ),
       );
     } else if (Option.isSome(draft)) {
