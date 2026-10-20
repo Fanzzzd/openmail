@@ -7229,11 +7229,15 @@ msgstr "{0} の提案をやめる"
 msgid "Stop suggesting the highlighted address"
 msgstr "ハイライトされたアドレスの提案をやめる"
 
-#. placeholder {0}: address.address
 #. placeholder {0}: stopped.address
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stopped suggesting {0}"
 msgstr "{0} の提案をやめました"
+
+#. Screen reader announcement after a recipient suggestion is hidden. Undo is the button right after the To, Cc or Bcc field that shows it again.
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Stopped suggesting {hidden}. Undo follows this field."
+msgstr "{hidden} の提案をやめました。このフィールドの後に「取り消す」ボタンがあります。"
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts

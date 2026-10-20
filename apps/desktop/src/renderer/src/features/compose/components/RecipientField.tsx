@@ -138,7 +138,14 @@ export function RecipientField({
   const stopSuggesting = (address: Address) => {
     hide({ payload: { address: address.address, hidden: true }, reactivityKeys: [Keys.contacts] });
     setStopped(address);
-    setAnnouncement(t`Stopped suggesting ${address.address}`);
+    const hidden = address.address;
+    setAnnouncement(
+      t({
+        message: `Stopped suggesting ${hidden}. Undo follows this field.`,
+        comment:
+          "Screen reader announcement after a recipient suggestion is hidden. Undo is the button right after the To, Cc or Bcc field that shows it again.",
+      }),
+    );
   };
 
   const undoStop = (address: Address) => {
@@ -319,15 +326,19 @@ export function RecipientField({
             }
           }}
           onBlur={(event) => {
+            // On the way to Undo the text stays text: Undo puts focus back to finish it.
+            if (event.relatedTarget === undoRef.current) return;
             commit();
-            if (event.relatedTarget !== undoRef.current) setStopped(null);
+            setStopped(null);
           }}
           className="h-[22px] min-w-24 flex-1 bg-transparent text-body outline-none placeholder:text-a11y-muted"
         />
       </Combobox.Chips>
       {stopped && (
-        <span className="flex h-9 max-w-56 shrink-0 items-center gap-1.5 text-footnote text-a11y-muted coarse:h-11">
-          <span className="min-w-0 truncate">{t`Stopped suggesting ${stopped.address}`}</span>
+        <span className="flex h-9 max-w-[60%] shrink-0 items-center gap-1.5 text-footnote text-a11y-muted coarse:h-11">
+          <span className="min-w-0 truncate" title={stopped.address}>
+            {t`Stopped suggesting ${stopped.address}`}
+          </span>
           <button
             ref={undoRef}
             type="button"
@@ -336,12 +347,13 @@ export function RecipientField({
             onClick={() => undoStop(stopped)}
             onBlur={(event) => {
               if (
-                !(
-                  event.relatedTarget instanceof Node &&
-                  fieldRef.current?.contains(event.relatedTarget)
-                )
+                event.relatedTarget instanceof Node &&
+                fieldRef.current?.contains(event.relatedTarget)
               )
-                setStopped(null);
+                return;
+              // Focus left the field by way of Undo: the typed text becomes a chip, as on blur.
+              commit();
+              setStopped(null);
             }}
             className="shrink-0 rounded font-medium text-a11y-accent hover:underline dark:text-blue-400"
           >

@@ -212,6 +212,13 @@ export const cases = [
     "if (focus && !row && frames++ < FOCUS_ROW_FRAMES) requestAnimationFrame(attempt);",
     "if (false) requestAnimationFrame(attempt);",
   ],
+  [
+    "recipient text kept on the way to Undo",
+    "Tab to Undo after hiding the last suggestion",
+    `${renderer}features/compose/components/RecipientField.tsx`,
+    "            if (event.relatedTarget === undoRef.current) return;\n",
+    "",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -313,8 +320,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 59)
-      throw new Error(`Expected all 59 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 60)
+      throw new Error(`Expected all 60 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

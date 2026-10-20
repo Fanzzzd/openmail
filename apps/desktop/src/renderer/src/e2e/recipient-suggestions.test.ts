@@ -160,3 +160,41 @@ it("Shift-Backspace edits the text; forward Delete stops suggesting, shows it an
   expect(chip("jor")).toBeNull();
   expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });
+
+it("Tab to Undo after hiding the last suggestion keeps the typed text, and says where Undo is", async () => {
+  const user = await composer();
+  await typeAndWait(user, "jor");
+  for (const address of [work.address, home.address]) {
+    await eventually(() => expect(to().getAttribute("aria-activedescendant")).toBeTruthy());
+    await user.keyboard("{Delete}");
+    await eventually(() => expect(hidden.has(address)).toBe(true));
+  }
+  await eventually(() => expect(screen.queryAllByRole("option")).toHaveLength(0));
+  expect([...document.querySelectorAll("output[aria-live]")].map((o) => o.textContent)).toContain(
+    `Stopped suggesting ${home.address}. Undo follows this field.`,
+  );
+  // The visible status names the whole address even where it truncates.
+  expect(screen.getByTitle(home.address).textContent).toBe(`Stopped suggesting ${home.address}`);
+  await user.keyboard("{Tab}");
+  const undo = screen.getByRole("button", { name: "Undo" });
+  expect(document.activeElement).toBe(undo);
+  expect(chip("jor")).toBeNull();
+  expect(to()).toHaveProperty("value", "jor");
+  await user.keyboard("{Enter}");
+  await eventually(() => expect(hidden).toEqual(new Set([work.address])));
+  expect(document.activeElement).toBe(to());
+  expect(to()).toHaveProperty("value", "jor");
+  expect(chip("jor")).toBeNull();
+  // Leaving the field by way of Undo turns the text into a chip, as Tab from the field does.
+  await user.keyboard("{Backspace}r");
+  await eventually(() => expect(screen.getAllByRole("option")).toHaveLength(1));
+  await eventually(() => expect(to().getAttribute("aria-activedescendant")).toBeTruthy());
+  await user.keyboard("{Delete}");
+  await eventually(() => expect(hidden.size).toBe(2));
+  await eventually(() => expect(screen.queryAllByRole("option")).toHaveLength(0));
+  await user.keyboard("{Tab}");
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Undo" }));
+  await user.keyboard("{Tab}");
+  await eventually(() => expect(chip("jor")).toBeTruthy());
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
+});

@@ -7229,11 +7229,15 @@ msgstr "Ne plus suggérer {0}"
 msgid "Stop suggesting the highlighted address"
 msgstr "Ne plus suggérer l’adresse en surbrillance"
 
-#. placeholder {0}: address.address
 #. placeholder {0}: stopped.address
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Stopped suggesting {0}"
 msgstr "{0} ne sera plus suggérée"
+
+#. Screen reader announcement after a recipient suggestion is hidden. Undo is the button right after the To, Cc or Bcc field that shows it again.
+#: src/renderer/src/features/compose/components/RecipientField.tsx
+msgid "Stopped suggesting {hidden}. Undo follows this field."
+msgstr "{hidden} ne sera plus suggérée. Le bouton Annuler suit ce champ."
 
 #: src/renderer/src/features/compose/components/ComposeToolbar.tsx
 #: src/renderer/src/i18n/shortcut-names.ts
