@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Group, Panel, useDefaultLayout } from "react-resizable-panels";
+import { Panel } from "react-resizable-panels";
 import { PANE_MIN } from "../../../shared/layout";
+import { SavedGroup } from "./SavedPanes";
 
 export function MailPanels({
   position,
@@ -11,23 +12,21 @@ export function MailPanels({
   readerVisible: boolean;
   children?: ReactNode;
 }) {
-  const panes = useDefaultLayout({
-    id: readerVisible ? `openmail:mail-panes:${position}` : `openmail:mail-panes:${position}:list`,
-    panelIds: readerVisible ? ["list", "reader"] : ["list"],
-    storage: localStorage,
-  });
   return (
     <Panel id="mail" minSize={position === "bottom" ? 360 : PANE_MIN.list + PANE_MIN.reader}>
-      <Group
+      <SavedGroup
         key={String(readerVisible)}
+        storageKey={
+          readerVisible
+            ? `openmail:mail-pane-sizes:${position}`
+            : `openmail:mail-pane-sizes:${position}:list`
+        }
         orientation={position === "bottom" ? "vertical" : "horizontal"}
-        defaultLayout={panes.defaultLayout}
-        onLayoutChanged={panes.onLayoutChanged}
         className="h-full"
         resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
       >
         {children}
-      </Group>
+      </SavedGroup>
     </Panel>
   );
 }

@@ -4,25 +4,66 @@ import { testDom } from "../test-support/test-dom";
 
 const controls = vi.hoisted(() => {
   vi.resetModules();
-  return { layouts: new Array<{ id: string; panelIds: string[] }>() };
+  return {
+    groups: new Array<{
+      onLayoutChanged: (
+        layout: Record<string, number>,
+        meta: { isUserInteraction: boolean },
+      ) => void;
+    }>(),
+    panels: new Map<
+      string,
+      {
+        defaultSize?: number;
+        onResize?: (size: { asPercentage: number; inPixels: number }, id: string) => void;
+      }
+    >(),
+  };
 });
 vi.mock("react-resizable-panels", () => ({
-  Panel: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-  Group: ({ children }: { children: ReactNode }) => createElement("div", null, children),
-  useDefaultLayout: (options: { id: string; panelIds: string[] }) => {
-    controls.layouts.push(options);
-    return { defaultLayout: {}, onLayoutChanged: vi.fn() };
+  Panel: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    id: string;
+    defaultSize?: number;
+    onResize?: (size: { asPercentage: number; inPixels: number }, id: string) => void;
+  }) => {
+    controls.panels.set(props.id, props);
+    return createElement("div", null, children);
+  },
+  Group: ({
+    children,
+    ...props
+  }: {
+    children: ReactNode;
+    onLayoutChanged: (layout: Record<string, number>, meta: { isUserInteraction: boolean }) => void;
+  }) => {
+    controls.groups.push(props);
+    return createElement("div", null, children);
   },
 }));
 import { MailPanels } from "./MailPanels";
+import { SavedPanel } from "./SavedPanes";
 afterAll(() => {
   vi.doUnmock("react-resizable-panels");
   vi.resetModules();
 });
+function memoryStorage() {
+  const items = new Map<string, string>();
+  return {
+    items,
+    getItem: (key: string) => items.get(key) ?? null,
+    setItem: vi.fn((key: string, value: string) => void items.set(key, value)),
+  };
+}
+
 it("hidden reading panes use a full-width list layout, separate from both saved split layouts", () => {
   const dom = testDom();
-  vi.stubGlobal("localStorage", {});
-  controls.layouts.length = 0;
+  const storage = memoryStorage();
+  const read = vi.spyOn(storage, "getItem");
+  vi.stubGlobal("localStorage", storage);
   try {
     for (const [position, readerVisible] of [
       ["right", true],
@@ -40,11 +81,46 @@ it("hidden reading panes use a full-width list layout, separate from both saved 
         ),
       );
     }
-    expect(controls.layouts.map((p) => [p.id, p.panelIds])).toEqual([
-      ["openmail:mail-panes:right", ["list", "reader"]],
-      ["openmail:mail-panes:right:list", ["list"]],
-      ["openmail:mail-panes:bottom", ["list", "reader"]],
+    expect(read.mock.calls.map(([key]) => key)).toEqual([
+      "openmail:mail-pane-sizes:right",
+      "openmail:mail-pane-sizes:right:list",
+      "openmail:mail-pane-sizes:bottom",
     ]);
+  } finally {
+    dom.dispose();
+  }
+});
+
+it("the list opens at the width the person gave it, whatever the window did since", () => {
+  const dom = testDom();
+  const storage = memoryStorage();
+  vi.stubGlobal("localStorage", storage);
+  const panes = (key: number) =>
+    createElement(
+      MailPanels,
+      { key, position: "right", readerVisible: true },
+      createElement(SavedPanel, { id: "list", defaultSize: 380 }),
+    );
+  try {
+    dom.render(panes(1));
+    const list = () => controls.panels.get("list");
+    expect(list()?.defaultSize).toBe(380);
+    // The list is 356 px of a 1089 px group.
+    act(() => list()?.onResize?.({ asPercentage: 32.69, inPixels: 356 }, "list"));
+    const group = () => controls.groups.at(-1);
+    // A window resize clamps the list to its minimum; that is not saved.
+    act(() => group()?.onLayoutChanged({ list: 37.5, reader: 62.5 }, { isUserInteraction: false }));
+    expect(storage.setItem).not.toHaveBeenCalled();
+    // The person drags it to 400 px.
+    act(() =>
+      group()?.onLayoutChanged({ list: 36.73, reader: 63.27 }, { isUserInteraction: true }),
+    );
+    expect(JSON.parse(storage.items.get("openmail:mail-pane-sizes:right") ?? "{}")).toEqual({
+      list: 400,
+    });
+    // The panes remount as the window crosses a breakpoint, and the list opens at 400 px.
+    dom.render(panes(2));
+    expect(list()?.defaultSize).toBe(400);
   } finally {
     dom.dispose();
   }
@@ -52,7 +128,7 @@ it("hidden reading panes use a full-width list layout, separate from both saved 
 
 it("preserves reader/editor state when the zoom breakpoint changes pane orientation", () => {
   const dom = testDom();
-  vi.stubGlobal("localStorage", {});
+  vi.stubGlobal("localStorage", memoryStorage());
   let mounts = 0;
   function ReaderState() {
     const [text, setText] = useState("Original");

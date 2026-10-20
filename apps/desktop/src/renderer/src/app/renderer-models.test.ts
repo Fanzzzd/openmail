@@ -41,7 +41,6 @@ const state = vi.hoisted(() => {
     loadMore: vi.fn(),
     emit: vi.fn<(event: DesktopEvent) => void>(),
     fail: false,
-    layout: vi.fn(),
     page: new Array<ThreadSummary>(),
     deferred: false,
     wait: vi.fn<() => Promise<void>>(),
@@ -250,12 +249,6 @@ vi.mock("../state/desktop", () => ({
     state.emit.mockImplementation(receive);
   },
 }));
-vi.mock("react-resizable-panels", () => ({
-  useDefaultLayout: (options: unknown) => {
-    state.layout(options);
-    return { defaultLayout: undefined, onLayoutChanged: vi.fn() };
-  },
-}));
 
 const account: Account = {
   id: "a",
@@ -424,7 +417,6 @@ beforeEach(() => {
   state.toastUpdates.mockClear();
   state.operations.mockClear();
   state.loadMore.mockClear();
-  state.layout.mockClear();
   notify.mockClear();
   showUndo.mockClear();
   undo = null;
@@ -747,20 +739,22 @@ it("panels keep independent state and layout persistence follows overview and si
   expect(registry.get(goToFolderAtom)).toBe(true);
   expect(registry.get(pickerModeAtom)).toBe("move");
   expect(registry.get(dialogAtom)).toBeNull();
-  vi.stubGlobal("localStorage", { getItem: () => null, setItem: vi.fn() });
+  const panels: ReturnType<typeof usePanelLayout>[] = [];
   function LayoutHarness() {
-    usePanelLayout({
+    const layout = usePanelLayout({
       prefs: { ...DEFAULT_PREFS, sidebarVisible: false },
       hasAccounts: true,
       view: { space: OVERVIEW, mailbox: "inbox" },
       mode: "wide",
     });
+    useEffect(() => {
+      panels.push(layout);
+    });
     return null;
   }
   dom.render(createElement(LayoutHarness));
-  expect(state.layout).toHaveBeenCalledWith(
-    expect.objectContaining({ id: expect.stringContaining("overview"), panelIds: ["main"] }),
-  );
+  expect(panels.at(-1)).toMatchObject({ docked: false, paneMode: "overview" });
+  expect(panels.at(-1)?.sizesKey).toContain("overview");
 });
 
 it("removing the last loaded row waits for the next page before advancing selection", async () => {

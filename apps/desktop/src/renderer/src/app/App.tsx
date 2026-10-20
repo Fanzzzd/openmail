@@ -63,7 +63,8 @@ import { FailedOpNotice } from "../features/sync-status/FailedOpNotice";
 import { UpdateNotice } from "../features/updates/UpdateNotice";
 import { RemoteImagesPrompt } from "../features/reader/RemoteImagesPrompt";
 import { SidebarRail } from "../features/sidebar/SidebarRail";
-import { Group, Panel } from "react-resizable-panels";
+import { Panel } from "react-resizable-panels";
+import { SavedGroup, SavedPanel } from "./SavedPanes";
 import { PANE_MIN } from "../../../shared/layout";
 import { MailPanels } from "./MailPanels";
 import { createPortal } from "react-dom";
@@ -261,7 +262,7 @@ export function App({ composeId }: { composeId?: string }) {
   const hasAccounts = accountList.length > 0;
   const { viewAccount, title } = useViewTitle(view, accountList, labelMap);
 
-  const { docked, paneMode, savedLayout, mailOrientation } = usePanelLayout({
+  const { docked, paneMode, sizesKey, mailOrientation } = usePanelLayout({
     prefs,
     hasAccounts,
     view,
@@ -516,16 +517,15 @@ export function App({ composeId }: { composeId?: string }) {
               onCompose={() => startCompose("new")}
             />
           )}
-          <Group
+          <SavedGroup
             key={`${paneMode}:${docked}`}
+            storageKey={sizesKey}
             role={layoutIsMain ? "main" : undefined}
             className="min-w-0 flex-1"
-            defaultLayout={savedLayout.defaultLayout}
-            onLayoutChanged={savedLayout.onLayoutChanged}
             resizeTargetMinimumSize={{ fine: 9, coarse: 24 }}
           >
             {docked && (
-              <Panel
+              <SavedPanel
                 id="sidebar"
                 data-mail-pane="sidebar"
                 defaultSize={232}
@@ -534,7 +534,7 @@ export function App({ composeId }: { composeId?: string }) {
                 groupResizeBehavior="preserve-pixel-size"
               >
                 {sidebar}
-              </Panel>
+              </SavedPanel>
             )}
             {docked && <ResizeHandle label={t`Resize sidebar`} />}
             {paneMode !== "mail" ? (
@@ -546,7 +546,7 @@ export function App({ composeId }: { composeId?: string }) {
                 position={prefs.readingPanePosition}
                 readerVisible={prefs.readingPaneVisible}
               >
-                <Panel
+                <SavedPanel
                   id="list"
                   data-mail-pane="list"
                   defaultSize={380}
@@ -557,7 +557,7 @@ export function App({ composeId }: { composeId?: string }) {
                   groupResizeBehavior="preserve-pixel-size"
                 >
                   <div ref={listSlot} className="flex h-full" />
-                </Panel>
+                </SavedPanel>
                 {prefs.readingPaneVisible && (
                   <ResizeHandle label={t`Resize message list`} orientation={mailOrientation} />
                 )}
@@ -573,7 +573,7 @@ export function App({ composeId }: { composeId?: string }) {
                 )}
               </MailPanels>
             )}
-          </Group>
+          </SavedGroup>
         </div>
       )}
       {/* The list and reader live outside the layout, so changing layouts keeps their state. */}
