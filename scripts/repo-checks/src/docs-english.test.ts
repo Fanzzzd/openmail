@@ -28,15 +28,18 @@ const BLOCK_END = "<!-- cjk-ok:end -->";
 
 function cjkLines(text: string): number[] {
   const hits: number[] = [];
-  let inBlock = false;
+  // Line number of the open block's start marker, or 0 outside a block.
+  let blockStart = 0;
   for (const [index, line] of text.split("\n").entries()) {
     const marker = line.trim();
     if (marker === BLOCK_START || marker === BLOCK_END) {
-      inBlock = marker === BLOCK_START;
+      blockStart = marker === BLOCK_START ? index + 1 : 0;
       continue;
     }
-    if (!inBlock && !line.includes(LINE_MARKER) && CJK.test(line)) hits.push(index + 1);
+    if (!blockStart && !line.includes(LINE_MARKER) && CJK.test(line)) hits.push(index + 1);
   }
+  // A start marker without an end would exempt the rest of the file: report the marker.
+  if (blockStart) hits.push(blockStart);
   return hits;
 }
 
@@ -75,6 +78,11 @@ it("honors the line marker and marked blocks only", () => {
     "かな and 한글",
   ].join("\n");
   expect(cjkLines(text)).toEqual([2, 8, 10, 11]);
+});
+
+it("reports a block start marker that is never closed", () => {
+  const text = ["English line.", "<!-- cjk-ok:start -->", "中文行", "更多中文"].join("\n");
+  expect(cjkLines(text)).toEqual([2]);
 });
 
 it("allows only the Chinese README and locale data", () => {

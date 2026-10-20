@@ -103,7 +103,7 @@ The retrieval corpus has four passages: an English flight, a Chinese shopping re
 
 <!-- cjk-ok:end -->
 
-Overall 6/8, and 4/6 across languages. Short Chinese queries show a language preference. OCR text plus E5 lets 机票 ("airline ticket") find the boarding pass, but 收据 ("receipt") and `screenshot of code` both hit the mixed-language explainer image first. E5 can serve as a candidate ranking signal. It cannot replace exact search. <!-- cjk-ok -->
+Overall 6/8, and 4/6 across languages. Short Chinese queries show a language preference. OCR text plus E5 lets 机票 ("airline ticket") find the boarding pass, but 收据 ("receipt") and 截图中的代码 ("code in a screenshot") both hit the mixed-language explainer image first. E5 can serve as a candidate ranking signal. It cannot replace exact search. <!-- cjk-ok -->
 
 ## sqlite-vec
 

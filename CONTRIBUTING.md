@@ -105,7 +105,7 @@ pnpm build && pnpm check-types && pnpm test && pnpm exec oxlint && pnpm exec oxf
 
 ## Architecture rules
 
-[AGENTS.md](AGENTS.md) is the full list, in Chinese. In short:
+[AGENTS.md](AGENTS.md) is the full list. In short:
 
 - `packages/core` is the only code that touches the network or the database. The desktop main process, the CLI and the MCP server call functions core exports. They write no SQL and call no provider API.
 - Node-specific core code lives only in `packages/core/src/platform/node/`. Other core sources import no `node:` modules, Node built-ins or Node-only packages, and read no Node globals; runtime capabilities come from Effect platform services. Only `platform/bytes.ts` may probe `globalThis.Buffer`, once at startup. Read [docs/platform-inventory.md](docs/platform-inventory.md) before changing platform code.

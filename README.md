@@ -111,7 +111,7 @@ Details: [privacy policy](https://openmail-docs.vercel.app/privacy) and [securit
 
 ## Documentation
 
-User docs: **[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**. Developer docs are in [`docs/`](docs/): [architecture](docs/architecture.md), [testing](docs/testing.md), [release](docs/release.md), [security](docs/security.md), the [glossary](CONTEXT.md) and the [changelog](CHANGELOG.md). Some deeper notes, such as sync correctness and performance, are still in Chinese.
+User docs: **[openmail-docs.vercel.app](https://openmail-docs.vercel.app)**. Developer docs are in [`docs/`](docs/): [architecture](docs/architecture.md), [testing](docs/testing.md), [release](docs/release.md), [security](docs/security.md), the [glossary](CONTEXT.md) and the [changelog](CHANGELOG.md). Deeper notes cover [sync correctness](docs/sync-correctness.md) and [performance](docs/performance.md).
 
 ## Contributing
 
