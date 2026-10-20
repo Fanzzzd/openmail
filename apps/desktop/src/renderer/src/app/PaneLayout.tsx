@@ -2,6 +2,7 @@ import { useCallback, useState, type ComponentProps } from "react";
 import { BatchActions } from "../features/mail-list/BatchActions";
 import { ThreadActions } from "../features/organize/ThreadActions";
 import { Separator } from "react-resizable-panels";
+import { rowsMoved } from "../ui/TrafficLights";
 
 /** The reader's actions: for the selected rows when several are selected, otherwise for the open thread. */
 export function ReaderToolbar({
@@ -29,7 +30,10 @@ export function usePaneHost() {
   });
   const slot = useCallback(
     (element: HTMLElement | null) => {
-      element?.append(host);
+      if (!element) return;
+      element.append(host);
+      // The pane's header rows moved, often without changing size.
+      rowsMoved();
     },
     [host],
   );

@@ -91,6 +91,20 @@ function layoutBox(el: HTMLElement) {
   return { left, top, bottom: top + el.offsetHeight };
 }
 
+/** The measure of every mounted spacer; see `rowsMoved`. */
+const spacers = new Set<() => void>();
+
+/**
+ * Re-measures every spacer, now and again in the next animation frame. Call
+ * after the layout moves a header row without resizing it, such as a pane
+ * host that moves to a new slot when the sidebar docks, undocks or becomes
+ * the rail. A ResizeObserver does not fire for a move. The second pass
+ * catches a pane that its library sizes in a later effect of the same commit.
+ */
+export function rowsMoved() {
+  for (const measure of spacers) measure();
+}
+
 /**
  * A drag-region spacer, first in a header row. It sizes itself so the next
  * item starts where the lights' row is free, after the row's own padding and
@@ -107,7 +121,8 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
     const row = space?.parentElement;
     if (!space || !row) return constVoid;
     let last = "";
-    const measure = () => {
+    let frame = 0;
+    const measureNow = () => {
       const box = layoutBox(row);
       const style = getComputedStyle(row);
       const start = box.left + px(style.borderLeftWidth) + px(style.paddingLeft);
@@ -123,14 +138,28 @@ export function TrafficLightSpace({ className = "" }: { className?: string }) {
       // A hidden spacer leaves the flex row, so the row's gap does not add up either.
       space.hidden = !shown;
     };
-    measure();
+    const measure = () => {
+      measureNow();
+      if (frame || typeof requestAnimationFrame !== "function") return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        measureNow();
+      });
+    };
+    measureNow();
     const observer =
-      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+      typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measureNow);
     observer?.observe(row);
+    // The window's resize event comes before the media queries report a new
+    // breakpoint and React moves the panes, so the row may still move in this
+    // frame. The animation frame callback runs after that commit and before paint.
     window.addEventListener("resize", measure);
+    spacers.add(measure);
     return () => {
       observer?.disconnect();
       window.removeEventListener("resize", measure);
+      spacers.delete(measure);
+      if (frame) cancelAnimationFrame(frame);
     };
   }, [area]);
   if (!area) return null;

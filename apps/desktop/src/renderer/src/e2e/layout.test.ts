@@ -496,6 +496,71 @@ it("a wide window docks the sidebar and has no drawer toggle", async () => {
   expect(lightSpaceAt(document.querySelector('[data-mail-pane="list"] header'), 260)).toBe(0);
 });
 
+it("the list header clears the lights when a breakpoint or the sidebar moves it without resizing it", async () => {
+  width = 1200;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  // The header keeps its size and only moves: right of the docked sidebar, right of the rail, or
+  // to the window edge. Its ResizeObserver does not fire, and jsdom has none to begin with.
+  const header = document.querySelector('[data-mail-pane="list"] header');
+  if (!header) throw new Error("Missing list header");
+  const docked = () =>
+    document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail])');
+  let moved = 0;
+  const at = () => moved + (rail() ? 56 : docked() ? 232 : 0);
+  for (const [name, value] of Object.entries({ offsetTop: 0, offsetHeight: 52 }))
+    Object.defineProperty(header, name, { configurable: true, value });
+  Object.defineProperty(header, "offsetLeft", { configurable: true, get: at });
+  const space = () => {
+    const spacer = header.querySelector<HTMLElement>(":scope > [data-traffic-light-space]");
+    return spacer?.hidden ? 0 : Number(spacer?.dataset.trafficLightSpace);
+  };
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  expect(space()).toBe(0);
+  // The window's resize event comes first and measures the old place; then the media query
+  // reports the medium breakpoint and the rail replaces the sidebar.
+  width = 959;
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  resize(959);
+  expect(rail()).not.toBeNull();
+  expect(space()).toBe(40);
+  width = 961;
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  resize(961);
+  expect(rail()).toBeNull();
+  expect(space()).toBe(0);
+  // Hiding the sidebar moves the list to the window edge with no resize at all.
+  fireEvent.keyDown(document.body, {
+    key: "s",
+    code: "KeyS",
+    metaKey: true,
+    altKey: true,
+    shiftKey: true,
+  });
+  await eventually(() => expect(docked()).toBeNull());
+  expect(space()).toBe(96);
+  // A row that moves later in the same frame as a resize is measured again before paint.
+  act(() => {
+    window.dispatchEvent(new Event("resize"));
+  });
+  moved = 200;
+  expect(space()).toBe(96);
+  await act(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve());
+      }),
+  );
+  expect(space()).toBe(0);
+});
+
 it("a medium window docks an icon rail whose mailboxes and spaces hand focus to the list", async () => {
   width = 800;
   current = await flow();
