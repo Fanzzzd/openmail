@@ -94,7 +94,7 @@ Mailbox has eleven groups. A group is a namespace on the one service, typed by a
 
 ### Policy and changes
 
-`domain/command.ts` defines Command, Actor and Outcome. `decide` in `mailbox/policy.ts` decides by entry point and write permission. User actions take the execute path. Rules execute or propose depending on their permission. Writes from MCP and the built-in assistant need approval, and an agent can never send directly. Tool switches and approval details are maintained only in the [agent guide](agents.md#提议改动).
+`domain/command.ts` defines Command, Actor and Outcome. `decide` in `mailbox/policy.ts` decides by entry point and write permission. User actions take the execute path. Rules execute or propose depending on their permission. Writes from MCP and the built-in assistant need approval, and an agent can never send directly. Tool switches and approval details are maintained only in the [agent guide](agents.md#proposing-changes).
 
 For an ordinary change, core expands the conversation, applies the local state, records `pending_ops` and `audit_log`, then tries to push to the provider. Rules for retries, claims, failure notices and send results are maintained only in [sync correctness](sync-correctness.md#outbound-operation-queue). When sync writes to the database, it keeps the local result of operations still waiting to push, so a pull does not overwrite offline changes.
 

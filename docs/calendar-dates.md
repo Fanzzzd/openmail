@@ -1,17 +1,17 @@
-# 日历日期解析规则
+# Calendar date parsing rules
 
-检测和输入共用 `packages/core/src/calendar/event-dates.ts` 的有界语法，无 LLM。相对日期和省略年份的日期以邮件日期及确认窗口选择的 IANA 时区为准。
+Detection and input share the bounded grammar in `packages/core/src/calendar/event-dates.ts`. No LLM is involved. Relative dates and dates without a year are resolved against the message date and the IANA time zone chosen in the confirmation window.
 
-- 英文裸星期取下一次该星期；当天同名星期要求确认。
-- `this Friday` 等 `this` 表达取今天或下一次该星期，不回到过去。
-- 英文 `next` 加不同星期要求确认，避免“最近一次”和“再下一周”混淆。当天同名星期取七天后。
-- 中文 `下周`／`下星期` 使用周一开始的下一自然周；`本周`／`这周` 使用今天或下一次该星期；`周`／`星期` 与英文裸星期一致。
-- 省略年份的月日若在本地日期之前 1 至 14 天，要求明确年份；更早的日期取下一年。明确年份保持原值；跨月范围保留结束月份，跨年范围将结束日期推进一年。全天结束日期排他。
-- `03/04` 等月日均不超过 12 的数字日期要求确认；`13/4` 和 `4/13` 可唯一确定为 4 月 13 日。金额和版本中的点号不作日期分隔符。
-- 单个时间缺少日期时要求确认。自然语言中的 12 小时制时间缺少 am／pm 或中文时段时要求确认；13 点及以后、明确的 ISO 日期时间使用 24 小时制。
-- `noon tomorrow`／`tomorrow at noon`／`at noon on Friday`／`on Friday at 3pm`／`明天中午`／`周五中午` 各作为一个候选。中文时段会传递给同一范围中未写时段的结束时间。
-- 范围结束时间早于开始时间，且两者小时均不超过 12 时，结束时间加 12 小时。`11am to 1`／`上午11点到1点` 为 11:00 至 13:00；这类范围未写日期时用参考日。其他逆序、相同端点或缺日期的范围要求确认。
-- 支持 `日`／`号`、`明年` 加月日、`凌晨`。支持的语法之外不推测日期。
-- 夏令时使墙上时间缺失或重复时要求确认，并提示输入 UTC 偏移。有效的显式 ISO 偏移可确定具体时刻。
+- A bare English weekday means the next occurrence of that weekday. If it names today's weekday, the parser asks for confirmation.
+- `this` expressions such as `this Friday` mean today or the next occurrence of that weekday. They never go back in time.
+- English `next` with a different weekday asks for confirmation, so "the nearest one" and "the one in the following week" are not confused. `next` with today's weekday means seven days later.
+- Chinese `下周` / `下星期` ("next week") use the next calendar week starting on Monday. `本周` / `这周` ("this week") use today or the next occurrence of that weekday. `周` / `星期` ("weekday") behave like a bare English weekday. <!-- cjk-ok -->
+- A month and day without a year that falls 1 to 14 days before the local date asks for an explicit year. Earlier dates move to the next year. An explicit year is kept as written. A range across months keeps the end month. A range across years moves the end date forward one year. All-day end dates are exclusive.
+- Numeric dates such as `03/04`, where both month and day are 12 or less, ask for confirmation. `13/4` and `4/13` resolve uniquely to April 13. Dots in amounts and versions are not date separators.
+- A single time without a date asks for confirmation. A 12-hour time in natural language without am/pm or a Chinese time-of-day word asks for confirmation. Times of 13:00 and later, and explicit ISO date-times, use the 24-hour clock.
+- `noon tomorrow` / `tomorrow at noon` / `at noon on Friday` / `on Friday at 3pm` / `明天中午` ("noon tomorrow") / `周五中午` ("Friday noon") each form one candidate. A Chinese time-of-day word carries over to an end time in the same range that has none. <!-- cjk-ok -->
+- If a range's end time is earlier than its start time and both hours are 12 or less, the parser adds 12 hours to the end time. `11am to 1` / `上午11点到1点` ("11am to 1") is 11:00 to 13:00. When such a range has no date, it uses the reference date. Other reversed ranges, ranges with equal endpoints and ranges without a date ask for confirmation. <!-- cjk-ok -->
+- The grammar supports `日` / `号` (day-of-month suffixes), `明年` ("next year") with a month and day, and `凌晨` ("early morning"). Outside the supported grammar the parser does not guess dates. <!-- cjk-ok -->
+- When daylight saving time makes a wall-clock time missing or repeated, the parser asks for confirmation and suggests entering a UTC offset. A valid explicit ISO offset determines the exact instant.
 
-所有星期组合、跨月及跨年、金额／版本排除、时段继承和 DST 行为见 `packages/core/src/calendar/event-dates.test.ts`。界面摘要使用 Lingui ICU 复数、Intl 日期和列表格式；日语仅使用 `other` 分支。
+`packages/core/src/calendar/event-dates.test.ts` covers every weekday combination, ranges across months and years, the amount and version exclusions, time-of-day inheritance and DST behavior. The UI summary uses Lingui ICU plurals and Intl date and list formats. Japanese uses only the `other` branch.

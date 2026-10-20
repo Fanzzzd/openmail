@@ -1,6 +1,6 @@
 # Testing
 
-The automated tests cover the core, CLI, desktop and mobile mail flows. They use a fake provider and Model, temporary SQLite or in-memory databases, the DOM and mocks of native services. The full mail flow tests also run in jsdom. They do not start Electron and do not read a real mailbox or address book. Acceptance with real accounts, system permissions and signed builds is in the [roadmap](roadmap.md#待用户完成).
+The automated tests cover the core, CLI, desktop and mobile mail flows. They use a fake provider and Model, temporary SQLite or in-memory databases, the DOM and mocks of native services. The full mail flow tests also run in jsdom. They do not start Electron and do not read a real mailbox or address book. Acceptance with real accounts, system permissions and signed builds is in the [roadmap](roadmap.md#owner-to-do).
 
 To run one test file, use `pnpm --filter @openmail/core exec vitest run src/domain/cache.test.ts`. The desktop end-to-end tests use their own config: `pnpm --filter @openmail/desktop exec vitest run --config vitest.e2e.config.ts src/renderer/src/e2e/calendar.test.ts`.
 
@@ -101,7 +101,7 @@ Every Vitest project gets its own temporary directory through `packages/core/tes
 
 [performance-plans.test.ts](../packages/core/src/platform/node/performance-plans.test.ts) checks the indexes of the real Store SQL in one place. A sync health case with 120 messages covers paging wraparound and Unicode ID order; it is a normal test. The 100,000-message [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts) is excluded by default and runs only with `pnpm test:perf`. Its commands, reports, latency budgets and the write and disk cost of migration 35 are maintained only in [performance](performance.md).
 
-The fake Apple Contacts helper, its self-check and the limits of testing on a real Mac are maintained only in [Apple Contacts](apple-contacts.md#验证边界). Performance data, query plans and reproduction scripts are maintained only in [performance](performance.md).
+The fake Apple Contacts helper, its self-check and the limits of testing on a real Mac are maintained only in [Apple Contacts](apple-contacts.md#verification-limits). Performance data, query plans and reproduction scripts are maintained only in [performance](performance.md).
 
 `models.integration.test.ts` is skipped by default. It runs on-device inference only when `OPENMAIL_TEST_MODELS=1` is set and the E5 and MobileCLIP files that `spikes/media/models/` asks for are present. Run it with `OPENMAIL_TEST_MODELS=1 pnpm --filter @openmail/core exec vitest run src/platform/node/models.integration.test.ts`. Regular regressions for third-party AI use a fake Model and fetch, and make no real API requests.
 

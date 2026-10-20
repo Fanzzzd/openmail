@@ -1,42 +1,42 @@
-# 依赖补丁
+# Dependency patches
 
-`pnpm-workspace.yaml` 的 `patchedDependencies` 列出 `patches/` 里的补丁。补丁按版本号绑定，升级依赖时 pnpm 会因版本不匹配报错，这时按下面的条件决定删掉补丁还是重做。三个补丁都只影响手机端。最后两节是版本覆盖：Effect 的在升级 Effect 时一起看，lightningcss 的在升级 Tailwind 时看。
+`patchedDependencies` in `pnpm-workspace.yaml` lists the patches in `patches/`. Each patch is bound to a version number. When a dependency is upgraded, pnpm fails on the version mismatch. At that point, use the conditions below to decide whether to delete the patch or redo it. All three patches affect only mobile. The last two sections are version overrides. Review the Effect one when upgrading Effect, and the lightningcss one when upgrading Tailwind.
 
 ## react-native-tcp-socket@6.4.3
 
-IMAP／SMTP 的 TCP 和 TLS 传输。补丁改了四处：
+TCP and TLS transport for IMAP and SMTP. The patch changes four things:
 
-- Android 的 TLS 连接校验证书主机名。上游 issue [#239](https://github.com/Rapsssito/react-native-tcp-socket/issues/239)，修复 PR [#240](https://github.com/Rapsssito/react-native-tcp-socket/pull/240)。
-- iOS 在 TLS 握手完成前不发 `connect`。上游 issue [#237](https://github.com/Rapsssito/react-native-tcp-socket/issues/237)，修复 PR [#238](https://github.com/Rapsssito/react-native-tcp-socket/pull/238)。
-- Android 的 STARTTLS 升级：读线程在升级期间让出 socket，不再用 `BufferedInputStream` 预读明文，否则会吞掉握手字节；升级完成后发 `connect`。
-- 两端在 STARTTLS 握手完成后才发 `secureConnect`（`react-native-tcp-socket/src/TLSSocket.js`、`react-native-tcp-socket/src/index.js`）。
+- TLS connections on Android check the certificate hostname. Upstream issue [#239](https://github.com/Rapsssito/react-native-tcp-socket/issues/239), fix PR [#240](https://github.com/Rapsssito/react-native-tcp-socket/pull/240).
+- iOS does not emit `connect` before the TLS handshake completes. Upstream issue [#237](https://github.com/Rapsssito/react-native-tcp-socket/issues/237), fix PR [#238](https://github.com/Rapsssito/react-native-tcp-socket/pull/238).
+- STARTTLS upgrade on Android. The read thread yields the socket during the upgrade and no longer reads plaintext ahead with `BufferedInputStream`, which would swallow handshake bytes. It emits `connect` after the upgrade completes.
+- Both platforms emit `secureConnect` only after the STARTTLS handshake completes (`react-native-tcp-socket/src/TLSSocket.js`, `react-native-tcp-socket/src/index.js`).
 
-后两项上游还没有 issue。删除条件：#240 和 #238 合并并发布，且新版本的 STARTTLS 升级在 Android 和 iOS 上都等握手完成再发 `secureConnect`。
+The last two changes have no upstream issue yet. Delete the patch when #240 and #238 are merged and released, and the new version's STARTTLS upgrade waits for the handshake to complete before emitting `secureConnect` on both Android and iOS.
 
 ## expo-background-task@57.0.21
 
-手机后台刷新（见 [apps/mobile/README.md](../apps/mobile/README.md)）。补丁把 iOS 的 `BGProcessingTask` 换成 `BGAppRefreshTask`（后台模式 `fetch`，标识符 `com.openmail.mobile.refresh`），去掉任务过期通知里多余的 `url` 判断；Android 的 WorkManager 约束改成非计费网络加电量不低，并挂到每个任务请求上。
+Mobile background refresh (see [apps/mobile/README.md](../apps/mobile/README.md)). On iOS the patch replaces `BGProcessingTask` with `BGAppRefreshTask` (background mode `fetch`, identifier `com.openmail.mobile.refresh`) and removes a redundant `url` check in the task expiration notification. On Android it changes the WorkManager constraints to an unmetered network and battery not low, and attaches them to every task request.
 
-上游 issue [expo/expo#48122](https://github.com/expo/expo/issues/48122) 提议让网络约束可配置。任务类型、标识符和电量约束没有上游 issue，属于 OpenMail 的取舍。删除条件：expo-background-task 允许按任务选择 app refresh 和自定义约束。在那之前每次升级都要重做这个补丁。
+Upstream issue [expo/expo#48122](https://github.com/expo/expo/issues/48122) proposes making the network constraint configurable. The task type, identifier and battery constraint have no upstream issue. They are OpenMail's own choices. Delete the patch when expo-background-task lets each task choose app refresh and custom constraints. Until then, redo this patch on every upgrade.
 
 ## expo-notifications@57.0.22
 
-本地新邮件通知。补丁做 OpenMail 自己的事，没有对应的上游缺陷：
+Local new-mail notifications. The patch does OpenMail-specific work and has no matching upstream bug:
 
-- 从库的 AndroidManifest 去掉 `RECEIVE_BOOT_COMPLETED`、开机广播和 Firebase 消息服务。OpenMail 没有推送，也不在开机后重新调度。
-- Android 用 `openmailAccount` 给通知分组，用 `openmailPublicTitle` 生成锁屏公开版本，锁屏不显示发件人和主题。
-- iOS 用 `openmailThread` 设置 `threadIdentifier`，同一会话的通知归成一组。
+- It removes `RECEIVE_BOOT_COMPLETED`, the boot broadcast and the Firebase messaging service from the library's AndroidManifest. OpenMail has no push and does not reschedule after boot.
+- Android groups notifications by `openmailAccount` and builds the public lock screen version from `openmailPublicTitle`, so the lock screen does not show the sender or subject.
+- iOS sets `threadIdentifier` from `openmailThread`, so notifications from the same conversation form one group.
 
-删除条件：清单部分可以改成 app 的 config plugin，用 `tools:node="remove"` 移除；分组、公开版本和 `threadIdentifier` 要等 expo-notifications 的本地通知内容提供对应字段。
+Delete conditions: the manifest part can move to an app config plugin that removes the entries with `tools:node="remove"`. Grouping, the public version and `threadIdentifier` must wait until expo-notifications local notification content offers matching fields.
 
-## 版本覆盖：@effect/platform-node-shared
+## Version override: @effect/platform-node-shared
 
-`pnpm-workspace.yaml` 的 `overrides` 把 `@effect/platform-node-shared` 固定在 4.0.3。Effect 的包按同一个版本号一起发布，`@effect/platform-node` 4.0.3 对它的依赖写的是 `^4.0.3`，pnpm 会解析到 4.0.4，而 4.0.4 要求 effect 4.0.4。没有这条覆盖，桌面和 CLI 会在 effect 4.0.3 上跑 4.0.4 的平台代码。
+`overrides` in `pnpm-workspace.yaml` pins `@effect/platform-node-shared` to 4.0.3. Effect packages are released together under one version number. `@effect/platform-node` 4.0.3 declares its dependency on it as `^4.0.3`, so pnpm resolves 4.0.4, and 4.0.4 requires effect 4.0.4. Without this override, desktop and the CLI would run 4.0.4 platform code on effect 4.0.3.
 
-Dependabot 不改 `overrides`。Dependabot 的 #14 只把 `@effect/platform-node` 升到 4.0.3，覆盖仍把 `platform-node-shared` 留在 4.0.2，4.0.2 没有 `NodeAddressResolver.js`，core 的 12 个测试文件在导入时失败。升级 Effect 家族时同一个提交里处理这一条：新版本的 `@effect/platform-node` 能解析到同版本的 `platform-node-shared` 时删掉覆盖，否则把它改成新的版本号。Effect 发布下一个补丁版本后，`^` 范围通常会再次越过当前版本，所以一般是改版本号。用 `pnpm peers check` 确认没有 effect 的 unmet peer。
+Dependabot does not change `overrides`. Dependabot's #14 upgraded only `@effect/platform-node` to 4.0.3. The override still kept `platform-node-shared` at 4.0.2, which has no `NodeAddressResolver.js`, and 12 core test files failed at import. When upgrading the Effect family, handle this override in the same commit. Delete it if the new `@effect/platform-node` resolves to a `platform-node-shared` of the same version. Otherwise change it to the new version number. After Effect releases the next patch version, the `^` range usually passes the current version again, so you usually change the version number. Run `pnpm peers check` to confirm there is no unmet effect peer.
 
-## 版本覆盖：lightningcss
+## Version override: lightningcss
 
-`@tailwindcss/node` 4.3.3 把 lightningcss 固定在 1.32.0。Tailwind 用它压缩生成的 CSS。1.32.0 不认识 `::highlight()` 伪元素，桌面 `styles.css` 的五条 `::highlight(openmail-*)` 规则每次构建都打印 "Found 5 warnings while optimizing generated CSS"。规则本身原样输出，警告是误报。1.33.0 能解析 `::highlight()`，`overrides` 里的 `"@tailwindcss/node>lightningcss": 1.33.0` 只替换 Tailwind 用的这一份。
+`@tailwindcss/node` 4.3.3 pins lightningcss to 1.32.0. Tailwind uses it to minify the generated CSS. 1.32.0 does not recognize the `::highlight()` pseudo-element, so the five `::highlight(openmail-*)` rules in the desktop `styles.css` print "Found 5 warnings while optimizing generated CSS" on every build. The rules are output unchanged, so the warning is a false positive. 1.33.0 parses `::highlight()`. `"@tailwindcss/node>lightningcss": 1.33.0` in `overrides` replaces only the copy that Tailwind uses.
 
-删除条件：`@tailwindcss/node` 的依赖升到 lightningcss 1.33 或更高。删掉后跑 `pnpm build`，确认桌面和文档站都没有这条警告。
+Delete the override when `@tailwindcss/node` depends on lightningcss 1.33 or later. After deleting it, run `pnpm build` and confirm that neither the desktop app nor the docs site prints this warning.

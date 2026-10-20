@@ -68,7 +68,7 @@ With your own Apple Developer credentials, run:
 pnpm --filter @openmail/desktop dist:signed
 ```
 
-Signing uses the Developer ID in the keychain, or `CSC_LINK` and `CSC_KEY_PASSWORD`. `forceCodeSigning` fails a signed build that has no signing identity. The hardened runtime is on. The signing and helper entitlement rules are in [Apple Contacts](apple-contacts.md#打包与权限). Ad-hoc builds use a separate unsigned plist that allows loading Electron's libraries, which are pre-signed by a different team.
+Signing uses the Developer ID in the keychain, or `CSC_LINK` and `CSC_KEY_PASSWORD`. `forceCodeSigning` fails a signed build that has no signing identity. The hardened runtime is on. The signing and helper entitlement rules are in [Apple Contacts](apple-contacts.md#packaging-and-permissions). Ad-hoc builds use a separate unsigned plist that allows loading Electron's libraries, which are pre-signed by a different team.
 
 Notarization accepts any one complete set of credentials and is skipped when none is set:
 
@@ -76,7 +76,7 @@ Notarization accepts any one complete set of credentials and is skipped when non
 - `APPLE_API_KEY`, `APPLE_API_KEY_ID`, `APPLE_API_ISSUER`.
 - `APPLE_KEYCHAIN_PROFILE`, plus `APPLE_KEYCHAIN` when needed.
 
-The builder's credential rules are in the [electron-builder 26 macOS docs](https://www.electron.build/v26/docs/mac/). The signing and inherited plists are in `apps/desktop/build/`. The Apple Contacts helper uses its own entitlements; the rules are in [Apple Contacts](apple-contacts.md#打包与权限).
+The builder's credential rules are in the [electron-builder 26 macOS docs](https://www.electron.build/v26/docs/mac/). The signing and inherited plists are in `apps/desktop/build/`. The Apple Contacts helper uses its own entitlements; the rules are in [Apple Contacts](apple-contacts.md#packaging-and-permissions).
 
 ## Release workflow (GitHub Actions)
 
@@ -109,24 +109,24 @@ git tag v0.2.0
 git push origin v0.2.0
 ```
 
-## 自动更新
+## Automatic updates
 
-core 接受 Electron updater 适配器，统一配置和发起网络检查。窗口显示后，core 用 `codesign --verify --deep --strict` 验证 app，并确认 Developer ID Application Authority 和 TeamIdentifier。开发环境和 ad-hoc 包不开启更新。
+core accepts an Electron updater adapter and owns the configuration and the network checks. After the window shows, core verifies the app with `codesign --verify --deep --strict` and confirms the Developer ID Application Authority and the TeamIdentifier. Development and ad-hoc builds do not turn updates on.
 
-已签名 app 从公开仓库 `Fanzzzd/openmail` 的 GitHub Releases 获取更新，不需要 GitHub 账户或令牌。更新源由 `electron-builder.config.cjs` 的 `publish` 决定，构建时写进 app 的 `Resources/app-update.yml`，内容只有 `provider`、`owner` 和 `repo`。
+A signed app gets updates from GitHub Releases of the public repo `Fanzzzd/openmail`. It needs no GitHub account or token. The `publish` setting in `electron-builder.config.cjs` sets the update source. The build writes it into the app's `Resources/app-update.yml`, which holds only `provider`, `owner` and `repo`.
 
-core 的 `resolveUpdateFeed`（[update-feed.ts](../packages/core/src/app/update-feed.ts)）不带凭证请求 GitHub API 选出 release。Stable 只取最新正式版；Latest 在正式版和预发布版中取 semver 最大的一个。清单只从该 release 的 `https://github.com/Fanzzzd/openmail/releases/download/<tag>/` 读取，重定向只接受 `release-assets.githubusercontent.com` 和 `objects.githubusercontent.com`。桌面适配器把 tag 交给 electron-updater 的 `GitHubProvider`，安装包从同一个 tag 下载，SDK 校验 sha512 和签名。未认证的 GitHub API 每个 IP 每小时限 60 次。Stable 每次检查调用 1 次，Latest 调用 2 次，release 超过 100 个时每多 100 个再加 1 次。
+core's `resolveUpdateFeed` ([update-feed.ts](../packages/core/src/app/update-feed.ts)) calls the GitHub API without credentials to pick a release. Stable takes only the latest full release. Latest takes the highest semver among full releases and prereleases. The manifest is read only from that release's `https://github.com/Fanzzzd/openmail/releases/download/<tag>/`, and redirects are accepted only to `release-assets.githubusercontent.com` and `objects.githubusercontent.com`. The desktop adapter passes the tag to electron-updater's `GitHubProvider`, the installer downloads from the same tag, and the SDK checks the sha512 and the signature. The unauthenticated GitHub API allows 60 calls per IP per hour. Each Stable check makes 1 call and each Latest check makes 2, plus 1 more for every 100 releases beyond the first 100.
 
-「设置 → 常规 → 软件更新」显示更新版本和检查／下载状态。每 6 小时检查一次，主窗口显示可用更新。自动下载默认开启，可在设置中关闭并显式下载；下载完成后，退出时先检查待处理草稿，再重新核对签名和渠道资格后安装。网络失败不影响收发。macOS 更新需要 ZIP 和签名，见 [electron-builder 26 自动更新文档](https://www.electron.build/v26/docs/features/auto-update/)。
+"Settings → General → Software updates" shows the update version and the check and download status. The app checks every 6 hours, and the main window shows an available update. Automatic download is on by default. Users can turn it off in Settings and download explicitly. After a download finishes, quitting first checks for pending drafts, then checks the signature and channel eligibility again, then installs. A network failure does not affect sending or receiving mail. macOS updates need the ZIP and a signature; see the [electron-builder 26 auto-update docs](https://www.electron.build/v26/docs/features/auto-update/).
 
-仓库公开前的构建把 GitHub 令牌存在钥匙串项 `updates:github-release-token`。升级后第一次启动更新时，core 删除这一项。项不存在或删除失败都不提示；`prefs` 表的 `updates:legacy-token-removed` 记录已执行，之后的启动不再访问该项。
+Builds from before the repo went public stored a GitHub token in the keychain item `updates:github-release-token`. On the first update start after upgrading, core deletes that item. It shows nothing if the item is missing or the delete fails. `updates:legacy-token-removed` in the `prefs` table records that the step ran, and later launches no longer touch the item.
 
-首次真实发布前还要验证：
+Before the first real release, also verify:
 
-- Developer ID 签名、公证、staple 和 Gatekeeper。
-- 用一个测试预发布 release 验证发现、下载、退出安装和签名拒绝。
-- 在 Intel Mac 上启动 x64 包，并在两种架构验证钥匙串读写。Apple Silicon 的 Rosetta 启动只作为补充。
-- 用正式签名包实际加载 sqlite-vec 和 ONNX。
+- Developer ID signing, notarization, stapling and Gatekeeper.
+- Discovery, download, install on quit and signature rejection, using a test prerelease.
+- Launching the x64 build on an Intel Mac, and keychain reads and writes on both architectures. A Rosetta launch on Apple Silicon is only a supplement.
+- Loading sqlite-vec and ONNX in a production-signed build.
 
 ## Old mail and cache
 
