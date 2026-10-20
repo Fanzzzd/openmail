@@ -17,6 +17,7 @@ import { attachmentHasType } from "./attachment-types.js";
 import {
   editSearchToken,
   liveSearchText,
+  routeSearchText,
   searchedFieldText,
   submittedSearchText,
   modifySearchToken,
@@ -383,6 +384,22 @@ it("waits for a second character or an operator's value before searching the las
   // Enter still runs a one-letter word or an unfinished operator as typed.
   assert.strictEqual(liveSearchText(submittedSearchText("p")), "p");
   assert.strictEqual(liveSearchText(submittedSearchText("is:u")), "is:u");
+});
+
+it("reads a search from a route as submitted, so its last word searches however short", () => {
+  // Back to `item 5` showed every result for "item": the route's trimmed `5` waited for a second character.
+  for (const [q, searched] of [
+    ["item 5", "item 5"],
+    ["plan b", "plan b"],
+    ["is:u", "is:u"],
+    [" p ", "p"],
+  ] as const)
+    assert.strictEqual(liveSearchText(routeSearchText(q)), searched, q);
+  assert.strictEqual(routeSearchText("item 5"), submittedSearchText("item 5"));
+  // A word that was a prefix after Enter stays one.
+  assert.strictEqual(liveSearchText(routeSearchText("northw")), "northw*");
+  assert.strictEqual(routeSearchText(""), "");
+  assert.strictEqual(routeSearchText("  "), "");
 });
 
 it("keeps an unfinished word a prefix after Enter, and chips a finished operator", () => {

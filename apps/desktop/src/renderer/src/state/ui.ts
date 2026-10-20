@@ -4,6 +4,7 @@
  * atoms read and write it, because the thread list atom derives its query
  * from them.
  */
+import { routeSearchText } from "@openmail/core/schema";
 import { Atom } from "effect/reactivity";
 
 import type { MailDialog, MailState } from "../../../shared/routes";
@@ -51,7 +52,10 @@ export const searchTextAtom = Atom.writable(
   (get) => {
     const draft = get(searchDraftAtom);
     const q = get(committedSearch);
-    return draft?.base === q && draft.moves === get(outsideMovesAtom) ? draft.text : q;
+    // A search that comes from the route already ran, so it reads as submitted.
+    return draft?.base === q && draft.moves === get(outsideMovesAtom)
+      ? draft.text
+      : routeSearchText(q);
   },
   (ctx, text: string) =>
     ctx.set(searchDraftAtom, {

@@ -47,7 +47,8 @@ export function searchFieldParts(value: string): {
  * whose value does not parse yet, such as `is:` or `is:u`. Run as typed, `p` matches only the
  * whole word and `is:u` matches as text, so the list emptied on the first key of a search. The
  * list keeps the search without that word meanwhile. Enter ends the word with a space (see
- * `submittedSearchText`), so a submitted `p` or `is:u` runs as typed. Expressions run as typed.
+ * `submittedSearchText`), so a submitted `p` or `is:u` runs as typed, and a search from a route
+ * reads as submitted (see `routeSearchText`). Expressions run as typed.
  */
 export function searchedFieldText(value: string): string {
   const { pending } = searchFieldParts(value);
@@ -86,6 +87,16 @@ export function liveSearchText(value: string): string {
 export function submittedSearchText(value: string): string {
   const text = value.trimEnd();
   return text === value && liveSearchText(text) === `${text.trim()}*` ? text : `${text} `;
+}
+/**
+ * The field's text for a search that comes from a route: a restored window, Back or Forward, or a
+ * link. The route keeps the search trimmed, but it ran as submitted, so it reads as Enter left it
+ * (see `submittedSearchText`): the `5` of `item 5` still searches instead of waiting for a
+ * second character.
+ */
+export function routeSearchText(q: string): string {
+  const search = q.trim();
+  return search ? submittedSearchText(search) : "";
 }
 export function serializeSearchField(chips: readonly string[], text: string): string {
   const value = [...chips, text].filter(Boolean).join(" ");

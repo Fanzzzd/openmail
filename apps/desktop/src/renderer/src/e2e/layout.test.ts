@@ -226,6 +226,35 @@ it("Cmd+] after Cmd+[ in a narrow window opens the reader again", async () => {
   await eventually(() => expect(reader()?.textContent).toContain("Original two"));
 });
 
+it("Back from a narrow reader to a search whose last word is one character shows the same results", async () => {
+  width = 520;
+  current = await flow({
+    windowHistory: true,
+    messages: Array.from({ length: 12 }, (_, index) =>
+      incoming(`m${index}`, { subject: `item ${index}`, date: Date.now() - (index + 1) * 60_000 }),
+    ),
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("m0"))).toBeTruthy());
+  const shown = () =>
+    [...document.querySelectorAll<HTMLElement>("[data-id]")].map((element) => element.dataset.id);
+  const field = screen.getByRole<HTMLInputElement>("combobox", { name: "Search mail" });
+  field.focus();
+  fireEvent.change(field, { target: { value: "item 5" } });
+  key("Enter", {}, field);
+  await eventually(() => expect(shown()).toEqual([h.id("m5")]));
+  // Past the search's commit to the route.
+  await eventually(() => expect(decodeURIComponent(window.location.hash)).toContain("q=item+5"));
+  fireEvent.click(row(h.id("m5")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original m5"));
+  clickButton("Back to messages");
+  await eventually(() => expect(reader()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("m5"))));
+  await wait(400);
+  expect(field.value.trim()).toBe("item 5");
+  expect(shown()).toEqual([h.id("m5")]);
+});
+
 it("Back from a narrow reader focuses a row that was below the first screen", async () => {
   // jsdom lays nothing out. As in Chromium, a shown list is 600 px tall, a hidden one reads a
   // height and scroll offset of 0 but keeps its offset for when it shows again, and the list

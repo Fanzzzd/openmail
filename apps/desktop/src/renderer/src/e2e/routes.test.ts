@@ -2,7 +2,7 @@ import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import { afterEach, expect, it, vi } from "vitest";
 import { Effect } from "effect";
 import { SETTLE_MS } from "../routes/router";
-import { advance, eventually, flow, key, row } from "./harness";
+import { advance, eventually, flow, incoming, key, row } from "./harness";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
 afterEach(async () => {
@@ -51,6 +51,22 @@ it("opens the search a route names and commits typed searches with replace", asy
   expect(h.router.history.length).toBe(length);
   fireEvent.change(field, { target: { value: "" } });
   await eventually(() => expect(h.href()).toBe("/mail/all/inbox"));
+});
+
+it("a search link whose last word is one character runs it whole", async () => {
+  current = await flow({
+    route: "/mail/all/inbox?q=plan+b",
+    messages: ["a", "b", "c"].map((letter) => incoming(letter, { subject: `plan ${letter}` })),
+  });
+  const h = current;
+  const field = await screen.findByLabelText("Search mail");
+  await eventually(() => expect(row(h.id("b"))).toBeTruthy());
+  await eventually(() =>
+    expect(
+      [...document.querySelectorAll<HTMLElement>("[data-id]")].map((e) => e.dataset.id),
+    ).toEqual([h.id("b")]),
+  );
+  expect(field).toHaveProperty("value", expect.stringContaining("plan b"));
 });
 
 it("opens the thread a route names and keeps the open thread in the route", async () => {
