@@ -1,5 +1,6 @@
 /** Runs one core agent tool from the command line, with the same checks and output as MCP. */
 
+import { withSyncFailureLog } from "../sync-failure-log.js";
 import {
   MailToolkit,
   ProposalMailToolkit,
@@ -100,7 +101,7 @@ export function runToolCommand(
     if (name === "search") yield* finishSearchIndex;
     const result = yield* invokeTool(name, parsed, json);
     return yield* print(result, json);
-  });
+  }).pipe(withSyncFailureLog);
 }
 export const toolInput = Flag.String("input-json").pipe(
   Flag.withDescription("Tool parameters as a JSON object. Use tools --json for schemas."),

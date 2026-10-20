@@ -947,6 +947,18 @@ describe("logs on stderr", () => {
     expect(stderr).not.toContain("alex.rivera@example.org");
     for (const hash of hashes) expect(stderr).not.toContain(hash);
   });
+
+  // `openmail tool sync` runs the MCP tool from the command line but logged the bare diagnostic.
+  test("openmail tool sync logs why a sync failed in one line, like MCP", async () => {
+    const tool = await openmail(["--log-level", "warn", "tool", "sync"], home.path);
+    expect(tool.stderr.split("\n").filter((line) => line.includes("WARN"))).toEqual([
+      expect.stringMatching(
+        /WARN \(#\d+\): gmail sync failed \(full\): ProviderError: Network calls are disabled in this offline session \{ logCode: 'sync-failed' \}$/,
+      ),
+    ]);
+    expect(tool.stderr).not.toContain("Diagnostic");
+    for (const hash of hashes) expect(tool.stderr).not.toContain(hash);
+  });
 });
 
 describe("spaces", () => {
