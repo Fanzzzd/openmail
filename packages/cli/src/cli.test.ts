@@ -2,6 +2,7 @@
 // OPENMAIL_HOME seeded by scripts/demo-data.mjs. Flag names, --json shapes and exit codes
 // are a contract for scripts and agents, so these tests read stdout, stderr and the code.
 import { execFile, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { chmod, cp, mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -845,6 +846,85 @@ describe("expected sync failures", () => {
     expect(sync.stderr).toContain("error: Some accounts did not sync.\nhint: Run it again.\n");
     expect(sync.stdout).toContain("error: Sync could not finish. Run it again.");
     expect(`${sync.stdout}${sync.stderr}`).not.toContain("--log-level");
+  });
+});
+
+/**
+ * `openmail mcp` after initialize and one `sync` call: the stderr the AI app keeps as the
+ * server's log.
+ */
+function mcpSyncStderr(home: string) {
+  return new Promise<string>((done, failed) => {
+    const child = spawn(process.execPath, ["--disable-warning=ExperimentalWarning", cli, "mcp"], {
+      env: { ...process.env, OPENMAIL_OFFLINE: "1", OPENMAIL_HOME: home },
+    });
+    let stdout = "";
+    let stderr = "";
+    const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
+    child.stderr.setEncoding("utf8").on("data", (chunk: string) => (stderr += chunk));
+    child.stdout.setEncoding("utf8").on("data", (chunk: string) => {
+      stdout += chunk;
+      const lines = stdout.split("\n");
+      stdout = lines.pop() ?? "";
+      for (const line of lines) {
+        const { id } = Schema.decodeUnknownSync(
+          Schema.Struct({ id: Schema.optionalKey(Schema.Number) }),
+        )(JSON.parse(line));
+        if (id === 1) {
+          send({ jsonrpc: "2.0", method: "notifications/initialized" });
+          send({
+            jsonrpc: "2.0",
+            id: 2,
+            method: "tools/call",
+            params: { name: "sync", arguments: {} },
+          });
+        }
+        if (id === 2) child.stdin.end();
+      }
+    });
+    child.once("error", failed);
+    child.once("close", () => done(stderr));
+    send({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "initialize",
+      params: {
+        protocolVersion: "2025-06-18",
+        capabilities: {},
+        clientInfo: { name: "test-client", version: "1" },
+      },
+    });
+  });
+}
+
+// stderr printed accountHash, the plain SHA-256 prefix of the account ID, so anyone could check
+// a guessed address against a log pasted into a public issue.
+describe("logs on stderr", () => {
+  const home = sharedHome();
+  const ids = ["gmail:alex@example.com", "imap:alex.rivera@example.org"];
+  const hashes = ids.flatMap((id) => {
+    const address = id.slice(id.indexOf(":") + 1);
+    return [id, address].map((value) =>
+      createHash("sha256").update(value).digest("hex").slice(0, 16),
+    );
+  });
+
+  test.for([["warn"], ["debug"]])(
+    "openmail --log-level %s sync prints no account hash",
+    async ([level = "warn"]) => {
+      const sync = await openmail(["--log-level", level, "sync"], home.path);
+      expect(sync.code).toBe(1);
+      expect(sync.stderr).toContain("sync failed (full)");
+      expect(sync.stderr).not.toContain("accountHash");
+      for (const hash of hashes) expect(sync.stderr).not.toContain(hash);
+    },
+  );
+
+  test("openmail mcp prints no account hash after a failed sync", async () => {
+    const stderr = await mcpSyncStderr(home.path);
+    expect(stderr).toContain("SyncFailedDiagnostic");
+    expect(stderr).not.toContain("accountHash");
+    for (const hash of hashes) expect(stderr).not.toContain(hash);
   });
 });
 

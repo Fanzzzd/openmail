@@ -1,8 +1,7 @@
 import { Context, Effect, Schema } from "effect";
-import { logWarning } from "../domain/diagnostic-log.js";
+import { diagnosticHashes, logWarning } from "../domain/diagnostic-log.js";
 import type { Account } from "../domain/account.js";
 import { KEYCHAIN_LOCKED_MESSAGE } from "../domain/errors.js";
-import { sha256Hex } from "../platform/crypto.js";
 
 /** Why a sync failed, as stored and shown. Provider response bodies never reach the UI. */
 export const SyncFailureReason = Schema.Literals([
@@ -95,7 +94,8 @@ export const SyncFailedDiagnostic = Schema.Struct({
   failure: SyncFailureReason,
   scope: Schema.Literals(["full", "inbox"]),
   status: Schema.optionalKey(Schema.Number),
-  accountHash: Schema.String,
+  /** Keyed per install (see DiagnosticHashKey); absent where no key was provided. */
+  accountHash: Schema.optionalKey(Schema.String),
 });
 export type SyncFailedDiagnostic = typeof SyncFailedDiagnostic.Type;
 
@@ -109,15 +109,17 @@ export function logSyncFailed(
     readonly reason?: string | undefined;
   },
 ) {
-  return logWarning("sync-failed", {
-    _tag: "SyncFailedDiagnostic",
-    reason: "sync-failed",
-    provider: account.provider,
-    failure: classifySyncFailure(error),
-    scope,
-    ...(error.status === undefined ? {} : { status: error.status }),
-    accountHash: sha256Hex(account.id.toLowerCase()).slice(0, 16),
-  } satisfies SyncFailedDiagnostic);
+  return Effect.flatMap(diagnosticHashes({ account: account.id }), (hashes) =>
+    logWarning("sync-failed", {
+      _tag: "SyncFailedDiagnostic",
+      reason: "sync-failed",
+      provider: account.provider,
+      failure: classifySyncFailure(error),
+      scope,
+      ...(error.status === undefined ? {} : { status: error.status }),
+      ...hashes,
+    } satisfies SyncFailedDiagnostic),
+  );
 }
 
 /**

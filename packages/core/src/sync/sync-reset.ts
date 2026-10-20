@@ -3,6 +3,7 @@ import type { Account } from "../domain/account.js";
 import type { ProviderAdapter, ResetChange } from "../providers/adapter.js";
 import type { Store } from "../store/service.js";
 import { sha256Hex } from "../platform/crypto.js";
+import { diagnosticHashes } from "../domain/diagnostic-log.js";
 import { trackImapBackfill } from "../providers/imap/imap-cursor.js";
 import { syncProfile } from "../providers/sync-profile.js";
 import { applyOpToLabels } from "../domain/mail-ops.js";
@@ -26,8 +27,9 @@ const staleFingerprint = (candidate: ResetCandidate) =>
 export const SyncResetDiagnostic = Schema.Struct({
   _tag: Schema.Literal("SyncResetDiagnostic"),
   provider: Schema.Literals(["gmail", "outlook", "imap"]),
-  accountHash: Schema.String,
-  folderHash: Schema.String,
+  /** Keyed per install (see DiagnosticHashKey); absent where no key was provided. */
+  accountHash: Schema.optionalKey(Schema.String),
+  folderHash: Schema.optionalKey(Schema.String),
   phase: Schema.Literals(["listing", "reset", "verification"]),
   listed: Schema.Number,
   kept: Schema.Number,
@@ -43,13 +45,14 @@ export function logSyncReset(
   folder: string,
   counts: Omit<SyncResetDiagnostic, "_tag" | "provider" | "accountHash" | "folderHash">,
 ) {
-  return Effect.logInfo({
-    _tag: "SyncResetDiagnostic",
-    provider: account.provider,
-    accountHash: sha256Hex(account.id.toLowerCase()).slice(0, 16),
-    folderHash: sha256Hex(folder).slice(0, 16),
-    ...counts,
-  } satisfies SyncResetDiagnostic);
+  return Effect.flatMap(diagnosticHashes({ account: account.id, folder }), (hashes) =>
+    Effect.logInfo({
+      _tag: "SyncResetDiagnostic",
+      provider: account.provider,
+      ...hashes,
+      ...counts,
+    } satisfies SyncResetDiagnostic),
+  );
 }
 
 /** Network verification runs outside SQLite transactions; unknown results stay durable. */

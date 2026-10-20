@@ -8,6 +8,10 @@ import {
   makeOptionalPermissions,
 } from "./provider-diagnostics.js";
 import { diagnosticRecord } from "../platform/node/diagnostics.js";
+import { DiagnosticHashKey } from "../domain/diagnostic-log.js";
+
+/** The app's diagnostics key; the CLI and MCP provide none and log no hash. */
+const withKey = Effect.provideService(DiagnosticHashKey, () => "k".repeat(64));
 
 it("provider diagnostics contain templates and hashes without ids, bodies or tokens", () => {
   const records: unknown[] = [];
@@ -22,7 +26,7 @@ it("provider diagnostics contain templates and hashes without ids, bodies or tok
         "https://graph.microsoft.com/v1.0/me/messages/private-id?$select=secret",
       ),
       { status: 403 },
-    ).pipe(Effect.provide(Logger.layer([logger]))),
+    ).pipe(Effect.provide(Logger.layer([logger])), withKey),
   );
   const record = diagnosticRecord("provider-failure", records[0], 0);
   expect(record).toMatchObject({
@@ -235,7 +239,10 @@ it("invalid cursor diagnostics retain a fixed code and account hash without curs
     records.push(...(Array.isArray(options.message) ? options.message : [options.message]));
   });
   Effect.runSync(
-    logInvalidGraphCursor("private@example.test").pipe(Effect.provide(Logger.layer([logger]))),
+    logInvalidGraphCursor("private@example.test").pipe(
+      Effect.provide(Logger.layer([logger])),
+      withKey,
+    ),
   );
   const record = diagnosticRecord("provider-failure", records[0], 0);
   expect(record).toMatchObject({

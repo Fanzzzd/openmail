@@ -1,5 +1,5 @@
-import { Schema } from "effect";
-import { logWarning } from "../domain/diagnostic-log.js";
+import { Effect, Schema } from "effect";
+import { diagnosticHashes, logWarning } from "../domain/diagnostic-log.js";
 
 import type { Provider } from "../domain/account.js";
 import {
@@ -9,7 +9,6 @@ import {
   ProviderError,
   ReauthReason,
 } from "../domain/errors.js";
-import { sha256Hex } from "../platform/crypto.js";
 
 /**
  * OAuth error codes that settle the question: the grant or the client is gone, or the
@@ -106,17 +105,20 @@ export const ReauthDiagnostic = Schema.Struct({
   _tag: Schema.Literal("ReauthDiagnostic"),
   provider: Schema.Literals(["gmail", "outlook", "imap"]),
   reason: ReauthReason,
-  accountHash: Schema.String,
+  /** Keyed per install (see DiagnosticHashKey); absent where no key was provided. */
+  accountHash: Schema.optionalKey(Schema.String),
 });
 export type ReauthDiagnostic = typeof ReauthDiagnostic.Type;
 
 export const logReauth = (provider: Provider, accountId: string, reason: ReauthReason) =>
-  logWarning("reauth-required", {
-    _tag: "ReauthDiagnostic",
-    provider,
-    reason,
-    accountHash: sha256Hex(accountId.toLowerCase()).slice(0, 16),
-  } satisfies ReauthDiagnostic);
+  Effect.flatMap(diagnosticHashes({ account: accountId }), (hashes) =>
+    logWarning("reauth-required", {
+      _tag: "ReauthDiagnostic",
+      provider,
+      reason,
+      ...hashes,
+    } satisfies ReauthDiagnostic),
+  );
 
 export const keychainLocked = () =>
   new ProviderError({ message: KEYCHAIN_LOCKED_MESSAGE, reason: "keychain" });

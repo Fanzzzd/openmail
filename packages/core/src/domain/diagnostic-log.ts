@@ -1,4 +1,5 @@
-import { Clock, Effect, Schema } from "effect";
+import { Clock, Context, Effect, Schema } from "effect";
+import { hmacSha256Hex, sha256Hex } from "../platform/crypto.js";
 
 /**
  * A stable code for every warning and error log. The diagnostics file records the code and
@@ -89,3 +90,40 @@ export const PlannerStatsSkippedDiagnostic = Schema.Struct({
   code: Schema.optionalKey(Schema.Int),
 });
 export type PlannerStatsSkippedDiagnostic = typeof PlannerStatsSkippedDiagnostic.Type;
+
+/**
+ * The per-install secret that account and folder hashes in log records are keyed with. The
+ * desktop app supplies the key from `diagnostics.key` (see `createLocalDiagnostics`). Every
+ * other entry point (the CLI, MCP, mobile) keeps the default, which has no key, so their log
+ * records carry no hash at all. No log line holds a value a guessed address can be checked
+ * against.
+ */
+export const DiagnosticHashKey = Context.Reference<(() => string | undefined) | null>(
+  "openmail/DiagnosticHashKey",
+  { defaultValue: () => null },
+);
+
+/**
+ * The 16-digit hash of an account ID or folder name under `key`: HMAC-SHA256 of the kind and
+ * the value's SHA-256 prefix. The only place a log hash is computed; never log the inner prefix.
+ */
+export const keyedDiagnosticHash = (key: string, kind: "account" | "folder", value: string) =>
+  hmacSha256Hex(
+    key,
+    `${kind}:${sha256Hex(kind === "account" ? value.toLowerCase() : value).slice(0, 16)}`,
+  ).slice(0, 16);
+
+/**
+ * `accountHash` and `folderHash` for a log record, keyed with DiagnosticHashKey, or no fields
+ * when no key was provided.
+ */
+export const diagnosticHashes = (of: { readonly account?: string; readonly folder?: string }) =>
+  Effect.gen(function* () {
+    const key = (yield* DiagnosticHashKey)?.();
+    const hashes: { accountHash?: string; folderHash?: string } = {};
+    if (key === undefined) return hashes;
+    if (of.account !== undefined)
+      hashes.accountHash = keyedDiagnosticHash(key, "account", of.account);
+    if (of.folder !== undefined) hashes.folderHash = keyedDiagnosticHash(key, "folder", of.folder);
+    return hashes;
+  });

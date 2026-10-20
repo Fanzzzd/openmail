@@ -32,6 +32,11 @@ export const localLog = (
   event: Parameters<ReturnType<typeof createLocalDiagnostics>["record"]>[0],
   data?: unknown,
 ) => diagnostics?.record(event, data);
+/**
+ * The per-install key core's log hashes are keyed with (DiagnosticHashKey). Before the
+ * diagnostics folder is ready there is no key, and records carry no hash.
+ */
+export const diagnosticHashKey = () => diagnostics?.hashKey();
 export const diagnosticsLogger = Logger.make((options) => {
   const messages: readonly unknown[] = Array.isArray(options.message)
     ? options.message
@@ -66,7 +71,7 @@ export const diagnosticsLogger = Logger.make((options) => {
     }
     const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(message);
     if (provider._tag === "Some") {
-      // The stored line carries the keyed account hash; the unkeyed one never leaves memory.
+      // Core keys the account hash (DiagnosticHashKey), so this line holds no unkeyed hash.
       const line = localLog("provider-failure", provider.value);
       classified = true;
       if (line !== undefined) process.stderr.write(`[provider-failure] ${line}\n`);

@@ -2,6 +2,7 @@ import { Effect, Layer, Logger } from "effect";
 import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { waitLimit, scaledMs } from "../../../../../packages/core/test-support/test-time.js";
+import { DiagnosticHashKey } from "../../../../../packages/core/src/domain/diagnostic-log.js";
 
 const native = vi.hoisted(() => ({
   primary: true,
@@ -10,6 +11,8 @@ const native = vi.hoisted(() => ({
   showErrorBox: vi.fn(),
   warnStart: false,
   diagnosticLog: vi.fn(),
+  diagnosticHashKey: () => "k".repeat(64),
+  seenHashKey: undefined as unknown,
   localLog: vi.fn(),
   finishCleanly: vi.fn(),
   exit: vi.fn(),
@@ -41,6 +44,7 @@ vi.mock("electron", () => ({
   powerMonitor: { isOnBatteryPower: () => false, getSystemIdleTime: () => 6 },
 }));
 vi.mock("@openmail/core", () => ({
+  DiagnosticHashKey,
   DatabaseUpgradeSpaceError: class extends Error {},
   DatabaseTooNewError: class DatabaseTooNewError extends Error {},
   unavailableVision: {
@@ -58,7 +62,12 @@ vi.mock("@openmail/core", () => ({
         Effect.die(native.startError ?? new Error("startup regression failure")),
       );
     if (native.warnStart)
-      return Layer.effectDiscard(Effect.logWarning("startup regression warning"));
+      return Layer.effectDiscard(
+        Effect.gen(function* () {
+          native.seenHashKey = yield* DiagnosticHashKey;
+          yield* Effect.logWarning("startup regression warning");
+        }),
+      );
     return Layer.empty;
   },
 }));
@@ -77,6 +86,7 @@ vi.mock("../files/opened-attachments", () => ({
 vi.mock("./reliability", () => ({
   prepareReliability: vi.fn(async () => true),
   diagnosticsLogger: Logger.make(() => native.diagnosticLog()),
+  diagnosticHashKey: native.diagnosticHashKey,
   localLog: native.localLog,
   finishCleanly: native.finishCleanly,
 }));
@@ -280,6 +290,8 @@ it("the diagnostics logger replaces the raw Effect logger", async () => {
   await vi.waitFor(() => expect(native.nodeMailbox).toHaveBeenCalled(), waitLimit);
   expect(existing).not.toHaveBeenCalled();
   expect(native.diagnosticLog).toHaveBeenCalled();
+  // Core keys account hashes in log records with the diagnostics file's key.
+  expect(native.seenHashKey).toBe(native.diagnosticHashKey);
   (await import("electron")).app.emit("will-quit", { preventDefault: vi.fn() });
   await vi.waitFor(() => expect(native.exit).toHaveBeenCalledWith(0), waitLimit);
 });

@@ -3,6 +3,7 @@ import { Effect, Fiber, Logger, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { AuthError, KEYCHAIN_LOCKED_MESSAGE, ProviderError } from "../domain/errors.js";
 import { diagnosticRecord } from "../platform/node/diagnostics.js";
+import { DiagnosticHashKey } from "../domain/diagnostic-log.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { TestMailbox } from "../platform/node/testing.js";
 import { Store } from "../store/service.js";
@@ -96,7 +97,12 @@ it.effect("an IMAP sync failure logs a fixed-field sync-failed event", () => {
     });
     assert.notInclude(JSON.stringify(record), "203.0.113.9");
     assert.notInclude(JSON.stringify(record), "me@example.com");
-  }).pipe(Effect.provide(layer), Effect.provide(Logger.layer([logger])));
+  }).pipe(
+    Effect.provide(layer),
+    Effect.provide(Logger.layer([logger])),
+    // The app's diagnostics key; without one the event carries no account hash.
+    Effect.provideService(DiagnosticHashKey, () => "k".repeat(64)),
+  );
 });
 
 // `openmail sync --log-level warn` showed only fixed fields, so no line named the error. The

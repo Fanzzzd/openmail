@@ -14,7 +14,7 @@ import {
   rebuildCorruptDatabase,
   type CacheResetResult,
 } from "./database-recovery.js";
-import { createHash, createHmac, randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import {
   existsSync,
   mkdirSync,
@@ -30,7 +30,7 @@ import { DatabaseSync } from "node:sqlite";
 import { Schema } from "effect";
 import { DatabaseTooNewError } from "../../db/migrate.js";
 import { MIGRATIONS } from "../../db/migrations.js";
-import { LogCode, logCodeOf } from "../../domain/diagnostic-log.js";
+import { LogCode, keyedDiagnosticHash, logCodeOf } from "../../domain/diagnostic-log.js";
 export { PlannerStatsSkippedDiagnostic } from "../../domain/diagnostic-log.js";
 import { AccountDiagnostics } from "../../domain/diagnostics-state.js";
 
@@ -111,6 +111,10 @@ export type RpcFailureKind = typeof RpcFailureKind.Type;
 /** A typed error's _tag or a class name: an identifier, never text from the error. */
 const ERROR_NAME = /^[A-Z][A-Za-z0-9]{0,63}$/;
 
+/** A 16-digit hex hash, or undefined for anything else. */
+const hashField = (value: string | undefined) =>
+  value !== undefined && /^[a-f0-9]{16}$/.test(value) ? value : undefined;
+
 /** Fixed fields only. Free text, causes, stack traces and nested payloads are never serialized. */
 export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.now()) {
   const decoded = Schema.decodeUnknownOption(DiagnosticEvent)(event);
@@ -118,10 +122,6 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
   const code =
     "code" in fields && typeof fields.code === "number" && Number.isFinite(fields.code)
       ? Math.trunc(fields.code)
-      : undefined;
-  const account =
-    "account" in fields && typeof fields.account === "string"
-      ? createHash("sha256").update(fields.account.toLowerCase()).digest("hex").slice(0, 16)
       : undefined;
   const provider = Schema.decodeUnknownOption(ProviderDiagnostic)(data);
   const reset = Schema.decodeUnknownOption(SyncResetDiagnostic)(data);
@@ -142,8 +142,8 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       _tag: value._tag,
       provider: value.provider,
       phase: value.phase,
-      accountHash: /^[a-f0-9]{16}$/.test(value.accountHash) ? value.accountHash : undefined,
-      folderHash: /^[a-f0-9]{16}$/.test(value.folderHash) ? value.folderHash : undefined,
+      accountHash: hashField(value.accountHash),
+      folderHash: hashField(value.folderHash),
       ...Object.fromEntries(
         ["listed", "kept", "local", "candidates", "verified", "incomplete", "deferred"].flatMap(
           (key) => {
@@ -170,7 +170,7 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       ...(value.status !== undefined && Number.isFinite(value.status)
         ? { status: Math.trunc(value.status) }
         : {}),
-      accountHash: /^[a-f0-9]{16}$/.test(value.accountHash) ? value.accountHash : undefined,
+      accountHash: hashField(value.accountHash),
     };
   }
   const reauth = Schema.decodeUnknownOption(ReauthDiagnostic)(data);
@@ -180,9 +180,7 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       event,
       provider: reauth.value.provider,
       reason: reauth.value.reason,
-      accountHash: /^[a-f0-9]{16}$/.test(reauth.value.accountHash)
-        ? reauth.value.accountHash
-        : undefined,
+      accountHash: hashField(reauth.value.accountHash),
     };
   const isRpcFailure = event === "rpc-failure" || event === "rpc-auth-failure";
   const rpc =
@@ -223,7 +221,6 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
       : {}),
     ...(appVersion === undefined ? {} : { appVersion }),
     ...(code === undefined ? {} : { code }),
-    ...(account === undefined ? {} : { accountHash: account }),
     ...(provider._tag === "Some"
       ? {
           _tag: provider.value._tag,
@@ -234,9 +231,7 @@ export function diagnosticRecord(event: unknown, data: unknown = {}, at = Date.n
           ...(provider.value.errorCode ? { errorCode: provider.value.errorCode } : {}),
           ...(provider.value.status === undefined ? {} : { status: provider.value.status }),
           ...(provider.value.failure === undefined ? {} : { failure: provider.value.failure }),
-          accountHash: /^[a-f0-9]{16}$/.test(provider.value.accountHash)
-            ? provider.value.accountHash
-            : undefined,
+          accountHash: hashField(provider.value.accountHash),
         }
       : {}),
   };
@@ -324,19 +319,6 @@ function installKey(file: string) {
   return read() ?? key;
 }
 
-/** Keys the 16-digit hashes portable code emits, so the stored value depends on the install. */
-function keyHashes(record: Record<string, unknown>, key: () => string) {
-  const keyed = (kind: string, value: unknown) =>
-    typeof value === "string" && HASH.test(value)
-      ? createHmac("sha256", key()).update(`${kind}:${value}`).digest("hex").slice(0, 16)
-      : undefined;
-  return {
-    ...record,
-    ...("accountHash" in record ? { accountHash: keyed("account", record.accountHash) } : {}),
-    ...("folderHash" in record ? { folderHash: keyed("folder", record.folderHash) } : {}),
-  };
-}
-
 /** The number a hash already has in `map`, or the next free one from `first`. */
 function numbered(map: Map<string, number>, value: unknown, first: number) {
   if (typeof value !== "string" || !HASH.test(value)) return Number.NaN;
@@ -368,14 +350,15 @@ export function createLocalDiagnostics(
   const keyFile = options.keyFile ?? join(directory, "diagnostics.key");
   let key: string | undefined;
   const hashKey = () => (key ??= installKey(keyFile));
-  /** The unkeyed and keyed hash of each listed account, mapped to its snapshot index. */
+  /**
+   * The keyed hash of each listed account, and the unkeyed hash older versions stored, mapped to
+   * its snapshot index.
+   */
   const accountIndexes = (accountIds: readonly string[]) => {
     const indexes = new Map<string, number>();
     for (const [index, id] of accountIds.entries()) {
-      const plain = createHash("sha256").update(id.toLowerCase()).digest("hex").slice(0, 16);
-      const keyed = keyHashes({ accountHash: plain }, hashKey).accountHash;
-      indexes.set(plain, index);
-      if (keyed !== undefined) indexes.set(keyed, index);
+      indexes.set(createHash("sha256").update(id.toLowerCase()).digest("hex").slice(0, 16), index);
+      indexes.set(keyedDiagnosticHash(hashKey(), "account", id), index);
     }
     return indexes;
   };
@@ -397,7 +380,9 @@ export function createLocalDiagnostics(
   const record = (event: DiagnosticEvent, data: unknown = {}) => {
     let written: string | undefined;
     try {
-      const text = JSON.stringify(keyHashes(diagnosticRecord(event, data, now()), hashKey));
+      // Hashes arrive keyed: core computes them with the key `hashKey` hands to
+      // DiagnosticHashKey, so this file never sees an unkeyed one.
+      const text = JSON.stringify(diagnosticRecord(event, data, now()));
       const line = `${text}\n`;
       if (existsSync(file) && statSync(file).size + Buffer.byteLength(line) > maxBytes) {
         for (let i = archives; i > 1; i--)
@@ -427,6 +412,8 @@ export function createLocalDiagnostics(
   return {
     file,
     record,
+    /** The per-install key for DiagnosticHashKey. Never log or export it. */
+    hashKey,
     /** `appVersion` goes on the startup record, so the log shows which build each run was. */
     begin: (appVersion?: string) => {
       const abnormalExit = health.running;

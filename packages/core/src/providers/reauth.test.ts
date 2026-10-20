@@ -11,7 +11,7 @@ import { makeOutlook } from "./outlook/outlook.js";
 import { fakeHttp } from "../platform/node/fake-http.js";
 import { refreshWithIssuer } from "./oauth-clients.js";
 import { isAuthFailure, failure as imapFailure } from "../platform/node/imap/session.js";
-import { sha256Hex } from "../platform/crypto.js";
+import { DiagnosticHashKey, keyedDiagnosticHash } from "../domain/diagnostic-log.js";
 import { diagnosticRecord } from "../platform/node/diagnostics.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
 import { makeProviderHttp } from "./provider-http.js";
@@ -576,12 +576,13 @@ it.effect("marking an account records its reason once, logs it, and a sign-in cl
       event: "reauth",
       provider: "gmail",
       reason: "testing_mode_expiry",
-      accountHash: sha256Hex(account.id).slice(0, 16),
+      accountHash: keyedDiagnosticHash("k".repeat(64), "account", account.id),
     });
     assert.notInclude(JSON.stringify(record), "me@gmail.com");
   }).pipe(
     Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
     Effect.provide(Logger.layer([logger])),
+    Effect.provideService(DiagnosticHashKey, () => "k".repeat(64)),
   );
 });
 

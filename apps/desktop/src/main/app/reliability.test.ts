@@ -1,12 +1,19 @@
 import { type CacheResetResult } from "../../../../../packages/core/src/platform/node/database-recovery.js";
 import { Effect, Logger } from "effect";
+import { HttpClientRequest } from "effect/http";
+import { createHash } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { createLocalDiagnostics } from "../../../../../packages/core/src/platform/node/diagnostics.js";
-import { logWarning } from "../../../../../packages/core/src/domain/diagnostic-log.js";
+import {
+  DiagnosticHashKey,
+  keyedDiagnosticHash,
+  logWarning,
+} from "../../../../../packages/core/src/domain/diagnostic-log.js";
+import { logProviderFailure } from "../../../../../packages/core/src/providers/provider-diagnostics.js";
 const native = vi.hoisted(() => ({
   response: 0,
   integrity: "ok",
@@ -397,6 +404,48 @@ it("core sync crashes retain safe phase and cause codes", async () => {
   expect(preview).toContain('"phase":"pull"');
   expect(preview).toContain('"causeKind":"defect"');
   expect(preview).not.toContain("private");
+});
+
+// Core logged the unkeyed SHA-256 prefix of the account ID, and the main process copied the
+// provider-failure line to stderr, where `npm run dev` and Console.app show it.
+it("the main process's stderr and diagnostics file get only the keyed account hash", async () => {
+  const dir = temp();
+  const recovery = await import("./reliability");
+  await recovery.prepareReliability(dir);
+  const accountId = "gmail:private@example.com";
+  const written: string[] = [];
+  const write = vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
+    written.push(String(chunk));
+    return true;
+  });
+  try {
+    await Effect.runPromise(
+      logProviderFailure(
+        "gmail",
+        accountId,
+        HttpClientRequest.get("https://gmail.googleapis.com/gmail/v1/users/me/profile"),
+        {
+          _tag: "ProviderError",
+          status: 500,
+        },
+      ).pipe(
+        Effect.provide(Logger.layer([recovery.diagnosticsLogger])),
+        Effect.provideService(DiagnosticHashKey, recovery.diagnosticHashKey),
+      ),
+    );
+  } finally {
+    write.mockRestore();
+  }
+  const key = readFileSync(join(dir, "diagnostics.key"), "utf8");
+  const keyed = keyedDiagnosticHash(key, "account", accountId);
+  const unkeyed = createHash("sha256").update(accountId).digest("hex").slice(0, 16);
+  const stderr = written.join("");
+  expect(stderr).toContain(`[provider-failure] `);
+  expect(stderr).toContain(`"accountHash":"${keyed}"`);
+  expect(stderr).not.toContain(unkeyed);
+  const file = readFileSync(join(dir, "diagnostics", "diagnostics.jsonl"), "utf8");
+  expect(file).toContain(`"accountHash":"${keyed}"`);
+  expect(file).not.toContain(unkeyed);
 });
 
 it("IMAP sync failures are recorded as fixed sync-failed fields", async () => {

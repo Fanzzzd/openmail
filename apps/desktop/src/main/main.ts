@@ -7,6 +7,7 @@ import { prepareUpdateQuit } from "./updates/update-install";
 import { cleanupAttachmentTemps, cleanupPrintTemps } from "./files/attachment-temp";
 import { cleanupOpenedAttachments, OPENED_CLEANUP_INTERVAL_MS } from "./files/opened-attachments";
 import {
+  DiagnosticHashKey,
   logWarning,
   NodeMailbox,
   DatabaseTooNewError,
@@ -34,7 +35,13 @@ import { applyDevelopmentAppearance } from "./windows/appearance";
 import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
 
-import { prepareReliability, diagnosticsLogger, finishCleanly, localLog } from "./app/reliability";
+import {
+  prepareReliability,
+  diagnosticHashKey,
+  diagnosticsLogger,
+  finishCleanly,
+  localLog,
+} from "./app/reliability";
 import { registerProcessErrorHandlers } from "./app/process-errors";
 
 // First, so MCP mode and early startup are covered; localLog writes once diagnostics exist.
@@ -219,6 +226,8 @@ if (mcp) {
       ),
     ).pipe(
       Effect.provide(Logger.layer([diagnosticsLogger])),
+      // Account and folder hashes in log records are keyed with the diagnostics file's key.
+      Effect.provideService(DiagnosticHashKey, diagnosticHashKey),
       // A failed start (the database locked by a process still quitting, say)
       // would otherwise leave a process with no window and nothing logged.
       // Quitting interrupts the program; that is not a failure.

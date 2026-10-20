@@ -1,7 +1,6 @@
 import { Effect, Option, Schema } from "effect";
-import { logWarning } from "../domain/diagnostic-log.js";
+import { diagnosticHashes, logWarning } from "../domain/diagnostic-log.js";
 import type { HttpClientRequest } from "effect/http";
-import { sha256Hex } from "../platform/crypto.js";
 
 // Only fixed templates cross the logging boundary. Query parameters and resource ids never do.
 const paths = [
@@ -73,7 +72,8 @@ export const ProviderDiagnostic = Schema.Struct({
   ),
   operation: Schema.optionalKey(Schema.Literals(["search", "delta"])),
   errorCode: Schema.optionalKey(GraphSearchErrorCode),
-  accountHash: Schema.String,
+  /** Keyed per install (see DiagnosticHashKey); absent where no key was provided. */
+  accountHash: Schema.optionalKey(Schema.String),
 });
 export type ProviderDiagnostic = typeof ProviderDiagnostic.Type;
 
@@ -127,25 +127,27 @@ export function logProviderFailure(
   search?: { readonly operation: "search"; readonly errorCode: typeof GraphSearchErrorCode.Type },
 ) {
   if (error.deferred) return Effect.void;
-  return logWarning("provider-failure", {
-    _tag: "ProviderDiagnostic",
-    provider,
-    method: request.method,
-    endpoint: providerEndpoint(request.url),
-    ...search,
-    ...(error.status === undefined ? {} : { status: error.status }),
-    failure:
-      error.reason === "configuration"
-        ? "configuration"
-        : error._tag === "AuthError"
-          ? "credentials"
-          : error.status === 0
-            ? "transport"
-            : error.status === undefined
-              ? "other"
-              : "http",
-    accountHash: sha256Hex(accountId.toLowerCase()).slice(0, 16),
-  } satisfies ProviderDiagnostic);
+  return Effect.flatMap(diagnosticHashes({ account: accountId }), (hashes) =>
+    logWarning("provider-failure", {
+      _tag: "ProviderDiagnostic",
+      provider,
+      method: request.method,
+      endpoint: providerEndpoint(request.url),
+      ...search,
+      ...(error.status === undefined ? {} : { status: error.status }),
+      failure:
+        error.reason === "configuration"
+          ? "configuration"
+          : error._tag === "AuthError"
+            ? "credentials"
+            : error.status === 0
+              ? "transport"
+              : error.status === undefined
+                ? "other"
+                : "http",
+      ...hashes,
+    } satisfies ProviderDiagnostic),
+  );
 }
 
 /** A denied optional endpoint stays disabled until that account signs in again. */
@@ -207,13 +209,15 @@ export function makeOptionalPermissions<
 
 /** Never record a persisted cursor or its query, even when it fails validation. */
 export const logInvalidGraphCursor = (accountId: string) =>
-  logWarning("provider-failure", {
-    _tag: "ProviderDiagnostic",
-    provider: "outlook",
-    method: "GET",
-    endpoint: "/me/mailFolders/:id",
-    operation: "delta",
-    errorCode: "InvalidDeltaCursor",
-    failure: "other",
-    accountHash: sha256Hex(accountId.toLowerCase()).slice(0, 16),
-  } satisfies ProviderDiagnostic);
+  Effect.flatMap(diagnosticHashes({ account: accountId }), (hashes) =>
+    logWarning("provider-failure", {
+      _tag: "ProviderDiagnostic",
+      provider: "outlook",
+      method: "GET",
+      endpoint: "/me/mailFolders/:id",
+      operation: "delta",
+      errorCode: "InvalidDeltaCursor",
+      failure: "other",
+      ...hashes,
+    } satisfies ProviderDiagnostic),
+  );

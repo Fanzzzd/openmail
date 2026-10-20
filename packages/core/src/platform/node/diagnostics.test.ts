@@ -21,6 +21,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DiagnosticHashKey, diagnosticHashes } from "../../domain/diagnostic-log.js";
 import {
   checkLocalDatabase,
   checkLocalDatabaseInWorker,
@@ -64,7 +65,8 @@ it("excludes message content, addresses, headers, tokens and error text, includi
   };
   log.record("runtime-error", privateData);
   const contents = readFileSync(log.file, "utf8");
-  expect(contents).toContain('"accountHash"');
+  // A raw address is dropped, not hashed: only core's keyed hashes reach the file.
+  expect(contents).not.toContain('"accountHash"');
   expect(contents).toContain('"code":137');
   writeFileSync(
     `${log.file}.1`,
@@ -308,11 +310,9 @@ it("resets a real cache then re-syncs through a fake provider while accounts and
 
 const ACCOUNT_ID = "gmail:alice@example.com";
 const unkeyed = (value: string) => createHash("sha256").update(value).digest("hex").slice(0, 16);
-const reset = (accountId: string, folder: string) => ({
+const counts = {
   _tag: "SyncResetDiagnostic",
   provider: "gmail",
-  accountHash: unkeyed(accountId.toLowerCase()),
-  folderHash: unkeyed(folder),
   phase: "reset",
   listed: 1,
   kept: 1,
@@ -321,6 +321,25 @@ const reset = (accountId: string, folder: string) => ({
   verified: 0,
   incomplete: 0,
   deferred: 0,
+};
+/** A sync-reset record as core logs it in the app, hashes keyed with this log's key. */
+const reset = (
+  log: ReturnType<typeof createLocalDiagnostics>,
+  accountId: string,
+  folder: string,
+) => ({
+  ...counts,
+  ...Effect.runSync(
+    diagnosticHashes({ account: accountId, folder }).pipe(
+      Effect.provideService(DiagnosticHashKey, log.hashKey),
+    ),
+  ),
+});
+/** A sync-reset record as older versions stored it, with unkeyed hashes. */
+const legacyReset = (accountId: string, folder: string) => ({
+  ...counts,
+  accountHash: unkeyed(accountId.toLowerCase()),
+  folderHash: unkeyed(folder),
 });
 const storedHashes = (file: string) =>
   readFileSync(file, "utf8")
@@ -336,19 +355,16 @@ it("keys account hashes per install, so the same address hashes differently else
   const [first, second] = [temp(), temp()];
   const a = createLocalDiagnostics(first);
   const b = createLocalDiagnostics(second);
-  for (const log of [a, b]) {
-    log.record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
-    log.record("runtime-error", { account: ACCOUNT_ID });
-  }
-  const [hashA, rawA] = storedHashes(a.file);
+  for (const log of [a, b]) log.record("sync-reset", reset(log, ACCOUNT_ID, "INBOX"));
+  const [hashA] = storedHashes(a.file);
   const [hashB] = storedHashes(b.file);
   expect(hashA).toMatch(/^[a-f0-9]{16}$/);
   expect(hashA).not.toBe(hashB);
   expect(hashA).not.toBe(unkeyed(ACCOUNT_ID));
-  expect(rawA).not.toBe(unkeyed(ACCOUNT_ID));
   expect(readFileSync(a.file, "utf8")).not.toContain(unkeyed("INBOX"));
   // The key persists: a restart writes the same keyed hash.
-  createLocalDiagnostics(first).record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
+  const restarted = createLocalDiagnostics(first);
+  restarted.record("sync-reset", reset(restarted, ACCOUNT_ID, "INBOX"));
   expect(storedHashes(a.file).at(-1)).toBe(hashA);
   const key = join(first, "diagnostics.key");
   expect(statSync(key).mode & 0o777).toBe(0o600);
@@ -361,13 +377,13 @@ it("keys account hashes per install, so the same address hashes differently else
 it("names accounts in the export by snapshot index and folders by number, never by hash", () => {
   const dir = temp();
   const log = createLocalDiagnostics(dir);
-  log.record("sync-reset", reset(ACCOUNT_ID, "INBOX"));
-  log.record("sync-reset", reset("imap:removed@example.com", "Archive"));
-  log.record("sync-reset", reset(ACCOUNT_ID, "Archive"));
+  log.record("sync-reset", reset(log, ACCOUNT_ID, "INBOX"));
+  log.record("sync-reset", reset(log, "imap:removed@example.com", "Archive"));
+  log.record("sync-reset", reset(log, ACCOUNT_ID, "Archive"));
   // An older build stored the unkeyed hash; the export maps it too.
   writeFileSync(
     `${log.file}.1`,
-    `${JSON.stringify({ at: 1, event: "sync-reset", ...reset(ACCOUNT_ID, "INBOX") })}\n`,
+    `${JSON.stringify({ at: 1, event: "sync-reset", ...legacyReset(ACCOUNT_ID, "INBOX") })}\n`,
   );
   const preview = log.preview(false, ["outlook:bob@example.com", ACCOUNT_ID]);
   const records = preview.split("\n").map((line) => JSON.parse(line));

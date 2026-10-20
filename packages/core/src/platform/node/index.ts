@@ -51,6 +51,7 @@ export {
   appleContactVCard,
   attachmentBytes,
   COMPOSE_ATTACHMENT_LIMIT,
+  DiagnosticHashKey,
   deviceErrorReason,
   deviceFailure,
   dockUnreadCount,
