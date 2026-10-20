@@ -384,6 +384,11 @@ msgstr "この下書きのラベルが無効です。ラベルを削除して、
 msgid "A message needs at least one recipient."
 msgstr "メッセージには受信者が 1 人以上必要です。"
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "リストで1ページ上 / 下へ"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "以前の毎日の静かな時間の設定はまだ有効です。このスケジュールを変更して置き換えてください。"
@@ -3101,6 +3106,11 @@ msgstr "ブラウザでのサインインを完了してから、ここに戻っ
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "第1"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "リストの最初 / 最後のメッセージ"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

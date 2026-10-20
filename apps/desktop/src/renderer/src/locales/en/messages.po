@@ -388,6 +388,11 @@ msgstr "A label on this draft isn't valid. Remove it and save again."
 msgid "A message needs at least one recipient."
 msgstr "A message needs at least one recipient."
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "A page up / down in the list"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
@@ -3105,6 +3110,11 @@ msgstr "Finish signing in in your browser, then come back here."
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "First"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "First / last message in the list"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

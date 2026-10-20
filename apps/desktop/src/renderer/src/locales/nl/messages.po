@@ -384,6 +384,11 @@ msgstr "Een label op dit concept is niet geldig. Verwijder het en sla opnieuw op
 msgid "A message needs at least one recipient."
 msgstr "Een bericht heeft minstens één ontvanger nodig."
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "Een pagina omhoog / omlaag in de lijst"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "Een eerdere dagelijkse stille uren-instelling is nog steeds actief. Wijzig dit schema om het te vervangen."
@@ -3101,6 +3106,11 @@ msgstr "Voltooi het inloggen in je browser en kom dan hier terug."
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "Eerste"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "Eerste / laatste bericht in de lijst"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

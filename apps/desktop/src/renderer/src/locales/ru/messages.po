@@ -384,6 +384,11 @@ msgstr "Один из ярлыков этого черновика недейс�
 msgid "A message needs at least one recipient."
 msgstr "У сообщения должен быть хотя бы один получатель."
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "На страницу вверх / вниз в списке"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "Предыдущая ежедневная настройка тихих часов всё ещё активна. Измените это расписание, чтобы заменить его."
@@ -3101,6 +3106,11 @@ msgstr "Завершите вход в браузере и вернитесь с
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "Первый"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "Первое / последнее сообщение в списке"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

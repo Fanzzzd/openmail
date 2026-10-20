@@ -36,3 +36,17 @@ export function rowWindow(layout: RowLayout, scrollTop: number, height: number) 
   const end = Math.min(count, rowAt(offsets, scrollTop + height) + 1 + 6);
   return { first, end, offset: offsets[first] ?? 0, total };
 }
+
+/**
+ * The row Page Down or Page Up moves to from row `from`: the row one list height below or above
+ * its top, and at least the next or previous row.
+ */
+export function pageRow(layout: RowLayout, from: number, height: number, direction: 1 | -1) {
+  const { offsets } = layout;
+  const last = offsets.length - 2;
+  if (last < 0) return -1;
+  const top = offsets[Math.max(0, Math.min(last, from))] ?? 0;
+  const row = rowAt(offsets, top + direction * height);
+  const index = direction > 0 ? Math.max(row, from + 1) : Math.min(row, from - 1);
+  return Math.max(0, Math.min(last, index));
+}

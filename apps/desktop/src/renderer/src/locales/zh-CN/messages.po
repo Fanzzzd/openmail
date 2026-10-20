@@ -394,6 +394,11 @@ msgstr "此草稿上有一个标签无效。请移除后重新保存。"
 msgid "A message needs at least one recipient."
 msgstr "邮件至少需要一个收件人。"
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "在列表中上翻 / 下翻一页"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "原每日静音时段仍生效。修改此日程后替换。"
@@ -3111,6 +3116,11 @@ msgstr "请在浏览器里完成授权。完成后回到这里。"
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "第一"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "列表中的第一封 / 最后一封邮件"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

@@ -511,6 +511,23 @@ function useShortcutRows(set: ShortcutSet): ShortcutRow[] {
       "⌘[ / ⌘]",
     ),
     navigation("panes", t`Move focus between panes`, "← / →"),
+    navigation(
+      "list-ends",
+      t({
+        message: "First / last message in the list",
+        comment: "Keyboard shortcuts help: Home and End select the first or last loaded message.",
+      }),
+      "Home / End",
+    ),
+    navigation(
+      "list-pages",
+      t({
+        message: "A page up / down in the list",
+        comment:
+          "Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.",
+      }),
+      "Page Up / Page Down",
+    ),
     navigation("spaces", t`Switch spaces`, set === "gmail" ? "⌘1…9" : "⌃⌘1…9"),
     navigation(
       "remove-recent-search",

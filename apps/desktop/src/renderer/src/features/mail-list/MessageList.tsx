@@ -28,7 +28,7 @@ import { useAtomValue } from "@effect/atom-react";
 import { prefsAtom } from "../../state/queries";
 import type { SearchIgnored, SearchInputProblem } from "../../state/threads";
 import { attachmentMatches } from "../search";
-import { rowLayout, rowWindow } from "./row-layout";
+import { pageRow, rowLayout, rowWindow } from "./row-layout";
 import { swipeMailOp } from "./message-swipe";
 import { pressQuickFilter, quickFilterOn } from "./quick-filters";
 import { constVoid } from "effect/Function";
@@ -96,6 +96,8 @@ interface Props {
   revealRowRef?: RefObject<((id: string) => void) | null>;
   selectionSource: SelectionSource;
   onSelect: SelectRow;
+  /** Home, End, Page Up or Page Down picked this row; it is selected as an arrow key would. */
+  onKeyboardSelect?: (id: string) => void;
   onEndReached: () => void;
   /** What a row's context menu needs; the same handlers as the reader toolbar. */
   rowActions: RowActions;
@@ -185,6 +187,7 @@ function MessageListBody({
   revealRowRef,
   selectionSource,
   onSelect,
+  onKeyboardSelect,
   onEndReached,
   rowActions,
   scrollKey,
@@ -543,6 +546,25 @@ function MessageListBody({
                 setViewport({ top: el.scrollTop, height: el.clientHeight });
                 if (scrollKey !== null) rememberScroll(scrollKey, el.scrollTop);
                 if (el.scrollTop + el.clientHeight >= el.scrollHeight - 160) endReached.current();
+              }}
+              onKeyDown={(e) => {
+                if (!onKeyboardSelect || e.altKey || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                const el = e.currentTarget;
+                const from = Math.max(0, selectedIndex);
+                const index =
+                  e.key === "Home"
+                    ? 0
+                    : e.key === "End"
+                      ? threads.length - 1
+                      : e.key === "PageDown" || e.key === "PageUp"
+                        ? pageRow(layout, from, el.clientHeight, e.key === "PageDown" ? 1 : -1)
+                        : -1;
+                const id = threads[index]?.id;
+                if (!id) return;
+                // The list's own scrolling would leave the selection behind and window out the
+                // focused row, so these keys move the selection instead.
+                e.preventDefault();
+                onKeyboardSelect(id);
               }}
               onKeyDownCapture={(e) => {
                 if (e.key !== "ContextMenu" && !(e.shiftKey && e.key === "F10")) return;

@@ -461,6 +461,12 @@ export function useMailSelection({
     focusList(next.focus);
     if (next.focus === list.at(-1)?.id) loadMore();
   };
+  /** Home, End, Page Up and Page Down in the list: the row `id` is selected as an arrow selects. */
+  const moveTo = (id: string) => {
+    select(id, "keyboard");
+    focusList(id);
+    if (id === list.at(-1)?.id) loadMore();
+  };
   /** Down or Enter from the search field; `resultsEntry` holds the rule it follows. */
   const [resultsRequest, setResultsRequest] = useState<ResultsRequest | null>(null);
   const enterResults = (text: string) =>
@@ -580,6 +586,7 @@ export function useMailSelection({
   return {
     selectAll: selectAllRows,
     move,
+    moveTo,
     enterResults,
     moveListCursor,
     toggleFocusedRow,

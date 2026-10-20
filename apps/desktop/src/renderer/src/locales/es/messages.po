@@ -384,6 +384,11 @@ msgstr "Una etiqueta de este borrador no es válida. Quítala y vuelve a guardar
 msgid "A message needs at least one recipient."
 msgstr "Un mensaje necesita al menos un destinatario."
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "Una página arriba / abajo en la lista"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "Una configuración anterior de horas de silencio diarias todavía está activa. Cambia este horario para reemplazarlo."
@@ -3101,6 +3106,11 @@ msgstr "Termina de iniciar sesión en tu navegador y luego vuelve aquí."
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "Primer"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "Primer / último mensaje de la lista"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

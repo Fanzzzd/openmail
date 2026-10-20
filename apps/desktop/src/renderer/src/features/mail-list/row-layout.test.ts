@@ -1,6 +1,6 @@
 import { listWindow } from "@openmail/core/schema";
 import { expect, it } from "vitest";
-import { rowLayout, rowWindow } from "./row-layout";
+import { pageRow, rowLayout, rowWindow } from "./row-layout";
 
 it("matches the fixed-height window when every row is the same height", () => {
   const layout = rowLayout(Array.from({ length: 500 }, () => 104));
@@ -24,4 +24,17 @@ it("gives only rows with hits the taller height, so plain rows leave no blank ba
   expect(window.offset).toBe(tall.offsets[14]);
   expect(window.end).toBe(28);
   expect(rowWindow(rowLayout([]), 0, 500)).toEqual({ first: 0, end: 0, offset: 0, total: 0 });
+});
+
+it("pages by the list's height, at least one row, and stops at either end", () => {
+  const layout = rowLayout(Array.from({ length: 30 }, (_, i) => (i === 3 ? 152 : 100)));
+  // 600 px below row 0's top is inside row 5, since row 3 is 52 px taller.
+  expect(pageRow(layout, 0, 600, 1)).toBe(5);
+  expect(pageRow(layout, 5, 600, -1)).toBe(0);
+  expect(pageRow(layout, 27, 600, 1)).toBe(29);
+  expect(pageRow(layout, 2, 600, -1)).toBe(0);
+  // A list not measured yet still moves one row.
+  expect(pageRow(layout, 4, 0, 1)).toBe(5);
+  expect(pageRow(layout, 4, 0, -1)).toBe(3);
+  expect(pageRow(rowLayout([]), 0, 600, 1)).toBe(-1);
 });

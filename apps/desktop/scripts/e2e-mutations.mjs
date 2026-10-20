@@ -297,6 +297,13 @@ export const cases = [
     "",
   ],
   [
+    "Home, End and page keys select in the list",
+    "Home, End, Page Up and Page Down move the list",
+    `${renderer}features/mail-list/MessageList.tsx`,
+    "                onKeyboardSelect(id);\n",
+    "",
+  ],
+  [
     "hint stays quiet after a recent search removal",
     "leaves its announcement the only live change",
     `${renderer}features/search/SearchField.tsx`,
@@ -404,8 +411,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 73)
-      throw new Error(`Expected all 73 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 74)
+      throw new Error(`Expected all 74 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

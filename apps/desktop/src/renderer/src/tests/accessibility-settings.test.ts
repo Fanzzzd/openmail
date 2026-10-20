@@ -110,6 +110,19 @@ it("groups the keyboard shortcuts with Triage first and filters them by name or 
       .getAllByRole("row")
       .map((row) => row.querySelector("td")?.textContent),
   ).toContain("Bold");
+  // The list's Home, End, Page Up and Page Down keys.
+  fireEvent.change(filter, { target: { value: "Page Down" } });
+  expect(
+    within(dialog)
+      .getAllByRole("row")
+      .map((row) => row.textContent),
+  ).toEqual(["A page up / down in the listPage Up / Page Down"]);
+  fireEvent.change(filter, { target: { value: "Home / End" } });
+  expect(
+    within(dialog)
+      .getAllByRole("row")
+      .map((row) => row.textContent),
+  ).toEqual(["First / last message in the listHome / End"]);
   fireEvent.change(filter, { target: { value: "no such shortcut" } });
   expect(within(dialog).getByRole("status").textContent).toBe("No shortcuts match.");
   await audit();

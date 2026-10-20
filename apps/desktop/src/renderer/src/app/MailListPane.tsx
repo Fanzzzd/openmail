@@ -247,6 +247,9 @@ export function MailListPane({
         setSelectedId(id);
         openSavedDraft(id);
       }}
+      onKeyboardSelect={(id) => {
+        if (!threads.loading) navigation.moveTo(id);
+      }}
       onEndReached={() => {
         loadMore();
       }}

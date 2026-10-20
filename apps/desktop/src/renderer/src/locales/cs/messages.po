@@ -384,6 +384,11 @@ msgstr "Štítek na tomto konceptu není platný. Odeberte ho a uložte znovu."
 msgid "A message needs at least one recipient."
 msgstr "Zpráva potřebuje alespoň jednoho příjemce."
 
+#. Keyboard shortcuts help: Page Up and Page Down move the selection by one screen of messages.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "A page up / down in the list"
+msgstr "O stránku nahoru / dolů v seznamu"
+
 #: src/renderer/src/features/settings/sections/SystemSettings.tsx
 msgid "A previous daily quiet-hours setting is still active. Change this schedule to replace it."
 msgstr "Předchozí nastavení denních klidových hodin je stále aktivní. Změňte tento plán, abyste jej nahradili."
@@ -3101,6 +3106,11 @@ msgstr "Dokončete přihlašování v prohlížeči a vraťte se sem."
 #: src/renderer/src/features/calendar/recurrence-summary.ts
 msgid "First"
 msgstr "První"
+
+#. Keyboard shortcuts help: Home and End select the first or last loaded message.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "First / last message in the list"
+msgstr "První / poslední zpráva v seznamu"
 
 #: src/renderer/src/features/reader/frame/EmailFrame.tsx
 msgid "Fit to width"

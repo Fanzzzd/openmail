@@ -515,6 +515,50 @@ it("Back to a list that started over at the top after a mailbox switch scrolls t
     expect(row(h.id("m48")).getAttribute("aria-selected")).toBe("true");
   }));
 
+it("Home, End, Page Up and Page Down move the list's selection and focus", () =>
+  withListLayout(async () => {
+    width = 520;
+    current = await flow({ messages: longInbox(150) });
+    const h = current;
+    await eventually(() => expect(row(h.id("m0"))).toBeTruthy());
+    const rowHeight = parseFloat(row(h.id("m0")).style.height);
+    const list = screen.getByRole("listbox", { name: "Inbox" });
+    const loaded = () =>
+      Math.round(
+        parseFloat(list.querySelector<HTMLElement>(":scope > div")!.style.height) / rowHeight,
+      );
+    const at = async (index: number) => {
+      await eventually(() => expect(document.activeElement).toBe(row(h.id(`m${index}`))));
+      expect(row(h.id(`m${index}`)).getAttribute("aria-selected")).toBe("true");
+      expect(screen.getAllByRole("option", { selected: true })).toHaveLength(1);
+      // focusList looks for its row in the next frame; the next key waits for that look.
+      await act(
+        () =>
+          new Promise<void>((resolve) => {
+            requestAnimationFrame(() => resolve());
+          }),
+      );
+    };
+    // The first page of 100 rows.
+    await eventually(() => expect(loaded()).toBe(100));
+    row(h.id("m0")).focus();
+    key("Home");
+    await at(0);
+    key("End");
+    await at(99);
+    // The last loaded row asks for older mail, as Down onto it does.
+    await eventually(() => expect(loaded()).toBe(150));
+    key("Home");
+    await at(0);
+    // The list is 600 px tall: a page is as many rows as fit in it.
+    const page = Math.floor(600 / rowHeight);
+    key("PageDown");
+    await at(page);
+    key("PageUp");
+    await at(0);
+    expect(list.scrollTop).toBe(0);
+  }));
+
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {
   width = 800;
   current = await flow();
