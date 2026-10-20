@@ -92,6 +92,8 @@ interface Props {
   selectedId: string | null;
   selectedIds: ReadonlySet<string>;
   listRef: RefObject<HTMLDivElement | null>;
+  /** Set while the rows are mounted: scrolls the row with this id into the list's window. */
+  revealRowRef?: RefObject<((id: string) => void) | null>;
   selectionSource: SelectionSource;
   onSelect: SelectRow;
   onEndReached: () => void;
@@ -180,6 +182,7 @@ function MessageListBody({
   selectedId,
   selectedIds,
   listRef,
+  revealRowRef,
   selectionSource,
   onSelect,
   onEndReached,
@@ -342,14 +345,33 @@ function MessageListBody({
   // Unmounted rows still have coordinates, so keyboard navigation can reach them. Focus moves to
   // the row only from the list or from nowhere: new results while the person types in the search
   // field must not pull keys, Backspace included, into the list.
+  const scrollToRow = useCallback(
+    (el: HTMLElement, index: number) => {
+      const top = layout.offsets[index] ?? 0;
+      const bottom = layout.offsets[index + 1] ?? top;
+      if (top < el.scrollTop) el.scrollTop = top;
+      else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
+      setViewport({ top: el.scrollTop, height: el.clientHeight });
+    },
+    [layout],
+  );
+  // focusList asks for a row outside the window, as after Back to a list that started over at
+  // the top when the mailbox changed.
+  useEffect(() => {
+    if (!revealRowRef) return constVoid;
+    revealRowRef.current = (id) => {
+      const el = listRef.current;
+      const index = threads.findIndex((thread) => thread.id === id);
+      if (el && index >= 0) scrollToRow(el, index);
+    };
+    return () => {
+      revealRowRef.current = null;
+    };
+  }, [revealRowRef, listRef, threads, scrollToRow]);
   useEffect(() => {
     const el = listRef.current;
     if (!el || selectedIndex < 0 || selectionSource !== "keyboard") return constVoid;
-    const top = layout.offsets[selectedIndex] ?? 0;
-    const bottom = layout.offsets[selectedIndex + 1] ?? top;
-    if (top < el.scrollTop) el.scrollTop = top;
-    else if (bottom > el.scrollTop + el.clientHeight) el.scrollTop = bottom - el.clientHeight;
-    setViewport({ top: el.scrollTop, height: el.clientHeight });
+    scrollToRow(el, selectedIndex);
     const frame = requestAnimationFrame(() => {
       const active = document.activeElement;
       if (active && active !== document.body && !el.contains(active)) return;
@@ -360,7 +382,7 @@ function MessageListBody({
         }
     });
     return () => cancelAnimationFrame(frame);
-  }, [selectedIndex, selectedId, selectionSource, layout, listRef]);
+  }, [selectedIndex, selectedId, selectionSource, scrollToRow, listRef]);
 
   // Short first pages have no scrollbar. Ask for older mail once per list growth.
   useEffect(() => {

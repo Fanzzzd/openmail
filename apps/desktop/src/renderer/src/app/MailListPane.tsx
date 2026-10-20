@@ -95,6 +95,7 @@ export function MailListPane({
     selection,
     setSelectedId,
     listRef,
+    revealRowRef,
     selectionSource,
     threads,
     loadMore,
@@ -203,6 +204,7 @@ export function MailListPane({
       selectedId={selection.focus}
       selectedIds={selection.ids}
       listRef={listRef}
+      revealRowRef={revealRowRef}
       selectionSource={selectionSource}
       rowActions={{
         batchMenu: <BatchMenuItems {...batch} />,

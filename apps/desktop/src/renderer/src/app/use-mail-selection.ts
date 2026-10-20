@@ -96,6 +96,7 @@ export function useMailSelection({
   } | null>(null);
 
   const listRef = useRef<HTMLDivElement>(null);
+  const revealRowRef = useRef<((id: string) => void) | null>(null);
   const [selectionSource, setSelectionSource] = useState<SelectionSource>("mouse");
 
   const [threads, loadMore] = useAtom(threadListAtom);
@@ -244,6 +245,8 @@ export function useMailSelection({
             (candidate) => candidate.dataset.id === focus,
           )
         : undefined;
+      // A row outside the list's window is not rendered until the list scrolls to it.
+      if (focus && !row) revealRowRef.current?.(focus);
       if (focus && !row && frames++ < FOCUS_ROW_FRAMES) requestAnimationFrame(attempt);
       else (row ?? element)?.focus({ preventScroll: true });
     };
@@ -598,6 +601,7 @@ export function useMailSelection({
     deleteRequest,
     setDeleteRequest,
     listRef,
+    revealRowRef,
     selectionSource,
     threads,
     loadMore,

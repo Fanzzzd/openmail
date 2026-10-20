@@ -315,10 +315,13 @@ it("Back from a narrow reader to a search whose last word is one character shows
   expect(shown()).toEqual([h.id("m5")]);
 });
 
-it("Back from a narrow reader focuses a row that was below the first screen", async () => {
-  // jsdom lays nothing out. As in Chromium, a shown list is 600 px tall, a hidden one reads a
-  // height and scroll offset of 0 but keeps its offset for when it shows again, and the list
-  // hears of a change in its size a few frames later, from its ResizeObserver.
+/**
+ * Runs `body` with list layout as Chromium gives it. jsdom lays nothing out: here a shown list is
+ * 600 px tall, a hidden one reads a height and scroll offset of 0 but keeps its offset for when it
+ * shows again, and the list hears of a change in its size a few frames later, from its
+ * ResizeObserver.
+ */
+async function withListLayout(body: () => Promise<void>) {
   const height = vi
     .spyOn(HTMLElement.prototype, "clientHeight", "get")
     .mockImplementation(function (this: HTMLElement) {
@@ -358,12 +361,24 @@ it("Back from a narrow reader focuses a row that was below the first screen", as
     },
   );
   try {
+    await body();
+  } finally {
+    shownOrHidden.disconnect();
+    height.mockRestore();
+    if (setupScrollTop) Object.defineProperty(Element.prototype, "scrollTop", setupScrollTop);
+    vi.stubGlobal("ResizeObserver", setupObserver);
+  }
+}
+
+const longInbox = (length: number) =>
+  Array.from({ length }, (_, index) =>
+    incoming(`m${index}`, { date: Date.now() - (index + 1) * 60_000 }),
+  );
+
+it("Back from a narrow reader focuses a row that was below the first screen", () =>
+  withListLayout(async () => {
     width = 520;
-    current = await flow({
-      messages: Array.from({ length: 40 }, (_, index) =>
-        incoming(`m${index}`, { date: Date.now() - (index + 1) * 60_000 }),
-      ),
-    });
+    current = await flow({ messages: longInbox(40) });
     const h = current;
     await eventually(() => expect(row(h.id("m0"))).toBeTruthy());
     const rowHeight = parseFloat(row(h.id("m0")).style.height);
@@ -378,13 +393,33 @@ it("Back from a narrow reader focuses a row that was below the first screen", as
     key("Escape", {}, document.body);
     await eventually(() => expect(reader()).toBeNull());
     await eventually(() => expect(document.activeElement).toBe(row(h.id(target))));
-  } finally {
-    shownOrHidden.disconnect();
-    height.mockRestore();
-    if (setupScrollTop) Object.defineProperty(Element.prototype, "scrollTop", setupScrollTop);
-    vi.stubGlobal("ResizeObserver", setupObserver);
-  }
-});
+  }));
+
+it("Back to a list that started over at the top after a mailbox switch scrolls to its row", () =>
+  withListLayout(async () => {
+    width = 520;
+    current = await flow({ windowHistory: true, messages: longInbox(60) });
+    const h = current;
+    await eventually(() => expect(row(h.id("m0"))).toBeTruthy());
+    const rowHeight = parseFloat(row(h.id("m0")).style.height);
+    const list = screen.getByRole("listbox", { name: "Inbox" });
+    list.scrollTop = 48 * rowHeight - 300;
+    fireEvent.scroll(list);
+    await eventually(() => expect(row(h.id("m48"))).toBeTruthy());
+    fireEvent.click(row(h.id("m48")));
+    await eventually(() => expect(reader()?.textContent).toContain("Original m48"));
+    // Another mailbox starts at the top; Back twice returns through the reader to the Inbox list.
+    key("2", { metaKey: true }, document.body);
+    await eventually(() =>
+      expect(screen.getByRole("heading", { level: 1 }).textContent).not.toBe("Inbox"),
+    );
+    key("[", { metaKey: true }, document.body);
+    await eventually(() => expect(reader()?.textContent).toContain("Original m48"));
+    key("[", { metaKey: true }, document.body);
+    await eventually(() => expect(reader()).toBeNull());
+    await eventually(() => expect(document.activeElement).toBe(row(h.id("m48"))));
+    expect(row(h.id("m48")).getAttribute("aria-selected")).toBe("true");
+  }));
 
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {
   width = 800;

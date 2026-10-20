@@ -268,6 +268,13 @@ export const cases = [
     'active.closest("[hidden]")) focusReaderNow();',
     'active.closest("[hidden]")) void 0;',
   ],
+  [
+    "focusList scrolls to a row outside the list's window",
+    "started over at the top after a mailbox switch",
+    `${renderer}app/use-mail-selection.ts`,
+    "      if (focus && !row) revealRowRef.current?.(focus);\n",
+    "",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -369,8 +376,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 68)
-      throw new Error(`Expected all 68 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 69)
+      throw new Error(`Expected all 69 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
