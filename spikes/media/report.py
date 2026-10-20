@@ -19,24 +19,24 @@ q8 = load('embeddings.json')
 hybrid = load('embeddings-hybrid.json')
 manifest = load('model-manifest.json')
 whisper = load('whisper.json')
-labels = {'mixed': '中英混排', 'long': '长截图', 'receipt': '票据', 'ticket': '登机牌', 'code': '代码'}
-document_labels = {'flight-en': '英文航班', 'receipt-zh': '中文票据', 'code-en': '英文程序', 'meeting-zh': '中文会议'}
+labels = {'mixed': 'Mixed Chinese and English', 'long': 'Long screenshot', 'receipt': 'Receipt', 'ticket': 'Boarding pass', 'code': 'Code'}
+document_labels = {'flight-en': 'English flight', 'receipt-zh': 'Chinese receipt', 'code-en': 'English program', 'meeting-zh': 'Chinese meeting'}
 tables = []
 
-headers = ['样本', '尺寸 px', '真值字符', '整图匹配率', '整图暖轮 ms', '切片匹配率', '切片暖轮 ms']
+headers = ['Sample', 'Size px', 'Truth chars', 'Whole match', 'Whole warm ms', 'Tiled match', 'Tiled warm ms']
 rows = []
 for sample in ['mixed', 'long', 'receipt', 'ticket', 'code']:
     whole = next(x for x in vision['ocr'] if x['sample'] == sample and not x['tiled'])
     tile = next(x for x in vision['ocr'] if x['sample'] == sample and x['tiled'])
-    label = '中英简繁混排' if sample == 'mixed' else '小字购物票据' if sample == 'receipt' else '代码截图' if sample == 'code' else labels[sample]
+    label = 'Mixed Simplified, Traditional and English' if sample == 'mixed' else 'Small-print shopping receipt' if sample == 'receipt' else 'Code screenshot' if sample == 'code' else labels[sample]
     rows.append([label, f"{whole['timing']['width']}×{whole['timing']['height']}", str(whole['ground_truth_characters']),
         f(whole['character_match_percent']) + '%', f(whole['warm_median_ms']), f(tile['character_match_percent']) + '%', f(tile['warm_median_ms'])])
 tables.append((headers, rows))
-tables.append((['样本', '分类最高标签', '置信度', '分类暖轮 ms'],
+tables.append((['Sample', 'Top label', 'Confidence', 'Classify warm ms'],
     [[labels[x['sample']], x['labels'][0]['label'], f"{x['labels'][0]['confidence']:.3f}", f(x['warm_median_ms'])]
         for x in vision['classifications']]))
-tables.append((['与原票据比较', '距离'], [[label, f'{d:.4f}'] for label, d in zip(
-    ['同图', '改为浅黄背景的票据', '登机牌', '代码截图', '中英混排'], vision['feature_print']['distances_from_first'], strict=True)]))
+tables.append((['Compared with the original receipt', 'Distance'], [[label, f'{d:.4f}'] for label, d in zip(
+    ['Same image', 'Receipt on a light yellow background', 'Boarding pass', 'Code screenshot', 'Mixed Chinese and English'], vision['feature_print']['distances_from_first'], strict=True)]))
 
 def clip_files(dtype):
     excluded = 'onnx/vision_model.onnx' if dtype == 'q8' else 'onnx/vision_model_quantized.onnx'
@@ -46,21 +46,21 @@ def size(files, weights=False):
     return sum(x['bytes'] for x in files if not weights or x['file'].endswith('.onnx')) / 1e6
 
 e5_files = [x for x in manifest if x['model'] == 'Xenova/multilingual-e5-small']
-tables.append((['模型配置', '模型包 MB', 'ONNX 权重 MB', '本地加载 ms'], [
-    ['MobileCLIP S0 全 q8，对照', f(size(clip_files('q8'))), f(size(clip_files('q8'), True)), f(q8['clip']['total_load_ms'])],
-    ['MobileCLIP S0 图像 fp32、文本 q8，选用', f(size(clip_files('fp32'))), f(size(clip_files('fp32'), True)), f(hybrid['clip']['total_load_ms'])],
+tables.append((['Model configuration', 'Package MB', 'ONNX weights MB', 'Local load ms'], [
+    ['MobileCLIP S0 all q8, baseline', f(size(clip_files('q8'))), f(size(clip_files('q8'), True)), f(q8['clip']['total_load_ms'])],
+    ['MobileCLIP S0 image fp32, text q8, chosen', f(size(clip_files('fp32'))), f(size(clip_files('fp32'), True)), f(hybrid['clip']['total_load_ms'])],
     ['multilingual-e5-small q8', f(size(e5_files)), f(size(e5_files, True)), f(hybrid['e5']['load_ms'])],
 ]))
-tables.append((['图像', '全 q8 端到端 ms', '选用配置端到端 ms', '选用配置纯推理 ms'], [
+tables.append((['Image', 'All q8 end-to-end ms', 'Chosen end-to-end ms', 'Chosen inference ms'], [
     [labels[x['id']], f(next(y for y in q8['clip']['images'] if y['id'] == x['id'])['end_to_end_ms']['median']),
         f(x['end_to_end_ms']['median']), f(x['inference_ms']['median'])] for x in hybrid['clip']['images']]))
-tables.append((['查询', '目标', '全 q8 名次', '选用配置名次', '选用配置文本端到端 ms'], [
+tables.append((['Query', 'Target', 'All q8 rank', 'Chosen rank', 'Chosen text end-to-end ms'], [
     [x['query'], labels[x['expected']], str(next(y for y in q8['clip']['queries'] if y['query'] == x['query'])['correct_rank']),
         str(x['correct_rank']), f(x['end_to_end_ms']['median'])] for x in hybrid['clip']['queries']]))
-tables.append((['E5 输入', '字符', '含前缀 tokens', '暖轮 ms'], [
-    ['中文块' if x['language'] == 'zh' else '英文块', str(x['characters']), str(x['token_count']), f(x['end_to_end_ms']['median'])]
+tables.append((['E5 input', 'Chars', 'Tokens with prefix', 'Warm ms'], [
+    ['Chinese chunk' if x['language'] == 'zh' else 'English chunk', str(x['characters']), str(x['token_count']), f(x['end_to_end_ms']['median'])]
     for x in hybrid['e5']['chunks']]))
-tables.append((['查询', '目标', '名次'], [
+tables.append((['Query', 'Target', 'Rank'], [
     [x['query'], document_labels[x['expected']], str(x['correct_rank'])] for x in hybrid['e5']['queries']]))
 sqlite_rows = []
 for runtime in ['node', 'electron']:
@@ -68,9 +68,9 @@ for runtime in ['node', 'electron']:
     label = f"Node {x['versions']['node']}" if runtime == 'node' else f"Electron {x['versions']['electron']} main"
     sqlite_rows.append([label, x['versions']['sqlite'], x['versions']['vec'].lstrip('v'), f(x['load_ms']), f(x['insert_ms']),
         f(x['first_query_ms']), f(x['warm_median_ms']), f(x['warm_p95_ms'])])
-tables.append((['环境', 'SQLite', 'sqlite-vec', '加载 ms', '插入 ms', '首查 ms', '暖轮中位 ms', 'p95 ms'], sqlite_rows))
-tables.append((['语言', '首次进程 s', '三轮墙钟中位 s', '相对实时倍速', '实时系数'], [
-    ['英文' if x['language'] == 'en' else '中文', f(x['runs'][0]['wall_ms'] / 1000), f(x['wall_median_ms'] / 1000),
+tables.append((['Runtime', 'SQLite', 'sqlite-vec', 'Load ms', 'Insert ms', 'First query ms', 'Warm median ms', 'p95 ms'], sqlite_rows))
+tables.append((['Language', 'First process s', 'Median wall clock of 3 runs s', 'Speed vs real time', 'Real-time factor'], [
+    ['English' if x['language'] == 'en' else 'Chinese', f(x['runs'][0]['wall_ms'] / 1000), f(x['wall_median_ms'] / 1000),
         f(x['speed_x']) + '×', f"{x['real_time_factor']:.3f}"] for x in whisper['results']]))
 
 path = ROOT / 'RESULTS.md'

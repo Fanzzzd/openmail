@@ -1,132 +1,140 @@
-# 端侧媒体搜索实测
+# On-device media search measurements
 
-可行。OCR 用 Vision，向量库用 sqlite-vec。图文选 MobileCLIP S0 的 fp32 图像编码器加 q8 文本编码器。文本选 E5 small q8，保留 FTS 和 RRF。语音 base 可选。短中文跨语言检索和中文转写仍有质量问题。
+It is feasible. OCR uses Vision and the vector store uses sqlite-vec. For images and text, the choice is the MobileCLIP S0 fp32 image encoder with the q8 text encoder. For text, the choice is E5 small q8, keeping FTS and RRF. Speech with the base model is optional. Short Chinese cross-language retrieval and Chinese transcription still have quality problems.
 
-2026-09-30，M3 Max，16 核，48GB，macOS 26.2，接电。Swift 6.3.3，Node 24.4.1，Electron 44.4.5 内置 Node 24.21.0。ONNX 用 Transformers.js 4.3.0、onnxruntime-node 1.30.0，CPU，4 个计算线程，1 个图间线程。未测 Core ML EP。
+Measured on 2026-09-30 on an M3 Max, 16 cores, 48GB, macOS 26.2, on power. Swift 6.3.3, Node 24.4.1, and Electron 44.4.5 with its bundled Node 24.21.0. ONNX runs on Transformers.js 4.3.0 and onnxruntime-node 1.30.0, on CPU, with 4 compute threads and 1 inter-op thread. The Core ML EP was not tested.
 
-只用本机生成的 PNG 和语音。未读真实邮件，未碰 openmail 用户目录或运行中的 app，未提交。网络只下载依赖、源码和模型。模型固定版本并校验 SHA-256，推理禁用网络。
+The spike uses only PNGs and speech generated on this machine. It read no real mail, did not touch the openmail user directory or a running app, and committed nothing. The network was used only to download dependencies, source code and models. Models are pinned to fixed versions and verified by SHA-256, and inference has the network disabled.
 
-## OCR 与 Vision
+## OCR and Vision
 
-Vision accurate，语言 `zh-Hans`、`zh-Hant`、`en`，语言纠错开启。匹配率为 `1 - Levenshtein距离 / 真值字符数`，去空白，保留大小写、标点。每模式新进程跑 6 轮。表中暖轮是后 5 轮中位数，不含图片解码和进程启动。
+Vision accurate, languages `zh-Hans`, `zh-Hant`, `en`, with language correction on. The match rate is `1 - Levenshtein distance / truth character count`, with whitespace removed and case and punctuation kept. Each mode runs 6 rounds in a new process. The warm column is the median of the last 5 rounds and excludes image decoding and process startup.
 
-| 样本         | 尺寸 px  | 真值字符 | 整图匹配率 | 整图暖轮 ms | 切片匹配率 | 切片暖轮 ms |
-| ------------ | -------- | -------- | ---------- | ----------- | ---------- | ----------- |
-| 中英简繁混排 | 1000×600 | 146      | 99.32%     | 216.96      | 99.32%     | 263.07      |
-| 长截图       | 900×5200 | 3490     | 99.94%     | 2086.39     | 100.00%    | 3395.08     |
-| 小字购物票据 | 600×1100 | 223      | 99.55%     | 205.37      | 99.55%     | 262.08      |
-| 登机牌       | 1000×560 | 122      | 94.26%     | 195.11      | 94.26%     | 183.44      |
-| 代码截图     | 1100×750 | 307      | 92.51%     | 277.07      | 92.51%     | 298.65      |
+| Sample                                    | Size px  | Truth chars | Whole match | Whole warm ms | Tiled match | Tiled warm ms |
+| ----------------------------------------- | -------- | ----------- | ----------- | ------------- | ----------- | ------------- |
+| Mixed Simplified, Traditional and English | 1000×600 | 146         | 99.32%      | 216.96        | 99.32%      | 263.07        |
+| Long screenshot                           | 900×5200 | 3490        | 99.94%      | 2086.39       | 100.00%     | 3395.08       |
+| Small-print shopping receipt              | 600×1100 | 223         | 99.55%      | 205.37        | 99.55%      | 262.08        |
+| Boarding pass                             | 1000×560 | 122         | 94.26%      | 195.11        | 94.26%      | 183.44        |
+| Code screenshot                           | 1100×750 | 307         | 92.51%      | 277.07        | 92.51%      | 298.65        |
 
-长图有 113 行。6 个纵向切片最大高 1024px，重叠 128px，宽度不变。框映射到原图左上角像素坐标，按框中心分配重叠区域，无重复行。长图首轮整图 2498.85ms，切片 3354.30ms。合成小字为 15px，未覆盖模糊、倾斜或手写。
+The long image has 113 lines. It is split into 6 vertical tiles at most 1024px high, with a 128px overlap and the full width. Boxes map to top-left pixel coordinates in the source image. Overlap regions are assigned by box center, and no line is duplicated. The first round on the long image took 2498.85ms whole and 3354.30ms tiled. The synthetic small print is 15px. Blur, skew and handwriting are not covered.
 
-Swift CLI 为 133496 字节，约 130.37KiB。标准输出逐行 `{text, confidence, box}`，计时写 stderr。代码标点和票面短字段容易错，不能按置信度直接丢弃所有低分结果。
+The Swift CLI is 133496 bytes, about 130.37KiB. Standard output has one `{text, confidence, box}` per line, and timing goes to stderr. Code punctuation and short fields on tickets are error-prone, so low-confidence results cannot all be dropped by confidence alone.
 
-| 样本     | 分类最高标签 | 置信度 | 分类暖轮 ms |
-| -------- | ------------ | ------ | ----------- |
-| 中英混排 | document     | 0.495  | 10.05       |
-| 长截图   | document     | 0.604  | 66.08       |
-| 票据     | document     | 0.557  | 10.67       |
-| 登机牌   | document     | 0.575  | 9.86        |
-| 代码     | document     | 0.463  | 8.51        |
+| Sample                    | Top label | Confidence | Classify warm ms |
+| ------------------------- | --------- | ---------- | ---------------- |
+| Mixed Chinese and English | document  | 0.495      | 10.05            |
+| Long screenshot           | document  | 0.604      | 66.08            |
+| Receipt                   | document  | 0.557      | 10.67            |
+| Boarding pass             | document  | 0.575      | 9.86             |
+| Code                      | document  | 0.463      | 8.51             |
 
-前 5 标签和分数保存在 `artifacts/vision.json`，document、printed_page、screenshot 占主导。分类可辅助判断文档或截图，不能直接充当票据、机票标签。
+The top 5 labels and scores are saved in `artifacts/vision.json`. document, printed_page and screenshot dominate. Classification can help tell documents from screenshots. It cannot serve directly as a receipt or ticket label.
 
-Feature print revision 2，768 维。首张提取 79.51ms，后续 8.00 至 11.79ms。
+Feature print revision 2, 768 dimensions. The first image took 79.51ms to extract, and later ones took 8.00 to 11.79ms.
 
-| 与原票据比较       | 距离   |
-| ------------------ | ------ |
-| 同图               | 0.0000 |
-| 改为浅黄背景的票据 | 0.1798 |
-| 登机牌             | 0.9766 |
-| 代码截图           | 0.9521 |
-| 中英混排           | 0.9572 |
+| Compared with the original receipt   | Distance |
+| ------------------------------------ | -------- |
+| Same image                           | 0.0000   |
+| Receipt on a light yellow background | 0.1798   |
+| Boarding pass                        | 0.9766   |
+| Code screenshot                      | 0.9521   |
+| Mixed Chinese and English            | 0.9572   |
 
-可做相似图检索。向量缓存要记录 Vision revision，距离阈值尚未验证。
+This works for similar-image search. The vector cache must record the Vision revision. The distance threshold has not been validated.
 
-## 图文和文本向量
+## Image-text and text embeddings
 
-本地加载不含下载和库导入。每项先跑 2 轮，再测 10 轮中位数。图像端到端含 PNG 解码、缩放、中心裁剪和推理；纯推理用预处理好的输入。MobileCLIP 为 512 维，文本固定补齐到 77 tokens。E5 为 384 维，平均池化后归一化，使用 `query:` 和 `passage:` 前缀。
+Local load excludes download and library import. Each item runs 2 rounds first, then the median of 10 rounds is measured. Image end-to-end includes PNG decoding, resizing, center cropping and inference. Pure inference uses preprocessed input. MobileCLIP has 512 dimensions, and text is padded to a fixed 77 tokens. E5 has 384 dimensions, uses mean pooling followed by normalization, and uses the `query:` and `passage:` prefixes.
 
-| 模型配置                               | 模型包 MB | ONNX 权重 MB | 本地加载 ms |
-| -------------------------------------- | --------- | ------------ | ----------- |
-| MobileCLIP S0 全 q8，对照              | 56.87     | 54.65        | 319.50      |
-| MobileCLIP S0 图像 fp32、文本 q8，选用 | 90.57     | 88.34        | 255.10      |
-| multilingual-e5-small q8               | 135.39    | 118.31       | 733.20      |
+| Model configuration                       | Package MB | ONNX weights MB | Local load ms |
+| ----------------------------------------- | ---------- | --------------- | ------------- |
+| MobileCLIP S0 all q8, baseline            | 56.87      | 54.65           | 319.50        |
+| MobileCLIP S0 image fp32, text q8, chosen | 90.57      | 88.34           | 255.10        |
+| multilingual-e5-small q8                  | 135.39     | 118.31          | 733.20        |
 
-MB 按 1000000 字节，模型包包含 tokenizer、配置和已有许可文件，不含运行库。图文两种配置共用文本权重。
+MB means 1000000 bytes. A model package includes the tokenizer, configuration and the license files it ships with, and excludes the runtime libraries. Both image-text configurations share the text weights.
 
-| 图像     | 全 q8 端到端 ms | 选用配置端到端 ms | 选用配置纯推理 ms |
-| -------- | --------------- | ----------------- | ----------------- |
-| 中英混排 | 154.14          | 190.64            | 40.77             |
-| 长截图   | 222.75          | 251.73            | 68.80             |
-| 票据     | 161.89          | 148.44            | 55.31             |
-| 代码     | 136.11          | 168.92            | 64.26             |
-| 登机牌   | 120.97          | 107.97            | 47.71             |
+| Image                     | All q8 end-to-end ms | Chosen end-to-end ms | Chosen inference ms |
+| ------------------------- | -------------------- | -------------------- | ------------------- |
+| Mixed Chinese and English | 154.14               | 190.64               | 40.77               |
+| Long screenshot           | 222.75               | 251.73               | 68.80               |
+| Receipt                   | 161.89               | 148.44               | 55.31               |
+| Code                      | 136.11               | 168.92               | 64.26               |
+| Boarding pass             | 120.97               | 107.97               | 47.71               |
 
-候选是上述 5 张图。下表是目标图片的名次，数字越小越好。
+The candidates are the 5 images above. The table below gives the rank of the target image. Lower is better. The Chinese queries are test data: 机票 means "airline ticket", 机票截图 means "airline ticket screenshot" and 收据 means "receipt". <!-- cjk-ok -->
 
-| 查询               | 目标   | 全 q8 名次 | 选用配置名次 | 选用配置文本端到端 ms |
-| ------------------ | ------ | ---------- | ------------ | --------------------- |
-| receipt            | 票据   | 1          | 1            | 19.90                 |
-| screenshot of code | 代码   | 3          | 1            | 15.92                 |
-| airline ticket     | 登机牌 | 1          | 1            | 10.88                 |
-| 机票               | 登机牌 | 2          | 1            | 7.14                  |
-| 机票截图           | 登机牌 | 2          | 1            | 25.37                 |
-| 收据               | 票据   | 3          | 3            | 15.34                 |
+<!-- cjk-ok:start -->
 
-四条指定查询通过率从 2/4 提升到 4/4。fp32 图像编码器值得增加 33.70MB。全图中心裁剪会丢长图边缘，正式索引仍需同时存整图和切片向量。
+| Query              | Target        | All q8 rank | Chosen rank | Chosen text end-to-end ms |
+| ------------------ | ------------- | ----------- | ----------- | ------------------------- |
+| receipt            | Receipt       | 1           | 1           | 19.90                     |
+| screenshot of code | Code          | 3           | 1           | 15.92                     |
+| airline ticket     | Boarding pass | 1           | 1           | 10.88                     |
+| 机票               | Boarding pass | 2           | 1           | 7.14                      |
+| 机票截图           | Boarding pass | 2           | 1           | 25.37                     |
+| 收据               | Receipt       | 3           | 3           | 15.34                     |
 
-| E5 输入 | 字符 | 含前缀 tokens | 暖轮 ms |
-| ------- | ---- | ------------- | ------- |
-| 中文块  | 300  | 208           | 44.30   |
-| 英文块  | 300  | 64            | 12.03   |
+<!-- cjk-ok:end -->
 
-检索库含英文航班、中文购物票据、英文程序、中文会议四段文字。名次如下。
+The pass rate on the four specified queries rose from 2/4 to 4/4. The fp32 image encoder is worth its extra 33.70MB. A center crop of the whole image loses the edges of long images, so the real index still needs vectors for both the whole image and its tiles.
 
-| 查询                                            | 目标     | 名次 |
-| ----------------------------------------------- | -------- | ---- |
-| 机票和登机手续                                  | 英文航班 | 3    |
-| airline ticket and boarding pass                | 英文航班 | 1    |
-| shopping receipt for coffee                     | 中文票据 | 1    |
-| 购物小票的金额                                  | 中文票据 | 1    |
-| 本地图片索引代码                                | 英文程序 | 3    |
-| project meeting next Tuesday                    | 中文会议 | 1    |
-| 从新加坡飞往上海的航班，需要护照和登机牌        | 英文航班 | 1    |
-| 用 TypeScript 和 SQLite 索引图片并做 OCR 的程序 | 英文程序 | 1    |
+| E5 input      | Chars | Tokens with prefix | Warm ms |
+| ------------- | ----- | ------------------ | ------- |
+| Chinese chunk | 300   | 208                | 44.30   |
+| English chunk | 300   | 64                 | 12.03   |
 
-整体 6/8，跨语言 4/6。短中文查询有语言偏好。OCR 文字加 E5 可让“机票”找到登机牌，但“收据”和“截图中的代码”均先命中混排说明图。E5 可作为候选排序信号，不能替代精确搜索。
+The retrieval corpus has four passages: an English flight, a Chinese shopping receipt, an English program and a Chinese meeting. The ranks are below. The Chinese queries are test data. In order they mean "airline ticket and check-in", "the amount on a shopping receipt", "local image indexing code", "a flight from Singapore to Shanghai that needs a passport and boarding pass" and "a program that indexes images and runs OCR with TypeScript and SQLite".
+
+<!-- cjk-ok:start -->
+
+| Query                                           | Target          | Rank |
+| ----------------------------------------------- | --------------- | ---- |
+| 机票和登机手续                                  | English flight  | 3    |
+| airline ticket and boarding pass                | English flight  | 1    |
+| shopping receipt for coffee                     | Chinese receipt | 1    |
+| 购物小票的金额                                  | Chinese receipt | 1    |
+| 本地图片索引代码                                | English program | 3    |
+| project meeting next Tuesday                    | Chinese meeting | 1    |
+| 从新加坡飞往上海的航班，需要护照和登机牌        | English flight  | 1    |
+| 用 TypeScript 和 SQLite 索引图片并做 OCR 的程序 | English program | 1    |
+
+<!-- cjk-ok:end -->
+
+Overall 6/8, and 4/6 across languages. Short Chinese queries show a language preference. OCR text plus E5 lets 机票 ("airline ticket") find the boarding pass, but 收据 ("receipt") and `screenshot of code` both hit the mixed-language explainer image first. E5 can serve as a candidate ranking signal. It cannot replace exact search. <!-- cjk-ok -->
 
 ## sqlite-vec
 
-同一 arm64 dylib，161896 字节。用 `DatabaseSync({allowExtension:true})` 和 `loadExtension`，加载后关闭扩展加载。磁盘库启用 WAL，事务插入 10000 个固定种子的随机归一化 float32 向量。查询 384 维，k=10，首轮后再查 50 个不同向量。前 10 个邻居与 JS 暴力计算一致。
+The same arm64 dylib, 161896 bytes, in both runtimes. It loads through `DatabaseSync({allowExtension:true})` and `loadExtension`, and extension loading is turned off after the load. The on-disk database uses WAL. A transaction inserts 10000 random normalized float32 vectors from a fixed seed. Queries are 384 dimensions with k=10, and 50 different vectors are queried after the first round. The top 10 neighbors match a brute-force JS computation.
 
-| 环境                 | SQLite | sqlite-vec | 加载 ms | 插入 ms | 首查 ms | 暖轮中位 ms | p95 ms |
-| -------------------- | ------ | ---------- | ------- | ------- | ------- | ----------- | ------ |
-| Node 24.4.1          | 3.53.1 | 0.1.9      | 1.76    | 204.44  | 3.87    | 3.43        | 5.01   |
-| Electron 44.4.5 main | 3.53.4 | 0.1.9      | 0.45    | 132.92  | 2.97    | 2.71        | 3.00   |
+| Runtime              | SQLite | sqlite-vec | Load ms | Insert ms | First query ms | Warm median ms | p95 ms |
+| -------------------- | ------ | ---------- | ------- | --------- | -------------- | -------------- | ------ |
+| Node 24.4.1          | 3.53.1 | 0.1.9      | 1.76    | 204.44    | 3.87           | 3.43           | 5.01   |
+| Electron 44.4.5 main | 3.53.4 | 0.1.9      | 0.45    | 132.92    | 2.97           | 2.71           | 3.00   |
 
-库大小 16003072 字节。整数主键须绑定 `BigInt`。Electron 用仓库 main 工作目录已有二进制和 spike 内独立 profile，没有启动 openmail。正式签名打包尚未测。384 维文本和 512 维图文要分表。
+The database is 16003072 bytes. Integer primary keys must be bound as `BigInt`. Electron uses the existing binary from the repo's main working directory and a separate profile inside the spike, and openmail was not started. A signed release build has not been tested. 384-dimension text vectors and 512-dimension image-text vectors need separate tables.
 
-## 可选语音
+## Optional speech
 
-whisper.cpp v1.9.4，多语言 base F16，147.95MB。Metal，4 线程，beam=5，best-of=5。系统 `say` 生成中英各 30 秒单声道 16kHz 音频，完整语音调速到 30 秒。每种语言启动 3 个新进程。
+whisper.cpp v1.9.4, multilingual base F16, 147.95MB. Metal, 4 threads, beam=5, best-of=5. The system `say` command generates 30 seconds each of Chinese and English mono 16kHz audio, with the full speech retimed to 30 seconds. Each language starts 3 new processes.
 
-| 语言 | 首次进程 s | 三轮墙钟中位 s | 相对实时倍速 | 实时系数 |
-| ---- | ---------- | -------------- | ------------ | -------- |
-| 英文 | 25.19      | 0.64           | 46.82×       | 0.021    |
-| 中文 | 1.23       | 1.12           | 26.74×       | 0.037    |
+| Language | First process s | Median wall clock of 3 runs s | Speed vs real time | Real-time factor |
+| -------- | --------------- | ----------------------------- | ------------------ | ---------------- |
+| English  | 25.19           | 0.64                          | 46.82×             | 0.021            |
+| Chinese  | 1.23            | 1.12                          | 26.74×             | 0.037            |
 
-英文首次运行含 Metal 初始化，库内计时仅 1.04 秒，不能把它当成稳定转写耗时。中文声音原长 42.91 秒，被加快 1.43 倍，有“登机牌”识别成“灯鸡排”等同音字错误。base 可做速度候选，中文质量需要更大模型另测。
+The first English run includes Metal initialization. The library's own timing is only 1.04 seconds, so this number is not a stable transcription time. The original Chinese speech is 42.91 seconds long and was sped up 1.43 times. It has homophone errors, such as 登机牌 ("boarding pass") transcribed as 灯鸡排. base is a speed candidate. Chinese quality needs a separate test with a larger model. <!-- cjk-ok -->
 
-## 选型与范围
+## Choice and scope
 
-先接 Vision OCR、sqlite-vec、FTS。后台索引接 MobileCLIP 混合精度和 E5 q8，通过 RRF 合并。分类只作辅助。语音由用户选择下载。
+Start with Vision OCR, sqlite-vec and FTS. Background indexing adds MobileCLIP mixed precision and E5 q8, merged by RRF. Classification is only a helper. The user chooses whether to download speech.
 
-推荐图文加文本模型包共 **225.96MB**。含语音共 **373.91MB**。本次全部试验模型实际下载 **385.76MB**，多出的 11.85MB 是淘汰的 q8 图像编码器。Vision 使用系统模型，无额外 spike 模型下载。
+The recommended image-text and text model packages total **225.96MB**. With speech, the total is **373.91MB**. All models tried in this spike took **385.76MB** to download. The extra 11.85MB is the rejected q8 image encoder. Vision uses system models, so the spike downloads no extra model for it.
 
-本机运行无阻塞。质量限制是短中文跨语言查询和中文语音转写。样本很小，尚未验证真实附件、手机、签名后的 Electron、后台队列和 PDF。这里的代码没有接入 app。
+Nothing blocks running on this machine. The quality limits are short Chinese cross-language queries and Chinese speech transcription. The samples are small. Real attachments, phones, signed Electron, background queues and PDFs have not been verified. The code here is not wired into the app.
 
-Swift 编译、JSON/坐标检查、CLI 错误路径、Python 语法、模型哈希、双运行时 KNN 对照、spike lint 和格式检查通过。未运行 app 构建或测试，未改 apps、packages 或根依赖。复现见 [README.md](README.md)，数字原始记录在 [artifacts/](artifacts/)。
+Swift compilation, JSON and coordinate checks, CLI error paths, Python syntax, model hashes, the KNN comparison across both runtimes, spike lint and format checks pass. The app build and tests were not run, and apps, packages and root dependencies were not changed. To reproduce, see [README.md](README.md). The raw numbers are in [artifacts/](artifacts/).
 
-组件用法参考 [MobileCLIP ONNX](https://huggingface.co/Xenova/mobileclip_s0)、[E5 模型说明](https://huggingface.co/intfloat/multilingual-e5-small)、[sqlite-vec Node 示例](https://github.com/asg017/sqlite-vec/blob/main/examples/simple-node2/demo.mjs)、[whisper.cpp](https://github.com/ggml-org/whisper.cpp)。上述性能和排序均为本机实测。
+Component usage follows [MobileCLIP ONNX](https://huggingface.co/Xenova/mobileclip_s0), [the E5 model card](https://huggingface.co/intfloat/multilingual-e5-small), [the sqlite-vec Node example](https://github.com/asg017/sqlite-vec/blob/main/examples/simple-node2/demo.mjs) and [whisper.cpp](https://github.com/ggml-org/whisper.cpp). All performance and ranking numbers above were measured on this machine.

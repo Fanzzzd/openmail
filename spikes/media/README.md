@@ -1,8 +1,8 @@
-# 端侧媒体搜索实验
+# On-device media search spike
 
-结果见 [RESULTS.md](RESULTS.md)。脚本只读生成样本，只写本目录。模型下载与推理分开。推理禁用远程模型和 `fetch`，不调用服务端推理。
+Results are in [RESULTS.md](RESULTS.md). The scripts read only generated samples and write only to this directory. Model download is separate from inference. Inference disables remote models and `fetch` and calls no server inference.
 
-需要 Apple Silicon Mac、Node 24、`swiftc`、Python 3、npm。语音实验另需 `cmake`、`ffmpeg`、已安装的 Samantha 和 Tingting 系统声音。无需 Xcode 项目。
+You need an Apple Silicon Mac, Node 24, `swiftc`, Python 3 and npm. The speech spike also needs `cmake`, `ffmpeg`, and the Samantha and Tingting system voices installed. No Xcode project is needed.
 
 ```sh
 cd spikes/media
@@ -18,7 +18,7 @@ npm run report
 npm run check-report
 ```
 
-Swift CLI 的标准输出是 JSON lines，字段为 `text`、`confidence`、`box`。`box` 是原图像素坐标 `[x, y, width, height]`，原点在左上。耗时和图像尺寸写到标准错误。切片高 1024px，重叠 128px，按框中心归属去重。语言顺序为 `zh-Hans`、`zh-Hant`、`en`，识别级别为 accurate。
+The Swift CLI writes JSON lines to standard output, with the fields `text`, `confidence` and `box`. `box` is `[x, y, width, height]` in source image pixels, with the origin at the top left. Timing and image size go to standard error. Tiles are 1024px high with a 128px overlap, and boxes are deduplicated by which tile holds their center. The language order is `zh-Hans`, `zh-Hant`, `en`, and the recognition level is accurate.
 
 ```sh
 bin/vision samples/mixed.png
@@ -27,14 +27,14 @@ bin/vision classify samples/receipt.png
 bin/vision feature samples/receipt.png samples/receipt-similar.png samples/code.png
 ```
 
-Electron 测试要用仓库的 44.4.5 二进制，不能设置 `ELECTRON_RUN_AS_NODE`。在仓库根目录 `pnpm install` 后，用 desktop 依赖的 Electron 二进制。只启动 `electron-main.mjs`，不加载 openmail。它在 ready 前把 userData、sessionData 和日志目录改到 `artifacts/electron-profile/`，无窗口。
+The Electron test must use the repo's 44.4.5 binary and must not set `ELECTRON_RUN_AS_NODE`. After `pnpm install` at the repo root, use the Electron binary that desktop depends on. It starts only `electron-main.mjs` and does not load openmail. Before ready, it moves userData, sessionData and the log directory to `artifacts/electron-profile/`. It opens no window.
 
 ```sh
 MEDIA_ELECTRON_BIN="$(cd ../../apps/desktop && node -p 'require("electron")')"
 env -u ELECTRON_RUN_AS_NODE "$MEDIA_ELECTRON_BIN" electron-main.mjs
 ```
 
-语音实验固定 whisper.cpp v1.9.4。以下网络请求只下载源码。base 模型由上面的下载脚本按固定版本下载并校验。
+The speech spike pins whisper.cpp v1.9.4. The network requests below only download source code. The download script above fetches and verifies the base model at a pinned version.
 
 ```sh
 curl -4 -fsSL https://api.github.com/repos/ggml-org/whisper.cpp/tarball/v1.9.4 -o artifacts/whisper-src.tar.gz
@@ -45,6 +45,6 @@ cmake --build artifacts/whisper-build --target whisper-cli -j 6
 python3 bench-whisper.py
 ```
 
-`say` 生成的整段语音经 `atempo` 调至 30 秒，补齐或截去末尾静音。输出为单声道 16kHz、16-bit PCM。转写保留时间戳。英文原始长度 28.82 秒，中文 42.91 秒，中文语速被加快约 1.43 倍。
+`atempo` stretches each full `say` recording to 30 seconds, and trailing silence is padded or trimmed. The output is mono 16kHz 16-bit PCM. Transcripts keep timestamps. The original English length is 28.82 seconds and the Chinese length is 42.91 seconds, so the Chinese speech is sped up about 1.43 times.
 
-原始结果在 `artifacts/vision.json`、`embeddings.json`、`embeddings-hybrid.json`、`sqlite-node.json`、`sqlite-electron.json`、`whisper.json`。模型版本、大小和 SHA-256 在 `model-manifest.json`，机器配置在 `environment.json`。大文件、生成样本、数据库和依赖被本目录的 `.gitignore` 忽略，可按上述命令重建。
+The raw results are in `artifacts/vision.json`, `embeddings.json`, `embeddings-hybrid.json`, `sqlite-node.json`, `sqlite-electron.json` and `whisper.json`. Model versions, sizes and SHA-256 are in `model-manifest.json`, and the machine configuration is in `environment.json`. This directory's `.gitignore` ignores large files, generated samples, databases and dependencies. You can rebuild them with the commands above.
