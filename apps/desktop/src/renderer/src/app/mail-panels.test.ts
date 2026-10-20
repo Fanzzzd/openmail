@@ -18,10 +18,11 @@ const controls = vi.hoisted(() => {
         onResize?: (size: { asPercentage: number; inPixels: number }, id: string) => void;
       }
     >(),
+    resizes: new Array<number>(),
   };
 });
 vi.mock("react-resizable-panels", () => ({
-  usePanelRef: () => ({ current: null }),
+  usePanelRef: () => ({ current: { resize: (pixels: number) => controls.resizes.push(pixels) } }),
   Panel: ({
     children,
     ...props
@@ -46,7 +47,7 @@ vi.mock("react-resizable-panels", () => ({
   },
 }));
 import { MailPanels } from "./MailPanels";
-import { SavedPanel } from "./SavedPanes";
+import { SavedGroup, SavedPanel } from "./SavedPanes";
 afterAll(() => {
   vi.doUnmock("react-resizable-panels");
   vi.resetModules();
@@ -200,5 +201,72 @@ it("converts an earlier build's percent widths once, only in the wide layout", (
     expect(read.mock.calls.map(([key]) => key)).toEqual(["openmail:mail-pane-sizes:right"]);
   } finally {
     dom.dispose();
+  }
+});
+
+it("converts the list's old percent from the group's size after the sidebar's conversion", async () => {
+  const dom = testDom();
+  const storage = memoryStorage();
+  vi.stubGlobal("localStorage", storage);
+  const frames: FrameRequestCallback[] = [];
+  vi.stubGlobal("requestAnimationFrame", (callback: FrameRequestCallback) => frames.push(callback));
+  storage.items.set(
+    "react-resizable-panels:openmail:panes:mail:sidebar:mail",
+    JSON.stringify({ sidebar: 25, mail: 75 }),
+  );
+  storage.items.set(
+    "react-resizable-panels:openmail:mail-panes:right:list:reader",
+    JSON.stringify({ list: 50, reader: 50 }),
+  );
+  controls.resizes.length = 0;
+  const saved = (key: string): unknown => JSON.parse(storage.items.get(key) ?? "null");
+  try {
+    dom.render(
+      createElement(
+        SavedGroup,
+        {
+          storageKey: "openmail:pane-sizes:mail",
+          legacy: { keys: ["react-resizable-panels:openmail:panes:mail:sidebar:mail"], wide: true },
+        },
+        createElement(SavedPanel, { id: "sidebar", defaultSize: 232 }),
+        createElement(
+          MailPanels,
+          { position: "right", readerVisible: true, wide: true },
+          createElement(SavedPanel, { id: "list", defaultSize: 380 }),
+        ),
+      ),
+    );
+    // A 1320 px window. The inner group hears of its size first: the list's 380 px of the
+    // 1087 px left of the sidebar's default 232 px and the divider.
+    act(() =>
+      controls.panels
+        .get("list")
+        ?.onResize?.({ asPercentage: (380 / 1087) * 100, inPixels: 380 }, "list"),
+    );
+    expect(saved("openmail:mail-pane-sizes:right")).toBeNull();
+    // The sidebar's 25 % of 1320 px is 330 px.
+    act(() =>
+      controls.panels
+        .get("sidebar")
+        ?.onResize?.({ asPercentage: (232 / 1320) * 100, inPixels: 232 }, "sidebar"),
+    );
+    await act(() => Promise.resolve());
+    expect(controls.resizes).toEqual([330]);
+    expect(saved("openmail:pane-sizes:mail")).toEqual({ sidebar: 330 });
+    // The library lays the inner group out at 989 px; the list gets half of that.
+    act(() =>
+      controls.panels
+        .get("list")
+        ?.onResize?.({ asPercentage: (380 / 989) * 100, inPixels: 380 }, "list"),
+    );
+    act(() => {
+      for (const frame of frames.splice(0)) frame(0);
+    });
+    await act(() => Promise.resolve());
+    expect(saved("openmail:mail-pane-sizes:right")).toEqual({ list: 495 });
+    expect(controls.resizes).toEqual([330, 495]);
+  } finally {
+    dom.dispose();
+    vi.unstubAllGlobals();
   }
 });

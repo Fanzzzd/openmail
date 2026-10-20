@@ -66,7 +66,16 @@ function readLegacyLayout(storage: Pick<Storage, "getItem">, keys: readonly stri
 }
 
 type Measure = (size: PanelSize, id: string, resize: (pixels: number) => void) => void;
-const SizesContext = createContext<{ saved: Sizes; measure: Measure } | null>(null);
+/**
+ * Runs `then` once this group's own percent conversion is done. `moved` says whether it resized a
+ * pane, so a group nested in another pane has a new size to measure in the next frame.
+ */
+type AfterConversion = (then: (moved: boolean) => void) => void;
+const SizesContext = createContext<{
+  saved: Sizes;
+  measure: Measure;
+  afterConversion: AfterConversion;
+} | null>(null);
 
 /**
  * A Group whose `SavedPanel`s open at the pixel sizes saved under `storageKey`.
@@ -75,7 +84,8 @@ const SizesContext = createContext<{ saved: Sizes; measure: Measure } | null>(nu
  * on the first mount in the wide layout, a pane with no saved pixel size takes its old percentage
  * of the group's measured size, which is saved in pixels; the old keys are then removed. Once the
  * group has pixel sizes saved, the old keys are not read. A narrower window would clamp the
- * panes, so there the old keys are neither read nor removed.
+ * panes, so there the old keys are neither read nor removed. A group inside another SavedGroup's
+ * pane converts after the outer one: the outer conversion resizes the pane this group fills.
  */
 export function SavedGroup({
   storageKey,
@@ -87,6 +97,9 @@ export function SavedGroup({
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
   legacy?: { keys: readonly string[]; wide: boolean };
 }) {
+  // The group this one sits in. Its panes take their converted sizes first: a pane of this group
+  // measured before that holds a share of the old size.
+  const parent = use(SizesContext);
   // Read once per mount: the group remounts whenever its panes change.
   const [saved] = useState(() => readSizes(storage, storageKey));
   // Pixel sizes saved for this group, by a drag or a conversion, mean the old keys are done with.
@@ -96,6 +109,9 @@ export function SavedGroup({
   const [legacyLayout] = useState(() => readLegacyLayout(storage, legacyKeys));
   const measured = useRef(new Map<string, PanelSize>());
   const legacyPending = useRef(legacyLayout !== null);
+  // Waiting for this group's conversion: null once it is done, with whether it moved a pane.
+  const waiting = useRef<((moved: boolean) => void)[] | null>(legacyLayout ? [] : null);
+  const moved = useRef(false);
   const value = useMemo(() => {
     const write = (sizes: Sizes) => {
       try {
@@ -107,20 +123,54 @@ export function SavedGroup({
         // Storage may be full or unavailable; the panes keep their sizes for this session.
       }
     };
+    const finish = (resized: boolean) => {
+      const callbacks = waiting.current ?? [];
+      waiting.current = null;
+      moved.current = resized;
+      for (const callback of callbacks) callback(resized);
+    };
+    const afterConversion: AfterConversion = (then) => {
+      if (waiting.current) waiting.current.push(then);
+      else then(moved.current);
+    };
+    const convert = (id: string, resize: (pixels: number) => void) => {
+      const size = measured.current.get(id);
+      const percent = legacyLayout?.[id];
+      if (
+        !size ||
+        saved[id] !== undefined ||
+        percent === undefined ||
+        size.asPercentage <= 0 ||
+        size.inPixels <= 0
+      ) {
+        finish(false);
+        return;
+      }
+      const pixels = Math.round((percent / 100) * ((size.inPixels / size.asPercentage) * 100));
+      write({ [id]: pixels });
+      // Resizing from inside the library's resize notice would nest layout updates.
+      queueMicrotask(() => {
+        resize(pixels);
+        finish(true);
+      });
+    };
     const measure: Measure = (size, id, resize) => {
       measured.current.set(id, size);
       if (!legacyPending.current || !legacyLayout || size.inPixels <= 0) return;
       legacyPending.current = false;
       for (const key of legacyKeys) storage.removeItem(key);
-      const percent = legacyLayout[id];
-      if (saved[id] !== undefined || percent === undefined || size.asPercentage <= 0) return;
-      const pixels = Math.round((percent / 100) * ((size.inPixels / size.asPercentage) * 100));
-      write({ [id]: pixels });
-      // Resizing from inside the library's resize notice would nest layout updates.
-      queueMicrotask(() => resize(pixels));
+      // A parent conversion that resized its panes changes this group's size: the pane's share
+      // of the group is measured again in the next frame, after the library lays it out.
+      const run = () => convert(id, resize);
+      if (!parent) run();
+      else
+        parent.afterConversion((parentMoved) => {
+          if (parentMoved) requestAnimationFrame(run);
+          else run();
+        });
     };
-    return { saved, measure };
-  }, [saved, legacyLayout, legacyKeys, storage, storageKey]);
+    return { saved, measure, afterConversion };
+  }, [saved, legacyLayout, legacyKeys, storage, storageKey, parent]);
   const save = (layout: Layout, meta: LayoutChangedMeta) => {
     if (!meta.isUserInteraction) return;
     const sizes = pixelSizes(layout, measured.current);
