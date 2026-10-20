@@ -42,6 +42,8 @@ import { type ResultsRequest, resultsEntry } from "../features/search/results-en
 
 /** How long typing pauses before the search goes into the route. */
 const SEARCH_COMMIT_MS = 400;
+/** How many frames focusList waits for its row to render before it focuses the list. */
+const FOCUS_ROW_FRAMES = 10;
 
 export function useMailSelection({
   accountsReady,
@@ -229,15 +231,23 @@ export function useMailSelection({
   }, [prefs.threadGrouping, prefsResult._tag]);
 
   const focusList = (focus: string | null) => {
-    requestAnimationFrame(() => {
+    // A list shown again, as after the narrow reader's Back, renders the rows of its virtual
+    // window only once it has measured its height again, which can take a few frames. Until
+    // then the row waits, unless focus went somewhere else in the meantime.
+    let frames = 0;
+    const attempt = () => {
       const element = listRef.current;
+      const active = document.activeElement;
+      if (frames > 0 && active && active !== document.body && !element?.contains(active)) return;
       const row = focus
         ? [...(element?.querySelectorAll<HTMLButtonElement>("[data-id]") ?? [])].find(
             (candidate) => candidate.dataset.id === focus,
           )
         : undefined;
-      (row ?? element)?.focus({ preventScroll: true });
-    });
+      if (focus && !row && frames++ < FOCUS_ROW_FRAMES) requestAnimationFrame(attempt);
+      else (row ?? element)?.focus({ preventScroll: true });
+    };
+    requestAnimationFrame(attempt);
   };
   /**
    * The mailbox's selection from before a search. Clearing the search opens it again, unless a

@@ -3,7 +3,7 @@ import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { act, fireEvent, screen, within } from "@testing-library/react/pure";
 import axe from "axe-core";
-import { clickButton, eventually, flow, key, row } from "./harness";
+import { clickButton, eventually, flow, incoming, key, row } from "./harness";
 import { mailHref } from "../../../shared/routes";
 
 let current: Awaited<ReturnType<typeof flow>> | undefined;
@@ -224,6 +224,74 @@ it("Cmd+] after Cmd+[ in a narrow window opens the reader again", async () => {
   await eventually(() => expect(reader()).toBeNull());
   key("]", { metaKey: true }, document.body);
   await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+});
+
+it("Back from a narrow reader focuses a row that was below the first screen", async () => {
+  // jsdom lays nothing out. As in Chromium, a shown list is 600 px tall, a hidden one reads a
+  // height and scroll offset of 0 but keeps its offset for when it shows again, and the list
+  // hears of a change in its size a few frames later, from its ResizeObserver.
+  const height = vi
+    .spyOn(HTMLElement.prototype, "clientHeight", "get")
+    .mockImplementation(function (this: HTMLElement) {
+      return this.closest("[hidden]") ? 0 : 600;
+    });
+  const offsets = new WeakMap<Element, number>();
+  const setupScrollTop = Object.getOwnPropertyDescriptor(Element.prototype, "scrollTop");
+  Object.defineProperty(Element.prototype, "scrollTop", {
+    configurable: true,
+    get(this: Element) {
+      return this.closest("[hidden]") ? 0 : (offsets.get(this) ?? 0);
+    },
+    set(this: Element, value: number) {
+      offsets.set(this, value);
+    },
+  });
+  const observed = new Set<{ callback: () => void; target: Element }>();
+  const shownOrHidden = new MutationObserver(() =>
+    setTimeout(() => {
+      for (const entry of observed) if (entry.target.isConnected) entry.callback();
+    }, 60),
+  );
+  shownOrHidden.observe(document.body, { attributeFilter: ["hidden"], subtree: true });
+  const setupObserver = globalThis.ResizeObserver;
+  globalThis.ResizeObserver = class {
+    callback: () => void;
+    constructor(callback: () => void) {
+      this.callback = callback;
+    }
+    observe(target: Element) {
+      observed.add({ callback: this.callback, target });
+    }
+    unobserve = constVoid;
+    disconnect = constVoid;
+  };
+  try {
+    width = 520;
+    current = await flow({
+      messages: Array.from({ length: 40 }, (_, index) =>
+        incoming(`m${index}`, { date: Date.now() - (index + 1) * 60_000 }),
+      ),
+    });
+    const h = current;
+    await eventually(() => expect(row(h.id("m0"))).toBeTruthy());
+    const rowHeight = parseFloat(row(h.id("m0")).style.height);
+    const list = screen.getByRole("listbox", { name: "Inbox" });
+    list.scrollTop = 1000;
+    fireEvent.scroll(list);
+    // A row on screen, more than six rows below the top of the list.
+    const target = `m${Math.floor((1000 + 590) / rowHeight)}`;
+    await eventually(() => expect(row(h.id(target))).toBeTruthy());
+    fireEvent.click(row(h.id(target)));
+    await eventually(() => expect(reader()).not.toBeNull());
+    key("Escape", {}, document.body);
+    await eventually(() => expect(reader()).toBeNull());
+    await eventually(() => expect(document.activeElement).toBe(row(h.id(target))));
+  } finally {
+    shownOrHidden.disconnect();
+    height.mockRestore();
+    if (setupScrollTop) Object.defineProperty(Element.prototype, "scrollTop", setupScrollTop);
+    globalThis.ResizeObserver = setupObserver;
+  }
 });
 
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {

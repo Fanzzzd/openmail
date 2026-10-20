@@ -205,6 +205,13 @@ export const cases = [
     '        if (move === "forward" && left && history.index() === left.index) {',
     "        if (false) {",
   ],
+  [
+    "narrow Back focuses a row below the first screen",
+    "focuses a row that was below the first screen",
+    `${renderer}app/use-mail-selection.ts`,
+    "if (focus && !row && frames++ < FOCUS_ROW_FRAMES) requestAnimationFrame(attempt);",
+    "if (false) requestAnimationFrame(attempt);",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -306,8 +313,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 58)
-      throw new Error(`Expected all 58 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 59)
+      throw new Error(`Expected all 59 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
