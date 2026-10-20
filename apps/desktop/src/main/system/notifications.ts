@@ -8,6 +8,7 @@ import {
 } from "@openmail/core";
 import { Effect } from "effect";
 import { Notification } from "electron";
+import { showNotification } from "../windows/reveal";
 import { type DesktopLabels, pluralText } from "../../shared/desktop-labels";
 
 /**
@@ -107,7 +108,7 @@ export function makeNotifications({
           notifications.delete(notification);
           notificationAccounts.delete(notification);
         });
-        notification.show();
+        showNotification(notification);
         continue;
       }
       for (const message of batch.messages) {
@@ -131,7 +132,7 @@ export function makeNotifications({
         notificationAccounts.set(notification, [message.accountId]);
         yield* mailbox.app.rememberNotificationActions(id, actions);
         wireNotification(notification, id, actions);
-        notification.show();
+        showNotification(notification);
       }
     }
   });

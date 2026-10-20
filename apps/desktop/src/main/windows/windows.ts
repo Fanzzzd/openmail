@@ -12,7 +12,13 @@ import { WINDOW_MIN } from "../../shared/layout";
 import { TRAFFIC_LIGHT_POSITION } from "../../shared/window-chrome";
 import { appHref, composeHref, parseAppHref, threadHref } from "../../shared/routes";
 import type { ComposeRecipients, SavedWindow } from "../../shared/window-state";
-import { backgroundWindows, revealAndFocus, revealWindow } from "./reveal";
+import {
+  addWindowTab,
+  backgroundWindows,
+  maximizeWindow,
+  revealAndFocus,
+  revealWindow,
+} from "./reveal";
 import { centeredBounds, visibleBounds, windowStateFile } from "./window-state";
 
 import {
@@ -73,8 +79,7 @@ export function registerComposeDraft(win: BrowserWindow | null, id: string): boo
   if (!win || !isComposeWindow(win)) return false;
   const current = draftEditors.get(id);
   if (current && current.win !== win) {
-    current.win.show();
-    current.win.focus();
+    revealAndFocus(current.win);
     return false;
   }
   draftEditors.set(id, { win, kind: "window" });
@@ -84,8 +89,7 @@ export function claimInlineDraft(win: BrowserWindow | null, id: string | null): 
   if (!win) return false;
   const existing = id ? draftEditors.get(id) : undefined;
   if (existing && (existing.win !== win || existing.kind !== "inline")) {
-    existing.win.show();
-    existing.win.focus();
+    revealAndFocus(existing.win);
     return false;
   }
   for (const [key, editor] of draftEditors)
@@ -245,8 +249,12 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
       preload: path.join(here, "../preload/index.cjs"),
       ...WINDOW_SECURITY,
       devTools: !app.isPackaged,
-      // A background window sits behind other apps; keep it painting so harnesses can capture it.
-      ...(backgroundWindows() ? { backgroundThrottling: false } : {}),
+      // A background window sits behind other apps and a hidden one is never shown; keep both
+      // painting, with timers, animation frames and observers running, so harnesses can drive
+      // and capture them.
+      ...(backgroundWindows()
+        ? { backgroundThrottling: false, paintWhenInitiallyHidden: true }
+        : {}),
     },
   });
   trustRenderer(
@@ -258,7 +266,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   lockNavigation(win, options.kind ?? "main");
   if (MAC && (options.kind === undefined || options.kind === "main")) {
     win.on("new-window-for-tab", () => {
-      if (!win.isDestroyed()) win.addTabbedWindow(createMainWindow());
+      if (!win.isDestroyed()) addWindowTab(win, createMainWindow());
     });
   }
 
@@ -329,7 +337,7 @@ function createAppWindow(options: WindowOptions): BrowserWindow {
   if (options.href) url.hash = options.href;
   void win.loadURL(url.href);
   win.once("ready-to-show", () => {
-    if (restored?.maximized) win.maximize();
+    if (restored?.maximized) maximizeWindow(win);
     revealWindow(win);
   });
   return win;
@@ -415,8 +423,7 @@ export function openComposeWindow(
 ): BrowserWindow {
   const editor = draftEditors.get(draftId);
   if (editor && (editor.kind === "window" || editor.win !== transfer)) {
-    editor.win.show();
-    editor.win.focus();
+    revealAndFocus(editor.win);
     if (editor.kind === "inline") inlinePopOut?.(editor.win, draftId);
     return editor.win;
   }

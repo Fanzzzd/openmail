@@ -15,6 +15,7 @@ const controls = vi.hoisted(() => {
   return { make, windows: [make(1), make(2)], current: 1, main: vi.fn(), tab: vi.fn() };
 });
 vi.mock("electron", () => ({
+  app: { isPackaged: true },
   BrowserWindow: { getAllWindows: () => controls.windows },
   Menu: { sendActionToFirstResponder: controls.tab },
 }));

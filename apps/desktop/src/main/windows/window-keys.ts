@@ -1,5 +1,6 @@
 import { BrowserWindow, Menu, type MenuItemConstructorOptions } from "electron";
 import { focusMainWindow, windowOf } from "./windows";
+import { focusWindow, revealAndFocus, setWindowFullScreen } from "./reveal";
 import { shortcutAccelerator, type ShortcutSet } from "../../shared/shortcuts";
 import { adjacentWindowId } from "../../shared/window-keys";
 
@@ -17,7 +18,7 @@ export function switchWindow(
     if (process.platform === "darwin") {
       const win = windowOf(clientId);
       if (!win || win.isDestroyed()) return;
-      win.focus();
+      focusWindow(win);
       Menu.sendActionToFirstResponder(
         action === "nextTab" ? "selectNextTab:" : "selectPreviousTab:",
       );
@@ -26,7 +27,7 @@ export function switchWindow(
   }
   if (action === "toggleFullScreen") {
     const win = windowOf(clientId);
-    if (win && !win.isDestroyed()) win.setFullScreen(!win.isFullScreen());
+    if (win && !win.isDestroyed()) setWindowFullScreen(win, !win.isFullScreen());
     return;
   }
   if (action === "focusMainWindow") {
@@ -44,8 +45,7 @@ export function switchWindow(
   const win = windows.find((item) => item.id === id);
   if (!win) return;
   if (win.isMinimized()) win.restore();
-  win.show();
-  win.focus();
+  revealAndFocus(win);
 }
 
 export function nativeTabMenu(set: ShortcutSet): MenuItemConstructorOptions[] {

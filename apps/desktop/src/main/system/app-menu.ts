@@ -120,8 +120,9 @@ export function goActionHref(
 
 /**
  * The menu state with no focused window: the app is in the background, or its windows opened
- * without focus (OPENMAIL_BACKGROUND_WINDOWS). Nothing is selected. The Go menu lists the spaces
- * of the first main window state that has them, else the spaces it listed last.
+ * without focus (OPENMAIL_BACKGROUND_WINDOWS) or stay hidden (OPENMAIL_HIDDEN_WINDOWS). Nothing
+ * is selected. The Go menu lists the spaces of the first main window state that has them, else
+ * the spaces it listed last.
  */
 export function unfocusedMenuState(
   mainWindowStates: readonly (NativeMenuState | undefined)[],

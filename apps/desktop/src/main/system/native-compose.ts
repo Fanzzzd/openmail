@@ -1,6 +1,7 @@
 import { execFile } from "node:child_process";
 import { nativeBinary } from "../app/native-binary";
 import { app, type BrowserWindow } from "electron";
+import { focusWindow } from "../windows/reveal";
 import { Effect, Schema } from "effect";
 import { COMPOSE_ATTACHMENT_LIMIT, DeviceError, attachmentBytes } from "@openmail/core";
 import {
@@ -50,7 +51,7 @@ function execute(parent: BrowserWindow | null, name: Helper, mode: string, input
         if (running.size === 0) busy.delete(parent);
         parent.removeListener("closed", closed);
         app.removeListener("will-quit", closed);
-        if (name === "photos" && !parent.isDestroyed()) parent.focus();
+        if (name === "photos" && !parent.isDestroyed()) focusWindow(parent);
         if (error) reject(new Error("Native compose failed"));
         else resolve(output);
       },

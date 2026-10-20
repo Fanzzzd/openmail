@@ -20,6 +20,7 @@ import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
 import { checkForUpdateState } from "../updates/updates";
 import { switchWindow } from "../windows/window-keys";
+import { focusWindow } from "../windows/reveal";
 import { DEMO_DOWNLOADS, demoDownloads } from "../files/downloads-demo";
 import {
   appDownloads,
@@ -86,7 +87,10 @@ import {
 } from "../windows/windows";
 
 /** Brings the app back to the front after a sign-in in the system browser. */
-const focusApp = Effect.sync(() => BrowserWindow.getAllWindows()[0]?.focus());
+const focusApp = Effect.sync(() => {
+  const win = BrowserWindow.getAllWindows()[0];
+  if (win) focusWindow(win);
+});
 
 /**
  * RPC server transport over Electron IPC. Each renderer (webContents) is one
