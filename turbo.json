@@ -72,6 +72,8 @@
         "$TURBO_ROOT$/scripts/*.{js,mjs,cjs}",
         "$TURBO_ROOT$/apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "$TURBO_ROOT$/packages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
+        "$TURBO_ROOT$/*.{md,mdx}",
+        "$TURBO_ROOT$/{apps,docs,packages,scripts,spikes}/**/*.{md,mdx}",
         "!$TURBO_ROOT$/{apps,packages}/**/node_modules/**",
         "!$TURBO_ROOT$/{apps,packages}/**/{dist,out,.next,release}/**"
       ],

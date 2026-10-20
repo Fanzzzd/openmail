@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Platform: macOS 13+](https://img.shields.io/badge/platform-macOS%2013%2B-lightgrey.svg)](#install)
 
-English | [简体中文](README.zh-CN.md)
+English | [简体中文](README.zh-CN.md) <!-- cjk-ok -->
 
 **Your mail on your Mac, readable by the agents you allow.**
 
