@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { createMemoryHistory } from "@tanstack/react-router";
 import { expect, it, vi } from "vitest";
-import { createAppRouter } from "./router";
+import { createAppHashHistory } from "./hash-history";
+import { createAppRouter, historyFor } from "./router";
 
 vi.mock("../app/App", () => ({ App: () => null }));
 vi.mock("../app/ThreadWindow", () => ({ ThreadWindow: () => null }));
@@ -46,3 +47,50 @@ it("routes compose windows", async () => {
   const { match } = await load("/compose/draft%3Aabc");
   expect(match?.params).toEqual({ draftId: "draft:abc" });
 });
+
+const settled = (ms: number) =>
+  new Promise<void>((resolve) => {
+    setTimeout(resolve, ms);
+  });
+async function hashBecomes(hash: string) {
+  for (let i = 0; i < 100 && window.location.hash !== hash; i++) await settled(5);
+  expect(window.location.hash).toBe(hash);
+}
+
+/**
+ * The window's real history: a browser Back, Forward or Go that lands while a replace waits to
+ * settle drops the replace, so the timer does not write it over the entry the move landed on.
+ */
+it.each(["back", "forward", "go"] as const)(
+  "a browser %s before a replace settles keeps the entry it lands on",
+  async (move) => {
+    window.history.replaceState(null, "", "/#/mail/all/inbox");
+    const router = createAppRouter(createAppHashHistory());
+    await router.load();
+    const history = historyFor(router, 50);
+    try {
+      history.navigate("/mail/all/sent", false);
+      await hashBecomes("#/mail/all/sent");
+      if (move === "forward") {
+        window.history.back();
+        await hashBecomes("#/mail/all/inbox");
+        history.navigate("/mail/all/inbox?thread=a", true);
+        window.history.forward();
+        await hashBecomes("#/mail/all/sent");
+        await settled(150);
+        expect(window.location.hash).toBe("#/mail/all/sent");
+        expect(history.index()).toBe(1);
+        return;
+      }
+      history.navigate("/mail/all/sent?thread=a", true);
+      if (move === "back") window.history.back();
+      else window.history.go(-1);
+      await hashBecomes("#/mail/all/inbox");
+      await settled(150);
+      expect(window.location.hash).toBe("#/mail/all/inbox");
+      expect(history.index()).toBe(0);
+    } finally {
+      router.history.destroy();
+    }
+  },
+);

@@ -60,12 +60,19 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
   // The current entry's place relative to where this window started, followed
   // from the history's own notices, so a replace keeps it and Back lowers it.
   let index = 0;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   router.history.subscribe(({ action }) => {
     if (action.type === "PUSH" || action.type === "FORWARD") index += 1;
     else if (action.type === "BACK") index -= 1;
     else if (action.type === "GO") index += action.index;
+    // A move through history, including the browser's own Back and Forward, leaves the entry
+    // the waiting replace was meant for. Writing it once it settles would overwrite the entry
+    // the move landed on, so drop it.
+    if (action.type === "BACK" || action.type === "FORWARD" || action.type === "GO") {
+      clearTimeout(timer);
+      waiting = null;
+    }
   });
-  let timer: ReturnType<typeof setTimeout> | undefined;
   const write = (href: string, replace: boolean) => {
     if (parseAppHref(href)) void router.navigate({ href, replace });
   };
