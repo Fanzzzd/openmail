@@ -543,6 +543,10 @@ export async function flow(
       };
     },
     async dispose() {
+      // A selection's history replace waits to settle; write it out while the window still
+      // exists, or its timer lands on a torn-down window in the next test.
+      registry.get(historyAtom).flush();
+      await Promise.resolve();
       cleanup();
       registry.dispose();
       router.history.destroy();

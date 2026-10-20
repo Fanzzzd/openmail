@@ -67,14 +67,18 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
   const write = (href: string, replace: boolean) => {
     if (parseAppHref(href)) void router.navigate({ href, replace });
   };
-  // Browser history queues writes until a microtask and folds a replace followed by a push
-  // into one push. Writing the waiting replace out here keeps it on the entry Back returns to,
-  // for every caller that pushes or moves through history next.
-  const flush = () => {
+  const settle = () => {
     clearTimeout(timer);
     const href = waiting;
     waiting = null;
     if (href !== null) write(href, true);
+  };
+  // Browser history queues writes until a microtask and folds a replace followed by a push
+  // into one push. Writing the queue out here keeps the replace on the entry Back returns to,
+  // for every caller that pushes or moves through history next. The settle timer needs no
+  // such write: nothing follows it in the same tick.
+  const flush = () => {
+    settle();
     router.history.flush();
   };
   return {
@@ -86,7 +90,7 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
       }
       waiting = href;
       clearTimeout(timer);
-      timer = setTimeout(flush, settleMs);
+      timer = setTimeout(settle, settleMs);
     },
     flush,
     back: () => {
