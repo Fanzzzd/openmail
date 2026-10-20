@@ -113,3 +113,14 @@ it("a comma still turns the typed text into a chip with suggestions showing", as
   await eventually(() => expect(chip("jor")).toBeTruthy());
   expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
 });
+
+// The Cc/Bcc button unmounts itself, so focus fell to the page body.
+it("the Cc/Bcc button moves focus to the Cc field", async () => {
+  await composer();
+  const button = screen.getByRole("button", { name: "Cc/Bcc" });
+  button.focus();
+  await userEvent.setup().keyboard("{Enter}");
+  await eventually(() =>
+    expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Cc" })),
+  );
+});

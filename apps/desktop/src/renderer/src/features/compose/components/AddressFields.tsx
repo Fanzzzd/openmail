@@ -90,7 +90,11 @@ export function AddressFields({
           <div className="shrink-0 coarse:max-sm:basis-full coarse:max-sm:ps-16">
             <button
               type="button"
-              onClick={() => setShowBcc(true)}
+              onClick={() => {
+                // The button goes away with the click, so focus moves on to Cc, as the shortcut does.
+                setShowBcc(true);
+                requestAnimationFrame(() => ccRef.current?.focus());
+              }}
               className={`h-9 text-a11y-muted hover:text-neutral-800 coarse:h-11 dark:hover:text-neutral-200 ${touchTarget}`}
             >
               <Trans>Cc/Bcc</Trans>
