@@ -421,3 +421,47 @@ it("Escape in a search with a chip clears it, closes the suggestions and returns
   await wait(50);
   expect(field.getAttribute("aria-expanded")).toBe("false");
 });
+
+it("Fn-Delete on a recent search removes it and says so", async () => {
+  localStorage.setItem(
+    "openmail.recentSearches",
+    JSON.stringify(["Lunch on Friday", "Lunch menu"]),
+  );
+  try {
+    current = await flow({ messages: [incoming("one", { subject: "Lunch on Friday" })] });
+    const h = current;
+    await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+    const field = screen.getByLabelText<HTMLInputElement>("Search mail");
+    field.focus();
+    fireEvent.input(field, { target: { value: "Lun" }, inputType: "insertText" });
+    await eventually(() => expect(field.getAttribute("aria-expanded")).toBe("true"));
+    const suggestions = () =>
+      screen
+        .getAllByRole("option")
+        .filter((option) => !option.hasAttribute("data-id"))
+        .map((option) => option.textContent);
+    await eventually(() => expect(suggestions()).toContain("Lunch on Friday"));
+    key("ArrowDown", {}, field);
+    await eventually(() =>
+      expect(
+        document.getElementById(field.getAttribute("aria-activedescendant") ?? "")?.textContent,
+      ).toBe("Lunch on Friday"),
+    );
+    field.setSelectionRange(3, 3);
+    key("Delete", {}, field);
+    await eventually(() =>
+      expect(JSON.parse(localStorage.getItem("openmail.recentSearches") ?? "[]")).toEqual([
+        "Lunch menu",
+      ]),
+    );
+    const live = [...document.querySelectorAll("output[aria-live]")].map((o) => o.textContent);
+    expect(live).toContain("Removed Lunch on Friday from recent searches");
+    // The live region stays exposed while the popup hides the rest of the window.
+    const region = [...document.querySelectorAll("output[aria-live]")].find(
+      (o) => o.textContent === "Removed Lunch on Friday from recent searches",
+    );
+    expect(region?.closest('[aria-hidden="true"]')).toBeNull();
+  } finally {
+    localStorage.removeItem("openmail.recentSearches");
+  }
+});

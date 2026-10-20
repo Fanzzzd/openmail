@@ -136,6 +136,13 @@ export function SearchField({
   const dateTarget = target && operatorGroup(target.operator) === "dates" ? target : null;
   const dateLabels = { today: t`Today`, yesterday: t`Yesterday`, last7Days: t`Last 7 days` };
   const recents = useRecentSearches();
+  // The popup hides the rest of the window from screen readers but keeps live regions, so this
+  // one says what Fn-Delete or the × took out of the list.
+  const [announcement, setAnnouncement] = useState("");
+  const removeRecent = (query: string) => {
+    recentSearches.remove(query);
+    setAnnouncement(t`Removed ${query} from recent searches`);
+  };
   const run = useRunMail();
   const removeHint = useId();
   const groups = searchSuggestions({
@@ -336,7 +343,7 @@ export function SearchField({
               e.preventDefault();
               if (action.kind === "submit") submit();
               else if (action.kind === "complete") choose(action.suggestion);
-              else recentSearches.remove(action.query);
+              else removeRecent(action.query);
             }}
             ref={fieldRef}
             aria-label={t`Search mail`}
@@ -389,10 +396,7 @@ export function SearchField({
                             aria-describedby={item.kind === "recent" ? removeHint : undefined}
                             className={`group ${itemClass}`}
                           >
-                            <SuggestionRow
-                              item={item}
-                              onRemove={(query) => recentSearches.remove(query)}
-                            />
+                            <SuggestionRow item={item} onRemove={removeRecent} />
                           </Combobox.Item>
                         ) : null;
                       }}
@@ -404,6 +408,9 @@ export function SearchField({
           </Combobox.Positioner>
         </Combobox.Portal>
       </Combobox.Root>
+      <output aria-live="polite" aria-atomic="true" className="sr-only">
+        {announcement}
+      </output>
       {value && (
         <Tip label={t`Clear search`}>
           <button

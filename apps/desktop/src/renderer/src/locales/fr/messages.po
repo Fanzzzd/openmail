@@ -6035,6 +6035,10 @@ msgstr "Supprimez ce compte et sa messagerie locale d’OpenMail. Le courrier su
 msgid "Remove tracking parameters from links"
 msgstr "Supprimer les paramètres de suivi des liens"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Removed {query} from recent searches"
+msgstr "{query} retiré des recherches récentes"
+
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Removed {recipient}"
 msgstr "{recipient} supprimé"

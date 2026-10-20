@@ -6035,6 +6035,10 @@ msgstr "Odeberte tento účet a jeho místní poštu z OpenMailu. Pošta na serv
 msgid "Remove tracking parameters from links"
 msgstr "Odstranit sledovací parametry z odkazů"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Removed {query} from recent searches"
+msgstr "Hledání {query} bylo odebráno z nedávných hledání"
+
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Removed {recipient}"
 msgstr "Odebráno: {recipient}"

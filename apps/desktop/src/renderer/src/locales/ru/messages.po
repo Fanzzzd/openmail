@@ -6035,6 +6035,10 @@ msgstr "Удалите эту учётную запись и её локальн
 msgid "Remove tracking parameters from links"
 msgstr "Удалять параметры отслеживания из ссылок"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Removed {query} from recent searches"
+msgstr "{query} удалено из недавних поисков"
+
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Removed {recipient}"
 msgstr "{recipient} удалён"

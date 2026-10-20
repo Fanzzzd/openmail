@@ -6035,6 +6035,10 @@ msgstr "このアカウントとそのローカルメールを OpenMail から�
 msgid "Remove tracking parameters from links"
 msgstr "リンクから追跡パラメータを削除"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Removed {query} from recent searches"
+msgstr "最近の検索から {query} を削除しました"
+
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Removed {recipient}"
 msgstr "{recipient} を削除しました"

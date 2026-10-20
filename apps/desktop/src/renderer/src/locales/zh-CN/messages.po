@@ -6045,6 +6045,10 @@ msgstr "从 OpenMail 移除这个账户和它的本地邮件。服务器上的�
 msgid "Remove tracking parameters from links"
 msgstr "移除链接中的跟踪参数"
 
+#: src/renderer/src/features/search/SearchField.tsx
+msgid "Removed {query} from recent searches"
+msgstr "已从最近搜索中移除 {query}"
+
 #: src/renderer/src/features/compose/components/RecipientField.tsx
 msgid "Removed {recipient}"
 msgstr "已移除 {recipient}"
