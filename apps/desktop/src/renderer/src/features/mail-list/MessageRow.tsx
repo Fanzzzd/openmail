@@ -287,7 +287,12 @@ export const Row = memo(function Row({
             <Paperclip className="size-3.5 shrink-0" />
             {m.attachmentNames?.length ? (
               m.attachmentNames.slice(0, 2).map((name, index) => (
-                <span key={index} className="max-w-32 truncate rounded bg-fill-hover px-1">
+                <span
+                  key={index}
+                  // On a selected row the chip's fill stacks on the row's: the muted grey has
+                  // only 4.2:1 on it in dark mode, so the name takes a lighter grey.
+                  className={`max-w-32 truncate rounded bg-fill-hover px-1 ${selected && !accent ? "dark:text-neutral-300" : ""}`}
+                >
                   {name}
                 </span>
               ))

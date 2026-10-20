@@ -179,3 +179,78 @@ it("unknown-size notices only appear for real size conditions, while omitted ope
     );
   }
 });
+
+it("an attachment chip on a selected row keeps 4.5:1 contrast in dark mode", () => {
+  state.density = "default";
+  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+  const noop = vi.fn();
+  const thread: ThreadSummary = {
+    id: "one",
+    accountId: "gmail:me",
+    threadId: "thread",
+    subject: "Invite",
+    from: { name: "Sender", address: "sender@example.com" },
+    date: 0,
+    snippet: "",
+    labels: [],
+    isUnread: false,
+    isStarred: false,
+    hasAttachments: true,
+    attachmentNames: ["invite.ics"],
+    threadCount: 1,
+    participants: [],
+  };
+  const chip = (selected: boolean) => {
+    const markup = renderToStaticMarkup(
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(MessageList, {
+          title: "Inbox",
+          threads: [thread],
+          loading: false,
+          showAccount: false,
+          searching: false,
+          searchingServer: false,
+          searchTruncated: false,
+          searchErrorAccounts: [],
+          searchInputInvalid: false,
+          searchReauthAccounts: [],
+          searchIgnored: [],
+          filters: {
+            enabled: false,
+            unread: false,
+            starred: false,
+            important: false,
+            inInbox: false,
+          },
+          inLabel: false,
+          folderActions: null,
+          onFilters: noop,
+          labels: new Map(),
+          selectedId: selected ? "one" : null,
+          selectedIds: new Set<string>(selected ? ["one"] : []),
+          listRef: { current: null },
+          selectionSource: "mouse",
+          onSelect: noop,
+          onEndReached: noop,
+          rowActions: {
+            mailbox: "inbox",
+            labels: [],
+            stateOf: () => null,
+            onOp: noop,
+            onSwipeOp: noop,
+            onCompose: noop,
+            onOpenWindow: noop,
+            onSnooze: noop,
+            onFilter: noop,
+          },
+        }),
+      ),
+    );
+    return /<span class="([^"]*)">invite\.ics<\/span>/.exec(markup)?.[1] ?? "";
+  };
+  // Dark mode: #a3a3a3 on the chip's #3f3f3f over a selected row is 4.17:1; neutral-300 is 7:1.
+  expect(chip(true)).toContain("dark:text-neutral-300");
+  expect(chip(false)).not.toContain("dark:text-neutral-300");
+});
