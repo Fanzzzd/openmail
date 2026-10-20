@@ -34,14 +34,7 @@ import { readerSelectedText } from "./quote-selection";
 import { isBackKey } from "../../lib/responsive-layout";
 import { forwardFrameKey } from "./frame/forward-frame-key";
 import { constVoid } from "effect/Function";
-import {
-  ACTIVE_MESSAGE_BORDER,
-  Avatar,
-  Expanded,
-  MessageHead,
-  ReplyBar,
-  SelectedMessageAnnouncement,
-} from "./ThreadMessage";
+import { CollapsedMessage, Expanded, ReplyBar, SelectedMessageAnnouncement } from "./ThreadMessage";
 import { ThreadSummary, TriageChip } from "../ai";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 import { touchIcon } from "../../ui/styles";
@@ -596,28 +589,16 @@ export function ThreadView({
                 }
               />
             ) : (
-              // A heading per collapsed message, as for expanded ones; the button discloses it.
-              <Heading level={3} key={m.id}>
-                <button
-                  data-message-id={m.id}
-                  type="button"
-                  aria-expanded={false}
-                  onClick={() => {
-                    activate(m.id);
-                    toggle(m.id);
-                  }}
-                  onFocus={() => activate(m.id)}
-                  className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
-                >
-                  <Avatar message={m} />
-                  <span className="min-w-0 flex-1 max-w-[75ch]">
-                    <MessageHead message={m} />
-                    <span className="mt-0.5 block truncate text-body text-a11y-muted">
-                      {m.snippet}
-                    </span>
-                  </span>
-                </button>
-              </Heading>
+              <CollapsedMessage
+                key={m.id}
+                message={m}
+                active={m.id === activeId}
+                onActivate={() => activate(m.id)}
+                onExpand={() => {
+                  activate(m.id);
+                  toggle(m.id);
+                }}
+              />
             ),
           )}
         </div>

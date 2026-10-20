@@ -42,7 +42,7 @@ import { UnsubscribeButton } from "./UnsubscribeButton";
 import { InviteBanner, MeetingLinks } from "../calendar";
 import { Attachments } from "./attachments/Attachments";
 import { LazyMessageBody } from "./body/MessageBodyShell";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { contactPhotoAtom, prefsAtom } from "../../state/queries";
 import { Heading } from "../../ui/Heading";
@@ -473,5 +473,48 @@ export function Avatar({ message: m }: { message: Message }) {
         displayName(m.from).slice(0, 1).toUpperCase()
       )}
     </span>
+  );
+}
+
+/**
+ * A collapsed message: a heading whose button discloses it. Its name is the sender and time, as
+ * for an expanded message's heading; the snippet describes it.
+ */
+export function CollapsedMessage({
+  message: m,
+  active,
+  onActivate,
+  onExpand,
+}: {
+  message: Message;
+  active: boolean;
+  onActivate: () => void;
+  onExpand: () => void;
+}) {
+  const { t, i18n } = useLingui();
+  const snippetId = useId();
+  const sender = displayName(m.from);
+  const sent = threadDate(m.date, i18n);
+  return (
+    <Heading level={3}>
+      <button
+        data-message-id={m.id}
+        type="button"
+        aria-expanded={false}
+        aria-label={t`${sender}, ${sent}`}
+        aria-describedby={snippetId}
+        onClick={onExpand}
+        onFocus={onActivate}
+        className={`@container/message flex w-full gap-3 py-3 text-left ${active ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
+      >
+        <Avatar message={m} />
+        <span className="min-w-0 flex-1 max-w-[75ch]">
+          <MessageHead message={m} />
+          <span id={snippetId} className="mt-0.5 block truncate text-body text-a11y-muted">
+            {m.snippet}
+          </span>
+        </span>
+      </button>
+    </Heading>
   );
 }

@@ -452,3 +452,38 @@ it("opens an older message whose attachment matched the search", async () => {
   await eventually(() => expect(article("m2")?.textContent).toContain("amount due"));
   expect(article("m3")).toBeNull();
 });
+
+it("a collapsed message's heading is named by sender and time, with its snippet as description", async () => {
+  current = await flow({
+    messages: [
+      incoming("older", {
+        threadId: "talk",
+        from: { name: "Priya Shah", address: "priya@example.org" },
+        snippet: "Hi both, I put the notes in the folder",
+        labels: ["INBOX"],
+        isUnread: false,
+        date: Date.now() - 60_000,
+      }),
+      incoming("newer", { threadId: "talk", date: Date.now() - 1000 }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("newer"))).toBeTruthy());
+  fireEvent.click(row(h.id("newer")));
+  const collapsed = () =>
+    document.querySelector<HTMLElement>(
+      `button[data-message-id="${h.id("older")}"][aria-expanded="false"]`,
+    );
+  await eventually(() => expect(collapsed()).not.toBeNull());
+  const button = collapsed();
+  const name = button?.getAttribute("aria-label") ?? "";
+  expect(name).toMatch(/^Priya Shah, /);
+  expect(name).not.toContain("priya@example.org");
+  expect(name).not.toContain("Hi both");
+  // The heading takes its name from the button: the same as an expanded message's heading.
+  expect(button?.parentElement?.tagName).toBe("H3");
+  // Testing Library collapses the narrow no-break space a time can hold.
+  expect(screen.getByRole("button", { name: name.replace(/\s+/g, " ") })).toBe(button);
+  const description = document.getElementById(button?.getAttribute("aria-describedby") ?? "");
+  expect(description?.textContent).toBe("Hi both, I put the notes in the folder");
+});
