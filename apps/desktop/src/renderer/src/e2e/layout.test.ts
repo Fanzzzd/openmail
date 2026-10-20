@@ -274,6 +274,41 @@ it("widening after a narrow pick leaves no Back step that changes nothing", asyn
   await eventually(() => expect(title()).toBe("Sent"));
 });
 
+it("Next view never lands on the reader entry that widening stepped back over", async () => {
+  width = 1200;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const title = () => screen.getByRole("heading", { level: 1 }).textContent;
+  const mailboxes = () => screen.getAllByRole("navigation", { name: "Mailboxes" })[0]!;
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  await eventually(() => expect(title()).toBe("Sent"));
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: /^Inbox/ }));
+  await eventually(() => expect(title()).toBe("Inbox"));
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  resize(520);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  const stepped = new Promise<unknown>((resolve) => {
+    window.addEventListener("popstate", resolve, { once: true });
+    setTimeout(resolve, 1000);
+  });
+  resize(1200);
+  await act(() => stepped);
+  const go = (action: "goBack" | "goForward") =>
+    h.event({ _tag: "NativeAction", action, triggeredByAccelerator: false });
+  await go("goBack");
+  await eventually(() => expect(title()).toBe("Sent"));
+  await go("goForward");
+  await eventually(() => expect(title()).toBe("Inbox"));
+  // Nothing is ahead but the reader's old entry: Next view goes back off it.
+  await go("goForward");
+  await wait(400);
+  expect(title()).toBe("Inbox");
+  await go("goBack");
+  await eventually(() => expect(title()).toBe("Sent"));
+});
+
 it("the reader takes focus when it becomes the only pane by narrowing or by Back", async () => {
   width = 1200;
   current = await flow({ windowHistory: true });

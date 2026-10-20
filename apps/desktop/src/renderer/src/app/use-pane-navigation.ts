@@ -48,6 +48,10 @@ export function usePaneNavigation({
   // The reader's entry that Back left, still ahead in history: Forward onto it opens the reader
   // again. A push drops it, as the browser drops every entry ahead.
   const leftEntry = useRef<{ index: number; viewKey: string } | null>(null);
+  // The reader's entry that widening stepped back over. It shows the route of the entry before
+  // it, so Forward onto it would change nothing. It is always the last entry, since the reader's
+  // entry is pushed and a push drops every entry ahead, so Forward onto it steps back off it.
+  const steppedOver = useRef<number | null>(null);
   const { setReaderViewKey } = layout;
   const pushReaderEntry = useCallback(() => {
     // The route as of now: a row's selection may have been written in this same tick.
@@ -63,7 +67,14 @@ export function usePaneNavigation({
   useEffect(
     () =>
       history.listen((move) => {
-        if (move === "push") leftEntry.current = null;
+        if (move === "push") {
+          leftEntry.current = null;
+          steppedOver.current = null;
+        }
+        if (move === "forward" && history.index() === steppedOver.current) {
+          history.back();
+          return;
+        }
         const left = leftEntry.current;
         if (move === "forward" && left && history.index() === left.index) {
           leftEntry.current = null;
@@ -105,8 +116,10 @@ export function usePaneNavigation({
         entry !== null &&
         history.index() === entry &&
         withoutMessage(registry.get(locationAtom).href) === beforeReader.current
-      )
+      ) {
+        steppedOver.current = entry;
         history.back();
+      }
     } else if (narrowReader && entry === null) pushReaderEntry();
   }, [layout.mode, narrowReader, history, registry, pushReaderEntry]);
   // The reader also becomes the only pane without a click: the window narrows with a conversation

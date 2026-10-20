@@ -258,8 +258,8 @@ export const cases = [
     "widening steps back over an unchanged reader entry",
     "leaves no Back step that changes nothing",
     `${renderer}app/use-pane-navigation.ts`,
-    "      )\n        history.back();\n",
-    "      )\n        void 0;\n",
+    "        steppedOver.current = entry;\n        history.back();\n",
+    "        steppedOver.current = entry;\n",
   ],
   [
     "widening ignores the message the narrow reader picked",
@@ -267,6 +267,13 @@ export const cases = [
     `${renderer}app/use-pane-navigation.ts`,
     "withoutMessage(registry.get(locationAtom).href) === beforeReader.current",
     "registry.get(locationAtom).href === beforeReader.current",
+  ],
+  [
+    "Forward steps back off the reader entry widening left",
+    "Next view never lands on the reader entry",
+    `${renderer}app/use-pane-navigation.ts`,
+    '        if (move === "forward" && history.index() === steppedOver.current) {',
+    "        if (false) {",
   ],
   [
     "the reader takes focus when it becomes the only pane",
@@ -390,8 +397,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 71)
-      throw new Error(`Expected all 71 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 72)
+      throw new Error(`Expected all 72 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
