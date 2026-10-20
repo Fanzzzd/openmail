@@ -261,6 +261,13 @@ export const cases = [
     "      )\n        history.back();\n",
     "      )\n        void 0;\n",
   ],
+  [
+    "the reader takes focus when it becomes the only pane",
+    "the reader takes focus when it becomes the only pane",
+    `${renderer}app/use-pane-navigation.ts`,
+    'active.closest("[hidden]")) focusReaderNow();',
+    'active.closest("[hidden]")) void 0;',
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -362,8 +369,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 67)
-      throw new Error(`Expected all 67 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 68)
+      throw new Error(`Expected all 68 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

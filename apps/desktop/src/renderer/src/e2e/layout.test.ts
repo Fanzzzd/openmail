@@ -239,6 +239,30 @@ it("passing through the narrow layout leaves no Back step that changes nothing",
   expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id("one")}`);
 });
 
+it("the reader takes focus when it becomes the only pane by narrowing or by Back", async () => {
+  width = 1200;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const readerFocused = () =>
+    eventually(() => expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"));
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  row(h.id("one")).focus();
+  resize(520);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  await readerFocused();
+  // Another mailbox, then Back onto the reader's entry.
+  key("2", { metaKey: true }, document.body);
+  await eventually(() =>
+    expect(screen.getByRole("heading", { level: 1 }).textContent).not.toBe("Inbox"),
+  );
+  await eventually(() => expect(document.activeElement?.getAttribute("role")).toBe("listbox"));
+  await h.event({ _tag: "NativeAction", action: "goBack", triggeredByAccelerator: true });
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  await readerFocused();
+});
+
 it("Cmd+] after Cmd+[ in a narrow window opens the reader again", async () => {
   width = 520;
   current = await flow({ windowHistory: true });

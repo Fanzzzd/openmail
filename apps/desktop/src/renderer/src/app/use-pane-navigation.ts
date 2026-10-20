@@ -1,4 +1,5 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
+import { constVoid } from "effect/Function";
 import { Reactivity } from "effect/reactivity";
 import { useCallback, useContext, useEffect, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
@@ -7,10 +8,9 @@ import { historyAtom, locationAtom } from "../state/location";
 import { useRunMail, withMail } from "../state/mail";
 import type { useMailSelection } from "./use-mail-selection";
 
-const focusReader = () =>
-  requestAnimationFrame(() =>
-    document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus(),
-  );
+const focusReaderNow = () =>
+  document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus();
+const focusReader = () => requestAnimationFrame(focusReaderNow);
 
 /** Moving between the sidebar, list and reader in whichever layout the window has. */
 export function usePaneNavigation({
@@ -94,6 +94,20 @@ export function usePaneNavigation({
         history.back();
     } else if (narrowReader && entry === null) pushReaderEntry();
   }, [layout.mode, narrowReader, history, registry, pushReaderEntry]);
+  // The reader also becomes the only pane without a click: the window narrows with a conversation
+  // open, or Back returns to the reader's entry from another mailbox. The focused row or list is
+  // hidden then, so focus goes to the reader instead of falling to the page.
+  const wasNarrowReader = useRef(narrowReader);
+  useEffect(() => {
+    const became = narrowReader && !wasNarrowReader.current;
+    wasNarrowReader.current = narrowReader;
+    if (!became) return constVoid;
+    const frame = requestAnimationFrame(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body || active.closest("[hidden]")) focusReaderNow();
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [narrowReader]);
   return {
     shown,
     /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */
