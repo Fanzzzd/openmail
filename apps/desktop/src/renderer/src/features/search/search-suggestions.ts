@@ -8,6 +8,8 @@ import {
   searchValueSuggestions,
   searchValueTarget,
 } from "@openmail/core/schema";
+import type { KeyEvent } from "../../../../shared/shortcuts";
+import { removesSuggestion } from "../../lib/delete-key";
 
 /** Filters worth suggesting. Every other operator still works when typed. */
 export const SUGGESTED_OPERATORS: readonly { token: string; description: MessageDescriptor }[] = [
@@ -95,10 +97,12 @@ export function suggestionFor(
 /**
  * What a key does in the field. Enter without a highlighted row runs the
  * search. Tab completes the highlighted row, or the only filter that fits.
- * Delete (or Shift-Backspace) removes a highlighted recent search.
+ * Forward Delete removes a highlighted recent search, by the same rule as a
+ * recipient suggestion (removesSuggestion); Backspace always edits the text.
  */
 export function suggestionKeyAction(
-  event: { key: string; shiftKey: boolean },
+  event: KeyEvent,
+  field: Parameters<typeof removesSuggestion>[1],
   active: SearchSuggestion | undefined,
   groups: readonly { group: SearchSuggestionGroup; items: readonly SearchSuggestion[] }[],
 ):
@@ -112,10 +116,7 @@ export function suggestionKeyAction(
     const completion = active ?? (groups[0]?.items.length === 1 ? only : undefined);
     return completion?.kind === "token" ? { kind: "complete", suggestion: completion } : null;
   }
-  if (
-    active?.kind === "recent" &&
-    (event.key === "Delete" || (event.key === "Backspace" && event.shiftKey))
-  )
+  if (active?.kind === "recent" && removesSuggestion(event, field))
     return { kind: "remove", query: active.query };
   return null;
 }

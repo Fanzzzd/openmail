@@ -5577,9 +5577,10 @@ msgstr "プレス ？このリストを表示するには、テキストフィ�
 msgid "Press {help} for all shortcuts."
 msgstr "{help} を押すとすべてのショートカットを表示します。"
 
+#. Screen reader hint on a recent search. Fn-Delete is forward delete on a Mac keyboard (⌦ on a full keyboard); it removes the highlighted recent search.
 #: src/renderer/src/features/search/SearchField.tsx
-msgid "Press Delete to remove it from recent searches."
-msgstr "Delete キーで最近の検索から削除します。"
+msgid "Press Fn-Delete to remove it from recent searches."
+msgstr "Fn-Delete キーで最近の検索から削除します。"
 
 #. Screen reader hint on a recipient suggestion. Fn-Delete is forward delete on a Mac keyboard (⌦ on a full keyboard); it hides the highlighted suggestion.
 #: src/renderer/src/features/compose/components/RecipientField.tsx
@@ -6020,6 +6021,11 @@ msgstr "時間帯を削除"
 #: src/renderer/src/features/ai/Proposals.tsx
 msgid "Remove star"
 msgstr "スターを外す"
+
+#. Keyboard shortcuts help: in the search field, removes the highlighted recent search.
+#: src/renderer/src/features/settings/sections/SystemSettings.tsx
+msgid "Remove the highlighted recent search"
+msgstr "ハイライトされた最近の検索を削除"
 
 #: src/renderer/src/features/settings/Settings.tsx
 msgid "Remove this account and its local mail from OpenMail. Mail on the server is not affected. Opened attachments you edited stay until you clear them in Local cache settings."

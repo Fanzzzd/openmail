@@ -243,6 +243,7 @@ export function renderShortcutsPage(names: Map<string, string>): string {
     "| Action | Shortcut |",
     "| --- | --- |",
     "| Stop suggesting the highlighted address in To, Cc or Bcc | ⌦ / fn⌫ |",
+    "| Remove the highlighted recent search | ⌦ / fn⌫ |",
     "",
     "After you stop suggesting an address, the field shows it with an **Undo** button.",
   );

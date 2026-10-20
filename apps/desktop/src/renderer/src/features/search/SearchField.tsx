@@ -331,7 +331,7 @@ export function SearchField({
                 return;
               }
               const active = open && highlighted !== undefined ? byKey.get(highlighted) : undefined;
-              const action = suggestionKeyAction(e, active, open ? groups : []);
+              const action = suggestionKeyAction(e, e.currentTarget, active, open ? groups : []);
               if (!action) return;
               e.preventDefault();
               if (action.kind === "submit") submit();
@@ -367,7 +367,11 @@ export function SearchField({
                 </Combobox.Empty>
               )}
               <span id={removeHint} hidden>
-                {t`Press Delete to remove it from recent searches.`}
+                {t({
+                  message: "Press Fn-Delete to remove it from recent searches.",
+                  comment:
+                    "Screen reader hint on a recent search. Fn-Delete is forward delete on a Mac keyboard (⌦ on a full keyboard); it removes the highlighted recent search.",
+                })}
               </span>
               <Combobox.List>
                 {(group: { value: SearchSuggestionGroup; items: string[] }) => (

@@ -91,24 +91,38 @@ it("typing caps the list and orders filters first only for a filter name", () =>
     );
 });
 
-it("keys: Enter runs the search, Tab completes, Delete removes a recent search", () => {
+it("keys: Enter runs the search, Tab completes, forward Delete removes a recent search", () => {
   const filter = searchSuggestions({ value: "has:pd", recents: [], contacts: [], labels: [] });
   const only = filter[0]?.items[0];
-  expect(suggestionKeyAction({ key: "Enter", shiftKey: false }, undefined, filter)).toEqual({
+  const stroke = (key: string, shiftKey = false) => ({
+    key,
+    shiftKey,
+    metaKey: false,
+    ctrlKey: false,
+    altKey: false,
+  });
+  const empty = { value: "", selectionStart: 0, selectionEnd: 0 };
+  expect(suggestionKeyAction(stroke("Enter"), empty, undefined, filter)).toEqual({
     kind: "submit",
   });
-  expect(suggestionKeyAction({ key: "Enter", shiftKey: false }, only, filter)).toBeNull();
-  expect(suggestionKeyAction({ key: "Tab", shiftKey: false }, undefined, filter)).toEqual({
+  expect(suggestionKeyAction(stroke("Enter"), empty, only, filter)).toBeNull();
+  expect(suggestionKeyAction(stroke("Tab"), empty, undefined, filter)).toEqual({
     kind: "complete",
     suggestion: only,
   });
-  expect(suggestionKeyAction({ key: "Tab", shiftKey: true }, undefined, filter)).toBeNull();
+  expect(suggestionKeyAction(stroke("Tab", true), empty, undefined, filter)).toBeNull();
   const recent = { kind: "recent" as const, key: "\u0000recent:q", query: "q" };
-  expect(suggestionKeyAction({ key: "Delete", shiftKey: false }, recent, [])).toEqual({
-    kind: "remove",
-    query: "q",
-  });
-  expect(suggestionKeyAction({ key: "Backspace", shiftKey: false }, recent, [])).toBeNull();
+  for (const shift of [false, true])
+    expect(suggestionKeyAction(stroke("Delete", shift), empty, recent, [])).toEqual({
+      kind: "remove",
+      query: "q",
+    });
+  // Backspace edits the text, with or without Shift, as in a recipient field.
+  expect(suggestionKeyAction(stroke("Backspace"), empty, recent, [])).toBeNull();
+  expect(suggestionKeyAction(stroke("Backspace", true), empty, recent, [])).toBeNull();
+  // Plain Delete before the end of the text deletes the next character.
+  const caret = { value: "qu", selectionStart: 1, selectionEnd: 1 };
+  expect(suggestionKeyAction(stroke("Delete"), caret, recent, [])).toBeNull();
   expect(contactLookup("al")).toBe("");
   expect(contactLookup("-ali")).toBe("ali");
   expect(contactLookup("from:al")).toBe("al");

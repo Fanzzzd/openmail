@@ -512,6 +512,15 @@ function useShortcutRows(set: ShortcutSet): ShortcutRow[] {
     ),
     navigation("panes", t`Move focus between panes`, "← / →"),
     navigation("spaces", t`Switch spaces`, set === "gmail" ? "⌘1…9" : "⌃⌘1…9"),
+    navigation(
+      "remove-recent-search",
+      t({
+        message: "Remove the highlighted recent search",
+        comment:
+          "Keyboard shortcuts help: in the search field, removes the highlighted recent search.",
+      }),
+      SUGGESTION_REMOVAL_KEYS,
+    ),
     {
       id: "stop-suggesting",
       group: "compose",
