@@ -20,7 +20,7 @@ import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
 import { checkForUpdateState } from "../updates/updates";
 import { switchWindow } from "../windows/window-keys";
-import { focusWindow } from "../windows/reveal";
+import { focusWindow, showOpenDialog } from "../windows/reveal";
 import { DEMO_DOWNLOADS, demoDownloads } from "../files/downloads-demo";
 import {
   appDownloads,
@@ -58,7 +58,6 @@ import {
   app,
   BrowserWindow,
   clipboard,
-  dialog,
   ipcMain,
   type IpcMainEvent,
   webContents,
@@ -251,7 +250,7 @@ const Handlers = MailRpcs.toLayer(
       ChooseAttachmentFolder: (_, { client }) =>
         chooseAttachmentFolder(m, (options) => {
           const parent = windowOf(client.id);
-          return parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options);
+          return showOpenDialog(parent, options);
         }),
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
       ClipboardText: () => Effect.promise(() => clipboard.readText()),

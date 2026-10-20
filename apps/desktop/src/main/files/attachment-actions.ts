@@ -7,7 +7,6 @@ import {
   app,
   clipboard,
   ClipboardItem,
-  dialog,
   nativeImage,
   ShareMenu,
   shell,
@@ -22,6 +21,7 @@ import {
   type Mailbox,
   type PerformError,
 } from "@openmail/core";
+import { previewFile, showOpenDialog } from "../windows/reveal";
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
 import { openedAttachments } from "./opened-attachments";
 import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
@@ -233,7 +233,7 @@ export const saveAttachmentsTo: (
     )[],
   };
   const choice = yield* Effect.tryPromise({
-    try: () => (parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options)),
+    try: () => showOpenDialog(parent, options),
     catch: deviceFailure,
   });
   const folder = choice.filePaths[0];
@@ -461,7 +461,7 @@ export const attachmentAction: (
         const first = files[0];
         if (process.platform === "darwin" && parent && first) {
           const previewed = yield* Effect.try({
-            try: () => parent.previewFile(first),
+            try: () => previewFile(parent, first),
             catch: deviceFailure,
           }).pipe(Effect.result);
           if (previewed._tag === "Success") {

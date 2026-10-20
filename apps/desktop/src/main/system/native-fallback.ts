@@ -1,5 +1,5 @@
 /** Native message boxes for when no renderer can draw the React prompt. */
-import { dialog } from "electron";
+import { showMessageBox } from "../windows/reveal";
 
 /** Resolves with the index of the chosen button. The first button is the default and Cancel unless set. */
 export const nativeAsk = (options: {
@@ -10,13 +10,11 @@ export const nativeAsk = (options: {
   defaultId?: number;
   cancelId?: number;
 }) =>
-  dialog
-    .showMessageBox({
-      type: options.type,
-      message: options.message,
-      ...(options.detail ? { detail: options.detail } : {}),
-      buttons: [...options.buttons],
-      defaultId: options.defaultId ?? 0,
-      cancelId: options.cancelId ?? 0,
-    })
-    .then((result) => result.response);
+  showMessageBox({
+    type: options.type,
+    message: options.message,
+    ...(options.detail ? { detail: options.detail } : {}),
+    buttons: [...options.buttons],
+    defaultId: options.defaultId ?? 0,
+    cancelId: options.cancelId ?? 0,
+  }).then((result) => result.response);

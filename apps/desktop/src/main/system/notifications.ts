@@ -82,6 +82,7 @@ export function makeNotifications({
         const singleAccount = batch.messages.every(
           (message) => message.accountId === first.accountId,
         );
+        // reveal-ok: constructs the banner only; showNotification in reveal.ts posts it.
         const notification = new Notification({
           id: messageLink(first.id),
           groupId: batch.profileId ?? first.accountId,
@@ -113,6 +114,7 @@ export function makeNotifications({
       }
       for (const message of batch.messages) {
         const id = message.id;
+        // reveal-ok: constructs the banner only; showNotification in reveal.ts posts it.
         const notification = new Notification({
           id: messageLink(id),
           groupId: batch.profileId ?? message.accountId,

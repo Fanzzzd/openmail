@@ -22,7 +22,8 @@ import {
 /** A mailbox failure, or one on this computer. */
 type FileError = PerformError | DeviceError;
 import { Effect } from "effect";
-import { app, BrowserWindow, dialog, session } from "electron";
+import { app, BrowserWindow, session } from "electron";
+import { printContents, showSaveDialog } from "../windows/reveal";
 
 import type { PrintHeadings } from "../../shared/rpc";
 
@@ -73,9 +74,7 @@ export const saveMessage: (
     ),
     filters: [{ name: "Email", extensions: ["eml"] }],
   };
-  const choice = yield* Effect.promise(() =>
-    parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
-  );
+  const choice = yield* Effect.promise(() => showSaveDialog(parent, options));
   if (choice.canceled || !choice.filePath) return false;
   yield* write(choice.filePath, yield* m.reading.rawMessageBytes(messageId));
   return true;
@@ -125,9 +124,7 @@ export const printThread: (
       defaultPath: path.join(app.getPath("documents"), `${safeFilename(subject || "message")}.pdf`),
       filters: [{ name: "PDF", extensions: ["pdf"] }],
     };
-    const choice = yield* Effect.promise(() =>
-      parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options),
-    );
+    const choice = yield* Effect.promise(() => showSaveDialog(parent, options));
     if (choice.canceled || !choice.filePath) return false;
     pdfPath = choice.filePath;
   }
@@ -197,11 +194,15 @@ export const printThread: (
         return true;
       }
       return yield* Effect.callback<boolean, DeviceError>((resume) => {
-        win.webContents.print({ silent: false, printBackground: true }, (success, reason) => {
-          // A cancelled print dialog reports "Print job canceled" or "cancelled".
-          if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
-          else resume(Effect.fail(deviceFailure(reason)));
-        });
+        printContents(
+          win.webContents,
+          { silent: false, printBackground: true },
+          (success, reason) => {
+            // A cancelled print dialog reports "Print job canceled" or "cancelled".
+            if (success || /cancel/i.test(reason)) resume(Effect.succeed(success));
+            else resume(Effect.fail(deviceFailure(reason)));
+          },
+        );
       });
     }).pipe(
       Effect.ensuring(

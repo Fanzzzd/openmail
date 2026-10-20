@@ -2,9 +2,17 @@ import {
   app,
   type BrowserWindow,
   dialog,
+  type MessageBoxOptions,
+  type MessageBoxReturnValue,
   type NativeImage,
   type Notification,
+  type OpenDialogOptions,
+  type OpenDialogReturnValue,
+  type SaveDialogOptions,
+  type SaveDialogReturnValue,
   Tray,
+  type WebContents,
+  type WebContentsPrintOptions,
 } from "electron";
 
 /**
@@ -18,7 +26,9 @@ import {
  *   virtual display (see docs/testing.md#windows-in-automated-runs).
  *
  * Packaged builds ignore both variables. Every show, focus, maximize or full-screen call in the
- * main process goes through this module so a mode cannot be bypassed.
+ * main process goes through this module so a mode cannot be bypassed, and so do native dialogs,
+ * Quick Look, printing, the menu-bar icon and notifications. A hidden run answers each dialog
+ * and panel as if the person cancelled it.
  */
 export type WindowMode = "normal" | "background" | "hidden";
 
@@ -103,4 +113,47 @@ export function createTray(icon: () => NativeImage): Tray | undefined {
 export function showStartupError(title: string, detail: string) {
   if (hiddenWindows()) process.stderr.write(`${title}\n${detail}\n`);
   else dialog.showErrorBox(title, detail);
+}
+
+/** Shows a native message box. A hidden run answers with `cancelId` and logs the question. */
+export function showMessageBox(options: MessageBoxOptions): Promise<MessageBoxReturnValue> {
+  if (!hiddenWindows()) return dialog.showMessageBox(options);
+  process.stderr.write(`Hidden windows: answered Cancel to "${options.message}"\n`);
+  return Promise.resolve({ response: options.cancelId ?? 0, checkboxChecked: false });
+}
+
+/** Shows the native open panel, attached to `parent` when there is one. A hidden run cancels. */
+export function showOpenDialog(
+  parent: BrowserWindow | null | undefined,
+  options: OpenDialogOptions,
+): Promise<OpenDialogReturnValue> {
+  if (hiddenWindows()) return Promise.resolve({ canceled: true, filePaths: [] });
+  return parent ? dialog.showOpenDialog(parent, options) : dialog.showOpenDialog(options);
+}
+
+/** Shows the native save panel, attached to `parent` when there is one. A hidden run cancels. */
+export function showSaveDialog(
+  parent: BrowserWindow | null | undefined,
+  options: SaveDialogOptions,
+): Promise<SaveDialogReturnValue> {
+  if (hiddenWindows()) return Promise.resolve({ canceled: true, filePath: "" });
+  return parent ? dialog.showSaveDialog(parent, options) : dialog.showSaveDialog(options);
+}
+
+/**
+ * Opens `file` in Quick Look over `win`. A hidden run opens nothing and still reports the preview
+ * as shown, so the caller does not fall back to opening the file in another app.
+ */
+export function previewFile(win: BrowserWindow, file: string) {
+  if (!hiddenWindows()) win.previewFile(file);
+}
+
+/** Opens the print panel for `contents`. A hidden run reports a cancelled print. */
+export function printContents(
+  contents: WebContents,
+  options: WebContentsPrintOptions,
+  done: (success: boolean, reason: string) => void,
+) {
+  if (hiddenWindows()) done(false, "cancelled");
+  else contents.print(options, done);
 }

@@ -20,6 +20,8 @@ const banned: readonly { name: string; pattern: RegExp }[] = [
 const allowed: Record<string, readonly string[]> = {
   // Fallbacks when no renderer can draw the React prompt (quit, update result, recovery).
   "main/system/native-fallback.ts": ["dialog.showMessageBox"],
+  // The hidden-windows gate that native-fallback.ts calls; a hidden run answers Cancel.
+  "main/windows/reveal.ts": ["dialog.showMessageBox"],
   // OS-owned surfaces: Dock menu, menu bar extra (tray) and the application menu bar.
   "main/system/system.ts": ["Menu.buildFromTemplate"],
   // Writing Tools, AutoFill and Services exist only in a native menu at the right-clicked frame.

@@ -22,7 +22,7 @@
 - The main process entry is ESM. Do not `await app.whenReady()` at the top level. Electron emits `ready` only after the entry module finishes evaluating, so it deadlocks. Use `app.once("ready", …)`.
 - preload runs with sandbox on, so it must output CJS (see `electron.vite.config.ts`).
 - electron-vite 5 supports only vite ≤ 7.
-- Automated runs never put windows on the user's screen. A harness that only drives the renderer over CDP starts a development build with `OPENMAIL_HIDDEN_WINDOWS=1`. A harness that needs a visible window runs only on agent-screen (or another virtual display, or CI) and refuses to start without `OPENMAIL_VISIBLE_WINDOWS_OK=1`. Every show or focus call in the main process goes through `apps/desktop/src/main/windows/reveal.ts`. See `docs/testing.md#windows-in-automated-runs`.
+- Automated runs never put windows on the user's screen. A harness that only drives the renderer over CDP starts a development build with `OPENMAIL_HIDDEN_WINDOWS=1`. A harness that needs a visible window runs only on agent-screen (or another virtual display, or CI) and refuses to start without `OPENMAIL_VISIBLE_WINDOWS_OK=1`. Every show or focus call, native dialog, Quick Look, print panel, tray and notification in the main process goes through `apps/desktop/src/main/windows/reveal.ts`. See `docs/testing.md#windows-in-automated-runs`.
 
 ## Checks
 
