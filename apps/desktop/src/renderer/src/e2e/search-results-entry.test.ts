@@ -197,3 +197,24 @@ it("leaving the search field after Down drops the request, even when focus comes
   expect(reader()).not.toContain("Lunch on Friday");
   expect(await markedRead()).toEqual([]);
 });
+
+// A click on a row of the previous list while a new search loaded did nothing but focus the row,
+// and once the results replaced it focus fell to the page body.
+it("the previous list's rows are dimmed and inert while a search loads", async () => {
+  const { h, field, markedRead } = await start();
+  const list = () => screen.getByRole("listbox");
+  const release = await h.holdLists();
+  fireEvent.change(field, { target: { value: "lunch" } });
+  await eventually(() => expect(list().getAttribute("aria-busy")).toBe("true"));
+  // jsdom ignores inert; Chromium sends a click on these rows to the list behind them.
+  expect(row(h.id("one")).closest("[inert]")).not.toBeNull();
+  expect(row(h.id("one")).closest("[data-stale]")?.className).toContain("opacity-50");
+  await release();
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  expect(list().getAttribute("aria-busy")).toBe("false");
+  expect(row(h.id("two")).closest("[inert]")).toBeNull();
+  expect(row(h.id("two")).closest("[data-stale]")).toBeNull();
+  expect(document.activeElement).toBe(field);
+  expect(selectedRows()).toEqual([]);
+  expect(await markedRead()).toEqual([]);
+});

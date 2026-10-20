@@ -8,7 +8,8 @@
  *
  * - While that search's first page loads, or while it has no rows and its server search still
  *   runs, the request waits and focus stays in the field. The rows on screen meanwhile belong to
- *   the previous list, so they are never selected, focused or marked read.
+ *   the previous list, so they are never selected, focused or marked read. The list shows them
+ *   dimmed and inert, so a click, a tap or Tab can't reach them either.
  * - Once rows arrive, a selected row among them stays selected and takes focus. Otherwise the
  *   first row becomes the keyboard selection and takes focus, as Down in the list makes it, and
  *   the Reading setting marks it read.

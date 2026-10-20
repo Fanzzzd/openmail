@@ -66,6 +66,13 @@ export const cases = [
     "payload: { address: address.address, hidden: true }",
   ],
   [
+    "stale rows while a query loads",
+    "rows are dimmed and inert while a search loads",
+    `${renderer}features/mail-list/MessageList.tsx`,
+    "inert={stale}",
+    "inert={false}",
+  ],
+  [
     "organization",
     "archive advances|trash advances|Gmail labels|offline archive|moves to one folder|provider latency",
     shared,
@@ -264,8 +271,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 52)
-      throw new Error(`Expected all 52 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 53)
+      throw new Error(`Expected all 53 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

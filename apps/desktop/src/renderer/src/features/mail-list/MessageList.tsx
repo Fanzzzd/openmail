@@ -292,6 +292,12 @@ function MessageListBody({
     return () => observer.disconnect();
   }, [listRef]);
 
+  // Until a new query's first page arrives the rows on screen are the previous list's (see
+  // features/search/results-entry.ts). They are inert, so no click, tap or Tab reaches one and
+  // focus can't sit on a row that the results then replace. They dim after a moment, so a fast
+  // load does not flash.
+  const stale = loading && threads.length > 0;
+
   // A mailbox shown again after a search scrolls back once its rows are there; another mailbox
   // starts at the top and becomes the one to remember.
   const pendingScroll = useRef<number | null>(null);
@@ -518,7 +524,12 @@ function MessageListBody({
             />
           }
         >
-          <div style={{ height: window.total, position: "relative" }}>
+          <div
+            inert={stale}
+            data-stale={stale || undefined}
+            style={{ height: window.total, position: "relative" }}
+            className={stale ? "opacity-50 transition-opacity delay-150 duration-150" : undefined}
+          >
             <div style={{ transform: `translateY(${window.offset}px)` }}>
               {threads.slice(window.first, window.end).map((m, localIndex) => {
                 const i = window.first + localIndex;
