@@ -48,7 +48,14 @@ export const cases = [
     "narrow Back after opening",
     "Back from a narrow reader selects",
     `${renderer}routes/router.ts`,
-    "      router.history.flush();\n",
+    "    router.history.flush();\n",
+    "",
+  ],
+  [
+    "Back after a quick folder switch",
+    "Back after a quick folder switch",
+    `${renderer}routes/router.ts`,
+    "    router.history.flush();\n",
     "",
   ],
   [
@@ -285,8 +292,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 55)
-      throw new Error(`Expected all 55 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 56)
+      throw new Error(`Expected all 56 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
