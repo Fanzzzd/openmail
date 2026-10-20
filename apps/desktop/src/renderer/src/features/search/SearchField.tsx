@@ -157,7 +157,8 @@ export function SearchField({
   }));
   // An empty field with no history shows one hint instead of a list of filters.
   const hint = !value.trim() && recents.length === 0;
-  useOpenSurface(open && (items.length > 0 || hint), () => setOpen(false));
+  const shown = open && (items.length > 0 || hint);
+  useOpenSurface(shown, () => setOpen(false));
   const groupNames: Record<SearchSuggestionGroup, string> = {
     recent: t`Recent`,
     people: t`People`,
@@ -198,6 +199,14 @@ export function SearchField({
     setOpen(false);
     requestAnimationFrame(() => fieldRef.current?.focus());
   };
+  const submit = () => {
+    recentSearches.add(value);
+    // An unfinished word stays a prefix, as while typing.
+    const ran = submittedSearchText(value);
+    onChange(ran);
+    setSubmitted(ran);
+    setOpen(false);
+  };
   const commitDate = (date: string) => {
     if (!dateTarget) return false;
     const next = selectSearchDate(value, dateTarget.operator, date);
@@ -234,7 +243,7 @@ export function SearchField({
             if (suggestion) choose(suggestion);
           } else emit(next, text);
         }}
-        open={open && (items.length > 0 || hint)}
+        open={shown}
         onOpenChange={setOpen}
         autoHighlight={false}
         onItemHighlighted={(item) => setHighlighted(item)}
@@ -306,32 +315,26 @@ export function SearchField({
           <Combobox.Input
             onFocus={(e) => rememberSearchReturn(e.relatedTarget, e.currentTarget.parentElement)}
             onKeyDown={(e) => {
-              // Once the search ran, Down or a second Enter moves on to the results.
+              const plain = !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey;
+              // Once the search ran, a second Enter moves on to the results. Down does so with no
+              // suggestions showing, and first runs the typed text as Enter does, since the list
+              // already shows its live results. With suggestions showing, Down moves through them.
               const toResults =
-                !open &&
-                submitted === value &&
-                (e.key === "ArrowDown" || e.key === "Enter") &&
-                !e.shiftKey &&
-                !e.altKey &&
-                !e.metaKey &&
-                !e.ctrlKey;
+                plain &&
+                ((e.key === "Enter" && !open && submitted === value) ||
+                  (e.key === "ArrowDown" && !shown && value.trim() !== ""));
               if (toResults && onEnterResults()) {
                 e.preventDefault();
                 e.preventBaseUIHandler();
+                if (submitted !== value) submit();
                 return;
               }
               const active = open && highlighted !== undefined ? byKey.get(highlighted) : undefined;
               const action = suggestionKeyAction(e, active, open ? groups : []);
               if (!action) return;
               e.preventDefault();
-              if (action.kind === "submit") {
-                recentSearches.add(value);
-                // An unfinished word stays a prefix, as while typing.
-                const ran = submittedSearchText(value);
-                onChange(ran);
-                setSubmitted(ran);
-                setOpen(false);
-              } else if (action.kind === "complete") choose(action.suggestion);
+              if (action.kind === "submit") submit();
+              else if (action.kind === "complete") choose(action.suggestion);
               else recentSearches.remove(action.query);
             }}
             ref={fieldRef}

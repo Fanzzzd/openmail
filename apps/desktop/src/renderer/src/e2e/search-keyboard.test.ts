@@ -65,14 +65,55 @@ it("Down from the field focuses the selected result", async () => {
   expect(reader()).toContain("Jordan budget");
 });
 
-it("Down before the search runs stays in the field", async () => {
+// Down did nothing until Enter ran the search, though the list already showed its live results.
+it("Down before Enter runs the search and selects the first live result", async () => {
+  current = await flow({
+    messages: [
+      incoming("one", { subject: "Quarterly report" }),
+      incoming("two", { subject: "Lunch on Friday" }),
+    ],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  fireEvent.change(field, { target: { value: "Lunc" } });
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  expect(field.getAttribute("aria-expanded")).toBe("false");
+  key("ArrowDown", {}, field);
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  expect(row(h.id("two")).getAttribute("aria-selected")).toBe("true");
+  // Ran as Enter runs it: the unfinished word stays a prefix.
+  expect(field).toHaveProperty("value", "Lunc");
+  await eventually(() => expect(reader()).toContain("Lunch on Friday"));
+});
+
+it("Down with an empty field or a search with no results stays in the field", async () => {
   current = await flow();
   const h = current;
   await eventually(() => expect(row(h.id("one"))).toBeTruthy());
   const field = screen.getByLabelText("Search mail");
   field.focus();
-  fireEvent.change(field, { target: { value: "Lunch" } });
   key("ArrowDown", {}, field);
+  await wait(100);
+  expect(document.activeElement).toBe(field);
+  fireEvent.change(field, { target: { value: "zebra" } });
+  await eventually(() => expect(() => row(h.id("one"))).toThrow());
+  key("ArrowDown", {}, field);
+  await wait(100);
+  expect(document.activeElement).toBe(field);
+});
+
+it("Down with suggestions showing moves through them and stays in the field", async () => {
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByLabelText("Search mail");
+  field.focus();
+  fireEvent.input(field, { target: { value: "fro" }, inputType: "insertText" });
+  await eventually(() => expect(field.getAttribute("aria-expanded")).toBe("true"));
+  key("ArrowDown", {}, field);
+  await eventually(() => expect(field.getAttribute("aria-activedescendant")).toBeTruthy());
   expect(document.activeElement).toBe(field);
 });
 
