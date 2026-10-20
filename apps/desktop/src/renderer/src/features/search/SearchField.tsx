@@ -94,8 +94,8 @@ export function SearchField({
 }: {
   value: string;
   onChange: (text: string) => void;
-  /** Moves to the results of the search that ran. False when there are none. */
-  onEnterResults: () => boolean;
+  /** Asks for the results of the text that ran; see results-entry.ts for the rule. */
+  onEnterResults: (search: string) => void;
   inputRef: Ref<HTMLInputElement>;
 }) {
   const { t } = useLingui();
@@ -206,6 +206,7 @@ export function SearchField({
     onChange(ran);
     setSubmitted(ran);
     setOpen(false);
+    return ran;
   };
   const commitDate = (date: string) => {
     if (!dateTarget) return false;
@@ -316,17 +317,17 @@ export function SearchField({
             onFocus={(e) => rememberSearchReturn(e.relatedTarget, e.currentTarget.parentElement)}
             onKeyDown={(e) => {
               const plain = !e.shiftKey && !e.altKey && !e.metaKey && !e.ctrlKey;
-              // Once the search ran, a second Enter moves on to the results. Down does so with no
-              // suggestions showing, and first runs the typed text as Enter does, since the list
-              // already shows its live results. With suggestions showing, Down moves through them.
+              // The handoff to the results follows the rule in results-entry.ts. A second Enter asks
+              // for them; Down does with no suggestions showing, after running the text as Enter
+              // does. With suggestions showing, Down moves through them.
               const toResults =
                 plain &&
                 ((e.key === "Enter" && !open && submitted === value) ||
                   (e.key === "ArrowDown" && !shown && value.trim() !== ""));
-              if (toResults && onEnterResults()) {
+              if (toResults) {
                 e.preventDefault();
                 e.preventBaseUIHandler();
-                if (submitted !== value) submit();
+                onEnterResults(submitted === value ? value : submit());
                 return;
               }
               const active = open && highlighted !== undefined ? byKey.get(highlighted) : undefined;

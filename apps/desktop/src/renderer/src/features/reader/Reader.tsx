@@ -30,7 +30,7 @@ interface Props {
   query: string;
   onQuery: (q: string) => void;
   /** Down or Enter from a search that ran: moves to the results. False when there are none. */
-  onEnterResults: () => boolean;
+  onEnterResults: (search: string) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   /**
    * Actions for the open thread, left of the search field. They fill the room

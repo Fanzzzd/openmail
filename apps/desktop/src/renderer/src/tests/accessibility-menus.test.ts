@@ -198,7 +198,7 @@ it("Close window closes the search suggestions before the window", async () => {
     return h(SearchField, {
       value,
       onChange: setValue,
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       inputRef: null,
     });
   };
@@ -244,7 +244,7 @@ const searchChips = (value: string) => {
     return h(SearchField, {
       value: text,
       onChange: setText,
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       inputRef: null,
     });
   };
@@ -291,7 +291,7 @@ it("remembers what had focus before the search field and hands it back", () => {
           key: "field",
           value: "",
           onChange: vi.fn(),
-          onEnterResults: () => false,
+          onEnterResults: vi.fn(),
           inputRef: null,
         }),
       ]),

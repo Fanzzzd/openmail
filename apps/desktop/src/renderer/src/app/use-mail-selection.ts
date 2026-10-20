@@ -38,6 +38,7 @@ import { scopeAccountIds, type SpaceId, type View } from "../lib/view";
 import { navigateAtom, rememberedViewsAtom } from "../state/location";
 import { labelPickerAtom } from "../features/organize/organize-state";
 import { parseAppHref } from "../../../shared/routes";
+import { type ResultsRequest, resultsEntry } from "../features/search/results-entry";
 
 /** How long typing pauses before the search goes into the route. */
 const SEARCH_COMMIT_MS = 400;
@@ -447,23 +448,36 @@ export function useMailSelection({
     focusList(next.focus);
     if (next.focus === list.at(-1)?.id) loadMore();
   };
-  /**
-   * Down or Enter from a search that ran. A selected result keeps the selection and takes focus;
-   * otherwise the first result becomes the keyboard selection, as the list's own Down makes it.
-   * False when there are no results.
-   */
-  const enterResults = () => {
-    const first = list[0];
-    if (!first) return false;
-    const kept =
-      selection.focus && visibleIds.has(selection.focus)
-        ? selection.focus
-        : [...selection.ids].find((id) => visibleIds.has(id));
-    if (kept) setSelectionSource("keyboard");
-    else select(first.id, "keyboard");
-    focusList(kept ?? first.id);
-    return true;
-  };
+  /** Down or Enter from the search field; `resultsEntry` holds the rule it follows. */
+  const [resultsRequest, setResultsRequest] = useState<ResultsRequest | null>(null);
+  const enterResults = (text: string) =>
+    setResultsRequest({ search: text, from: document.activeElement });
+  const answerResults = useEffectEvent(
+    (request: ResultsRequest, text: string, shown: typeof threads) => {
+      const entry = resultsEntry(request, {
+        search: text,
+        active: document.activeElement,
+        list: shown,
+        selection,
+      });
+      if (entry.kind === "wait") return;
+      setResultsRequest(null);
+      if (entry.kind === "drop") return;
+      if (entry.kept) setSelectionSource("keyboard");
+      else select(entry.id, "keyboard");
+      focusList(entry.id);
+    },
+  );
+  useEffect(() => {
+    if (!resultsRequest) return constVoid;
+    let cancelled = false;
+    queueMicrotask(() => {
+      if (!cancelled) answerResults(resultsRequest, query, threads);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [resultsRequest, query, threads]);
   /** Gmail's J/K while rows are checked: the cursor moves, the checked rows stay. */
   const moveListCursor = (direction: 1 | -1) => {
     const next = moveCursor(

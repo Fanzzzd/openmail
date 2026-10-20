@@ -178,7 +178,7 @@ it("typing values, selecting suggestions and modifying/editing chips retains the
   const Harness = () => {
     const [value, setValue] = useState("invoice from:ali");
     return createElement(SearchField, {
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       value,
       inputRef,
       onChange: (next) => {
@@ -237,7 +237,7 @@ it("shows date presets and commits a picked before/after date with the other ter
   const Harness = () => {
     const [value, setValue] = useState("from:alice invoice before:");
     return createElement(SearchField, {
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       value,
       inputRef: null,
       onChange: (next) => {
@@ -279,7 +279,7 @@ it("contact lookup skips empty values, debounces typing and resets when the Prof
   const Harness = () => {
     const [value, setValue] = useState("from:");
     return createElement(SearchField, {
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       value,
       inputRef: null,
       onChange: setValue,
@@ -335,7 +335,7 @@ it("the date picker waits for blur or Enter and never commits a partial or pre-1
   const Harness = () => {
     const [value, setValue] = useState("from:alice invoice before:");
     return createElement(SearchField, {
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       value,
       inputRef: null,
       onChange: (next) => {
@@ -401,7 +401,7 @@ const renderField = (dom: ReturnType<typeof testDom>, initial: string) => {
   const Harness = () => {
     const [value, setValue] = useState(initial);
     return createElement(SearchField, {
-      onEnterResults: () => false,
+      onEnterResults: vi.fn(),
       value,
       inputRef: null,
       onChange: (next) => {
@@ -574,7 +574,7 @@ it("a query shows a clear button that empties the field", () => {
       I18nProvider,
       { i18n },
       createElement(SearchField, {
-        onEnterResults: () => false,
+        onEnterResults: vi.fn(),
         value,
         inputRef,
         onChange: changed,
@@ -601,7 +601,7 @@ it("keeps chips at their natural width and scrolls the row instead of squeezing 
       I18nProvider,
       { i18n },
       createElement(SearchField, {
-        onEnterResults: () => false,
+        onEnterResults: vi.fn(),
         value: "label:receipts from:northwind invoice",
         inputRef: null,
         onChange: vi.fn(),
@@ -631,7 +631,7 @@ const renderChips = () => {
       I18nProvider,
       { i18n },
       createElement(SearchField, {
-        onEnterResults: () => false,
+        onEnterResults: vi.fn(),
         value: "label:receipts from:northwind",
         inputRef: null,
         onChange: vi.fn(),
