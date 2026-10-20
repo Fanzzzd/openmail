@@ -165,6 +165,8 @@ export function Reader({
           canOpenWindow={isDesktop()}
           onBack={onBack}
           menuInToolbar={menuInToolbar}
+          // The reader is the main landmark only when it has the window, in the narrow layout.
+          subjectLevel={landmark ? 1 : 2}
         />
       )}
     </section>

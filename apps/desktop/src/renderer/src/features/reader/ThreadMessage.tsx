@@ -45,6 +45,7 @@ import { LazyMessageBody } from "./body/MessageBodyShell";
 import { useEffect, useRef, useState } from "react";
 import { AsyncResult, Atom } from "effect/reactivity";
 import { contactPhotoAtom, prefsAtom } from "../../state/queries";
+import { Heading } from "../../ui/Heading";
 
 /**
  * Reply, Reply all and Forward under the last message, as in Apple Mail and Mimestream. The
@@ -263,7 +264,9 @@ export function Expanded({
       className={`@container/message py-3 ${active ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
     >
       {/* The thread's heading has the subject; each message is found by sender and time. */}
-      <h3 className="sr-only">{t`${sender}, ${sent}`}</h3>
+      <Heading level={3} className="sr-only">
+        {t`${sender}, ${sent}`}
+      </Heading>
       {onEditDraft && (
         <div className="mb-2 flex items-center gap-2 rounded-control bg-red-500/[0.06] px-3 py-1.5 text-body">
           <span className="flex-1 text-a11y-danger dark:text-red-400">

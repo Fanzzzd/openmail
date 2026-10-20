@@ -844,3 +844,51 @@ it("the overview beside a docked sidebar keeps every control inside a landmark",
   });
   expect(violations.map((issue) => issue.id)).toEqual([]);
 });
+
+// A narrow window's list had no main landmark, and its reader no h1: the list's title went
+// hidden with the list while the reader's subject stayed an h2.
+it("a narrow window's list and reader are each the main landmark with an h1; wide stays one main", async () => {
+  const landmarks = async () => {
+    let violations: axe.Result[] = [];
+    await act(async () => {
+      violations = (
+        await axe.run(document.body, {
+          runOnly: [
+            "region",
+            "landmark-one-main",
+            "landmark-no-duplicate-main",
+            "landmark-main-is-top-level",
+            "landmark-unique",
+            "page-has-heading-one",
+            "heading-order",
+          ],
+        })
+      ).violations;
+    });
+    return violations.map((issue) => issue.id);
+  };
+  const h1 = () => screen.getByRole("heading", { level: 1 }).textContent;
+  width = 520;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  expect(screen.getByRole("main").contains(row(h.id("one")))).toBe(true);
+  expect(h1()).toBe("Inbox");
+  expect(await landmarks()).toEqual([]);
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  expect(screen.getByRole("main").contains(reader())).toBe(true);
+  expect(h1()).toBe("Flow one");
+  // The message headings follow the subject one level down.
+  expect(screen.getByRole("heading", { level: 2, name: /^Alice, / })).toBeTruthy();
+  expect(await landmarks()).toEqual([]);
+  // Wide: the panes are one main landmark, the list's title is the h1 and the subject an h2.
+  resize(1200);
+  await eventually(() => expect(row(h.id("one")).closest("[hidden]")).toBeNull());
+  expect(screen.getByRole("main").contains(row(h.id("one")))).toBe(true);
+  expect(screen.getByRole("main").contains(reader())).toBe(true);
+  expect(h1()).toBe("Inbox");
+  expect(screen.getByRole("heading", { level: 2, name: "Flow one" })).toBeTruthy();
+  expect(screen.getByRole("heading", { level: 3, name: /^Alice, / })).toBeTruthy();
+  expect(await landmarks()).toEqual([]);
+});

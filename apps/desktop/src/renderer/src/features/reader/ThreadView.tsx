@@ -50,6 +50,7 @@ import { NO_SEARCH_HITS, SearchHitBar } from "../search";
 import { MediaMatches } from "./MediaMatches";
 import { RawMessageDialog } from "./lazy";
 import { runWindowShortcut } from "./frame/window-shortcut.js";
+import { Heading, HeadingShift } from "../../ui/Heading";
 import { useRemoteImages } from "./use-remote-images.js";
 import { type ReaderActionDone, useThreadMailActions } from "./use-thread-mail-actions.js";
 
@@ -89,6 +90,7 @@ export function ThreadView({
   onComposeMessage,
   onBack,
   menuInToolbar = false,
+  subjectLevel = 2,
 }: {
   messages: readonly Message[];
   derivedMatches?: readonly DerivedChunk[] | undefined;
@@ -109,6 +111,11 @@ export function ThreadView({
   onBack?: (() => void) | undefined;
   /** The toolbar's Conversation actions menu holds the thread's commands, so the subject row has no menu. */
   menuInToolbar?: boolean;
+  /**
+   * 1 when the reader has the window to itself; beside the list, the list's title is the h1. The
+   * message headings below the subject follow it.
+   */
+  subjectLevel?: 1 | 2;
 }) {
   const { t } = useLingui();
   const run = useRunMail();
@@ -432,190 +439,195 @@ export function ThreadView({
   }, [scroller]);
 
   return (
-    // Focusable so ⌘+ and ⌘- reach it after a click anywhere in the thread.
-    <div
-      ref={scroller}
-      data-reader-text
-      role="document"
-      aria-label={newest?.subject || t`(No subject)`}
-      tabIndex={-1}
-      onMouseDownCapture={(event) => {
-        if (
-          event.target instanceof Element &&
-          // Wider than typing: clicks on any control or the message frame keep their own focus.
-          !event.target.closest("button,a,input,textarea,select,iframe,[contenteditable]")
-        )
-          event.currentTarget.focus({ preventScroll: true });
-      }}
-      // Nothing in the thread is wider than the pane, but scrollIntoView (find
-      // hits, selection jumps) can still scroll its hidden x axis.
-      onScroll={(event) => {
-        if (event.currentTarget.scrollLeft !== 0) event.currentTarget.scrollLeft = 0;
-      }}
-      className="selectable @container/thread min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none [scrollbar-gutter:stable] px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
-    >
-      <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
-      {newest && (
-        <TriageChip
-          id={newest.id}
-          accountId={newest.accountId}
-          labels={messages.flatMap((message) => message.labels)}
-        />
-      )}
-      {newest && (
-        <ThreadSummary
-          key={`${newest.accountId}/${newest.threadId}`}
-          id={newest.id}
-          accountId={newest.accountId}
-        />
-      )}
-      <div className="flex items-start gap-2 pt-2 pb-4">
-        <h2 className="min-w-0 flex-1 text-[20px] leading-tight font-bold break-words @min-[520px]/thread:text-[24px]">
-          {newest?.subject || t`(No subject)`}
-        </h2>
-        {messages.length > 1 && (
-          <div className="hidden shrink-0 gap-2 pt-1 text-footnote text-a11y-accent @min-[520px]/thread:flex dark:text-blue-400">
-            <button
-              type="button"
-              onClick={() => expand(true)}
-              title={shortcut("expandAll")}
-              disabled={messages.every((m) => open.has(m.id))}
-            >{t`Expand all`}</button>
-            <button
-              type="button"
-              onClick={() => expand(false)}
-              title={shortcut("collapseAll")}
-              disabled={open.size === 0}
-            >{t`Collapse all`}</button>
-          </div>
+    <HeadingShift.Provider value={subjectLevel - 2}>
+      {/* Focusable so ⌘+ and ⌘- reach it after a click anywhere in the thread. */}
+      <div
+        ref={scroller}
+        data-reader-text
+        role="document"
+        aria-label={newest?.subject || t`(No subject)`}
+        tabIndex={-1}
+        onMouseDownCapture={(event) => {
+          if (
+            event.target instanceof Element &&
+            // Wider than typing: clicks on any control or the message frame keep their own focus.
+            !event.target.closest("button,a,input,textarea,select,iframe,[contenteditable]")
+          )
+            event.currentTarget.focus({ preventScroll: true });
+        }}
+        // Nothing in the thread is wider than the pane, but scrollIntoView (find
+        // hits, selection jumps) can still scroll its hidden x axis.
+        onScroll={(event) => {
+          if (event.currentTarget.scrollLeft !== 0) event.currentTarget.scrollLeft = 0;
+        }}
+        className="selectable @container/thread min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-x-none [scrollbar-gutter:stable] px-4 pb-10 focus-visible:-outline-offset-2 @min-[520px]/thread:px-7"
+      >
+        <SelectedMessageAnnouncement message={messages.find((m) => m.id === activeId)} />
+        {newest && (
+          <TriageChip
+            id={newest.id}
+            accountId={newest.accountId}
+            labels={messages.flatMap((message) => message.labels)}
+          />
         )}
-        {!menuInToolbar && (
-          <DropdownMenu
-            label={t`More actions`}
-            trigger={
-              <button
-                type="button"
-                aria-label={t`More actions`}
-                className={`mt-1 rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
-              >
-                <MoreHorizontal className="size-4" />
-              </button>
-            }
+        {newest && (
+          <ThreadSummary
+            key={`${newest.accountId}/${newest.threadId}`}
+            id={newest.id}
+            accountId={newest.accountId}
+          />
+        )}
+        <div className="flex items-start gap-2 pt-2 pb-4">
+          <Heading
+            level={2}
+            className="min-w-0 flex-1 text-[20px] leading-tight font-bold break-words @min-[520px]/thread:text-[24px]"
           >
-            {canOpenWindow && (
-              <>
-                <MenuItem icon={AppWindow} onClick={() => run(openThreadWindow(selectedId))}>
-                  {t`Open in new window`}
-                </MenuItem>
-                <MenuSeparator />
-              </>
-            )}
-            <ThreadViewMenuItems
-              messages={messages}
-              selectedId={selectedId}
-              single={single}
-              notify={notify}
-              print={print}
-            />
-          </DropdownMenu>
-        )}
-      </div>
-      {finding && (
-        <FindBar
-          inputRef={findRef}
-          query={findQuery}
-          onQuery={(query) => {
-            setFindQuery(query);
-            setFindIndex(0);
-          }}
-          index={findIndex}
-          count={findCount}
-          onStep={findNext}
-          onClose={closeFind}
-        />
-      )}
-      {!finding && hits && <SearchHitBar index={hitIndex} count={hitCount} onStep={nextHit} />}
-      <MediaMatches chunks={derivedMatches} />
-      <div className="divide-y divide-separator">
-        {messages.map((m) =>
-          open.has(m.id) ? (
-            <Expanded
-              key={m.id}
-              message={m}
-              searchMatches={searchMatches.filter((match) => match.messageId === m.id)}
-              searchHits={
-                searchTerms.length
-                  ? {
-                      terms: searchTerms,
-                      index: activeId === m.id && !finding ? hitIndex : -1,
-                      onCount: activeId === m.id ? reportHits : undefined,
-                    }
-                  : NO_SEARCH_HITS
-              }
-              onActivate={() => activate(m.id)}
-              active={m.id === activeId}
-              onMessageOp={(op) => messageAction(m.id, op)}
-              onUnreadFrom={() => unreadFrom(m.id)}
-              onOpenSingle={isDesktop() ? () => run(openMessageWindow(m.id)) : undefined}
-              thread={stored}
-              findQuery={finding && activeId === m.id ? findQuery : ""}
-              findIndex={findIndex}
-              onMatches={activeId === m.id ? reportMatches : undefined}
-              onSave={isDesktop() ? () => save(m.id) : undefined}
-              onSearchSender={() => searchSender(m)}
-              onShare={canShare ? (kind) => shareLink(m.id, kind) : undefined}
-              onOpenWeb={canOpenWeb && isDesktop() ? () => openWeb(m.id) : undefined}
-              webLabel={webLabel}
-              zoom={zoom}
-              defaultBackground={prefs.messageBackground}
-              onZoomKey={(e) => frameKeys(m.id, e)}
-              remote={loadsRemote(m)}
-              imageNotice={m.id === imageNoticeId}
-              onLoadImages={loadImages}
-              imageSenders={imageSenders}
-              notify={notify}
-              onShowOriginal={() => setRaw(m.id)}
-              onPrint={isDesktop() ? (pdf) => print(m.id, pdf, m.id) : undefined}
-              onCollapse={messages.length > 1 ? () => toggle(m.id) : undefined}
-              onEditDraft={
-                m.labels.includes("DRAFT") && onEditDraft
-                  ? // The local draft id survives the provider replacing this message on save.
-                    () => onEditDraft(m.draftId ?? m.id)
-                  : undefined
-              }
-            />
-          ) : (
-            // A heading per collapsed message, as for expanded ones; the button discloses it.
-            <h3 key={m.id}>
+            {newest?.subject || t`(No subject)`}
+          </Heading>
+          {messages.length > 1 && (
+            <div className="hidden shrink-0 gap-2 pt-1 text-footnote text-a11y-accent @min-[520px]/thread:flex dark:text-blue-400">
               <button
-                data-message-id={m.id}
                 type="button"
-                aria-expanded={false}
-                onClick={() => {
-                  activate(m.id);
-                  toggle(m.id);
-                }}
-                onFocus={() => activate(m.id)}
-                className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
-              >
-                <Avatar message={m} />
-                <span className="min-w-0 flex-1 max-w-[75ch]">
-                  <MessageHead message={m} />
-                  <span className="mt-0.5 block truncate text-body text-a11y-muted">
-                    {m.snippet}
-                  </span>
-                </span>
-              </button>
-            </h3>
-          ),
+                onClick={() => expand(true)}
+                title={shortcut("expandAll")}
+                disabled={messages.every((m) => open.has(m.id))}
+              >{t`Expand all`}</button>
+              <button
+                type="button"
+                onClick={() => expand(false)}
+                title={shortcut("collapseAll")}
+                disabled={open.size === 0}
+              >{t`Collapse all`}</button>
+            </div>
+          )}
+          {!menuInToolbar && (
+            <DropdownMenu
+              label={t`More actions`}
+              trigger={
+                <button
+                  type="button"
+                  aria-label={t`More actions`}
+                  className={`mt-1 rounded-control p-1.5 ${touchIcon} text-a11y-muted outline-offset-0 outline-a11y-focus hover:bg-fill-hover hover:text-neutral-800 focus-visible:outline-[3px] data-popup-open:bg-fill-pressed dark:hover:text-neutral-100`}
+                >
+                  <MoreHorizontal className="size-4" />
+                </button>
+              }
+            >
+              {canOpenWindow && (
+                <>
+                  <MenuItem icon={AppWindow} onClick={() => run(openThreadWindow(selectedId))}>
+                    {t`Open in new window`}
+                  </MenuItem>
+                  <MenuSeparator />
+                </>
+              )}
+              <ThreadViewMenuItems
+                messages={messages}
+                selectedId={selectedId}
+                single={single}
+                notify={notify}
+                print={print}
+              />
+            </DropdownMenu>
+          )}
+        </div>
+        {finding && (
+          <FindBar
+            inputRef={findRef}
+            query={findQuery}
+            onQuery={(query) => {
+              setFindQuery(query);
+              setFindIndex(0);
+            }}
+            index={findIndex}
+            count={findCount}
+            onStep={findNext}
+            onClose={closeFind}
+          />
         )}
+        {!finding && hits && <SearchHitBar index={hitIndex} count={hitCount} onStep={nextHit} />}
+        <MediaMatches chunks={derivedMatches} />
+        <div className="divide-y divide-separator">
+          {messages.map((m) =>
+            open.has(m.id) ? (
+              <Expanded
+                key={m.id}
+                message={m}
+                searchMatches={searchMatches.filter((match) => match.messageId === m.id)}
+                searchHits={
+                  searchTerms.length
+                    ? {
+                        terms: searchTerms,
+                        index: activeId === m.id && !finding ? hitIndex : -1,
+                        onCount: activeId === m.id ? reportHits : undefined,
+                      }
+                    : NO_SEARCH_HITS
+                }
+                onActivate={() => activate(m.id)}
+                active={m.id === activeId}
+                onMessageOp={(op) => messageAction(m.id, op)}
+                onUnreadFrom={() => unreadFrom(m.id)}
+                onOpenSingle={isDesktop() ? () => run(openMessageWindow(m.id)) : undefined}
+                thread={stored}
+                findQuery={finding && activeId === m.id ? findQuery : ""}
+                findIndex={findIndex}
+                onMatches={activeId === m.id ? reportMatches : undefined}
+                onSave={isDesktop() ? () => save(m.id) : undefined}
+                onSearchSender={() => searchSender(m)}
+                onShare={canShare ? (kind) => shareLink(m.id, kind) : undefined}
+                onOpenWeb={canOpenWeb && isDesktop() ? () => openWeb(m.id) : undefined}
+                webLabel={webLabel}
+                zoom={zoom}
+                defaultBackground={prefs.messageBackground}
+                onZoomKey={(e) => frameKeys(m.id, e)}
+                remote={loadsRemote(m)}
+                imageNotice={m.id === imageNoticeId}
+                onLoadImages={loadImages}
+                imageSenders={imageSenders}
+                notify={notify}
+                onShowOriginal={() => setRaw(m.id)}
+                onPrint={isDesktop() ? (pdf) => print(m.id, pdf, m.id) : undefined}
+                onCollapse={messages.length > 1 ? () => toggle(m.id) : undefined}
+                onEditDraft={
+                  m.labels.includes("DRAFT") && onEditDraft
+                    ? // The local draft id survives the provider replacing this message on save.
+                      () => onEditDraft(m.draftId ?? m.id)
+                    : undefined
+                }
+              />
+            ) : (
+              // A heading per collapsed message, as for expanded ones; the button discloses it.
+              <Heading level={3} key={m.id}>
+                <button
+                  data-message-id={m.id}
+                  type="button"
+                  aria-expanded={false}
+                  onClick={() => {
+                    activate(m.id);
+                    toggle(m.id);
+                  }}
+                  onFocus={() => activate(m.id)}
+                  className={`@container/message flex w-full gap-3 py-3 text-left ${m.id === activeId ? `border-l-2 ${ACTIVE_MESSAGE_BORDER} pl-2` : ""}`}
+                >
+                  <Avatar message={m} />
+                  <span className="min-w-0 flex-1 max-w-[75ch]">
+                    <MessageHead message={m} />
+                    <span className="mt-0.5 block truncate text-body text-a11y-muted">
+                      {m.snippet}
+                    </span>
+                  </span>
+                </button>
+              </Heading>
+            ),
+          )}
+        </div>
+        {onComposeMessage && replyTarget && (
+          <ReplyBar
+            onCompose={(mode, attachment) => onComposeMessage(replyTarget.id, mode, attachment)}
+          />
+        )}
+        {raw && <RawMessageDialog messageId={raw} notify={notify} onClose={() => setRaw(null)} />}
       </div>
-      {onComposeMessage && replyTarget && (
-        <ReplyBar
-          onCompose={(mode, attachment) => onComposeMessage(replyTarget.id, mode, attachment)}
-        />
-      )}
-      {raw && <RawMessageDialog messageId={raw} notify={notify} onClose={() => setRaw(null)} />}
-    </div>
+    </HeadingShift.Provider>
   );
 }

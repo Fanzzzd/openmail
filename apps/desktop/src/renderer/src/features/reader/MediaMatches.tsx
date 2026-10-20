@@ -6,6 +6,7 @@ import type { DerivedChunk } from "../../../../shared/api";
 import { resultError } from "../../lib/errors";
 import { mediaImageAtom } from "../../state/queries";
 import { Dialog } from "../../ui/Dialog";
+import { Heading } from "../../ui/Heading";
 
 /** Shows the original image with the OCR hit mapped onto its natural dimensions. */
 function ImageMatch({ chunk, onClose }: { chunk: DerivedChunk; onClose: () => void }) {
@@ -67,9 +68,9 @@ export function MediaMatches({ chunks }: { chunks: readonly DerivedChunk[] }) {
   if (!chunks.length) return null;
   return (
     <section className="mx-4 mb-3 rounded-card bg-amber-500/5 p-3 text-body">
-      <h3 className="mb-2 font-medium">
+      <Heading level={3} className="mb-2 font-medium">
         <Trans>Content matches</Trans>
-      </h3>
+      </Heading>
       <ul className="space-y-2">
         {chunks.slice(0, 20).map((chunk, index) => (
           <li key={index}>

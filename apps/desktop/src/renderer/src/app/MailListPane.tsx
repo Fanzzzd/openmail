@@ -110,6 +110,7 @@ export function MailListPane({
   const listSearch = listQuery?.search ?? "";
   return (
     <MessageList
+      landmark={narrow}
       leading={leading}
       notice={
         <MailStatusNotice

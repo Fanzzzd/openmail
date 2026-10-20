@@ -33,6 +33,7 @@ import { LazyEmailFrame } from "../body/MessageBodyShell";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
 import { touchIcon } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
+import { Heading } from "../../../ui/Heading";
 
 export function Attachments({
   message,
@@ -562,7 +563,9 @@ function EmbeddedReader({
     );
   return (
     <section aria-label={t`Attached message`} className="mt-3 rounded-card border border-edge p-3">
-      <h4 className="font-semibold">{message.subject || t`(No subject)`}</h4>
+      <Heading level={4} className="font-semibold">
+        {message.subject || t`(No subject)`}
+      </Heading>
       <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-3 text-footnote break-all">
         <dt>
           <Trans>From</Trans>

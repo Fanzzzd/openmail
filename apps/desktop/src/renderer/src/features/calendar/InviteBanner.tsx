@@ -30,6 +30,7 @@ import { MeetingLinks } from "./MeetingLinks";
 import { NO_VALUE } from "../../i18n/message-text";
 import { formButton } from "../../ui/form-styles";
 import { Disclosure } from "../../ui/Disclosure";
+import { Heading } from "../../ui/Heading";
 import { localTimeZone } from "../../lib/time-zone";
 
 export function InviteBanner({ message }: { message: Message }) {
@@ -189,7 +190,9 @@ function Invitation({
             ? t`Meeting response`
             : t`Calendar invitation`}
       </p>
-      <h3 className="text-callout font-semibold">{invite.title || message.subject}</h3>
+      <Heading level={3} className="text-callout font-semibold">
+        {invite.title || message.subject}
+      </Heading>
       {invite.start && (
         <p>
           <CalendarRange range={invite} />

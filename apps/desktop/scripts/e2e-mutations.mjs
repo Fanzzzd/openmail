@@ -73,6 +73,20 @@ export const cases = [
     "inert={false}",
   ],
   [
+    "narrow list landmark",
+    "each the main landmark with an h1",
+    `${renderer}app/MailListPane.tsx`,
+    "landmark={narrow}",
+    "landmark={false}",
+  ],
+  [
+    "narrow reader heading",
+    "each the main landmark with an h1",
+    `${renderer}features/reader/Reader.tsx`,
+    "subjectLevel={landmark ? 1 : 2}",
+    "subjectLevel={2}",
+  ],
+  [
     "organization",
     "archive advances|trash advances|Gmail labels|offline archive|moves to one folder|provider latency",
     shared,
@@ -271,8 +285,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 53)
-      throw new Error(`Expected all 53 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 54)
+      throw new Error(`Expected all 54 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

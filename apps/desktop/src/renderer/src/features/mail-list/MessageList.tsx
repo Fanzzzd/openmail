@@ -45,6 +45,8 @@ import { useScrollFade } from "../../lib/scroll-fade";
 export type SelectionSource = "keyboard" | "mouse";
 
 interface Props {
+  /** The list has the window to itself, as in the narrow layout, so it is the main landmark. */
+  landmark?: boolean;
   /** A new key starts the rows over: scroll position, viewport and open menu. */
   resetKey?: string;
   /** The search field, when the list has the window's search instead of the reader. */
@@ -96,7 +98,7 @@ interface Props {
  * The search row sits outside the keyed body, so a search that replaces the rows never remounts
  * the field being typed in.
  */
-export function MessageList({ resetKey, searchBar, leading, ...body }: Props) {
+export function MessageList({ landmark = false, resetKey, searchBar, leading, ...body }: Props) {
   const { t } = useLingui();
   // The mailbox's scroll position outlives the search bodies, so clearing a search returns to it.
   const mailboxScroll = useRef<{ key: string | undefined; top: number }>({
@@ -112,6 +114,7 @@ export function MessageList({ resetKey, searchBar, leading, ...body }: Props) {
   );
   return (
     <section
+      role={landmark ? "main" : undefined}
       aria-label={body.searching ? t`Search results` : body.title}
       className="flex h-full w-full flex-col bg-surface"
     >

@@ -180,10 +180,11 @@ it("audits the main sidebar, virtual list and reader with fixture messages", asy
     "false",
     "false",
   ]);
-  // The subject heads the thread; each message is headed by sender and time.
-  expect(screen.getByRole("heading", { level: 2, name: message.subject })).toBeTruthy();
+  // The subject heads the thread, as the h1 of the reader's main landmark; each message is
+  // headed one level below by sender and time.
+  expect(screen.getByRole("heading", { level: 1, name: message.subject })).toBeTruthy();
   expect(
-    screen.getByRole("heading", { level: 3, name: new RegExp(`^${message.from.name}, `) }),
+    screen.getByRole("heading", { level: 2, name: new RegExp(`^${message.from.name}, `) }),
   ).toBeTruthy();
   await audit();
   options[0]?.focus();

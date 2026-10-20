@@ -39,6 +39,7 @@ import { CalendarDays } from "lucide-react";
 import { NO_VALUE } from "../../i18n/message-text";
 import { EventRecurrenceEditor } from "./EventRecurrenceEditor";
 import { formButton, formInput } from "../../ui/form-styles";
+import { Heading } from "../../ui/Heading";
 
 const DATE_ZONES = calendarIanaZones();
 const DATE_ZONE_OPTIONS = DATE_ZONES.map((zone) => ({ value: zone, label: zone }));
@@ -115,9 +116,9 @@ export function OverlappingEvents({
   const failure = calendarFailure(result);
   return (
     <section className="space-y-1 border-t border-blue-200 pt-2 dark:border-blue-900">
-      <h4 className="font-semibold">
+      <Heading level={4} className="font-semibold">
         <Trans>Your overlapping events</Trans>
-      </h4>
+      </Heading>
       {result.waiting ? (
         <p>
           <Trans>Loading calendar…</Trans>
@@ -432,7 +433,9 @@ function EventConfirmation({
   if (dialogOnly) return dialog;
   return (
     <section className="mt-3 space-y-2 rounded-card border border-blue-200 p-3 dark:border-blue-900">
-      <h3 className="font-semibold">{event.title || message.subject}</h3>
+      <Heading level={3} className="font-semibold">
+        {event.title || message.subject}
+      </Heading>
       <p>
         {range}
         {shown.start.kind === "date" && <> · {t`All day`}</>}
