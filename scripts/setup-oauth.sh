@@ -5,7 +5,7 @@
 # It writes only OpenMail's config.json and never sets GitHub secrets.
 # The steps follow docs/setup-google.md and docs/setup-microsoft.md. Keep them in sync.
 #
-# Run after `pnpm build`: scripts/setup-oauth.sh
+# Run after `pnpm build`: scripts/setup-oauth.sh [data-folder]
 
 set -euo pipefail
 
@@ -119,6 +119,42 @@ finish() {
 # Stages
 # ──────────────────────────────────────────────────────────────────────────
 
+usage() {
+  cat <<'USAGE'
+Usage: scripts/setup-oauth.sh [data-folder]
+
+Saves the OAuth clients in <data-folder>/config.json. Without the argument it uses
+OPENMAIL_HOME, or the installed OpenMail's data folder when OPENMAIL_HOME is unset.
+For a dev app started with --user-data-dir, pass that same folder.
+USAGE
+}
+case "${1:-}" in
+  -h | --help) usage; exit 0 ;;
+  -*) usage >&2; exit 2 ;;
+esac
+if (( $# > 1 )); then usage >&2; exit 2; fi
+
+# The data folder: the argument, else OPENMAIL_HOME, else the folder the installed app and the
+# CLI use by default (dataDirFor in packages/core/src/platform/node/paths.ts).
+INSTALLED_APP_FOLDER=0
+if [[ -n "${1:-}" ]]; then
+  DATA_DIR="$1"
+elif [[ -n "${OPENMAIL_HOME:-}" ]]; then
+  DATA_DIR="$OPENMAIL_HOME"
+else
+  INSTALLED_APP_FOLDER=1
+  if [[ "$(uname -s)" == Darwin ]]; then
+    DATA_DIR="$HOME/Library/Application Support/openmail"
+  else
+    DATA_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/openmail"
+  fi
+fi
+# Made absolute before the cd below, so a relative folder is relative to where you ran this.
+[[ "$DATA_DIR" == /* ]] || DATA_DIR="$PWD/$DATA_DIR"
+# Every CLI call below reads and writes this folder, and so do the commands this prints.
+export OPENMAIL_HOME="$DATA_DIR"
+printf -v RUN_CLI 'OPENMAIL_HOME=%q pnpm cli' "$DATA_DIR"
+
 # OpenMail keeps client IDs in its own config.json (through the CLI).
 cd "$(dirname "$0")/.."
 
@@ -131,10 +167,8 @@ fi
 # configured google|microsoft: is a client already saved in config.json?
 configured() {
   node -e '
-    const fs = require("node:fs"), path = require("node:path"), os = require("node:os");
-    const dir = process.env.OPENMAIL_HOME
-      || path.join(os.homedir(), "Library", "Application Support", "openmail");
-    const file = path.join(dir, "config.json");
+    const fs = require("node:fs"), path = require("node:path");
+    const file = path.join(process.env.OPENMAIL_HOME, "config.json");
     const config = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, "utf8")) : {};
     process.exit(config[process.argv[1]] ? 0 : 1);
   ' "$1"
@@ -147,7 +181,11 @@ printf '\n%s%s  OpenMail OAuth client setup%s\n\n' "$BOLD" "$BLUE" "$RESET"
 say "OpenMail signs in with an OAuth client you register yourself. This wizard walks"
 say "you through the Google Cloud and Azure consoles, then saves the client in"
 say "OpenMail's config.json."
-say "Data directory: ${OPENMAIL_HOME:-~/Library/Application Support/openmail}"
+say "Data folder: $DATA_DIR"
+if (( INSTALLED_APP_FOLDER )); then
+  warn "This is the installed OpenMail's data folder. For a dev data folder, pass it:"
+  warn "scripts/setup-oauth.sh \"\$HOME/OpenMail-dev\""
+fi
 printf '\n'
 if configured google; then note "A Google client is already saved."; fi
 if configured microsoft; then note "A Microsoft client is already saved."; fi
@@ -221,9 +259,9 @@ if (( DO_GOOGLE )); then
   stage "Google: save and sign in to Gmail"
   "${CLI[@]}" config google --client-id "$GOOGLE_CLIENT_ID" --client-secret "$GOOGLE_CLIENT_SECRET"
   if confirm "Sign in to Gmail now? This opens Google's consent page"; then
-    "${CLI[@]}" accounts add gmail || SKIPPED+=("Gmail sign-in failed. Run later: pnpm cli accounts add gmail")
+    "${CLI[@]}" accounts add gmail || SKIPPED+=("Gmail sign-in failed. Run later: $RUN_CLI accounts add gmail")
   else
-    SKIPPED+=("Sign in to Gmail: pnpm cli accounts add gmail, or add the account in the app")
+    SKIPPED+=("Sign in to Gmail: $RUN_CLI accounts add gmail, or add the account in the app")
   fi
   pause "Press Enter to continue"
 fi
@@ -268,9 +306,9 @@ if (( DO_MICROSOFT )); then
   stage "Microsoft: save and sign in to Outlook"
   "${CLI[@]}" config microsoft --client-id "$MICROSOFT_CLIENT_ID"
   if confirm "Sign in to Outlook now? This opens Microsoft's consent page"; then
-    "${CLI[@]}" accounts add outlook || SKIPPED+=("Outlook sign-in failed. Run later: pnpm cli accounts add outlook")
+    "${CLI[@]}" accounts add outlook || SKIPPED+=("Outlook sign-in failed. Run later: $RUN_CLI accounts add outlook")
   else
-    SKIPPED+=("Sign in to Outlook: pnpm cli accounts add outlook, or add the account in the app")
+    SKIPPED+=("Sign in to Outlook: $RUN_CLI accounts add outlook, or add the account in the app")
   fi
   pause "Press Enter to continue"
 fi

@@ -69,7 +69,7 @@
         "$TURBO_ROOT$/.oxlintrc.json",
         "$TURBO_ROOT$/turbo.json",
         "$TURBO_ROOT$/{apps,packages}/*/package.json",
-        "$TURBO_ROOT$/scripts/*.{js,mjs,cjs}",
+        "$TURBO_ROOT$/scripts/*.{js,mjs,cjs,sh}",
         "$TURBO_ROOT$/apps/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "$TURBO_ROOT$/packages/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}",
         "$TURBO_ROOT$/*.{md,mdx}",

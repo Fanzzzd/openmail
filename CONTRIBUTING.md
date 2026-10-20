@@ -62,7 +62,13 @@ OpenMail signs in to Gmail and personal Outlook with an OAuth client. A source c
 
 Use a client you registered yourself. Do not reuse another app's client ID or credentials. IMAP accounts need no client.
 
-[`scripts/setup-oauth.sh`](scripts/setup-oauth.sh) walks you through the same console steps in the terminal. Run it after `pnpm build`. It opens each console page, asks for the client ID and secret, and saves them with `openmail config`. It writes only OpenMail's `config.json`.
+[`scripts/setup-oauth.sh`](scripts/setup-oauth.sh) walks you through the same console steps in the terminal. It opens each console page, asks for the client ID and secret, and saves them with `openmail config`. It writes only `config.json` in the data folder, and prints that folder before it starts. `--user-data-dir` moves that file too, so give the script the dev app's folder. Run it after `pnpm build`:
+
+```sh
+OPENMAIL_HOME="$HOME/OpenMail-dev" scripts/setup-oauth.sh
+```
+
+Without `OPENMAIL_HOME` or a folder argument, it writes to the installed app's folder, `~/Library/Application Support/openmail`.
 
 ## Where things live
 
