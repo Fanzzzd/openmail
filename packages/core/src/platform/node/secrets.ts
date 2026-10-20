@@ -4,7 +4,7 @@ import { Effect, Layer, Option, Schedule } from "effect";
 import { keychainLocked } from "../../providers/reauth.js";
 import { Secrets } from "../auth.js";
 
-// Refresh tokens and IMAP passwords live in the OS keychain. Error handling: docs/sync-correctness.md#重新登录的判定.
+// Refresh tokens and IMAP passwords live in the OS keychain. Error handling: docs/sync-correctness.md#when-to-ask-for-sign-in-again.
 const SERVICE = "openmail";
 export { MODEL_KEY } from "../../ai/secrets.js";
 

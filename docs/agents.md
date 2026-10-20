@@ -33,7 +33,7 @@ OAuth 注册步骤见 [Google](setup-google.md) 与 [Microsoft](setup-microsoft.
 
 人工命令的改动以 `user:cli` 进入审计。`agents write-mode` 仅查看 Changes by AI apps（Read only 或 Ask me first，`--json` 输出 `{"changes_by_ai_apps":"read_only"|"ask_me_first"}`）；传入模式参数会失败，修改须在 app 的设置中完成。CLI 只能列出（`proposals list`）和拒绝（`proposals reject`）提议，不能批准。批准只在 app 的 AI suggestions 里进行：能跑 shell 的代理也能调用 CLI，CLI 里的批准算不上用户本人的确认。旧的 `proposals approve` 仍能解析，但不出现在帮助里，调用时以退出码 1 失败并提示去 app 批准；core 的 `decideProposal` 同样拒绝所有非 app 的批准。CLI 没有 send 命令，发送须在 app 中审阅。
 
-只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#同步健康检查)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
+只检查同步时运行 `openmail health --json`，单账户加 `--account <id>`。报告只比较服务商和本地计数，不同步或修复数据；字段解释只在[同步说明](sync-correctness.md#sync-health-check)维护。命令实现见 [cli.ts](../packages/cli/src/cli.ts)。
 
 需要禁止远程写入时，在 CLI 或 MCP 启动前设置 `OPENMAIL_READ_ONLY=1`。该模式仍可读取网络及凭证、刷新 token 和写本地状态；`sync` 不推送既有队列。MCP 默认读取工具与此会话开关分别控制工具入口和远程写入，详细边界只在[架构](architecture.md#read-only-session)维护。MCP 配置可加 `"env": { "OPENMAIL_READ_ONLY": "1" }`。
 

@@ -22,4 +22,4 @@ Retry and send confirmation live in [provider-retry.ts](../../packages/core/src/
 
 ## Decision and impact
 
-A server listing that has not been shown to be complete is never grounds for deletion. Delete candidates go into a persistent verification queue and are deleted only after the server confirms they are gone. The Graph page size is set through a request header. Failed and unverified items stay in the cache. The current sync rules are in the [sync notes](../sync-correctness.md#重置删除保护).
+A server listing that has not been shown to be complete is never grounds for deletion. Delete candidates go into a persistent verification queue and are deleted only after the server confirms they are gone. The Graph page size is set through a request header. Failed and unverified items stay in the cache. The current sync rules are in the [sync notes](../sync-correctness.md#reset-deletion-guard).

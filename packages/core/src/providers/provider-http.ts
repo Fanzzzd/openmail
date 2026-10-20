@@ -146,7 +146,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
     const tokens = new Map<string, { token: string; expiresAt: number }>();
     /** When each account last refreshed successfully in this process, for the keep-alive. */
     const refreshedAt = new Map<string, number>();
-    /** Rotated refresh tokens the keychain refused; see docs/sync-correctness.md#重新登录的判定. */
+    /** Rotated refresh tokens the keychain refused; see docs/sync-correctness.md#when-to-ask-for-sign-in-again. */
     const unsaved = new Map<string, string>();
     // Per account, because Graph rotates refresh tokens and parallel refreshes would race to save them.
     const refreshLock = keyedLock(1);
@@ -237,7 +237,7 @@ export const makeProviderHttp = (options: ProviderHttpOptions) =>
         }),
       );
 
-    /** Refreshes an account not refreshed for `maxAge`; see docs/sync-correctness.md#重新登录的判定. */
+    /** Refreshes an account not refreshed for `maxAge`; see docs/sync-correctness.md#when-to-ask-for-sign-in-again. */
     const keepAlive = (accountId: string, maxAge: number) =>
       refreshLock(accountId).withPermits(1)(
         Effect.gen(function* () {

@@ -111,7 +111,7 @@ The CLI sync progress and SIGINT/SIGTERM exit tests are in `packages/cli/src/syn
 
 ## Outbound operations and sending regressions
 
-The [outbound rules](sync-correctness.md#出站操作队列) are tested with a fake provider, protocol responses and temporary SQLite, plus a local fake server for the SMTP stage. The tests send nothing to real accounts, do not start Electron and do not replace acceptance of native mobile transport.
+The [outbound rules](sync-correctness.md#outbound-operation-queue) are tested with a fake provider, protocol responses and temporary SQLite, plus a local fake server for the SMTP stage. The tests send nothing to real accounts, do not start Electron and do not replace acceptance of native mobile transport.
 
 - [op-queue.test.ts](../packages/core/src/mailbox/op-queue.test.ts): backoff, expiry, lost claims, copy progress, remap failures, draft cleanup and resending only to rejected addresses.
 - [Node IMAP regressions](../packages/core/src/platform/node/imap-opqueue.test.ts) and [mobile IMAP regressions](../packages/core/src/platform/react-native/imap.test.ts): copy recovery, a missing UID or Message-ID, rejected flags, special folders, the SMTP stage and failures to save to Sent.
@@ -152,7 +152,7 @@ node apps/desktop/scripts/e2e-mutations.mjs
 
 The script temporarily changes behavior, one case at a time, requires every selected test to fail, and restores the file after each round. It covers the main flows and related regressions. When you add a flow, add its fault cases to the script. Afterwards run the normal tests and the repo checks.
 
-Regressions for the reset deletion guard are in [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts). They cover keeping cached mail outside the window, failed existence checks and persistent re-verification, IMAP UID reuse, and the Prefer page size for the initial, 410 restart, next-page and incremental Outlook delta requests. The rules are maintained only in [sync correctness](sync-correctness.md#重置删除保护).
+Regressions for the reset deletion guard are in [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts). They cover keeping cached mail outside the window, failed existence checks and persistent re-verification, IMAP UID reuse, and the Prefer page size for the initial, 410 restart, next-page and incremental Outlook delta requests. The rules are maintained only in [sync correctness](sync-correctness.md#reset-deletion-guard).
 
 [sync-stale.test.ts](../packages/core/src/sync/sync-stale.test.ts) checks the per-account scan budget, the hourly cooldown and re-verification after restart, the unavailable count, orphaned remote drafts, and the guard for changes still waiting to push. [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [outlook-sync-health.test.ts](../packages/core/src/providers/outlook/outlook-sync-health.test.ts) check that Outlook conflicts are queued durably before the cursor is saved.
 
@@ -164,7 +164,7 @@ Write safety and draft recovery:
 - [undo-send-and-draft-create.test.ts](../packages/core/src/mailbox/undo-send-and-draft-create.test.ts) and [mobile-outbox.test.ts](../packages/core/src/mailbox/mobile-outbox.test.ts) check the creation log, the send-claim transaction, retries after a definite failure, a disconnected renderer and reopening the database. They also cover late draft callbacks after a merge, stale claims, ID remapping and the partial-rejection guard.
 - On desktop, [renderer-models.test.ts](../apps/desktop/src/renderer/src/app/renderer-models.test.ts) checks the core RPC for undo.
 
-The behavior rules are maintained only in [sync correctness](sync-correctness.md#草稿与其他写入). A normal low-memory test run covers all of these without starting Electron.
+The behavior rules are maintained only in [sync correctness](sync-correctness.md#drafts-and-other-writes). A normal low-memory test run covers all of these without starting Electron.
 
 ## Parser fuzzing and accessibility
 
@@ -208,7 +208,7 @@ JSON goes to stdout. Steps and preview logs go to stderr:
 | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `readOnly`, `network`, `copiedDatabase`        | Whether the read-only session is on, whether provider calls are allowed (`--network`), and whether a copy of a database was provided.                                                       |
 | `steps`                                        | Each step as passed or skipped, with the reason for a skip. Without a cached Inbox conversation the reader step is skipped; without an account the composer and Settings steps are skipped. |
-| `syncHealth`                                   | The redacted sync health report for each account. Empty without accounts. Fields and checks are in [sync correctness](sync-correctness.md#同步健康检查).                                    |
+| `syncHealth`                                   | The redacted sync health report for each account. Empty without accounts. Fields and checks are in [sync correctness](sync-correctness.md#sync-health-check).                               |
 | `consoleErrors`, `exceptions`, `ipcRejections` | Renderer errors, exceptions and RPC rejections. Normal aborts do not count as rejections.                                                                                                   |
 | `failure`                                      | Why the script failed: a step timed out, the preview exited, or something else. `CDP closed` adds whether the renderer crashed and whether the preview process exited. Empty on success.    |
 

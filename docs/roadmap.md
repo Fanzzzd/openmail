@@ -6,7 +6,7 @@
 
 ## 进度（2026-10-07）
 
-本页按当前代码维护。下表的“完成”指产品路径和自动回归已存在；真实账户、设备权限与正式发行另行验收。同步重置删除保护、Outlook delta 分页、过期缓存扫描与冲突队列均已合入。所有重置删除候选均须验证；IMAP 搜索失败、Graph 续页和 Outlook 联系人文件夹遍历已有修复。同步规则与证据见[同步说明](sync-correctness.md#重置删除保护)。
+本页按当前代码维护。下表的“完成”指产品路径和自动回归已存在；真实账户、设备权限与正式发行另行验收。同步重置删除保护、Outlook delta 分页、过期缓存扫描与冲突队列均已合入。所有重置删除候选均须验证；IMAP 搜索失败、Graph 续页和 Outlook 联系人文件夹遍历已有修复。同步规则与证据见[同步说明](sync-correctness.md#reset-deletion-guard)。
 
 | 范围             | 已完成                                                                                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@
 | 工程验证         | 性能查询计划与内存回归、无障碍与键盘回归、renderer 模块拆分、真实 App／RPC／Mailbox 邮件流程、解析器 fuzz 与 axe 检查、十种语言目录检查                              |
 | 平台与手机       | Node 平台拆分、portable 入口、Expo 项目、op-sqlite／SecureStore／AuthSession adapters、Gmail／Outlook／IMAP/SMTP、受限阅读、撰写与确认发送、后台刷新、本地通知和徽标 |
 
-当前新增能力的证据见 [只读与可选服务](architecture.md#read-only-session)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#同步健康检查)和[测试入口](testing.md)。[db/migrations.ts](../packages/core/src/db/migrations.ts) 已有迁移 1 至 37。迁移 37 固定外部内容 FTS 的 rowid，支持安全回收数据库空闲页。T07 已接入整库计量、容量目标、低磁盘自适应 LRU 和 worker 压缩；保留星标、期限内邮件、永久保留标签、草稿和发件箱，目标不保证整库硬上限。新库直接启用增量回收；旧库首次需用户点击压缩。共享访问、同步、只读及索引安全检查会阻止不安全压缩。迁移 36 与出站可靠性规则见[同步说明](sync-correctness.md#出站操作队列)；10 万封预算、迁移 37 升级测量和压缩边界见[性能](performance.md)。
+当前新增能力的证据见 [只读与可选服务](architecture.md#read-only-session)、[邮件内容保护](security.md)、[同步健康报告](sync-correctness.md#sync-health-check)和[测试入口](testing.md)。[db/migrations.ts](../packages/core/src/db/migrations.ts) 已有迁移 1 至 37。迁移 37 固定外部内容 FTS 的 rowid，支持安全回收数据库空闲页。T07 已接入整库计量、容量目标、低磁盘自适应 LRU 和 worker 压缩；保留星标、期限内邮件、永久保留标签、草稿和发件箱，目标不保证整库硬上限。新库直接启用增量回收；旧库首次需用户点击压缩。共享访问、同步、只读及索引安全检查会阻止不安全压缩。迁移 36 与出站可靠性规则见[同步说明](sync-correctness.md#outbound-operation-queue)；10 万封预算、迁移 37 升级测量和压缩边界见[性能](performance.md)。
 
 O30 已补 Gmail 排除聊天及额外标签动作、Outlook 条件／例外和分类／复制等动作。原生只读规则、缺元数据的预览及有上限的候选搜索仍有限制，保持 partial，见[规则覆盖](server-rule-coverage.md)。S08 已支持邮件头、用户标签和 AROUND 近邻；零距离使用 FTS 短语，其他距离用词位置核验。彩色星标和复杂 OCR 高亮／排名仍未补齐，保持 partial。R40 已接入英中日期、六种重复模式、确认创建和 .ics 导出；日期歧义及 Outlook 无损映射限制见[日期规则](calendar-dates.md)和 [parity](parity.md)。
 

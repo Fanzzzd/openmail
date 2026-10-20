@@ -96,7 +96,7 @@ Mailbox has eleven groups. A group is a namespace on the one service, typed by a
 
 `domain/command.ts` defines Command, Actor and Outcome. `decide` in `mailbox/policy.ts` decides by entry point and write permission. User actions take the execute path. Rules execute or propose depending on their permission. Writes from MCP and the built-in assistant need approval, and an agent can never send directly. Tool switches and approval details are maintained only in the [agent guide](agents.md#提议改动).
 
-For an ordinary change, core expands the conversation, applies the local state, records `pending_ops` and `audit_log`, then tries to push to the provider. Rules for retries, claims, failure notices and send results are maintained only in [sync correctness](sync-correctness.md#出站操作队列). When sync writes to the database, it keeps the local result of operations still waiting to push, so a pull does not overwrite offline changes.
+For an ordinary change, core expands the conversation, applies the local state, records `pending_ops` and `audit_log`, then tries to push to the provider. Rules for retries, claims, failure notices and send results are maintained only in [sync correctness](sync-correctness.md#outbound-operation-queue). When sync writes to the database, it keeps the local result of operations still waiting to push, so a pull does not overwrite offline changes.
 
 The batch path records the inverse state of each message. `mailbox/undo-journal.ts` persists these records, so they survive a restart. Undo checks message state first, so it does not overwrite a later action. Restore records for deleted provider rules are stored separately from mail undo.
 
@@ -130,7 +130,7 @@ A sync reset never deletes a message straight from a server listing. Every delet
 
 A user draft is saved locally first, then pushed with that draft's latest content. A queue claim stops the desktop app, the CLI and the MCP server from creating server copies at the same time. A draft opened from another client is parsed from its raw MIME through MailCodec, which keeps HTML, Bcc and attachments. The Markdown source is stored separately. Sending or discarding clears the local draft and handles the server copy. Local changes not yet pushed win over a pull.
 
-Rules for creation logs, remote version conflicts, partial save failures and send intent recovery are in [sync correctness](sync-correctness.md#草稿与其他写入).
+Rules for creation logs, remote version conflicts, partial save failures and send intent recovery are in [sync correctness](sync-correctness.md#drafts-and-other-writes).
 
 A draft a model proposes carries a `proposal_id`. Drafts from MCP and the built-in assistant stay on the Mac first. A person edits, saves or sends them in the app. The upload and approval boundaries are in the [agent guide](agents.md).
 
