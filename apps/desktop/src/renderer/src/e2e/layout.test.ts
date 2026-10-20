@@ -254,17 +254,20 @@ it("Back from a narrow reader focuses a row that was below the first screen", as
   );
   shownOrHidden.observe(document.body, { attributeFilter: ["hidden"], subtree: true });
   const setupObserver = globalThis.ResizeObserver;
-  globalThis.ResizeObserver = class {
-    callback: () => void;
-    constructor(callback: () => void) {
-      this.callback = callback;
-    }
-    observe(target: Element) {
-      observed.add({ callback: this.callback, target });
-    }
-    unobserve = constVoid;
-    disconnect = constVoid;
-  };
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      callback: () => void;
+      constructor(callback: () => void) {
+        this.callback = callback;
+      }
+      observe(target: Element) {
+        observed.add({ callback: this.callback, target });
+      }
+      unobserve = constVoid;
+      disconnect = constVoid;
+    },
+  );
   try {
     width = 520;
     current = await flow({
@@ -290,7 +293,7 @@ it("Back from a narrow reader focuses a row that was below the first screen", as
     shownOrHidden.disconnect();
     height.mockRestore();
     if (setupScrollTop) Object.defineProperty(Element.prototype, "scrollTop", setupScrollTop);
-    globalThis.ResizeObserver = setupObserver;
+    vi.stubGlobal("ResizeObserver", setupObserver);
   }
 });
 
