@@ -23,9 +23,9 @@
     "test:perf": "OPENMAIL_PERF=1 vitest run src/mcp-server.test.ts"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.3",
+    "@effect/platform-node": "4.0.5",
     "@openmail/core": "workspace:*",
-    "effect": "4.0.3"
+    "effect": "4.0.5"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
