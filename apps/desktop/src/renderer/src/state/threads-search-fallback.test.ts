@@ -4,16 +4,28 @@ import { AtomRegistry } from "effect/reactivity";
 const row = (id: string, date: number) => ({ id, threadId: id, date });
 const state = vi.hoisted(() => {
   vi.resetModules();
-  return { serverRows: [] as { id: string; threadId: string; date: number }[] };
+  return {
+    serverRows: [] as { id: string; threadId: string; date: number }[],
+    /** Holds the `weeken*` local query until the test releases it. The mock sets both. */
+    holdSlowLocal: (): void => undefined,
+    releaseSlowLocal: (): void => undefined,
+  };
 });
 vi.mock("./rpc", async () => {
-  const { Context, Effect, Layer } = await import("effect");
+  const { Context, Deferred, Effect, Layer } = await import("effect");
   const { Atom, AsyncResult } = await import("effect/reactivity");
-  const local: Record<string, { rows: ReturnType<typeof row>[]; delay: number }> = {
-    "weeke*": { rows: [row("a", 3), row("b", 2)], delay: 0 },
-    // Slower than the server search's 350 ms wait, so the server answers first.
-    "weeken*": { rows: [row("a", 3)], delay: 1000 },
+  let gate = Deferred.makeUnsafe<void>();
+  state.holdSlowLocal = () => {
+    gate = Deferred.makeUnsafe<void>();
   };
+  state.releaseSlowLocal = () => {
+    Effect.runSync(Deferred.succeed(gate, undefined));
+  };
+  const local = new Map([
+    ["weeke*", Effect.succeed([row("a", 3), row("b", 2)])],
+    // Answers only when the test releases it, so the server search answers first.
+    ["weeken*", Effect.suspend(() => Deferred.await(gate)).pipe(Effect.as([row("a", 3)]))],
+  ]);
   const call = (tag: string, payload: { query?: { search?: string; before?: number } }) => {
     if (tag === "SearchServer")
       return Effect.succeed({
@@ -27,8 +39,7 @@ vi.mock("./rpc", async () => {
       return payload.query?.before === undefined
         ? Effect.succeed(Array.from({ length: 100 }, (_, i) => row(`m${i}`, 1000 - i)))
         : Effect.succeed([]).pipe(Effect.delay(300));
-    const found = local[payload.query?.search ?? ""];
-    return found ? Effect.succeed(found.rows).pipe(Effect.delay(found.delay)) : Effect.succeed([]);
+    return local.get(payload.query?.search ?? "") ?? Effect.succeed([]);
   };
   class MailClient extends Context.Service<MailClient, typeof call>()("test/threads-fallback") {
     static runtime = Atom.runtime(Layer.succeed(MailClient, call));
@@ -53,6 +64,7 @@ afterAll(() => {
 });
 beforeEach(() => {
   state.serverRows = [];
+  state.holdSlowLocal();
 });
 
 const setup = () =>
@@ -74,18 +86,31 @@ const setup = () =>
     ],
   });
 
-/** The thread ids on screen, sampled every 5 ms for `ms` after the search text changes. */
-async function typed(registry: AtomRegistry.AtomRegistry, search: string, ms: number) {
-  registry.set(searchTextAtom, search);
-  const seen: string[][] = [];
-  for (let at = 0; at < ms; at += 5) {
-    seen.push(registry.get(threadListAtom).threads.map((t) => t.id));
+type List = ReturnType<typeof threadListAtom.read>;
+const ids = (list: List) => list.threads.map((t) => t.id);
+
+/**
+ * Every list on screen after the search text changes, sampled every 5 ms until `done` holds for
+ * one. The last entry is the first list for which it holds.
+ */
+async function typed(
+  registry: AtomRegistry.AtomRegistry,
+  search: string | undefined,
+  done: (list: List) => boolean,
+) {
+  if (search !== undefined) registry.set(searchTextAtom, search);
+  const seen: List[] = [];
+  for (;;) {
+    const list = registry.get(threadListAtom);
+    seen.push(list);
+    if (done(list)) return seen;
     await new Promise<void>((resolve) => {
       setTimeout(resolve, 5);
     });
   }
-  return seen;
 }
+const serverDone = (list: List) => !list.searchingServer;
+const settled = (list: List) => !list.searchingServer && !list.loading;
 
 // A failed server search has no rows, and it replaced the previous rows with an empty list for a
 // frame on each keystroke until the new query's local rows arrived.
@@ -93,11 +118,16 @@ it("a failed server search keeps the previous rows while the local query loads",
   const registry = setup();
   const keep = registry.subscribe(threadListAtom, () => null);
   try {
-    expect((await typed(registry, "weeke", 600)).at(-1)).toEqual(["a", "b"]);
+    expect(ids((await typed(registry, "weeke", settled)).at(-1)!)).toEqual(["a", "b"]);
     expect(registry.get(threadListAtom).searchErrorAccounts).toEqual(["account"]);
-    const seen = await typed(registry, "weeken", 1300);
-    expect(seen.some((ids) => ids.length === 0)).toBe(false);
-    expect(seen.at(-1)).toEqual(["a"]);
+    // The server search fails while the local query is still held.
+    const seen = await typed(registry, "weeken", serverDone);
+    expect(seen.at(-1)!.loading).toBe(true);
+    expect(seen.at(-1)!.searchErrorAccounts).toEqual(["account"]);
+    state.releaseSlowLocal();
+    seen.push(...(await typed(registry, undefined, settled)));
+    expect(seen.some((list) => list.threads.length === 0)).toBe(false);
+    expect(ids(seen.at(-1)!)).toEqual(["a"]);
   } finally {
     keep();
     registry.dispose();
@@ -109,10 +139,11 @@ it("server rows replace the previous rows while the local query loads", async ()
   const registry = setup();
   const keep = registry.subscribe(threadListAtom, () => null);
   try {
-    await typed(registry, "weeke", 600);
-    await typed(registry, "weeken", 600);
-    expect(registry.get(threadListAtom).loading).toBe(true);
-    expect(registry.get(threadListAtom).threads.map((t) => t.id)).toEqual(["s"]);
+    await typed(registry, "weeke", settled);
+    // The server search answers while the local query is still held.
+    const during = (await typed(registry, "weeken", serverDone)).at(-1)!;
+    expect(during.loading).toBe(true);
+    expect(ids(during)).toEqual(["s"]);
   } finally {
     keep();
     registry.dispose();
@@ -125,7 +156,7 @@ it("a new query's first page is not an older page", async () => {
   const registry = setup();
   const keep = registry.subscribe(threadListAtom, () => null);
   try {
-    await typed(registry, "weeke", 600);
+    await typed(registry, "weeke", settled);
     registry.set(searchTextAtom, "weeken");
     const during = registry.get(threadListAtom);
     expect(during.loading).toBe(true);
@@ -141,13 +172,13 @@ it("fetching an older page shows as loading more", async () => {
   const registry = setup();
   const keep = registry.subscribe(threadListAtom, () => null);
   try {
-    await typed(registry, "", 100);
+    await typed(registry, "", (list) => list.threads.length > 0);
     expect(registry.get(threadListAtom).threads).toHaveLength(100);
     expect(registry.get(threadListAtom).canLoadMore).toBe(true);
     registry.set(threadListAtom, undefined);
     expect(registry.get(threadListAtom).waiting).toBe(true);
     expect(registry.get(threadListAtom).loadingMore).toBe(true);
-    await typed(registry, "", 500);
+    await typed(registry, undefined, (list) => !list.waiting);
     expect(registry.get(threadListAtom).loadingMore).toBe(false);
   } finally {
     keep();
