@@ -81,6 +81,18 @@ it("opens the thread a route names and keeps the open thread in the route", asyn
   );
 });
 
+// Browser history folded the selection's waiting replace into the next push, so Back after a
+// quick folder switch returned to the inbox without the thread just selected.
+it("Back after a quick folder switch returns to the thread just selected, in window history", async () => {
+  const h = (current = await flow({ route: "/mail/all/inbox", windowHistory: true }));
+  fireEvent.click(row(h.id("one")));
+  fireEvent.click(within(mailboxes()).getByRole("button", { name: "Sent" }));
+  await eventually(() => expect(h.href()).toBe("/mail/all/sent"));
+  act(() => h.router.history.back());
+  await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
+  expect(h.href()).toBe(`/mail/all/inbox?thread=${encodeURIComponent(h.id("one"))}`);
+});
+
 it("opens the dialog a route names, and closing it leaves the route in place", async () => {
   const h = (current = await flow({ route: "/mail/all/sent?dialog=settings" }));
   // Settings is a lazy chunk; its first import in a cold jsdom run can take over a second.
