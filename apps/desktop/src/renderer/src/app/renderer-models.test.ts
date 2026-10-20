@@ -781,6 +781,33 @@ it("removing the last loaded row waits for the next page before advancing select
   expect(model.navigation.selectedId).toBe("four");
 });
 
+// An older page in flight made canLoadMore false, so removing the last loaded row moved the
+// selection up instead of waiting for the row after it.
+it("removing the last loaded row while an older page loads waits for that page", async () => {
+  state.threads.mockReturnValue({
+    ...state.threads(),
+    canLoadMore: false,
+    loadingMore: true,
+    waiting: true,
+  });
+  mount();
+  state.page = [row("four")];
+  act(() => model.navigation.select("three", "keyboard"));
+  act(() => model.mailActions.act({ kind: "archive" }));
+  await flush();
+  await flush();
+  expect(model.navigation.selectedId).toBe("three");
+  state.threads.mockReturnValue({
+    ...state.threads(),
+    threads: [row("one"), row("two"), row("four")],
+    loadingMore: false,
+    waiting: false,
+  });
+  mount();
+  await flush();
+  expect(model.navigation.selectedId).toBe("four");
+});
+
 it("compose claims an inline draft and quietly closes an unchanged draft", async () => {
   const draft = emptyDraft(account.id);
   act(() => model.composition.setCompose(draft));

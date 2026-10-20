@@ -129,13 +129,15 @@ export function useMailActions({
           prefs.nextSelection,
         )
       : before;
+    // An older page already in flight counts as more rows: the next row is in it.
+    const olderRows = threads.canLoadMore || threads.loadingMore;
     const nextPaged = removed.size
       ? selectionAfterRemoval(
           before,
           list.map((row) => row.id),
           removed,
           prefs.nextSelection,
-          threads.canLoadMore,
+          olderRows,
         )
       : before;
     const lastLoaded = list.at(-1);
@@ -143,7 +145,7 @@ export function useMailActions({
       nextPaged === EMPTY_SELECTION &&
       before.ids.size > 0 &&
       [...before.ids].every((id) => removed.has(id)) &&
-      threads.canLoadMore &&
+      olderRows &&
       prefs.nextSelection === "below" &&
       lastLoaded &&
       listQuery;
