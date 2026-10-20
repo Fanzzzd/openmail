@@ -41,6 +41,11 @@ import { useShortcutText } from "../../i18n/use-shortcut-text";
 import { Toggle } from "@base-ui/react/toggle";
 import { useScrollFade } from "../../lib/scroll-fade";
 
+/** How long a query loads before the previous list's rows dim. */
+const DIM_AFTER_MS = 150;
+/** How long dimmed rows wait after a load before they brighten, for the next keystroke's query. */
+const BRIGHTEN_AFTER_MS = 250;
+
 /** How the current selection was made. Keyboard selection gets the solid accent. */
 export type SelectionSource = "keyboard" | "mouse";
 
@@ -112,6 +117,13 @@ export function MessageList({ landmark = false, resetKey, searchBar, leading, ..
     (key: string) => (mailboxScroll.current.key === key ? mailboxScroll.current.top : null),
     [],
   );
+  const stale = body.loading && body.threads.length > 0;
+  const [dimmed, setDimmed] = useState(false);
+  useEffect(() => {
+    if (stale === dimmed) return constVoid;
+    const timer = setTimeout(() => setDimmed(stale), stale ? DIM_AFTER_MS : BRIGHTEN_AFTER_MS);
+    return () => clearTimeout(timer);
+  }, [stale, dimmed]);
   return (
     <section
       role={landmark ? "main" : undefined}
@@ -132,6 +144,7 @@ export function MessageList({ landmark = false, resetKey, searchBar, leading, ..
         scrollKey={body.searching ? null : (resetKey ?? "")}
         rememberScroll={rememberScroll}
         rememberedScroll={rememberedScroll}
+        dimmed={dimmed}
       />
     </section>
   );
@@ -174,11 +187,14 @@ function MessageListBody({
   scrollKey,
   rememberScroll,
   rememberedScroll,
+  dimmed,
 }: Omit<Props, "resetKey" | "searchBar"> & {
   /** Where this mailbox's scroll position is kept; null while search results show. */
   scrollKey: string | null;
   rememberScroll: (key: string, top: number) => void;
   rememberedScroll: (key: string) => number | null;
+  /** The rows show dimmed; see MessageList. */
+  dimmed: boolean;
 }) {
   const { t, i18n } = useLingui();
   const shortcutText = useShortcutText();
@@ -298,7 +314,9 @@ function MessageListBody({
   // Until a new query's first page arrives the rows on screen are the previous list's (see
   // features/search/results-entry.ts). They are inert, so no click, tap or Tab reaches one and
   // focus can't sit on a row that the results then replace. They dim after a moment, so a fast
-  // load does not flash.
+  // load does not flash, and brighten a moment after the load, so typing that starts the next
+  // query in that time keeps them dim instead of blinking.
+  // Each query's rows are a new body, so the dim lives in MessageList and carries over.
   const stale = loading && threads.length > 0;
 
   // A mailbox shown again after a search scrolls back once its rows are there; another mailbox
@@ -531,7 +549,7 @@ function MessageListBody({
             inert={stale}
             data-stale={stale || undefined}
             style={{ height: window.total, position: "relative" }}
-            className={stale ? "opacity-50 transition-opacity delay-150 duration-150" : undefined}
+            className={`transition-opacity duration-150 motion-reduce:transition-none ${dimmed ? "opacity-50" : ""}`}
           >
             <div style={{ transform: `translateY(${window.offset}px)` }}>
               {threads.slice(window.first, window.end).map((m, localIndex) => {

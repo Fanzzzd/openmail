@@ -208,7 +208,9 @@ it("the previous list's rows are dimmed and inert while a search loads", async (
   await eventually(() => expect(list().getAttribute("aria-busy")).toBe("true"));
   // jsdom ignores inert; Chromium sends a click on these rows to the list behind them.
   expect(row(h.id("one")).closest("[inert]")).not.toBeNull();
-  expect(row(h.id("one")).closest("[data-stale]")?.className).toContain("opacity-50");
+  await eventually(() =>
+    expect(row(h.id("one")).closest("[data-stale]")?.className).toContain("opacity-50"),
+  );
   await release();
   await eventually(() => expect(() => row(h.id("one"))).toThrow());
   expect(list().getAttribute("aria-busy")).toBe("false");
@@ -217,4 +219,24 @@ it("the previous list's rows are dimmed and inert while a search loads", async (
   expect(document.activeElement).toBe(field);
   expect(selectedRows()).toEqual([]);
   expect(await markedRead()).toEqual([]);
+});
+
+it("rows stay dim between keystrokes while each query loads, and brighten once typing pauses", async () => {
+  const { h, field } = await start();
+  const list = () => screen.getByRole("listbox");
+  const rows = () => list().querySelector(".transition-opacity")?.className ?? "";
+  let release = await h.holdLists();
+  fireEvent.change(field, { target: { value: "lun" } });
+  await eventually(() => expect(rows()).toContain("opacity-50"));
+  await release();
+  await eventually(() => expect(list().getAttribute("aria-busy")).toBe("false"));
+  // The results are on screen. The next key comes before the dim lifts, so the rows never blink.
+  expect(rows()).toContain("opacity-50");
+  release = await h.holdLists();
+  fireEvent.change(field, { target: { value: "lunc" } });
+  await eventually(() => expect(list().getAttribute("aria-busy")).toBe("true"));
+  expect(rows()).toContain("opacity-50");
+  await release();
+  await eventually(() => expect(list().getAttribute("aria-busy")).toBe("false"));
+  await eventually(() => expect(rows()).not.toContain("opacity-50"));
 });

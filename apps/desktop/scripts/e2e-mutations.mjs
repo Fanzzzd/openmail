@@ -219,6 +219,13 @@ export const cases = [
     "            if (event.relatedTarget === undoRef.current) return;\n",
     "",
   ],
+  [
+    "stale rows stay dim between keystrokes",
+    "rows stay dim between keystrokes",
+    `${renderer}features/mail-list/MessageList.tsx`,
+    "stale ? DIM_AFTER_MS : BRIGHTEN_AFTER_MS",
+    "stale ? DIM_AFTER_MS : 0",
+  ],
 ];
 /** More changes a case makes, each `[relative, before, after]` in a file of its own. */
 const moreEdits = new Map([
@@ -320,8 +327,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 60)
-      throw new Error(`Expected all 60 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 61)
+      throw new Error(`Expected all 61 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
