@@ -44,6 +44,13 @@ it.effect(
       loadAverage: number[];
       samplesMs: number[];
       queries: QueryPlan[];
+      /** The first pass, when contention spread its samples and the measurement ran again. */
+      contendedPass?: {
+        medianMs: number;
+        maxMs: number;
+        loadAverage: number[];
+        samplesMs: number[];
+      };
     }[] = [];
     return Effect.gen(function* () {
       const store = yield* Store,
@@ -115,29 +122,47 @@ it.effect(
           trace.start();
           yield* effect;
           const queries = trace.stop();
-          const times: number[] = [];
-          for (let i = 0; i < iterations; i++) {
-            const start = performance.now();
-            yield* effect;
-            times.push(performance.now() - start);
+          const pass = Effect.gen(function* () {
+            const times: number[] = [];
+            for (let i = 0; i < iterations; i++) {
+              const start = performance.now();
+              yield* effect;
+              times.push(performance.now() - start);
+            }
+            times.sort((a, b) => a - b);
+            return {
+              medianMs: times[Math.floor(times.length / 2)] ?? 0,
+              maxMs: times.at(-1) ?? 0,
+              loadAverage: loadavg(),
+              samplesMs: times,
+            };
+          });
+          const report = (label: string, run: { medianMs: number; maxMs: number }) =>
+            process.stdout.write(
+              `${label}: ${run.medianMs.toFixed(2)} ms (calibrated ${calibratedMs(run.medianMs).toFixed(2)}, max ${run.maxMs.toFixed(2)}, budget ${budgetMs})\n`,
+            );
+          let run = yield* pass;
+          let contendedPass: typeof run | undefined;
+          // Over budget with the slowest run more than 3x the fastest: other processes took the
+          // CPU for part of the pass. A regression slows every run, so it fails the second pass too.
+          if (run.medianMs >= perfBudget(budgetMs) && run.maxMs > 3 * (run.samplesMs[0] ?? 0)) {
+            report(`${name} (contended, measuring again)`, run);
+            contendedPass = run;
+            run = yield* pass;
           }
-          times.sort((a, b) => a - b);
-          const medianMs = times[Math.floor(times.length / 2)] ?? 0;
-          const maxMs = times.at(-1) ?? 0;
           results.push({
             name,
-            medianMs,
-            calibratedMs: calibratedMs(medianMs),
-            maxMs,
+            medianMs: run.medianMs,
+            calibratedMs: calibratedMs(run.medianMs),
+            maxMs: run.maxMs,
             budgetMs,
-            loadAverage: loadavg(),
-            samplesMs: times,
+            loadAverage: run.loadAverage,
+            samplesMs: run.samplesMs,
             queries,
+            ...(contendedPass ? { contendedPass } : {}),
           });
           writeReport();
-          process.stdout.write(
-            `${name}: ${medianMs.toFixed(2)} ms (calibrated ${calibratedMs(medianMs).toFixed(2)}, max ${maxMs.toFixed(2)}, budget ${budgetMs})\n`,
-          );
+          report(name, run);
         });
       const gmail = fixtureAccounts[0],
         imap = fixtureAccounts[2];
@@ -332,6 +357,8 @@ it.effect(
           store
             .countThreads({ search })
             .pipe(Effect.tap((n) => Effect.sync(() => assert.strictEqual(n, threads)))),
+          // Nine runs: on a shared runner a burst of load can cover two of five runs.
+          9,
         );
       // The sidebar's label view lists one label id, across accounts or in one account.
       for (const [name, accountIds] of [
