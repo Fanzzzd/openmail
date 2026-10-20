@@ -142,6 +142,42 @@ it("a narrow window shows the list or the reader, and goes back with the button,
   expect(reader()).toBeNull();
 });
 
+it("Back from a narrow reader selects and focuses the conversation it opened, by click or by Enter", async () => {
+  width = 520;
+  current = await flow({ windowHistory: true });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const selected = (id: string) => row(h.id(id)).getAttribute("aria-selected") === "true";
+  const backTo = async (id: string, other: string) => {
+    await eventually(() => expect(reader()).toBeNull());
+    await eventually(() => expect(document.activeElement).toBe(row(h.id(id))));
+    expect(selected(id)).toBe(true);
+    expect(selected(other)).toBe(false);
+    expect(decodeURIComponent(window.location.hash)).toContain(`thread=${h.id(id)}`);
+  };
+  // Select one with the keyboard, then open two with a click in the same moment the
+  // selection moves: its route write and the reader's entry land in one tick.
+  row(h.id("one")).focus();
+  key("ArrowUp");
+  await eventually(() => expect(selected("one")).toBe(true));
+  fireEvent.click(row(h.id("two")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  clickButton("Back to messages");
+  await backTo("two", "one");
+  // The next arrow starts from the conversation that was open.
+  key("ArrowUp");
+  await eventually(() => expect(selected("one")).toBe(true));
+  // An arrow and Enter before the selection's route write settles.
+  key("ArrowDown");
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("two"))));
+  // Enter on the focused row button: jsdom sends no click for it, the browser does.
+  key("Enter");
+  fireEvent.click(row(h.id("two")), { detail: 0 });
+  await eventually(() => expect(reader()?.textContent).toContain("Original two"));
+  key("Escape", {}, document.body);
+  await backTo("two", "one");
+});
+
 it("the sidebar opens as a drawer below 960 px and closes when a mailbox is picked", async () => {
   width = 800;
   current = await flow();

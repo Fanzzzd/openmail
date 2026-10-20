@@ -95,8 +95,11 @@ export function historyFor(router: AppRouter, settleMs = SETTLE_MS): AppHistory 
     },
     index: () => index,
     pushSame: (href) => {
-      // The waiting replace lands on the entry Back returns to.
+      // The waiting replace lands on the entry Back returns to. Browser history queues
+      // writes until a microtask and folds a replace followed by a push into one push,
+      // so the replace is written out before the push.
       flush();
+      router.history.flush();
       if (parseAppHref(href)) router.history.push(href);
     },
     listen: (listener) => router.history.subscribe(() => listener()),

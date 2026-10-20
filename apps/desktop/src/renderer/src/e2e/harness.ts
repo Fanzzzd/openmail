@@ -34,6 +34,7 @@ import { rendererPrefs } from "../../../shared/renderer-prefs";
 import { MailRpcs } from "../../../shared/rpc";
 import { AiClientError } from "../../../shared/ai-clients";
 import { type AppRouter, createAppRouter, historyFor, initialLocation } from "../routes/router";
+import { createAppHashHistory } from "../routes/hash-history";
 import { AppRouterProvider } from "../routes/provider";
 import { historyAtom, locationAtom } from "../state/location";
 import { composeHref, DEFAULT_VIEW, mailHref, threadHref } from "../../../shared/routes";
@@ -178,6 +179,11 @@ export async function flow(
     thread?: string;
     /** The main window's starting route, from shared/routes. */
     route?: string;
+    /**
+     * Routes through jsdom's window history the way the app does, instead of memory history.
+     * Browser history queues its writes until a microtask, which memory history does not.
+     */
+    windowHistory?: boolean;
     /** The renderer sees no accounts, as on first launch. */
     noAccounts?: boolean;
     /** Prefs requests wait until `releasePrefs`, as on a slow first load. */
@@ -477,16 +483,16 @@ export async function flow(
   );
   await rpcRuntime.runPromise(Effect.void);
   const registry = AtomRegistry.make();
+  const startHref = options.thread
+    ? threadHref(`${account.id}/${options.thread}`)
+    : composeId
+      ? composeHref(composeId)
+      : (options.route ?? mailHref(DEFAULT_VIEW));
+  if (options.windowHistory) window.history.replaceState(null, "", `#${startHref}`);
   const router = createAppRouter(
-    createMemoryHistory({
-      initialEntries: [
-        options.thread
-          ? threadHref(`${account.id}/${options.thread}`)
-          : composeId
-            ? composeHref(composeId)
-            : (options.route ?? mailHref(DEFAULT_VIEW)),
-      ],
-    }),
+    options.windowHistory
+      ? createAppHashHistory(window)
+      : createMemoryHistory({ initialEntries: [startHref] }),
   );
   await router.load();
   registry.set(locationAtom, initialLocation(router));
@@ -539,6 +545,7 @@ export async function flow(
     async dispose() {
       cleanup();
       registry.dispose();
+      router.history.destroy();
       vi.useRealTimers();
       await Effect.runPromise(Fiber.interrupt(notificationFiber));
       await rpcRuntime.dispose();

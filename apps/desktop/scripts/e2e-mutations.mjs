@@ -45,6 +45,13 @@ export const cases = [
     "markReadAfter(0",
   ],
   [
+    "narrow Back after opening",
+    "Back from a narrow reader selects",
+    `${renderer}routes/router.ts`,
+    "      router.history.flush();\n",
+    "",
+  ],
+  [
     "organization",
     "archive advances|trash advances|Gmail labels|offline archive|moves to one folder|provider latency",
     shared,
