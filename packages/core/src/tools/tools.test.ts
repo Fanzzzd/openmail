@@ -30,6 +30,7 @@ import {
 import { AgentIdentity, CLI_AGENT_NAME, cleanMcpClientName } from "./agent-identity.js";
 import { snoozeDue } from "./proposal-tools.js";
 import { SEARCH_INDEX_NOTICE } from "./thread-tools.js";
+import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 import {
   MailToolError,
   UNTRUSTED_MAIL_NOTICE,
@@ -2813,6 +2814,48 @@ it.effect("draft_message rejects a bare name instead of dropping it from the rec
       ["bob@example.com", "carol@example.com"],
     );
     assert.strictEqual(calls.length, 1);
+  }),
+);
+
+// The sync tool returned the app's "It will retry automatically." An MCP server or
+// `openmail tool` runs no sync between calls, so nothing retried.
+it.effect("the sync tool tells the model to call it again instead of promising a retry", () =>
+  Effect.gen(function* () {
+    const errors = [
+      SYNC_FAILURE_TEXT.unknown,
+      SYNC_FAILURE_TEXT.quota,
+      SYNC_FAILURE_TEXT.server,
+      SYNC_FAILURE_TEXT.auth,
+    ];
+    const layer = stubMailbox({
+      accounts: { accounts: Effect.succeed(errors.map((_, index) => testAccount(`a${index}`))) },
+      sync: {
+        sync: (id) =>
+          Effect.succeed([
+            { accountId: id ?? "", changed: 0, deleted: 0, error: errors[Number(id?.slice(1))] },
+          ]),
+      },
+    });
+    const result = yield* run(call("sync", {}), layer);
+    assert.isFalse(result.isFailure, JSON.stringify(result.encodedResult));
+    const text = JSON.stringify(result.encodedResult);
+    assert.notInclude(text, "retry automatically");
+    assert.notInclude(text, "try again later");
+    assert.deepStrictEqual(
+      Schema.decodeUnknownSync(
+        Schema.Struct({
+          untrusted_mail: Schema.Struct({
+            results: Schema.Array(Schema.Struct({ error: Schema.String })),
+          }),
+        }),
+      )(result.encodedResult).untrusted_mail.results.map((row) => row.error),
+      [
+        "Sync could not finish. Call sync again.",
+        "The mail provider is limiting requests. Call sync again later.",
+        "The mail server had a problem. Call sync again later.",
+        SYNC_FAILURE_TEXT.auth,
+      ],
+    );
   }),
 );
 

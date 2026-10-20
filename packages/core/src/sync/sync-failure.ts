@@ -21,7 +21,8 @@ export type SyncFailureReason = typeof SyncFailureReason.Type;
 
 /**
  * The fixed text stored as an account's sync error, one per reason. The desktop app translates
- * these; the CLI and MCP print them as they are.
+ * these. The CLI and the sync tool print them, except the texts that promise a retry: nothing
+ * retries there, so they say to run sync again.
  */
 export const SYNC_FAILURE_TEXT: Readonly<Record<SyncFailureReason, string>> = {
   quota: "The mail provider is limiting requests. Sync will try again later.",
@@ -138,14 +139,17 @@ export interface SyncFailureDetail {
 
 const dropSyncFailureDetail = (_detail: SyncFailureDetail) => Effect.void;
 
-/** Receives every failed sync's error. The default drops it; `openmail sync` logs it on stderr. */
+/**
+ * Receives every failed sync's error. The default drops it; `openmail sync` and the MCP server
+ * log it on stderr.
+ */
 export const SyncFailureDetailLog = Context.Reference<
   (detail: SyncFailureDetail) => Effect.Effect<void>
 >("openmail/SyncFailureDetailLog", { defaultValue: () => dropSyncFailureDetail });
 
 /**
- * Hands a failed sync's detail to SyncFailureDetailLog. The app and MCP keep the default, which
- * drops it, so the message is redacted only when a caller asked for it.
+ * Hands a failed sync's detail to SyncFailureDetailLog. The app keeps the default, which drops
+ * it, so the message is redacted only when a caller asked for it.
  */
 export const logSyncFailureDetail = (
   ...args: Parameters<typeof syncFailureDetail>

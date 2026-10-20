@@ -37,6 +37,7 @@ import { searchRest } from "../search/search-page.js";
 import { ModelThread } from "../ai/model-thread.js";
 import { threadsWithLabel } from "../mailbox/label-filter.js";
 import { SyncResult } from "../domain/sync-status.js";
+import { SYNC_FAILURE_TEXT } from "../sync/sync-failure.js";
 import { Tool } from "effect/ai";
 import type { HandlersFor, ToolContext } from "./tool-context.js";
 
@@ -167,6 +168,23 @@ export const Sync = mailTool("sync", {
   .annotate(Tool.Destructive, false)
   .annotate(Tool.Idempotent, true)
   .annotate(Tool.OpenWorld, true);
+
+/**
+ * Stored sync errors that promise a retry. The app retries while it runs; the sync tool runs
+ * once per call, in an MCP server or `openmail tool`, so the model is told to call it again.
+ */
+const TOOL_SYNC_FAILURE_TEXT = new Map([
+  [SYNC_FAILURE_TEXT.unknown, "Sync could not finish. Call sync again."],
+  [SYNC_FAILURE_TEXT.quota, "The mail provider is limiting requests. Call sync again later."],
+  [SYNC_FAILURE_TEXT.server, "The mail server had a problem. Call sync again later."],
+]);
+
+const toolSyncError = (error: string) => {
+  for (const [stored, text] of TOOL_SYNC_FAILURE_TEXT)
+    if (error === stored || error.endsWith(`: ${stored}`))
+      return `${error.slice(0, -stored.length)}${text}`;
+  return error;
+};
 
 export const threadHandlers = ({
   mailbox,
@@ -324,7 +342,10 @@ export const threadHandlers = ({
       ).pipe(
         Effect.flatMap((all) =>
           bounded(
-            all.map((row) => ({ ...row, ...(row.error ? { error: shortText(row.error) } : {}) })),
+            all.map((row) => ({
+              ...row,
+              ...(row.error ? { error: shortText(toolSyncError(row.error)) } : {}),
+            })),
             100,
             token_budget,
           ).pipe(Effect.map((results) => ({ results, omitted: all.length - results.length }))),

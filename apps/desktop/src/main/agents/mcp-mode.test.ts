@@ -1,4 +1,5 @@
 import { execFileSync, spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
@@ -139,4 +140,64 @@ it.skipIf(!process.env.CI && !existsSync(entry))(
     }
   },
   40_000,
+);
+
+// A failed sync over `OpenMail --mcp` logged only SyncFailedDiagnostic's fixed fields, so no
+// line said why, and the tool result promised a retry that the server never makes.
+it.skipIf(!process.env.CI && !existsSync(entry))(
+  "OpenMail --mcp logs why a sync failed in one line, with no hash or address",
+  async () => {
+    const work = mkdtempSync(path.join(tmpdir(), "openmail-mcp-mode-"));
+    const home = path.join(work, "home");
+    execFileSync(process.execPath, [path.join(desktopRoot, "../../scripts/demo-data.mjs"), home]);
+    try {
+      const electron = String(createRequire(import.meta.url)("electron"));
+      const child = spawn(
+        electron,
+        [desktopRoot, "--mcp", `--user-data-dir=${path.join(work, "profile")}`],
+        {
+          env: { ...clientEnv(home), OPENMAIL_OFFLINE: "1" },
+          stdio: ["pipe", "pipe", "pipe"],
+        },
+      );
+      let stdout = "";
+      let stderr = "";
+      child.stdout.on("data", (data: Buffer) => {
+        stdout += data.toString();
+        if (stdout.includes('"id":3')) child.stdin.end();
+      });
+      child.stderr.on("data", (data: Buffer) => {
+        stderr += data.toString();
+      });
+      const exited = new Promise<number | null>((resolve) => {
+        child.once("exit", resolve);
+      });
+      for (const request of [
+        ...requests.slice(0, 2),
+        { id: 3, method: "tools/call", params: { name: "sync", arguments: {} } },
+      ])
+        child.stdin.write(`${JSON.stringify({ jsonrpc: "2.0", ...request })}\n`);
+      const timer = setTimeout(() => child.kill("SIGKILL"), scaledMs(20_000));
+      const code = await exited;
+      clearTimeout(timer);
+      expect(code, stderr).toBe(0);
+      // The demo data lets AI read only the Gmail account.
+      expect(stderr.split("\n").filter((line) => line.includes("sync failed"))).toEqual([
+        expect.stringMatching(
+          /^\[\d\d:\d\d:\d\d\.\d{3}\] WARN \(#\d+\): gmail sync failed \(full\): ProviderError: Network calls are disabled in this offline session \{ logCode: 'sync-failed' \}$/,
+        ),
+      ]);
+      expect(stderr).not.toContain("Diagnostic");
+      expect(stderr).not.toContain("accountHash");
+      for (const value of ["gmail:alex@example.com", "alex@example.com"]) {
+        expect(stderr).not.toContain(value);
+        expect(stderr).not.toContain(createHash("sha256").update(value).digest("hex").slice(0, 16));
+      }
+      expect(stdout).toContain("Sync could not finish. Call sync again.");
+      expect(stdout).not.toContain("retry automatically");
+    } finally {
+      rmSync(work, { recursive: true, force: true });
+    }
+  },
+  scaledMs(30_000),
 );

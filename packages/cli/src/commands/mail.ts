@@ -17,17 +17,14 @@ import {
   optionalString,
   print,
 } from "./common.js";
-import { Console, Effect, LogLevel, Logger, Option, Schema } from "effect";
+import { Console, Effect, LogLevel, Logger, Option } from "effect";
 import {
   MAILBOXES,
   Mailbox,
-  SyncFailedDiagnostic,
-  SyncFailureDetailLog,
   type SyncResult,
   cursorScope,
   decodeCursor,
   encodeCursor,
-  logWarning,
   printable,
   redactSyncHealth,
   searchRest,
@@ -36,12 +33,12 @@ import {
 import {
   SEARCH_VALUE_FORMS,
   type SearchResult,
-  type SyncFailureDetail,
   type ThreadSummary,
   unparsedSearchOperators,
   withUnparsedOperators,
 } from "@openmail/core/schema";
 import { SEARCH_INDEX_NOTE, finishSearchIndex, withProgress } from "../sync-progress.js";
+import { withSyncFailureLog } from "../sync-failure-log.js";
 import {
   cliSyncResult,
   serverSearchFailure,
@@ -88,41 +85,6 @@ const health = Command.make(
   }),
 ).pipe(Command.withDescription("Compare cached messages with read-only server counts"));
 
-/**
- * Why an account did not sync, for --log-level: an unknown failure at warn, the rest at debug.
- * The CLI writes no diagnostics file, and core already took addresses and tokens out.
- */
-const logSyncFailure = (detail: SyncFailureDetail) => {
-  const line =
-    [
-      `${detail.provider} sync failed (${detail.scope}): ${detail.tag}`,
-      ...(detail.reason === undefined ? [] : [`reason ${detail.reason}`]),
-      ...(detail.status === undefined ? [] : [`status ${detail.status}`]),
-    ].join(", ") + (detail.message ? `: ${detail.message}` : "");
-  return detail.failure === "unknown" ? logWarning("sync-failed", line) : Effect.logDebug(line);
-};
-
-const isSyncFailedDiagnostic = Schema.is(SyncFailedDiagnostic);
-
-/**
- * Runs `effect` with loggers that skip core's SyncFailedDiagnostic. That record holds fixed
- * fields for the app's diagnostics file, and the CLI writes none. logSyncFailure's line says the
- * same and why, so --log-level warn prints one line for each failed account.
- */
-const withoutSyncFailedDiagnostic = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
-  Effect.gen(function* () {
-    const loggers = yield* Logger.CurrentLoggers;
-    const skipping = [...loggers].map((logger) =>
-      Logger.make((options) => {
-        const messages: readonly unknown[] = Array.isArray(options.message)
-          ? options.message
-          : [options.message];
-        if (!messages.some(isSyncFailedDiagnostic)) logger.log(options);
-      }),
-    );
-    return yield* effect.pipe(Effect.provideService(Logger.CurrentLoggers, new Set(skipping)));
-  });
-
 /** Accepted and ignored: list, search and sync used to run as agent tools with a byte budget. */
 const legacyBudget = Flag.Int("token-budget").pipe(Flag.withHidden, Flag.optional);
 
@@ -143,8 +105,7 @@ const sync = Command.make(
     const results = yield* withProgress(
       Effect.forEach(ids, (id) => mailbox.sync.sync(id)).pipe(
         Effect.map((rows) => rows.flat().map((row) => cliSyncResult(row, verbose))),
-        Effect.provideService(SyncFailureDetailLog, logSyncFailure),
-        withoutSyncFailedDiagnostic,
+        withSyncFailureLog,
       ),
       !json,
     );

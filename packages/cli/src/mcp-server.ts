@@ -14,6 +14,7 @@ import { McpProtocol, McpSchema, McpServer } from "effect/ai";
 import type { Tool, Toolkit } from "effect/ai";
 import { explainDefect, stderrText } from "./cli-errors.js";
 import { CLI_VERSION } from "./version.js";
+import { withSyncFailureLog } from "./sync-failure-log.js";
 import { invalidArguments } from "./tool-errors.js";
 import { logLevelProblem, parseLogLevel } from "./log-levels.js";
 
@@ -172,7 +173,9 @@ const McpLive = (allowWrites = false): Layer.Layer<never, never, Mailbox> =>
  */
 export const runMcp = (allowWrites = false): Effect.Effect<void, never, Mailbox> =>
   Effect.raceFirst(
-    Layer.launch(McpLive(allowWrites)),
+    // MCP runs no sync of its own between calls, so a failed `sync` call logs why, as
+    // `openmail sync` does.
+    withSyncFailureLog(Layer.launch(McpLive(allowWrites))),
     Effect.callback<void>((resume) => {
       const done = () => resume(Effect.void);
       process.stdin.once("end", done);

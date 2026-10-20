@@ -3,6 +3,7 @@ import { EventEmitter } from "node:events";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { waitLimit, scaledMs } from "../../../../../packages/core/test-support/test-time.js";
 import { DiagnosticHashKey } from "../../../../../packages/core/src/domain/diagnostic-log.js";
+import { SyncFailedDiagnostic } from "../../../../../packages/core/src/sync/sync-failure.js";
 
 const native = vi.hoisted(() => ({
   primary: true,
@@ -54,6 +55,8 @@ vi.mock("@openmail/core", () => ({
   },
   dataDir: Effect.succeed("/tmp/openmail-startup-test"),
   logWarning: (_code: string, ...message: unknown[]) => Effect.logWarning(...message),
+  // The MCP server's sync failure log builds its filter from it when main loads.
+  SyncFailedDiagnostic,
   NodeSystem: Layer.empty,
   NodeMailbox: (options: unknown) => {
     native.nodeMailbox(options);

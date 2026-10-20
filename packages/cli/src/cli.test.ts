@@ -932,10 +932,19 @@ describe("logs on stderr", () => {
     },
   );
 
-  test("openmail mcp prints no account hash after a failed sync", async () => {
+  // A failed MCP sync logged only SyncFailedDiagnostic's fixed fields, so no line said why.
+  test("openmail mcp logs why a sync failed in one line per account, with no hash or address", async () => {
     const stderr = await mcpSyncStderr(home.path);
-    expect(stderr).toContain("SyncFailedDiagnostic");
+    // Only the Gmail account lets AI read it, so the sync tool syncs only that one.
+    expect(stderr.split("\n").filter((line) => line.trim() !== "")).toEqual([
+      expect.stringMatching(
+        /^\[\d\d:\d\d:\d\d\.\d{3}\] WARN \(#\d+\): gmail sync failed \(full\): ProviderError: Network calls are disabled in this offline session \{ logCode: 'sync-failed' \}$/,
+      ),
+    ]);
+    expect(stderr).not.toContain("Diagnostic");
     expect(stderr).not.toContain("accountHash");
+    expect(stderr).not.toContain("alex@example.com");
+    expect(stderr).not.toContain("alex.rivera@example.org");
     for (const hash of hashes) expect(stderr).not.toContain(hash);
   });
 });

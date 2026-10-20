@@ -62,7 +62,7 @@ With `--log-level warn`, `openmail sync` prints one line for each account that f
 
 `--log-level debug` prints the same line for every other failure, such as a rate limit or a server error. The lines leave out addresses, account hashes, URL queries and tokens.
 
-The log goes to stderr. Paste it into the GitHub issue. The MCP server writes its log to stderr too, and your AI app keeps that as the server's log. To log more, add `--log-level debug` after `mcp` or `--mcp` in the server's arguments in the AI app's config.
+The log goes to stderr. Paste it into the GitHub issue. The MCP server writes its log to stderr too, and your AI app keeps that as the server's log. When its `sync` tool fails for an account, the server logs the same line: by default for an unknown reason, and with `--log-level debug` for every other failure. To log more, add `--log-level debug` after `mcp` or `--mcp` in the server's arguments in the AI app's config.
 
 ## Mail stopped syncing
 
