@@ -285,8 +285,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 54)
-      throw new Error(`Expected all 54 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 55)
+      throw new Error(`Expected all 55 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });
