@@ -1,0 +1,105 @@
+import { Effect } from "effect";
+import { afterEach, expect, it } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { screen } from "@testing-library/react/pure";
+import { clickButton, eventually, flow, row, wait } from "./harness";
+
+let current: Awaited<ReturnType<typeof flow>> | undefined;
+afterEach(async () => {
+  await current?.dispose();
+  current = undefined;
+});
+
+const work = { name: "Jordan Lee", address: "jordan.lee@work.example" };
+const home = { name: "Jordan Lee", address: "jordan@home.example" };
+const chip = (text: string) => screen.queryByRole("button", { name: `Remove ${text}` });
+const to = () => screen.getByRole("combobox", { name: "To" });
+
+/**
+ * Opens a composer whose contact suggestions arrive 50 ms after each query. Typing at 120 ms a
+ * key, the list opens for one query, closes on the next key and opens again once that query's
+ * suggestions arrive, after the last keystroke.
+ */
+async function composer() {
+  current = await flow({
+    handlers: {
+      SuggestContacts: ({ query }) =>
+        Effect.succeed(query.toLowerCase().startsWith("j") ? [work, home] : []).pipe(
+          Effect.delay("50 millis"),
+        ),
+    },
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  clickButton("New message");
+  await eventually(() => expect(to()).toBeTruthy());
+  const user = userEvent.setup({ delay: 120 });
+  await user.click(to());
+  return user;
+}
+
+async function typeAndWait(user: ReturnType<typeof userEvent.setup>, text: string) {
+  await user.type(to(), text);
+  await eventually(() => expect(screen.getAllByRole("option")).toHaveLength(2));
+}
+
+// Base UI highlighted the first item only on a keystroke that found items already listed, so
+// suggestions that came after the last key left nothing highlighted and Enter or Tab made an
+// invalid "jor" chip.
+for (const stroke of ["{Enter}", "{Tab}"])
+  it(`${stroke} picks the first suggestion that arrived after the last key`, async () => {
+    const user = await composer();
+    await typeAndWait(user, "jor");
+    await eventually(() => expect(to().getAttribute("aria-activedescendant")).toBeTruthy());
+    await user.keyboard(stroke);
+    await eventually(() => expect(chip(`Jordan Lee <${work.address}>`)).toBeTruthy());
+    expect(chip("jor")).toBeNull();
+    expect(document.activeElement).toBe(to());
+  });
+
+it("Down and Up move the highlight through suggestions that arrived late", async () => {
+  const user = await composer();
+  await typeAndWait(user, "jor");
+  await user.keyboard("{ArrowDown}{ArrowUp}{ArrowDown}{Enter}");
+  await eventually(() => expect(chip(`Jordan Lee <${home.address}>`)).toBeTruthy());
+  expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
+});
+
+for (const stroke of ["{Enter}", "{Tab}"])
+  it(`${stroke} keeps a complete typed address over the highlighted suggestion`, async () => {
+    const user = await composer();
+    await typeAndWait(user, "jo@example.org");
+    await user.keyboard(stroke);
+    await eventually(() => expect(chip("jo@example.org")).toBeTruthy());
+    expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
+  });
+
+it("Enter after moving the highlight picks the suggestion over a typed address", async () => {
+  const user = await composer();
+  await typeAndWait(user, "jo@example.org");
+  await user.keyboard("{ArrowDown}{Enter}");
+  await eventually(() => expect(chip(`Jordan Lee <${home.address}>`)).toBeTruthy());
+  expect(chip("jo@example.org")).toBeNull();
+});
+
+it("Enter and Tab turn an address with no suggestion into a chip", async () => {
+  const user = await composer();
+  await user.type(to(), "carol@example.com");
+  await wait(400);
+  await user.keyboard("{Enter}");
+  await eventually(() => expect(chip("carol@example.com")).toBeTruthy());
+  expect(document.activeElement).toBe(to());
+  await user.type(to(), "dave@example.com");
+  await wait(400);
+  await user.keyboard("{Tab}");
+  await eventually(() => expect(chip("dave@example.com")).toBeTruthy());
+  expect(document.activeElement).not.toBe(to());
+});
+
+it("a comma still turns the typed text into a chip with suggestions showing", async () => {
+  const user = await composer();
+  await typeAndWait(user, "jor");
+  await user.type(to(), ",");
+  await eventually(() => expect(chip("jor")).toBeTruthy());
+  expect(chip(`Jordan Lee <${work.address}>`)).toBeNull();
+});

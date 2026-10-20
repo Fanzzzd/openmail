@@ -57,10 +57,15 @@ const serialize = (chips: readonly string[], typed: string) => {
 
 /**
  * A To, Cc or Bcc field. Finished addresses show as chips; the address being
- * typed gets suggestions from mail history. Enter or Tab picks the
- * highlighted suggestion, a separator or Enter turns typed text into a chip,
- * and Backspace in an empty field removes the last chip. The × on a
- * suggestion hides that address from suggestions.
+ * typed gets suggestions from mail history. The first suggestion is
+ * highlighted as soon as suggestions arrive, also when they arrive after the
+ * last keystroke. Enter or Tab picks the highlighted suggestion, except that
+ * typed text that is already one complete address wins over a highlight the
+ * user did not move with the keyboard or pointer. Without a suggestion, Enter
+ * turns typed text into a chip and Tab moves on, which does the same on blur.
+ * A separator turns typed text into a chip, and Backspace in an empty field
+ * removes the last chip. The × on a suggestion hides that address from
+ * suggestions.
  */
 export function RecipientField({
   label,
@@ -83,6 +88,8 @@ export function RecipientField({
   const [typed, setTyped] = useState("");
   const [open, setOpen] = useState(false);
   const [highlighted, setHighlighted] = useState<string | undefined>();
+  /** The user moved the highlight with the keyboard or pointer, rather than autoHighlight. */
+  const [chose, setChose] = useState(false);
   const hide = useAtomSet(setContactHiddenAtom);
 
   // The value is the source of truth. The last token is still being typed
@@ -96,7 +103,8 @@ export function RecipientField({
   const query = inputText.trim();
 
   const suggestions: Suggestions = query ? suggestionsAtom(query, from) : none;
-  const found = AsyncResult.getOrElse(useAtomValue(suggestions), () => []);
+  const suggested = useAtomValue(suggestions);
+  const found = AsyncResult.getOrElse(suggested, () => []);
   const taken = new Set(parseAddresses(value).addresses.map((a) => a.address.toLowerCase()));
   const shown = found.filter((a) => !taken.has(a.address.toLowerCase()));
   const byText = new Map(shown.map((a) => [formatAddress(a), a]));
@@ -106,6 +114,14 @@ export function RecipientField({
   const byGroup = new Map(groups.map((group) => [`group:${group.accountId}:${group.id}`, group]));
   const items = [...byText.keys(), ...(query ? byGroup.keys() : [])];
   const listed = open && query !== "" && items.length > 0;
+  // Base UI forgets a keystroke's highlight request when the popup closes. Keeping the popup
+  // open, empty and hidden while the query's suggestions load lets autoHighlight mark the first
+  // of them when they arrive after the last keystroke.
+  const loading = query !== "" && (suggested._tag === "Initial" || suggested.waiting);
+  const popupOpen = open && query !== "" && (items.length > 0 || loading);
+  const typedAddress = parseAddresses(query);
+  const complete = typedAddress.addresses.length === 1 && typedAddress.invalid.length === 0;
+  const suggestion = listed && highlighted && (chose || !complete) ? highlighted : undefined;
   useOpenSurface(listed, () => setOpen(false));
 
   const emit = (next: string) => {
@@ -117,6 +133,7 @@ export function RecipientField({
     const rest = parts.pop() ?? "";
     const done = parts.map((part) => part.trim()).filter(Boolean);
     setTyped(rest);
+    setChose(false);
     emit(serialize([...chips, ...done], rest));
   };
 
@@ -161,11 +178,14 @@ export function RecipientField({
         // Only typing changes the text; clears after a pick or on close are ignored.
         if (details.reason === "input-change") type(text);
       }}
-      open={listed}
+      open={popupOpen}
       onOpenChange={(next) => setOpen(next)}
       openOnInputClick={false}
       autoHighlight
-      onItemHighlighted={(item) => setHighlighted(item)}
+      onItemHighlighted={(item, details) => {
+        setHighlighted(item);
+        setChose(item !== undefined && details.reason !== "none");
+      }}
     >
       <Combobox.Chips
         ref={fieldRef}
@@ -261,11 +281,13 @@ export function RecipientField({
             if (e.key === "Escape" && !listed) {
               // Nothing to close here: let the compose window handle it.
               e.preventBaseUIHandler();
-            } else if (e.key === "Tab" && !e.shiftKey && listed && highlighted) {
+            } else if (e.key === "Tab" && !e.shiftKey && suggestion) {
               e.preventDefault();
-              pick(highlighted);
-            } else if (e.key === "Enter" && !(listed && highlighted) && commit()) {
+              pick(suggestion);
+            } else if (e.key === "Enter" && !suggestion && commit()) {
               e.preventDefault();
+              // Base UI would pick the highlighted suggestion over the typed address.
+              e.preventBaseUIHandler();
             }
           }}
           onBlur={() => {
@@ -287,7 +309,7 @@ export function RecipientField({
         >
           <Combobox.Popup
             aria-label={t`${label} suggestions`}
-            className={`max-h-64 w-80 overflow-y-auto p-[5px] ${popupSurface} ${popupMotion}`}
+            className={`max-h-64 w-80 overflow-y-auto p-[5px] data-empty:hidden ${popupSurface} ${popupMotion}`}
           >
             <Combobox.List>
               {(text: string) => {
