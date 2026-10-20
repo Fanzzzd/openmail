@@ -180,6 +180,12 @@ export function EmailFrame({
     };
   }, [frameDocument, fit]);
   const [hint, setHint] = useState<{ document: string; url: string | null } | null>(null);
+  /**
+   * Keyboard focus is in the message. While the page inside has focus, Chromium sends the iframe
+   * element no focus event and does not match :focus-visible on it, so the frame's window
+   * reports focus. A pointer press inside the page leaves the ring off, as :focus-visible would.
+   */
+  const [keyboardFocus, setKeyboardFocus] = useState(false);
   const dispose = useRef<(() => void) | undefined>(undefined);
   const keys = useRef(onKeyDown);
   useEffect(() => {
@@ -218,6 +224,23 @@ export function EmailFrame({
     const scroll = () => keepLeftEdge(frameDoc);
     frameDoc.addEventListener("scroll", scroll);
     const stopActivation = listenForMessageActivation(frameDoc, () => activate.current());
+    const frameWindow = frameDoc.defaultView;
+    let pressed = false;
+    const press = () => {
+      pressed = true;
+      setKeyboardFocus(false);
+    };
+    const focus = () => {
+      setKeyboardFocus(!pressed);
+      pressed = false;
+    };
+    const blur = () => {
+      pressed = false;
+      setKeyboardFocus(false);
+    };
+    frameDoc.addEventListener("pointerdown", press, true);
+    frameWindow?.addEventListener("focus", focus);
+    frameWindow?.addEventListener("blur", blur);
     const click = (event: MouseEvent) => {
       event.preventDefault();
       const element =
@@ -249,12 +272,22 @@ export function EmailFrame({
       frameDoc.removeEventListener("auxclick", click);
       frameDoc.removeEventListener("keydown", keydown);
       frameDoc.removeEventListener("scroll", scroll);
+      frameDoc.removeEventListener("pointerdown", press, true);
+      frameWindow?.removeEventListener("focus", focus);
+      frameWindow?.removeEventListener("blur", blur);
+      setKeyboardFocus(false);
       stopActivation();
     };
   };
 
   return (
-    <div onMouseLeave={() => setHint(null)} className={frameSurface(background, presentation)}>
+    <div
+      onMouseLeave={() => setHint(null)}
+      data-keyboard-focus={keyboardFocus || undefined}
+      // The app's focus colors, blue-700 and blue-300, follow the message's surface here, not the
+      // appearance, like the Fit to width button. Drawn inside, as the reader clips the surface.
+      className={`${frameSurface(background, presentation)} data-keyboard-focus:outline-2 data-keyboard-focus:-outline-offset-2 data-keyboard-focus:outline-solid ${background === "dark" ? "data-keyboard-focus:outline-blue-300" : "data-keyboard-focus:outline-blue-700"}`}
+    >
       <div ref={boxRef} style={{ height: FRAME_INITIAL_HEIGHT }}>
         <iframe
           ref={frameRef}

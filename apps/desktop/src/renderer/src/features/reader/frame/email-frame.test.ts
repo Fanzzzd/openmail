@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, expect, it, onTestFinished, vi } from "vitest";
 import { createElement } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { setupI18n } from "@lingui/core";
@@ -161,4 +161,68 @@ it("loads no stylesheet from the network, even with remote images allowed", () =
   // A fetched stylesheet's own url() and @import bypass the tracker and pixel filters.
   expect(directive("style-src")).toEqual(["'unsafe-inline'"]);
   expect(directive("img-src")).toContain("https:");
+});
+
+// The message frame is a Tab stop, but nothing showed when focus went into it.
+it("rings the message while keyboard focus is in it, and not after a click", async () => {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe = constVoid;
+      disconnect = constVoid;
+    },
+  );
+  onTestFinished(() => {
+    vi.unstubAllGlobals();
+  });
+  render(
+    createElement(
+      I18nProvider,
+      { i18n: setupI18n({ locale: "en", messages: {} }) },
+      createElement(EmailFrame, {
+        html: "<p>Hello</p>",
+        remote: false,
+        background: "light",
+        zoom: 100,
+        onActivate: constVoid,
+        previous: { bodies: [], before: 0 },
+        findQuery: "",
+        findIndex: 0,
+        onMatches: undefined,
+      }),
+    ),
+  );
+  const frame = screen.getByTitle("Message");
+  const surface = frame.parentElement?.parentElement;
+  if (!(frame instanceof HTMLIFrameElement) || !frame.contentDocument || !frame.contentWindow)
+    throw new Error("Missing message frame document");
+  if (!surface) throw new Error("Missing frame surface");
+  const doc = frame.contentDocument;
+  const view = frame.contentWindow;
+  doc.open();
+  doc.write(frame.srcdoc);
+  doc.close();
+  Object.defineProperty(doc, "URL", { value: "about:srcdoc" });
+  Object.defineProperty(doc, "fonts", { value: new EventTarget() });
+  await act(async () => {
+    frame.dispatchEvent(new Event("load"));
+  });
+  const ringed = () => surface.hasAttribute("data-keyboard-focus");
+  expect(ringed()).toBe(false);
+  expect(surface.className).toContain("data-keyboard-focus:outline-blue-700");
+  // Tab into the message.
+  act(() => {
+    view.dispatchEvent(new Event("focus"));
+  });
+  expect(ringed()).toBe(true);
+  act(() => {
+    view.dispatchEvent(new Event("blur"));
+  });
+  expect(ringed()).toBe(false);
+  // A click into the message.
+  act(() => {
+    doc.body.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    view.dispatchEvent(new Event("focus"));
+  });
+  expect(ringed()).toBe(false);
 });
