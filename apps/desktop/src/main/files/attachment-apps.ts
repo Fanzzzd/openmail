@@ -3,6 +3,7 @@ import { lstat } from "node:fs/promises";
 import { homedir } from "node:os";
 import path from "node:path";
 import { nativeBinary } from "../app/native-binary";
+import { openWithMacOS } from "../windows/reveal";
 import { Effect, Schema } from "effect";
 import { DeviceError, deviceFailure } from "@openmail/core";
 
@@ -83,5 +84,9 @@ export const openAttachmentWith = (application: string, file: string, roots = tr
       yield* new DeviceError({
         message: "The selected application is no longer a trusted directory.",
       });
-    yield* execute("/usr/bin/open", ["-a", application, "--", file]);
+    yield* Effect.tryPromise({
+      try: () =>
+        openWithMacOS(["-a", application, "--", file], { timeout: 15_000, maxBuffer: 1024 * 1024 }),
+      catch: deviceFailure,
+    });
   });

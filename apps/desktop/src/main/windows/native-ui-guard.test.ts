@@ -13,15 +13,17 @@ const banned: readonly { name: string; pattern: RegExp }[] = [
   { name: "<details>", pattern: /<details[\s>]/g },
   { name: "<progress>", pattern: /<progress[\s>]/g },
   { name: "Menu.buildFromTemplate", pattern: /\bMenu\.buildFromTemplate\b/g },
-  { name: "Menu.popup", pattern: /\bMenu\.popup\b|\.popup\s*\(/g },
+  // reveal.ts pops the menu; a call site names popupMenu.
+  { name: "Menu.popup", pattern: /\bMenu\.popup\b|\.popup\s*\(|\bpopupMenu\s*\(/g },
 ];
 
 /** Where each native API may appear, with the reason. */
 const allowed: Record<string, readonly string[]> = {
   // Fallbacks when no renderer can draw the React prompt (quit, update result, recovery).
   "main/system/native-fallback.ts": ["dialog.showMessageBox"],
-  // The hidden-windows gate that native-fallback.ts calls; a hidden run answers Cancel.
-  "main/windows/reveal.ts": ["dialog.showMessageBox"],
+  // The hidden-windows gate that native-fallback.ts and the menus below call; a hidden run
+  // answers Cancel and pops no menu.
+  "main/windows/reveal.ts": ["dialog.showMessageBox", "Menu.popup"],
   // OS-owned surfaces: Dock menu, menu bar extra (tray) and the application menu bar.
   "main/system/system.ts": ["Menu.buildFromTemplate"],
   // Writing Tools, AutoFill and Services exist only in a native menu at the right-clicked frame.

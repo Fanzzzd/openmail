@@ -1,15 +1,23 @@
+import { execFile } from "node:child_process";
+import path from "node:path";
 import {
   app,
   type BrowserWindow,
+  clipboard,
+  ClipboardItem,
   dialog,
+  type Menu,
   type MessageBoxOptions,
   type MessageBoxReturnValue,
   type NativeImage,
   type Notification,
   type OpenDialogOptions,
   type OpenDialogReturnValue,
+  type PopupOptions,
   type SaveDialogOptions,
   type SaveDialogReturnValue,
+  type ShareMenu,
+  shell,
   Tray,
   type WebContents,
   type WebContentsPrintOptions,
@@ -27,8 +35,10 @@ import {
  *
  * Packaged builds ignore both variables. Every show, focus, maximize or full-screen call in the
  * main process goes through this module so a mode cannot be bypassed, and so do native dialogs,
- * Quick Look, printing, the menu-bar icon and notifications. A hidden run answers each dialog
- * and panel as if the person cancelled it.
+ * Quick Look, printing, the menu-bar icon, notifications, popup and share menus, opening a URL,
+ * file or Finder window in another app, and the clipboard. A hidden run answers each dialog,
+ * panel and menu as if the person cancelled it, opens nothing in another app, and keeps
+ * clipboard writes in memory.
  */
 export type WindowMode = "normal" | "background" | "hidden";
 
@@ -156,4 +166,99 @@ export function printContents(
 ) {
   if (hiddenWindows()) done(false, "cancelled");
   else contents.print(options, done);
+}
+
+const skipped = (what: string) => {
+  process.stderr.write(`Hidden windows: did not ${what}\n`);
+};
+
+/**
+ * Opens `url` in its default app. A hidden run opens nothing, logs the scheme and host only (a
+ * mail link can carry a token in its path or query) and resolves as if the app opened.
+ */
+export function openExternalUrl(url: string): Promise<void> {
+  if (!hiddenWindows()) return shell.openExternal(url);
+  const parsed = URL.parse(url);
+  skipped(`open a ${parsed ? `${parsed.protocol}//${parsed.host}` : "malformed"} URL`);
+  return Promise.resolve();
+}
+
+/**
+ * Opens `file` in its default app; resolves to Electron's error message, or "" on success. A
+ * hidden run opens nothing and resolves to "".
+ */
+export function openPath(file: string): Promise<string> {
+  if (!hiddenWindows()) return shell.openPath(file);
+  skipped(`open ${path.basename(file)}`);
+  return Promise.resolve("");
+}
+
+/** Shows `file` in a Finder window. A hidden run shows nothing. */
+export function showItemInFolder(file: string) {
+  if (!hiddenWindows()) shell.showItemInFolder(file);
+  else skipped(`show ${path.basename(file)} in Finder`);
+}
+
+/**
+ * Runs macOS `open` with `args`, which starts or raises another app, and rejects with execFile's
+ * error. A hidden run starts nothing and resolves.
+ */
+export function openWithMacOS(
+  args: readonly string[],
+  options: { timeout: number; maxBuffer?: number },
+): Promise<void> {
+  if (hiddenWindows()) {
+    skipped(`run open ${args.filter((arg) => arg.startsWith("-")).join(" ")}`);
+    return Promise.resolve();
+  }
+  return new Promise((resolve, reject) => {
+    execFile("/usr/bin/open", args, options, (error) => (error ? reject(error) : resolve()));
+  });
+}
+
+/**
+ * Pops up a context or share menu. A hidden run shows nothing and closes it at once: `callback`
+ * runs as it would after the person dismissed the menu.
+ */
+export function popupMenu(menu: Menu | ShareMenu, options: PopupOptions) {
+  if (!hiddenWindows()) {
+    menu.popup(options);
+    return;
+  }
+  skipped("pop up a menu");
+  options.callback?.();
+}
+
+/**
+ * What a hidden run copied: the system clipboard belongs to the person at the keyboard. Reads in
+ * the same run return it, so a copy and paste still round-trips; before any write it is empty.
+ */
+let memory: { items: ClipboardItem[]; text: string } = { items: [], text: "" };
+
+/** The clipboard's items. A hidden run reads its own writes only. */
+export function readClipboard(): Promise<ClipboardItem[]> {
+  return hiddenWindows() ? Promise.resolve([...memory.items]) : clipboard.read();
+}
+
+/** The clipboard's plain text. A hidden run reads its own writes only. */
+export async function readClipboardText(): Promise<string> {
+  if (!hiddenWindows()) return clipboard.readText();
+  if (memory.text) return memory.text;
+  const item = memory.items.find((entry) => entry.types.includes("text/plain"));
+  const value = await item?.getType("text/plain");
+  return value instanceof Blob ? value.text() : "";
+}
+
+/** Replaces the clipboard's content with `items`. A hidden run keeps them in memory. */
+export function writeClipboard(items: ClipboardItem[]): Promise<void> {
+  if (!hiddenWindows()) return clipboard.write(items);
+  memory = { items: [...items], text: "" };
+  return Promise.resolve();
+}
+
+/** Replaces the clipboard's content with `text`. A hidden run keeps it in memory. */
+export function writeClipboardText(text: string): Promise<void> {
+  if (!hiddenWindows()) return clipboard.writeText(text);
+  memory = { items: [new ClipboardItem({ "text/plain": text })], text };
+  return Promise.resolve();
 }

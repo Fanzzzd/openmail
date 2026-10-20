@@ -2,6 +2,7 @@ import { app, BrowserWindow, Menu, session, type WebContents } from "electron";
 import { constVoid } from "effect/Function";
 import type { Prefs, PrefsPatch } from "@openmail/core";
 import type { TextMenuCommand } from "../../shared/window-ui";
+import { popupMenu } from "./reveal";
 import { sendWindowUi } from "./window-ui";
 
 let current: Pick<Prefs, "spellcheck" | "spellcheckLanguages"> = {
@@ -97,7 +98,7 @@ export function textMenuCommand(
  */
 export function popupWritingTools(win: BrowserWindow, state: MenuState) {
   if (!state.frame || win.isDestroyed()) return;
-  Menu.buildFromTemplate([{ role: "cut" }, { role: "copy" }, { role: "paste" }]).popup({
+  popupMenu(Menu.buildFromTemplate([{ role: "cut" }, { role: "copy" }, { role: "paste" }]), {
     window: win,
     frame: state.frame,
     x: Math.round(state.x),

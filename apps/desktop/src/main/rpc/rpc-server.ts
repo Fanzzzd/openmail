@@ -20,7 +20,12 @@ import { desktopAppleContacts } from "../system/apple-contacts";
 import { currentUpdateState } from "../updates/update-state";
 import { checkForUpdateState } from "../updates/updates";
 import { switchWindow } from "../windows/window-keys";
-import { focusWindow, showOpenDialog } from "../windows/reveal";
+import {
+  focusWindow,
+  readClipboardText,
+  showOpenDialog,
+  writeClipboardText,
+} from "../windows/reveal";
 import { DEMO_DOWNLOADS, demoDownloads } from "../files/downloads-demo";
 import {
   appDownloads,
@@ -54,15 +59,7 @@ import { becomeDefaultClient, defaultClientStatus } from "../system/default-clie
 import { diagnosticSnapshot, IMAP_PRESETS, Mailbox, senderSearchQuery } from "@openmail/core";
 import { diagnosticEnvironment } from "../app/diagnostic-environment";
 import { Effect, FiberSet, Layer, Queue, Stream } from "effect";
-import {
-  app,
-  BrowserWindow,
-  clipboard,
-  ipcMain,
-  type IpcMainEvent,
-  webContents,
-  session,
-} from "electron";
+import { app, BrowserWindow, ipcMain, type IpcMainEvent, webContents, session } from "electron";
 
 import { RPC_CHANNEL } from "../../shared/channel";
 import { RemoteAccess } from "../remote/remote-access-live";
@@ -253,7 +250,7 @@ const Handlers = MailRpcs.toLayer(
           return showOpenDialog(parent, options);
         }),
       SwitchWindow: ({ action }, { client }) => Effect.sync(() => switchWindow(client.id, action)),
-      ClipboardText: () => Effect.promise(() => clipboard.readText()),
+      ClipboardText: () => Effect.promise(() => readClipboardText()),
       OpenMailLink: ({ url }) =>
         Effect.gen(function* () {
           const target = externalUrl(url);
@@ -321,7 +318,7 @@ const Handlers = MailRpcs.toLayer(
         (kind === "web"
           ? m.reading.messageWebUrl(id)
           : m.reading.privateMailLink(id, kind ?? "message")
-        ).pipe(Effect.flatMap((link) => Effect.promise(() => clipboard.writeText(link)))),
+        ).pipe(Effect.flatMap((link) => Effect.promise(() => writeClipboardText(link)))),
       SetActiveSpace: ({ space }, { client }) => desktop.setSpace(client.id, space),
       NativeEdit: ({ action }, { client }) =>
         Effect.sync(() => {

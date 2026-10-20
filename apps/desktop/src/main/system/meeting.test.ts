@@ -1,6 +1,9 @@
 import { expect, it, vi } from "vitest";
 import { Effect } from "effect";
-vi.mock("electron", () => ({ shell: { openExternal: vi.fn(() => Promise.resolve()) } }));
+vi.mock("electron", () => ({
+  app: { isPackaged: false },
+  shell: { openExternal: vi.fn(() => Promise.resolve()) },
+}));
 import { shell } from "electron";
 import { openMeeting } from "./meeting";
 

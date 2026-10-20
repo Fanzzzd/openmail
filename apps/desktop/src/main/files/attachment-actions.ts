@@ -3,15 +3,7 @@ import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { Effect } from "effect";
-import {
-  app,
-  clipboard,
-  ClipboardItem,
-  nativeImage,
-  ShareMenu,
-  shell,
-  type BrowserWindow,
-} from "electron";
+import { app, ClipboardItem, nativeImage, ShareMenu, type BrowserWindow } from "electron";
 import {
   logWarning,
   DeviceError,
@@ -21,7 +13,14 @@ import {
   type Mailbox,
   type PerformError,
 } from "@openmail/core";
-import { previewFile, showOpenDialog } from "../windows/reveal";
+import {
+  openPath,
+  popupMenu,
+  previewFile,
+  showItemInFolder,
+  showOpenDialog,
+  writeClipboard,
+} from "../windows/reveal";
 import { attachmentTemp, type TempBatch } from "./attachment-temp";
 import { openedAttachments } from "./opened-attachments";
 import { EXECUTABLE, launcherBlockedMessage, safeFilename } from "./attachment-filenames";
@@ -170,8 +169,8 @@ export const appDownloads = (m: Mailbox["Service"], run: (effect: Effect.Effect<
     fetch: (source) => m.reading.attachmentPart(source.messageId, source.path),
     blocked: isBlocked,
     quarantine,
-    openPath: (file) => shell.openPath(file),
-    showItem: (file) => shell.showItemInFolder(file),
+    openPath,
+    showItem: showItemInFolder,
     run,
   }));
 
@@ -326,7 +325,7 @@ const openFiles = Effect.fnUntraced(function* (files: readonly string[]) {
   for (const file of files) {
     yield* Effect.tryPromise({ try: () => stat(file), catch: deviceFailure });
     const error = yield* Effect.tryPromise({
-      try: () => shell.openPath(file),
+      try: () => openPath(file),
       catch: deviceFailure,
     });
     if (error) return yield* new DeviceError({ message: error });
@@ -475,14 +474,15 @@ export const attachmentAction: (
       }
       case "share":
         yield* Effect.try({
-          try: () => new ShareMenu({ filePaths: files }).popup(parent ? { window: parent } : {}),
+          try: () =>
+            popupMenu(new ShareMenu({ filePaths: files }), parent ? { window: parent } : {}),
           catch: deviceFailure,
         });
         return countResult(files.length);
       case "copy":
         yield* Effect.tryPromise({
           try: () =>
-            clipboard.write([
+            writeClipboard([
               new ClipboardItem({
                 "text/uri-list": files.map((file) => pathToFileURL(file).href).join("\r\n"),
               }),

@@ -1,6 +1,7 @@
-import { app, shell } from "electron";
+import { app } from "electron";
 import { createRequire } from "node:module";
 import path from "node:path";
+import { openExternalUrl } from "../windows/reveal";
 import {
   readNotificationPermission,
   openNotificationSettingsWith,
@@ -14,4 +15,4 @@ export const notificationPermission = (request = false) =>
     load: () => require(path.join(process.resourcesPath, "native/notification-permissions.node")),
   });
 export const openNotificationSettings = () =>
-  openNotificationSettingsWith(process.platform, (url) => shell.openExternal(url));
+  openNotificationSettingsWith(process.platform, openExternalUrl);

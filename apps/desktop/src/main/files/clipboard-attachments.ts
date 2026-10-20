@@ -1,7 +1,7 @@
 import { COMPOSE_ATTACHMENT_LIMIT, DeviceError, type OutgoingAttachment } from "@openmail/core";
 import { Effect } from "effect";
-import { clipboard } from "electron";
 import { RASTER_IMAGE } from "../../shared/native-compose";
+import { readClipboard } from "../windows/reveal";
 
 type ClipboardEntry = {
   readonly types: readonly string[];
@@ -34,7 +34,7 @@ export async function readClipboardAttachments(
 /** No filesystem reads, even if the native clipboard contains file URLs. */
 export const clipboardAttachments = () =>
   Effect.tryPromise({
-    try: async () => readClipboardAttachments(await clipboard.read()),
+    try: async () => readClipboardAttachments(await readClipboard()),
     catch: (error) =>
       new DeviceError({ message: error instanceof Error ? error.message : String(error) }),
   });

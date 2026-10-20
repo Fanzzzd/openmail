@@ -1,4 +1,5 @@
 import { ShareMenu, type BrowserWindow } from "electron";
+import { popupMenu } from "../windows/reveal";
 import { Effect } from "effect";
 import { DeviceError, type Mailbox } from "@openmail/core";
 
@@ -17,7 +18,7 @@ export const shareMessageLink = (
     yield* Effect.try({
       try: () => {
         if (parent.isDestroyed()) throw new Error("Window closed");
-        new ShareMenu({ urls: [url] }).popup({ window: parent });
+        popupMenu(new ShareMenu({ urls: [url] }), { window: parent });
       },
       catch: () => new DeviceError({ message: "Message sharing is unavailable." }),
     });

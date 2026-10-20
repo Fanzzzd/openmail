@@ -1,6 +1,6 @@
 import { execFile } from "node:child_process";
 import { nativeBinary } from "../app/native-binary";
-import { app, shell } from "electron";
+import { app } from "electron";
 import { Effect } from "effect";
 import { appleContactVCard, DeviceError, type Address, type Mailbox } from "@openmail/core";
 import {
@@ -9,6 +9,7 @@ import {
   createAppleContactsController,
 } from "./apple-contacts-policy";
 import { AttachmentTemp } from "../files/attachment-temp";
+import { openExternalUrl, openWithMacOS } from "../windows/reveal";
 
 const failed = () => new DeviceError({ message: "Contacts operation failed." });
 export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
@@ -117,7 +118,7 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
         const identifier = contacts.cache.identifier(address);
         if (!identifier) return yield* failed();
         return yield* Effect.tryPromise({
-          try: () => shell.openExternal(appleContactUrl(identifier)),
+          try: () => openExternalUrl(appleContactUrl(identifier)),
           catch: failed,
         });
       }),
@@ -129,21 +130,18 @@ export function desktopAppleContacts(mailbox: Mailbox["Service"]) {
           temp ??= new AttachmentTemp(app.getPath("temp"));
           const [file] = await temp.write([{ filename: "contact.vcf", data }]);
           if (!file) throw new Error("Could not create vCard");
-          await new Promise<void>((resolve, reject) => {
-            execFile(
-              "/usr/bin/open",
-              ["-b", "com.apple.AddressBook", file],
-              { timeout: 15_000 },
-              (error) => (error ? reject(new Error("Could not open vCard")) : resolve()),
-            );
-          });
+          await openWithMacOS(["-b", "com.apple.AddressBook", file], { timeout: 15_000 }).catch(
+            () => {
+              throw new Error("Could not open vCard");
+            },
+          );
         },
         catch: failed,
       }),
     openSettings: () =>
       Effect.tryPromise({
         try: () =>
-          shell.openExternal(
+          openExternalUrl(
             "x-apple.systempreferences:com.apple.preference.security?Privacy_Contacts",
           ),
         catch: failed,
