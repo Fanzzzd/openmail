@@ -29,18 +29,10 @@ import { Context, Effect, FiberSet, Layer, Queue, Schedule, Semaphore, Stream } 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  app,
-  BrowserWindow,
-  Menu,
-  nativeImage,
-  net,
-  Notification,
-  powerMonitor,
-  Tray,
-} from "electron";
+import { app, BrowserWindow, Menu, nativeImage, net, Notification, powerMonitor } from "electron";
 
 import { menuEdit } from "../windows/menu-edit";
+import { createTray } from "../windows/reveal";
 import { watchOnline } from "../app/online";
 import { manualUpdateCheck } from "../updates/updates";
 import { nativeAsk } from "./native-fallback";
@@ -256,16 +248,18 @@ export const DesktopLive = Layer.effect(
         );
     };
 
-    // Template image adapts to the menu bar's light/dark appearance.
-    const trayIcon = nativeImage.createFromPath(
-      app.isPackaged
-        ? path.join(process.resourcesPath, "trayTemplate.png")
-        : fileURLToPath(new URL("../../build/trayTemplate.png", import.meta.url)),
-    );
-    trayIcon.setTemplateImage(true);
-    const tray = new Tray(trayIcon);
-    tray.setToolTip(APP_TITLE);
-    yield* Effect.addFinalizer(() => Effect.sync(() => tray.destroy()));
+    // Template image adapts to the menu bar's light/dark appearance. A hidden run has no tray.
+    const tray = createTray(() => {
+      const icon = nativeImage.createFromPath(
+        app.isPackaged
+          ? path.join(process.resourcesPath, "trayTemplate.png")
+          : fileURLToPath(new URL("../../build/trayTemplate.png", import.meta.url)),
+      );
+      icon.setTemplateImage(true);
+      return icon;
+    });
+    tray?.setToolTip(APP_TITLE);
+    yield* Effect.addFinalizer(() => Effect.sync(() => tray?.destroy()));
 
     let checkingUpdates = false;
     const checkUpdates = () => {
@@ -352,9 +346,9 @@ export const DesktopLive = Layer.effect(
         const title = profiles.find((p) => p.id === activeSpace)?.name ?? labels.allAccounts;
         app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
         if (process.platform === "darwin")
-          tray.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
-        tray.setToolTip(`${APP_TITLE} · ${title} (${unread})`);
-        tray.setContextMenu(
+          tray?.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
+        tray?.setToolTip(`${APP_TITLE} · ${title} (${unread})`);
+        tray?.setContextMenu(
           Menu.buildFromTemplate([
             { label: `${title} (${unread})`, enabled: false },
             { type: "separator" },

@@ -1,5 +1,10 @@
 import { connectCdp, listTargets } from "./cdp.mjs";
-import { smokeClickExpression, isBlockedSmokeImage, smokeEnvironment } from "./smoke-ui.mjs";
+import {
+  smokeClickExpression,
+  isBlockedSmokeImage,
+  requireBuild,
+  smokeEnvironment,
+} from "./smoke-ui.mjs";
 import { spawn } from "node:child_process";
 import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -19,6 +24,8 @@ const { values } = parseArgs({
     network: { type: "boolean", default: false },
   },
 });
+// A missing build makes Electron show a native error box on screen before hidden windows apply.
+requireBuild();
 const timeout = Number(values.timeout);
 if (!Number.isSafeInteger(timeout) || timeout < 1000) throw new Error("Invalid --timeout");
 const requestedPort = values.port ? Number(values.port) : 0;

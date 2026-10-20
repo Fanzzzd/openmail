@@ -5,6 +5,7 @@ import { expect, it } from "vitest";
 import {
   smokeClickExpression,
   isBlockedSmokeImage,
+  missingBuild,
   smokeEnvironment,
   visibleWindowsRefusal,
 } from "../../../../scripts/smoke-ui.mjs";
@@ -102,6 +103,17 @@ it("harnesses that show windows refuse to run without OPENMAIL_VISIBLE_WINDOWS_O
   expect(visibleWindowsRefusal({ OPENMAIL_VISIBLE_WINDOWS_OK: "1" }, "x", "y")).toBeNull();
 });
 
+it("a hidden harness stops before Electron when the build is missing", () => {
+  const main = "/repo/apps/desktop/out/main/index.js";
+  const mcp = "/repo/packages/cli/dist/mcp-server.js";
+  const desktop = "/repo/apps/desktop";
+  expect(missingBuild(desktop, (file) => file === main || file === mcp)).toBeNull();
+  const noMain = missingBuild(desktop, (file) => file !== main);
+  expect(noMain).toContain(`The build is missing: ${main}.`);
+  expect(noMain).toContain("pnpm build");
+  expect(missingBuild(desktop, () => false)).toContain(`${main}, ${mcp}`);
+});
+
 /** Every harness that launches the app with a window, and how it keeps the window off the user's screen. */
 it("every Electron harness either hides its windows or requires a virtual display", () => {
   const repo = path.join(desktopRoot, "../..");
@@ -118,7 +130,10 @@ it("every Electron harness either hides its windows or requires a virtual displa
     modes[path.relative(repo, file)] = text.includes("requireVisibleWindows(")
       ? "visible on a virtual display"
       : /smokeEnvironment\([^)]*"hidden"\)/.test(text)
-        ? "hidden"
+        ? // A hidden harness checks the build first: Electron's own load-error box ignores the mode.
+          text.includes("requireBuild()")
+          ? "hidden"
+          : "hidden without a build check"
         : "unguarded";
   }
   expect(modes).toEqual({

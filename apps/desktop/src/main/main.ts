@@ -21,7 +21,7 @@ import { Cause, Deferred, Effect, Fiber, Layer, Logger } from "effect";
 import { resolve } from "node:path";
 import { nativeBinary } from "./app/native-binary";
 import { builtInOAuthClients } from "./security/oauth-clients";
-import { app, BrowserWindow, dialog, powerMonitor } from "electron";
+import { app, BrowserWindow, powerMonitor } from "electron";
 import { desktopVision } from "./app/vision";
 import { desktopInferenceProcess } from "./app/inference";
 
@@ -30,7 +30,7 @@ import { RpcServerLive } from "./rpc/rpc-server";
 import { RemoteAccessLive } from "./remote/remote-access-live";
 import { DesktopLive, receiveAppUrl, receiveOpenFile, ready } from "./system/system";
 import { focusMainWindow } from "./windows/windows";
-import { prepareBackgroundWindows } from "./windows/reveal";
+import { prepareBackgroundWindows, showStartupError } from "./windows/reveal";
 import { applyDevelopmentAppearance } from "./windows/appearance";
 import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
@@ -238,15 +238,15 @@ if (mcp) {
           if (error instanceof DatabaseUpgradeSpaceError) {
             const labels = await nativeRecoveryLabels();
             // Native on purpose: startup failed, so no window or renderer exists to draw a React
-            // message, and the process exits right after.
-            dialog.showErrorBox(
+            // message, and the process exits right after. A hidden run writes it to stderr.
+            showStartupError(
               labels.upgradeSpaceTitle,
               labels.upgradeSpaceDetail(String(Math.ceil(error.requiredBytes / 1024 ** 2))),
             );
           }
           if (error instanceof DatabaseTooNewError) {
             const labels = await nativeRecoveryLabels();
-            dialog.showErrorBox(labels.newerDatabaseTitle, labels.newerDatabaseDetail);
+            showStartupError(labels.newerDatabaseTitle, labels.newerDatabaseDetail);
             // Exit 1 skips the quit handler's finish(); without it the next launches count
             // this refusal as a crash and reach safe mode.
             finishCleanly();

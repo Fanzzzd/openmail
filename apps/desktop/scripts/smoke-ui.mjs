@@ -1,3 +1,7 @@
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+
 /** Re-query and click in one renderer turn. A completed navigation is never clicked again. */
 export function smokeClickExpression(selector, ready) {
   return `(() => {
@@ -65,5 +69,33 @@ export function requireVisibleWindows(harness, reason) {
   const refusal = visibleWindowsRefusal(process.env, harness, reason);
   if (!refusal) return;
   process.stderr.write(`${refusal}\n`);
+  process.exit(2);
+}
+
+/**
+ * The build outputs a development run loads, relative to apps/desktop: the Electron main bundle
+ * and the MCP server of @openmail/cli.
+ */
+const BUILD_OUTPUTS = ["out/main/index.js", "../../packages/cli/dist/mcp-server.js"];
+
+/**
+ * Returns why `desktop` (the apps/desktop directory) has no complete build, or null when it has
+ * one. Without the main bundle Electron reports the load error in a native box on the current
+ * screen before the app can apply hidden windows, so a hidden harness checks first.
+ */
+export function missingBuild(desktop, exists = existsSync) {
+  const missing = BUILD_OUTPUTS.map((file) => join(desktop, file)).filter((file) => !exists(file));
+  if (missing.length === 0) return null;
+  return [
+    `The build is missing: ${missing.join(", ")}.`,
+    "Run `pnpm build` from the repo root first. Without it Electron shows its own error box.",
+  ].join("\n");
+}
+
+/** Exits with code 2 and the message when `missingBuild` finds outputs missing. */
+export function requireBuild() {
+  const missing = missingBuild(fileURLToPath(new URL("..", import.meta.url)));
+  if (!missing) return;
+  process.stderr.write(`${missing}\n`);
   process.exit(2);
 }

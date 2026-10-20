@@ -13,3 +13,5 @@ export function visibleWindowsRefusal(
   reason: string,
 ): string | null;
 export function requireVisibleWindows(harness: string, reason: string): void;
+export function missingBuild(desktop: string, exists?: (file: string) => boolean): string | null;
+export function requireBuild(): void;

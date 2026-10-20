@@ -1,4 +1,11 @@
-import { app, type BrowserWindow, type Notification } from "electron";
+import {
+  app,
+  type BrowserWindow,
+  dialog,
+  type NativeImage,
+  type Notification,
+  Tray,
+} from "electron";
 
 /**
  * How a development build puts its windows on screen. Automated runs must not disturb the person
@@ -79,4 +86,21 @@ export function addWindowTab(win: BrowserWindow, tab: BrowserWindow) {
 /** Posts `notification`. A hidden run posts nothing: a banner would appear on the screen. */
 export function showNotification(notification: Notification) {
   if (!hiddenWindows()) notification.show();
+}
+
+/**
+ * Creates the menu-bar icon from `icon()`. A hidden run creates none and returns undefined: the
+ * icon would appear in the menu bar of the person at the keyboard.
+ */
+export function createTray(icon: () => NativeImage): Tray | undefined {
+  return hiddenWindows() ? undefined : new Tray(icon());
+}
+
+/**
+ * Reports a startup failure before the process exits non-zero. A hidden run writes it to stderr
+ * instead of a native error box, which would appear on screen and wait for a click.
+ */
+export function showStartupError(title: string, detail: string) {
+  if (hiddenWindows()) process.stderr.write(`${title}\n${detail}\n`);
+  else dialog.showErrorBox(title, detail);
 }

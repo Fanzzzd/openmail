@@ -31,3 +31,16 @@ it("a main module that fails to load still throws in the GUI", async () => {
   await expect(import("./index")).rejects.toThrow();
   expect(native.exit).not.toHaveBeenCalled();
 });
+
+it("a main module that fails to load ends a hidden run with the error on stderr and exit 1", async () => {
+  process.argv = argv.filter((arg) => arg !== "--mcp");
+  vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "1");
+  try {
+    const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+    await import("./index");
+    expect(native.exit).toHaveBeenCalledWith(1);
+    expect(String(stderr.mock.calls[0]?.[0])).toMatch(/^OpenMail could not load: /);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

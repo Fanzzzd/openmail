@@ -4,13 +4,24 @@ import path from "node:path";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { desktopRoot } from "../../renderer/src/test-support/paths";
 
-const electron = vi.hoisted(() => ({
-  app: { isPackaged: false, setActivationPolicy: vi.fn() },
-}));
+const electron = vi.hoisted(() => {
+  const trays: unknown[] = [];
+  return {
+    app: { isPackaged: false, setActivationPolicy: vi.fn() },
+    dialog: { showErrorBox: vi.fn() },
+    trays,
+    Tray: class {
+      constructor(readonly icon: unknown) {
+        trays.push(this);
+      }
+    },
+  };
+});
 vi.mock("electron", () => electron);
 
 import {
   addWindowTab,
+  createTray,
   focusWindow,
   hiddenWindows,
   maximizeWindow,
@@ -19,6 +30,7 @@ import {
   revealWindow,
   setWindowFullScreen,
   showNotification,
+  showStartupError,
   windowMode,
 } from "./reveal";
 
@@ -53,6 +65,8 @@ function exercise() {
 beforeEach(() => {
   electron.app.isPackaged = false;
   electron.app.setActivationPolicy.mockClear();
+  electron.dialog.showErrorBox.mockClear();
+  electron.trays.length = 0;
 });
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -107,6 +121,36 @@ it("a development build without either variable shows and focuses as usual", () 
   const { win } = exercise();
   expect(win.show).toHaveBeenCalledTimes(2);
   expect(win.focus).toHaveBeenCalledTimes(2);
+});
+
+it("a hidden run has no menu-bar icon; other modes create it", () => {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test double for NativeImage
+  const icon = vi.fn(() => ({}) as Electron.NativeImage);
+  vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "1");
+  expect(createTray(icon)).toBeUndefined();
+  expect(icon).not.toHaveBeenCalled();
+  expect(electron.trays).toEqual([]);
+  vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "");
+  vi.stubEnv("OPENMAIL_BACKGROUND_WINDOWS", "1");
+  expect(createTray(icon)).toBeDefined();
+  expect(electron.trays).toHaveLength(1);
+});
+
+it("a hidden run writes a startup error to stderr instead of a native error box", () => {
+  const stderr = vi.spyOn(process.stderr, "write").mockReturnValue(true);
+  try {
+    vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "1");
+    showStartupError("Not enough space", "Free 12 MB");
+    expect(electron.dialog.showErrorBox).not.toHaveBeenCalled();
+    expect(stderr).toHaveBeenCalledWith("Not enough space\nFree 12 MB\n");
+    stderr.mockClear();
+    vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "");
+    showStartupError("Not enough space", "Free 12 MB");
+    expect(electron.dialog.showErrorBox).toHaveBeenCalledWith("Not enough space", "Free 12 MB");
+    expect(stderr).not.toHaveBeenCalled();
+  } finally {
+    stderr.mockRestore();
+  }
 });
 
 /** Main-process sources, without tests and the standalone Electron test drivers. */

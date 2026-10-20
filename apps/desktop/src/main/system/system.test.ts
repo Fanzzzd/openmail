@@ -590,6 +590,28 @@ it("menu bar count is optional and its clickable list caps at 50 individual mess
   );
 });
 
+it("a hidden run creates no menu-bar icon and still refreshes the Dock count", async () => {
+  vi.stubEnv("OPENMAIL_HIDDEN_WINDOWS", "1");
+  const server = fakeServer("me@gmail.com", [incoming("one"), incoming("two")]);
+  try {
+    await Effect.runPromise(
+      Effect.scoped(
+        Effect.gen(function* () {
+          const m = yield* Mailbox;
+          yield* m.accounts.connect({ provider: "gmail" });
+          yield* m.sync.sync();
+          yield* m.app.setPrefs({ menuBarUnreadCount: true });
+          yield* settle();
+          expect(observations.testState.trays).toEqual([]);
+          expect(observations.testState.badge).toHaveBeenLastCalledWith(2);
+        }),
+      ).pipe(Effect.provide(desktopLayer(server))),
+    );
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
 it("sleep resume restores Dock counts and delivers one Profile digest after muted mail was read or deleted", async () => {
   vi.useFakeTimers({ toFake: ["Date"] });
   vi.setSystemTime(new Date(2026, 9, 2, 17));
