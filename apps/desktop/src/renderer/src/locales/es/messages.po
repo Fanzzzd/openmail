@@ -6921,6 +6921,7 @@ msgstr "Muestra encima de un mensaje las fechas e invitaciones que contiene, par
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Barra lateral"
 

@@ -6921,6 +6921,7 @@ msgstr "メッセージ内で見つかった日付や招待をその上に表示
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "サイドバー"
 

@@ -6931,6 +6931,7 @@ msgstr "在邮件上方显示从中找到的日期和邀请，核对后可以加
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "侧栏"
 

@@ -6925,6 +6925,7 @@ msgstr "Shows dates and invitations found in a message above it, so you can add 
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Sidebar"
 

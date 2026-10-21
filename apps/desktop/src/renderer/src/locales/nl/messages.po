@@ -6921,6 +6921,7 @@ msgstr "Toont datums en uitnodigingen uit een bericht erboven, zodat je ze na co
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Zijbalk"
 

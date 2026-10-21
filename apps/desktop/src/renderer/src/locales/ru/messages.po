@@ -6921,6 +6921,7 @@ msgstr "Показывает над сообщением найденные в �
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Боковая панель"
 

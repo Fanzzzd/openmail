@@ -1406,6 +1406,12 @@ it("a narrow window's list and reader are each the main landmark with an h1; wid
   // The message headings follow the subject one level down.
   expect(screen.getByRole("heading", { level: 2, name: /^Alice, / })).toBeTruthy();
   expect(await landmarks()).toEqual([]);
+  // Medium: the panes are one main landmark, and the rail beside it is the labelled sidebar.
+  resize(880);
+  await eventually(() => expect(rail()).not.toBeNull());
+  expect(screen.getByRole("complementary", { name: "Sidebar" })).toBe(rail());
+  expect(screen.getByRole("main").contains(row(h.id("one")))).toBe(true);
+  expect(await landmarks()).toEqual([]);
   // Wide: the panes are one main landmark, the list's title is the h1 and the subject an h2.
   resize(1200);
   await eventually(() => expect(row(h.id("one")).closest("[hidden]")).toBeNull());

@@ -6921,6 +6921,7 @@ msgstr "Nad zprávou zobrazí nalezená data a pozvánky, abyste je po kontrole 
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Postranní panel"
 

@@ -6921,6 +6921,7 @@ msgstr "Zeigt Daten und Einladungen aus einer Nachricht darüber an, damit du si
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Seitenleiste"
 

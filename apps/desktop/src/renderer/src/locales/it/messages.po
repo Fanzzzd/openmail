@@ -6921,6 +6921,7 @@ msgstr "Mostra sopra un messaggio le date e gli inviti trovati, così puoi aggiu
 
 #: src/renderer/src/app/App.tsx
 #: src/renderer/src/features/sidebar/Sidebar.tsx
+#: src/renderer/src/features/sidebar/SidebarRail.tsx
 msgid "Sidebar"
 msgstr "Barra laterale"
 

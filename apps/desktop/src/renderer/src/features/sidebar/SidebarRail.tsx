@@ -64,7 +64,13 @@ export function SidebarRail({
     spaceAccounts(space, accounts).reduce((n, a) => n + (unread[a.id] ?? 0), 0);
 
   return (
-    <div data-mail-pane="sidebar" data-sidebar-rail className="flex h-full w-14 shrink-0 flex-col">
+    // The same labelled landmark as the wide sidebar, which the drawer opens in full.
+    <aside
+      aria-label={t`Sidebar`}
+      data-mail-pane="sidebar"
+      data-sidebar-rail
+      className="flex h-full w-14 shrink-0 flex-col"
+    >
       {/* The lights span 18 to 78 pt, wider than the rail. Their row belongs to the pane beside
           the rail: the same surface and no divider, so the rail and its border start below the
           lights, as VS Code's activity bar and Slack's workspace rail do. */}
@@ -153,7 +159,7 @@ export function SidebarRail({
           </fieldset>
         </div>
       </div>
-    </div>
+    </aside>
   );
 }
 
