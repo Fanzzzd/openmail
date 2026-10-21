@@ -308,10 +308,27 @@ function MessageListBody({
     endReached.current = onEndReached;
   }, [onEndReached]);
 
+  // The selected row stays in view when the list gets shorter, as when the status line below it
+  // grows to say older mail failed to load after End scrolled to the last row.
+  const selectedRow = useRef({ layout, index: selectedIndex });
+  useLayoutEffect(() => {
+    selectedRow.current = { layout, index: selectedIndex };
+  });
   useEffect(() => {
+    let height = listRef.current?.clientHeight ?? 0;
     const observer = new ResizeObserver(() => {
       const el = listRef.current;
-      if (el) setViewport({ top: el.scrollTop, height: el.clientHeight });
+      if (!el) return;
+      const before = height;
+      height = el.clientHeight;
+      const { layout: rows, index } = selectedRow.current;
+      if (index >= 0 && height < before) {
+        const top = rows.offsets[index] ?? 0;
+        const bottom = rows.offsets[index + 1] ?? top;
+        const shown = top >= el.scrollTop && bottom <= el.scrollTop + before;
+        if (shown && bottom > el.scrollTop + height) el.scrollTop = bottom - height;
+      }
+      setViewport({ top: el.scrollTop, height });
     });
     if (listRef.current) observer.observe(listRef.current);
     return () => observer.disconnect();
