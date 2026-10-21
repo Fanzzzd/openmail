@@ -333,6 +333,72 @@ it("widening keeps focus on the reader or the row that had it", async () => {
   await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
 });
 
+it("crossing 960 px either way keeps focus on the row or the reader that had it", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  row(h.id("one")).focus();
+  // 919 px docks the rail instead of the sidebar, which moves the list and the reader.
+  resize(919);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(row(h.id("one"))));
+  // The reader keeps focus the same way.
+  document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus();
+  resize(919);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  // A control in the reader keeps focus itself, not just its pane.
+  const bar = await screen.findByRole("group", { name: "Reply to this conversation" });
+  const reply = within(bar).getByRole("button", { name: "Reply" });
+  reply.focus();
+  resize(919);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(reply));
+});
+
+it("widening a narrow reader through 800 px and 960 px keeps focus on the reader", async () => {
+  width = 600;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  resize(831);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  // Straight from 600 px to 1320 px too.
+  resize(600);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus();
+  resize(1320);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).not.toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+});
+
 it("the reader takes focus when it becomes the only pane by narrowing or by Back", async () => {
   width = 1200;
   current = await flow({ windowHistory: true });

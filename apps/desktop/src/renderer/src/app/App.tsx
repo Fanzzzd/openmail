@@ -268,8 +268,8 @@ export function App({ composeId }: { composeId?: string }) {
     view,
     mode: layout.mode,
   });
-  const { host: listHost, slot: listSlot } = usePaneHost();
-  const { host: readerHost, slot: readerSlot } = usePaneHost();
+  const { host: listHost, slot: listSlot } = usePaneHost(paneNav.panesMoved);
+  const { host: readerHost, slot: readerSlot } = usePaneHost(paneNav.panesMoved);
   if (composeId)
     return (
       <div className="h-screen bg-surface">

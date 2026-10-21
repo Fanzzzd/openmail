@@ -23,9 +23,10 @@ export function ReaderToolbar({
  * A pane that keeps its React state when the layout moves it. The caller
  * portals the pane into `host` at one fixed place in the tree, and each
  * layout gives the host a slot through the `slot` ref. Changing layouts then
- * moves one DOM node instead of remounting the list or the reader.
+ * moves one DOM node instead of remounting the list or the reader. A moved
+ * node drops focus, so `moved` runs after each move to put it back.
  */
-export function usePaneHost() {
+export function usePaneHost(moved: () => void) {
   const [host] = useState(() => {
     const element = document.createElement("div");
     element.className = "flex h-full min-w-0 flex-1";
@@ -37,8 +38,9 @@ export function usePaneHost() {
       element.append(host);
       // The pane's header rows moved, often without changing size.
       rowsMoved();
+      moved();
     },
-    [host],
+    [host, moved],
   );
   return { host, slot };
 }

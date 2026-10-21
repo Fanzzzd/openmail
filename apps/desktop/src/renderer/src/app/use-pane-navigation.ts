@@ -1,7 +1,6 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
-import { constVoid } from "effect/Function";
 import { Reactivity } from "effect/reactivity";
-import { useCallback, useContext, useEffect, useEffectEvent, useRef } from "react";
+import { useCallback, useContext, useEffect, useLayoutEffect, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
 import { Keys } from "../state/keys";
 import { historyAtom, locationAtom, locationOf } from "../state/location";
@@ -122,50 +121,60 @@ export function usePaneNavigation({
       }
     } else if (narrowReader && entry === null) pushReaderEntry();
   }, [layout.mode, narrowReader, history, registry, pushReaderEntry]);
-  // The reader also becomes the only pane without a click: the window narrows with a conversation
-  // open, or Back returns to the reader's entry from another mailbox. The focused row or list is
-  // hidden then, so focus goes to the reader instead of falling to the page.
-  const wasNarrowReader = useRef(narrowReader);
-  useEffect(() => {
-    const became = narrowReader && !wasNarrowReader.current;
-    wasNarrowReader.current = narrowReader;
-    if (!became) return constVoid;
-    const frame = requestAnimationFrame(() => {
-      const active = document.activeElement;
-      if (!active || active === document.body || active.closest("[hidden]")) focusReaderNow();
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [narrowReader]);
-  // Leaving the narrow layout moves the list and the reader into the panes, and the focused
-  // element leaves the document for a moment, so focus falls to the page. It goes back to the
-  // reader if the reader had it, else to the selected row.
-  const focusedPane = useRef<string | null>(null);
+  // Changing layouts moves the list's and the reader's hosts into new slots (usePaneHost). The
+  // focused element leaves the document for a moment, so focus falls to the page; or it stays in a
+  // pane the new layout hides, as when the window narrows with a conversation open or Back returns
+  // to the narrow reader's entry from another mailbox. Either way focus goes back to the element
+  // that had it when that element still shows. Otherwise it goes to the reader when the reader is
+  // the only pane or had focus, else to the selected row when the list had focus.
+  const focused = useRef<{ pane: string | null; element: HTMLElement | null }>({
+    pane: null,
+    element: null,
+  });
   useEffect(() => {
     const remember = (event: FocusEvent) => {
-      if (!(event.target instanceof Element)) return;
-      focusedPane.current =
-        event.target.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null;
+      if (!(event.target instanceof HTMLElement)) return;
+      focused.current = {
+        pane: event.target.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null,
+        element: event.target,
+      };
     };
     document.addEventListener("focusin", remember);
     return () => document.removeEventListener("focusin", remember);
   }, []);
-  const restoreFocus = useEffectEvent(() => {
-    const active = document.activeElement;
-    if (active && active !== document.body && !active.closest("[hidden]")) return;
-    if (focusedPane.current === "reader" && shown.reader) focusReaderNow();
-    else if (focusedPane.current === "reader" || focusedPane.current === "list")
-      focusList(selectedId);
+  // What the rendered layout shows, for the frame after a move. Layout effects run in the same
+  // commit as the slot refs, so the frame never sees an older layout.
+  const latest = useRef({ shown, selectedId, focusList });
+  useLayoutEffect(() => {
+    latest.current = { shown, selectedId, focusList };
   });
-  const wasNarrow = useRef(layout.mode === "narrow");
-  useEffect(() => {
-    const left = wasNarrow.current && layout.mode !== "narrow";
-    wasNarrow.current = layout.mode === "narrow";
-    if (!left) return constVoid;
-    const frame = requestAnimationFrame(restoreFocus);
-    return () => cancelAnimationFrame(frame);
-  }, [layout.mode]);
+  const moveFrame = useRef<number | null>(null);
+  const panesMoved = useCallback(() => {
+    if (moveFrame.current !== null) cancelAnimationFrame(moveFrame.current);
+    moveFrame.current = requestAnimationFrame(() => {
+      moveFrame.current = null;
+      const active = document.activeElement;
+      if (active && active !== document.body && !active.closest("[hidden]")) return;
+      const { pane, element } = focused.current;
+      if (element?.isConnected && !element.closest("[hidden]")) {
+        element.focus({ preventScroll: true });
+        if (document.activeElement === element) return;
+      }
+      const { shown: panes, selectedId: row, focusList: toList } = latest.current;
+      if (panes.reader && (pane === "reader" || !panes.list)) focusReaderNow();
+      else if (pane === "reader" || pane === "list") toList(row);
+    });
+  }, []);
+  useEffect(
+    () => () => {
+      if (moveFrame.current !== null) cancelAnimationFrame(moveFrame.current);
+    },
+    [],
+  );
   return {
     shown,
+    /** usePaneHost calls this after it moves a pane into a new slot. */
+    panesMoved,
     /** Opens the selected conversation; in the narrow layout the reader replaces the list and takes focus. */
     openReader: () => {
       layout.setReaderViewKey(viewKey);
