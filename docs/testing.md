@@ -307,7 +307,7 @@ OPENMAIL_HOME=/tmp/openmail-demo OPENMAIL_READ_ONLY=1 OPENMAIL_OFFLINE=1 OPENMAI
 
 The implementation is in [appearance.ts](../apps/desktop/src/main/windows/appearance.ts).
 
-When the app gets `--user-data-dir`, that directory holds both Electron's profile and OpenMail's database, and the app ignores `OPENMAIL_HOME`. Pass the seeded directory to both: `OPENMAIL_HOME` for the CLI or an MCP server started from the same shell, `--user-data-dir` for the app. A `--user-data-dir` that differs from the seeded directory opens an empty profile. The precedence is in [main.ts](../apps/desktop/src/main/main.ts).
+When the app gets `--user-data-dir`, that directory holds both Electron's profile and OpenMail's database, and the app ignores `OPENMAIL_HOME`. Without `--user-data-dir`, a non-empty `OPENMAIL_HOME` holds both, so a launch with only `OPENMAIL_HOME` set never writes into the real profile in `~/Library/Application Support/OpenMail`. With neither, the app uses Electron's default profile and core's default data folder. `OpenMail --mcp` keeps its profile in a scratch folder of its own in every case. A `--user-data-dir` that differs from the seeded directory opens an empty profile, so pass the same directory to both when you set both. The precedence is in [profile-directory.ts](../apps/desktop/src/main/app/profile-directory.ts).
 
 ## Regressions by area
 

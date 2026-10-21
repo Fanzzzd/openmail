@@ -34,6 +34,7 @@ import { prepareBackgroundWindows, showStartupError } from "./windows/reveal";
 import { applyDevelopmentAppearance } from "./windows/appearance";
 import { showAppIdentity } from "./app/app-identity";
 import { mcpLaunchArgs, runMcpMode } from "./agents/mcp-mode";
+import { profileDirectory } from "./app/profile-directory";
 
 import {
   prepareReliability,
@@ -56,7 +57,10 @@ prepareBackgroundWindows();
 applyDevelopmentAppearance();
 
 const isolatedData = app.commandLine.getSwitchValue("user-data-dir");
-if (isolatedData) app.setPath("userData", resolve(isolatedData));
+// Before the single instance lock, which lives in the profile. MCP mode moves it to a scratch
+// folder of its own.
+const profile = profileDirectory(isolatedData, process.env);
+if (profile) app.setPath("userData", profile);
 
 // Register before ready: macOS delivers a launch URL during startup.
 app.on("open-url", (event, url) => {
