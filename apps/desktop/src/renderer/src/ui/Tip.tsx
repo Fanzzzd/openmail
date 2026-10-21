@@ -23,7 +23,10 @@ export function Tip({ label, shortcut, side = "bottom", children }: Props) {
     <Tooltip.Root>
       <Tooltip.Trigger delay={DELAY_MS} render={children} />
       <Tooltip.Portal>
-        <Tooltip.Positioner side={side} sideOffset={6} className="z-[70]">
+        {/* Base UI tooltips are visual only: the trigger carries the name, and no aria-describedby
+            points here. Screen readers skip the copy, so it is not page content outside a
+            landmark at the end of the body (axe's region rule). */}
+        <Tooltip.Positioner aria-hidden side={side} sideOffset={6} className="z-[70]">
           <Tooltip.Popup className="no-drag flex max-w-72 items-center gap-2 rounded-control bg-overlay px-2 py-1 text-footnote text-neutral-700 shadow-popup transition-opacity duration-100 data-ending-style:opacity-0 data-instant:transition-none data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-700 dark:text-neutral-100">
             <span>{label}</span>
             {shortcut && (

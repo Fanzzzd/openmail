@@ -792,6 +792,17 @@ it("the sidebar opens as a drawer below 960 px and closes when a mailbox is pick
   key("Escape");
   await eventually(() => expect(screen.queryByRole("dialog", { name: "Sidebar" })).toBeNull());
   await eventually(() => expect(document.activeElement).toBe(toggle));
+  // Focus on the toggle opens its tooltip in a portal at the end of the body, outside every
+  // landmark. It must not count as page content outside a landmark.
+  await eventually(() =>
+    expect(document.querySelector("[data-base-ui-portal]")?.textContent).toContain("Show sidebar"),
+  );
+  let violations: axe.Result[] = [];
+  await act(async () => {
+    violations = (await axe.run(document.body, { runOnly: ["region", "aria-hidden-focus"] }))
+      .violations;
+  });
+  expect(violations.map((issue) => issue.id)).toEqual([]);
 
   fireEvent.click(toggle);
   const reopened = await screen.findByRole("dialog", { name: "Sidebar" });
