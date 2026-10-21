@@ -22,7 +22,7 @@ import { Proposals } from "./lazy";
 import { openAiSettings } from "./open-ai-settings";
 import { isDesktop } from "../../lib/platform";
 import { Dialog } from "../../ui/Dialog";
-import { buttonLink, buttonPrimary, formInput } from "../../ui/styles";
+import { buttonLink, buttonPrimary, buttonSecondary, formInput } from "../../ui/styles";
 import { citedParts } from "./citations";
 
 export function useAiStream() {
@@ -298,7 +298,9 @@ export function AiOutput({
         </div>
       )}
       {result.status === "running" && (
-        <button type="button" onClick={result.cancel}>{t`Cancel`}</button>
+        <button type="button" onClick={result.cancel} className={buttonSecondary}>
+          {t`Cancel`}
+        </button>
       )}
       <SourceList sources={result.sources} openSource={openSource} />
     </div>
@@ -329,6 +331,7 @@ function AllowedThreadSummary({ id, keyConfigured }: { id: string; keyConfigured
     <section className="mb-4 space-y-2 rounded border border-violet-500/20 p-3">
       <button
         type="button"
+        className={buttonSecondary}
         disabled={!keyConfigured || result.status === "running"}
         onClick={() =>
           result.start(withMail((call) => Effect.succeed(call("Summarize", { id, locale }))))

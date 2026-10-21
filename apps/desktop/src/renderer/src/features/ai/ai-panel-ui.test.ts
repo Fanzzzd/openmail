@@ -7,6 +7,7 @@ import { AsyncResult } from "effect/reactivity";
 import type { AiEvent, AiTriage, ComposeBody } from "@openmail/core/schema";
 import { AI_ERRORS, DEFAULT_PREFS, InvalidInput, ProviderError } from "@openmail/core/schema";
 import { testDom } from "../../test-support/test-dom";
+import { buttonSecondary } from "../../ui/styles";
 
 const aiQueries = vi.hoisted(() => ({ tags: new Array<string>() }));
 const compose = vi.hoisted(() => ({ requests: new Array<unknown>(), truncated: false }));
@@ -119,6 +120,8 @@ it("reader displays a truncated summary with its token-limit warning", () => {
     );
     const summarize = dom.element.querySelector("button");
     if (!summarize) throw new Error("Missing Summarize button");
+    // A push button, not bare text that reads as the section's heading.
+    expect(summarize.className).toBe(buttonSecondary);
     act(() => summarize.click());
     expect(dom.element.textContent).toContain("Incomplete result");
     expect(dom.element.textContent).toContain("Output truncated at the token limit");
