@@ -5,7 +5,7 @@ import { categoryKey } from "../domain/categories.js";
 import type { Label } from "../domain/account.js";
 import { all } from "./sql-rows.js";
 import { type makeComposeStore } from "./store-compose.js";
-import { accountScope, type makeQueryStore } from "./store-query.js";
+import { accountScope, heldDraftMessage, type makeQueryStore } from "./store-query.js";
 import { Count, counts, LabelRow } from "./store-rows.js";
 
 /** Labels and unread counts per label and mailbox. */
@@ -52,6 +52,9 @@ export const makeLabelsStore = ({
     const literalLabels = [
       ...where,
       sql`(b.label!='CATEGORY_PERSONAL' OR b.account_id NOT IN (SELECT id FROM accounts WHERE provider='outlook'))`,
+      // A draft whose discard waits out its Undo no longer counts.
+      sql`(b.label!='DRAFT' OR NOT EXISTS (SELECT 1 FROM messages m WHERE m.id=b.message_id
+        AND ${heldDraftMessage(sql)}))`,
     ];
     const rows = yield* all(Count)(
       conversations

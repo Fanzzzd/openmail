@@ -301,12 +301,14 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
 
   /**
    * Drafts the Drafts list cannot show from `messages`: never pushed, or
-   * pushed but not pulled back yet. Newest first, as thread rows.
+   * pushed but not pulled back yet. Newest first, as thread rows. A draft whose
+   * discard waits out its Undo is left out.
    */
   const localDraftFilter = (q: ThreadQuery) => {
     const where: Fragment[] = [
       sql`(d.remote_message_id IS NULL OR NOT EXISTS (SELECT 1 FROM messages m
         WHERE m.account_id = d.account_id AND m.provider_id = d.remote_message_id))`,
+      sql`NOT EXISTS (SELECT 1 FROM draft_discards x WHERE x.id = d.id)`,
     ];
     if (q.accountIds) {
       where.push(

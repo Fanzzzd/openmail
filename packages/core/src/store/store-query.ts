@@ -587,6 +587,7 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
             : sql`NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}`,
         );
     } else where.push(hasLabel(MAILBOX_LABEL[mailbox]));
+    if (mailbox === "drafts") where.push(sql`NOT ${heldDraftMessage(sql)}`);
     if (mailbox === "inbox")
       where.push(
         sql`NOT EXISTS (SELECT 1 FROM thread_reminders r WHERE r.account_id=m.account_id AND r.thread_id=m.thread_id AND r.due_at IS NOT NULL)`,
@@ -726,6 +727,19 @@ export const accountScope = (
     : ids.length === 0
       ? sql.literal("0")
       : sql`${sql.literal(column)} IN ${sql.in(ids)}`;
+/**
+ * Whether the message is the provider copy of a draft whose discard is held for its undo window
+ * (or done and not yet gone). `account` and `providerId` name the message's columns. The Drafts
+ * list and count leave such a draft out while its Undo shows.
+ */
+export const heldDraftMessage = (
+  sql: SqlClient.SqlClient,
+  account = "m.account_id",
+  providerId = "m.provider_id",
+): Fragment =>
+  sql`EXISTS (SELECT 1 FROM draft_discards x JOIN drafts d ON d.id=x.id
+    WHERE d.account_id=${sql.literal(account)} AND d.remote_message_id=${sql.literal(providerId)})`;
+
 const labelIn = (sql: SqlClient.SqlClient, label: string): Fragment =>
   label === "CATEGORY_PERSONAL"
     ? sql`CASE WHEN m.account_id IN (SELECT id FROM accounts WHERE provider='outlook')

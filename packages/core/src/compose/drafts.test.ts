@@ -233,6 +233,48 @@ import { replyFromAddress } from "./signatures.js";
     ),
   );
 
+  // "Draft discarded" showed while Drafts still counted and listed the draft for the whole undo
+  // window.
+  it.effect("a held discard leaves the Drafts list and count until Undo brings it back", () =>
+    withMail((m) =>
+      Effect.gen(function* () {
+        const count = Effect.map(m.reading.unreadByLabel(), (counts) => counts.DRAFT ?? 0);
+        const within = Effect.map(
+          m.reading.unreadByLabel(undefined, "DRAFT", true),
+          (counts) => counts.DRAFT ?? 0,
+        );
+        // One draft the list shows from the provider's copy, one only from the local row.
+        yield* m.compose.saveDraft({ id: "draft:1", accountId: GMAIL, message: draftMessage() });
+        yield* m.sync.sync();
+        const [pulled] = yield* draftIds(m);
+        assert.ok(pulled?.startsWith(`${GMAIL}/`));
+        const synced = (yield* m.compose.openDraft(pulled!)).id;
+        yield* m.compose.saveDraft({
+          id: "draft:2",
+          accountId: GMAIL,
+          message: draftMessage({ subject: "Local" }),
+        });
+        assert.deepStrictEqual(new Set(yield* draftIds(m)), new Set(["draft:2", pulled]));
+        assert.strictEqual(yield* count, 2);
+        assert.strictEqual(yield* within, 2);
+
+        assert.strictEqual(yield* m.compose.discardDraftLater(synced, 10_000), true);
+        assert.deepStrictEqual(yield* draftIds(m), ["draft:2"]);
+        assert.strictEqual(yield* count, 1);
+        assert.strictEqual(yield* m.compose.discardDraftLater("draft:2", 10_000), true);
+        assert.deepStrictEqual(yield* draftIds(m), []);
+        assert.strictEqual(yield* count, 0);
+        assert.strictEqual(yield* within, 0);
+
+        yield* m.compose.restoreDraft(synced);
+        yield* m.compose.restoreDraft("draft:2");
+        assert.deepStrictEqual(new Set(yield* draftIds(m)), new Set(["draft:2", pulled]));
+        assert.strictEqual(yield* count, 2);
+        assert.strictEqual(yield* within, 2);
+      }),
+    ),
+  );
+
   it.effect("a late save during a held discard fails and leaves the discard in place", () =>
     withMail((m, server) =>
       Effect.gen(function* () {
