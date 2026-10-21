@@ -79,7 +79,12 @@ const html = (paragraphs) =>
   `<div style="font-family:-apple-system,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5">${paragraphs
     .map((p) => `<p>${p}</p>`)
     .join("")}</div>`;
-const text = (paragraphs) => paragraphs.join("\n\n").replace(/<[^>]+>/g, "");
+/** The text part of `html`: a line break or a closing block tag ends a line, other tags go. */
+const text = (paragraphs) =>
+  paragraphs
+    .join("\n\n")
+    .replace(/<br\s*\/?>|<\/(?:p|div|li|tr|h[1-6])>/gi, "\n")
+    .replace(/<[^>]+>/g, "");
 
 let counter = 0;
 /** One message; `body` is a list of paragraphs, rendered as both text and HTML. */
