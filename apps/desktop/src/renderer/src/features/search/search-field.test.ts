@@ -566,61 +566,69 @@ it("the placeholder names the search key of the active keymap", () => {
 
 it("a query shows a clear button that empties the field", () => {
   const dom = testDom();
-  const changed = vi.fn();
-  const inputRef = createRef<HTMLInputElement>();
-  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
-  const field = (value: string) =>
-    createElement(
-      I18nProvider,
-      { i18n },
-      createElement(SearchField, {
-        onEnterResults: vi.fn(),
-        value,
-        inputRef,
-        onChange: changed,
-      }),
-    );
-  dom.render(field(""));
-  expect(dom.element.querySelector('[aria-label="Clear search"]')).toBeNull();
-  dom.render(field("from:alice invoice"));
-  const clear = dom.element.querySelector('[aria-label="Clear search"]');
-  if (!clear) throw new Error("Missing Clear search");
-  act(() => {
-    clear.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
-  });
-  expect(changed).toHaveBeenCalledWith("");
+  try {
+    const changed = vi.fn();
+    const inputRef = createRef<HTMLInputElement>();
+    const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+    const field = (value: string) =>
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(SearchField, {
+          onEnterResults: vi.fn(),
+          value,
+          inputRef,
+          onChange: changed,
+        }),
+      );
+    dom.render(field(""));
+    expect(dom.element.querySelector('[aria-label="Clear search"]')).toBeNull();
+    dom.render(field("from:alice invoice"));
+    const clear = dom.element.querySelector('[aria-label="Clear search"]');
+    if (!clear) throw new Error("Missing Clear search");
+    act(() => {
+      clear.dispatchEvent(new dom.window.Event("click", { bubbles: true }));
+    });
+    expect(changed).toHaveBeenCalledWith("");
+  } finally {
+    dom.dispose();
+  }
 });
 
 // At 1320 px the chips "label:receipts" and "from:northwind" collapsed to "l ×" and "f ×" inside a
 // 320 px field: the chips could shrink to nothing and the row clipped what did not fit.
 it("keeps chips at their natural width and scrolls the row instead of squeezing them", () => {
   const dom = testDom();
-  const i18n = setupI18n({ locale: "en", messages: { en: {} } });
-  dom.render(
-    createElement(
-      I18nProvider,
-      { i18n },
-      createElement(SearchField, {
-        onEnterResults: vi.fn(),
-        value: "label:receipts from:northwind invoice",
-        inputRef: null,
-        onChange: vi.fn(),
-      }),
-    ),
-  );
-  const row = dom.element.querySelector("input")?.parentElement;
-  const chips = [...dom.element.querySelectorAll("button[title]")].map((b) =>
-    b.closest(".rounded-item"),
-  );
-  expect(chips).toHaveLength(2);
-  for (const chip of chips) {
-    expect(chip?.className).toContain("shrink-0");
-    expect(chip?.className).not.toContain("min-w-0");
-    expect(chip?.className).toContain("max-w-48");
+  try {
+    const i18n = setupI18n({ locale: "en", messages: { en: {} } });
+    dom.render(
+      createElement(
+        I18nProvider,
+        { i18n },
+        createElement(SearchField, {
+          onEnterResults: vi.fn(),
+          value: "label:receipts from:northwind invoice",
+          inputRef: null,
+          onChange: vi.fn(),
+        }),
+      ),
+    );
+    const row = dom.element.querySelector("input")?.parentElement;
+    const chips = [...dom.element.querySelectorAll("button[title]")].map((b) =>
+      b.closest(".rounded-item"),
+    );
+    expect(chips).toHaveLength(2);
+    for (const chip of chips) {
+      expect(chip?.className).toContain("shrink-0");
+      expect(chip?.className).not.toContain("min-w-0");
+      expect(chip?.className).toContain("max-w-48");
+    }
+    expect(row?.className).toContain("overflow-x-auto");
+    expect(row?.className).not.toContain("overflow-hidden");
+    expect(dom.element.querySelector("input")?.className).toContain("min-w-24");
+  } finally {
+    dom.dispose();
   }
-  expect(row?.className).toContain("overflow-x-auto");
-  expect(row?.className).not.toContain("overflow-hidden");
-  expect(dom.element.querySelector("input")?.className).toContain("min-w-24");
 });
 
 const renderChips = () => {
