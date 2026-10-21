@@ -195,6 +195,8 @@ export function Item(props: {
   indent?: boolean;
   disclosure?: ReactNode;
   buttonProps?: ButtonHTMLAttributes<HTMLButtonElement> | undefined;
+  /** The row's `data-focus-key`, the same as the rail's button for that mailbox. */
+  item?: string;
 }) {
   const { i18n } = useLingui();
   // Every row ends with its count at the same edge as the account rows above. The row's own
@@ -209,6 +211,7 @@ export function Item(props: {
       <button
         type="button"
         {...props.buttonProps}
+        data-focus-key={props.item}
         onClick={props.onClick}
         aria-current={props.active ? "page" : undefined}
         className={`flex h-full min-w-0 flex-1 items-center gap-2.5 text-left ${

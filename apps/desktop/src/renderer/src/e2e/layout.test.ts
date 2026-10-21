@@ -369,6 +369,153 @@ it("crossing 960 px either way keeps focus on the row or the reader that had it"
   await eventually(() => expect(document.activeElement).toBe(reply));
 });
 
+// Focus that the person moved to the page stayed remembered, so the next pane move sent it back
+// to the search field and the next single-key shortcut typed into it.
+it("a pane move leaves focus on the page when the person had left the element", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const field = screen.getByRole<HTMLInputElement>("combobox", { name: "Search mail" });
+  field.focus();
+  // A click on an empty part of the window: focus goes to the page with no focusin. The resize
+  // comes in a later task, as it would after a real click.
+  const clickEmpty = async (element: HTMLElement) => {
+    element.blur();
+    await wait(0);
+    expect(document.activeElement).toBe(document.body);
+  };
+  await clickEmpty(field);
+  resize(919);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await wait(100);
+  expect(document.activeElement).toBe(document.body);
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await wait(100);
+  expect(document.activeElement).toBe(document.body);
+  // Hiding the docked sidebar remounts the panes' group the same way.
+  field.focus();
+  await clickEmpty(field);
+  fireEvent.keyDown(document.body, {
+    key: "s",
+    code: "KeyS",
+    metaKey: true,
+    altKey: true,
+    shiftKey: true,
+  });
+  await eventually(() =>
+    expect(
+      document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail])'),
+    ).toBeNull(),
+  );
+  await wait(100);
+  expect(document.activeElement).toBe(document.body);
+});
+
+it("focus in the sidebar moves to the same mailbox in the sidebar, rail or drawer that replaces it", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const docked = () =>
+    document.querySelector<HTMLElement>('[data-mail-pane="sidebar"]:not([data-sidebar-rail])');
+  const starred = (sidebar: HTMLElement | null) =>
+    sidebar?.querySelector<HTMLElement>('[data-focus-key="mailbox:starred"]');
+  // Select a row without opening it, so the narrow layout shows the list.
+  row(h.id("one")).focus();
+  key("Home");
+  await eventually(() => expect(screen.getAllByRole("option", { selected: true })).toHaveLength(1));
+  const picked = screen.getByRole("option", { selected: true });
+  starred(docked())?.focus();
+  expect(document.activeElement?.textContent).toMatch(/^Starred/);
+  resize(880);
+  await eventually(() => expect(rail()).not.toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(starred(rail())));
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(starred(docked())));
+  // No sidebar shows in the narrow layout: focus goes to the list's selected row.
+  resize(780);
+  await eventually(() => expect(docked()).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(picked));
+  // A sidebar control with no counterpart, such as the rail's drawer toggle, hands focus to the
+  // open mailbox in the sidebar that replaces it.
+  resize(880);
+  await eventually(() => expect(rail()).not.toBeNull());
+  const toggle = within(rail()!).getByRole("button", { name: "Show sidebar" });
+  toggle.focus();
+  resize(1320);
+  await eventually(() =>
+    expect(document.activeElement).toBe(
+      docked()?.querySelector('[data-focus-key="mailbox:inbox"]'),
+    ),
+  );
+  // Focus in the open drawer goes to the docked sidebar when the window widens.
+  resize(880);
+  await eventually(() => expect(rail()).not.toBeNull());
+  fireEvent.click(within(rail()!).getByRole("button", { name: "Show sidebar" }));
+  const drawer = await screen.findByRole("dialog", { name: "Sidebar" });
+  await eventually(() =>
+    expect(drawer.contains(document.activeElement) && document.activeElement?.textContent).toMatch(
+      /^Inbox/,
+    ),
+  );
+  resize(1320);
+  await eventually(() => expect(screen.queryByRole("dialog", { name: "Sidebar" })).toBeNull());
+  await eventually(() =>
+    expect(document.activeElement).toBe(
+      docked()?.querySelector('[data-focus-key="mailbox:inbox"]'),
+    ),
+  );
+});
+
+it("the search field gets focus back when it shows again after the narrow reader stood in", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  const field = screen.getByRole<HTMLInputElement>("combobox", { name: "Search mail" });
+  field.focus();
+  // The narrow layout shows only the reader, which takes focus while the field is hidden.
+  resize(780);
+  await eventually(() => expect(document.querySelector('[data-mail-pane="list"]')).toBeNull());
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  // The wide reader header renders its own field again, and that one takes focus.
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await eventually(() =>
+    expect(document.activeElement).toBe(screen.getByRole("combobox", { name: "Search mail" })),
+  );
+  // A click in the reader that stood in makes the reader the person's own.
+  resize(780);
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  fireEvent.pointerDown(reader()!);
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await wait(100);
+  expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader");
+  // Focus the person moves on their own replaces the field.
+  screen.getByRole("combobox", { name: "Search mail" }).focus();
+  resize(780);
+  await eventually(() =>
+    expect(document.activeElement?.getAttribute("data-mail-pane")).toBe("reader"),
+  );
+  const bar = await screen.findByRole("group", { name: "Reply to this conversation" });
+  const reply = within(bar).getByRole("button", { name: "Reply" });
+  reply.focus();
+  resize(1320);
+  await eventually(() => expect(rail()).toBeNull());
+  await wait(100);
+  expect(document.activeElement).toBe(reply);
+});
+
 it("widening a narrow reader through 800 px and 960 px keeps focus on the reader", async () => {
   width = 600;
   current = await flow();

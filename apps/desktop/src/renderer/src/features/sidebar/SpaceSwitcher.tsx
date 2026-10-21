@@ -1,4 +1,5 @@
 import { ALL, OVERVIEW, spaceShortcutLabel, type SpaceId } from "../../lib/view";
+import { spaceItem } from "./sidebar-mailboxes";
 import type { Profile } from "../../../../shared/api";
 import { useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
@@ -50,6 +51,7 @@ export function SpaceSwitcher({
       <Tip label={t`Overview`} shortcut="⌃1" side="top">
         <Toolbar.Button
           aria-label={t`Overview`}
+          data-focus-key={spaceItem(OVERVIEW)}
           aria-current={space === OVERVIEW || undefined}
           onClick={() => onSpace(OVERVIEW)}
           className={`${cell(space === OVERVIEW)} text-neutral-600 dark:text-neutral-300`}
@@ -60,6 +62,7 @@ export function SpaceSwitcher({
       <Tip label={t`All accounts`} shortcut="⌃2" side="top">
         <Toolbar.Button
           aria-label={t`All accounts`}
+          data-focus-key={spaceItem(ALL)}
           aria-current={space === ALL || undefined}
           onClick={() => onSpace(ALL)}
           className={`${cell(space === ALL)} text-neutral-600 dark:text-neutral-300`}
@@ -94,6 +97,7 @@ export function SpaceSwitcher({
             <Tip key={p.id} label={p.name} shortcut={spaceShortcutLabel(shortcutSet, i)} side="top">
               <Toolbar.Button
                 aria-label={p.name}
+                data-focus-key={spaceItem(p.id)}
                 aria-current={space === p.id || undefined}
                 onClick={() => onSpace(p.id)}
                 onContextMenu={() => {

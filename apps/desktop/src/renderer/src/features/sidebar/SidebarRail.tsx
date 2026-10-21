@@ -17,7 +17,7 @@ import {
   spaceShortcutLabel,
   type View,
 } from "../../lib/view";
-import { MAILBOXES, useMailboxCounts } from "./sidebar-mailboxes";
+import { MAILBOXES, mailboxItem, spaceItem, useMailboxCounts } from "./sidebar-mailboxes";
 import { titlebarRow } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
 
@@ -104,6 +104,7 @@ export function SidebarRail({
               ({ id, icon: Icon, color }) => (
                 <RailButton
                   key={id}
+                  item={mailboxItem(id)}
                   label={i18n._(MAILBOX_NAMES[id])}
                   current={
                     view.space !== OVERVIEW && view.mailbox === id && !view.label
@@ -123,6 +124,7 @@ export function SidebarRail({
             className="mt-auto flex min-w-0 flex-col items-center gap-1 border-t border-separator pt-2"
           >
             <RailButton
+              item={spaceItem(OVERVIEW)}
               label={t`Overview`}
               shortcut="⌃1"
               current={view.space === OVERVIEW || undefined}
@@ -132,6 +134,7 @@ export function SidebarRail({
               <LayoutGrid className="size-4 text-neutral-600 dark:text-neutral-300" />
             </RailButton>
             <RailButton
+              item={spaceItem(ALL)}
               label={t`All accounts`}
               shortcut="⌃2"
               current={view.space === ALL || undefined}
@@ -143,6 +146,7 @@ export function SidebarRail({
             {profiles.map((p, i) => (
               <RailButton
                 key={p.id}
+                item={spaceItem(p.id)}
                 label={p.name}
                 shortcut={spaceShortcutLabel(prefs.shortcutSet, i)}
                 current={view.space === p.id || undefined}
@@ -165,6 +169,7 @@ export function SidebarRail({
 
 /** An icon with a tooltip and an unread badge. The name is the label, then the full count. */
 function RailButton({
+  item,
   label,
   shortcut,
   current,
@@ -172,6 +177,8 @@ function RailButton({
   onClick,
   children,
 }: {
+  /** The `data-focus-key` the docked sidebar gives the same mailbox or space. */
+  item: string;
   label: string;
   shortcut?: string | undefined;
   current: "page" | true | undefined;
@@ -184,6 +191,7 @@ function RailButton({
     <Tip label={label} shortcut={shortcut} side="right">
       <button
         type="button"
+        data-focus-key={item}
         aria-current={current}
         onClick={onClick}
         className={cell(Boolean(current))}

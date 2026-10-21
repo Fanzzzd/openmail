@@ -353,6 +353,9 @@ export function SearchField({
               else removeRecent(action.query);
             }}
             ref={fieldRef}
+            // The list header and the reader header each render a field. A pane move puts focus
+            // on whichever one shows (usePaneNavigation).
+            data-focus-key="search"
             aria-label={t`Search mail`}
             placeholder={chips.length ? undefined : searchKey ? t`Search  ${searchKey}` : t`Search`}
             className="h-6 min-w-24 flex-1 bg-transparent text-body text-ellipsis outline-none"

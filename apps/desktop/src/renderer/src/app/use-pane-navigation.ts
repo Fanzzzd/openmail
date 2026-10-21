@@ -8,9 +8,45 @@ import { mailHref } from "../../../shared/routes";
 import { useRunMail, withMail } from "../state/mail";
 import type { useMailSelection } from "./use-mail-selection";
 
-const focusReaderNow = () =>
-  document.querySelector<HTMLElement>('[data-mail-pane="reader"]')?.focus();
-const focusReader = () => requestAnimationFrame(focusReaderNow);
+const readerPane = () => document.querySelector<HTMLElement>('[data-mail-pane="reader"]');
+const focusReader = () => requestAnimationFrame(() => readerPane()?.focus());
+
+const paneOf = (element: Element) =>
+  element.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null;
+/** Whether an element is in the document and not in a hidden pane. */
+const shows = (element: Element) => element.isConnected && !element.closest("[hidden]");
+
+/**
+ * The control that stands for `element` once a layout replaced it: the shown element with the same
+ * `data-focus-key`, as the same mailbox in the docked sidebar, the rail or the drawer, or the search
+ * field in the list header or the reader header.
+ */
+function sameControl(element: HTMLElement) {
+  const key = element.dataset.focusKey;
+  if (key === undefined) return null;
+  return [...document.querySelectorAll<HTMLElement>("[data-focus-key]")].find(
+    (control) => control.dataset.focusKey === key && shows(control),
+  );
+}
+/** The open mailbox's control in the sidebar, rail or drawer that shows. */
+const currentMailbox = () =>
+  [
+    ...document.querySelectorAll<HTMLElement>(
+      '[data-mail-pane="sidebar"] [data-focus-key][aria-current="page"]',
+    ),
+  ].find(shows);
+
+/** Focuses `target` for a restore, marked in `restoring` so its focusin is not remembered. */
+function restore(
+  target: HTMLElement | null | undefined,
+  restoring: { current: HTMLElement | "list" | null },
+) {
+  if (!target) return false;
+  restoring.current = target;
+  target.focus({ preventScroll: true });
+  restoring.current = null;
+  return document.activeElement === target;
+}
 
 /**
  * A route without the message picked in the open thread. The reader writes that pick into its
@@ -121,26 +157,79 @@ export function usePaneNavigation({
       }
     } else if (narrowReader && entry === null) pushReaderEntry();
   }, [layout.mode, narrowReader, history, registry, pushReaderEntry]);
-  // Changing layouts moves the list's and the reader's hosts into new slots (usePaneHost). The
-  // focused element leaves the document for a moment, so focus falls to the page; or it stays in a
-  // pane the new layout hides, as when the window narrows with a conversation open or Back returns
-  // to the narrow reader's entry from another mailbox. Either way focus goes back to the element
-  // that had it when that element still shows. Otherwise it goes to the reader when the reader is
-  // the only pane or had focus, else to the selected row when the list had focus.
+  // Changing layouts moves the list's and the reader's hosts into new slots (usePaneHost) and
+  // remounts the sidebar. The focused element leaves the document for a moment, so focus falls to
+  // the page; or it stays in a pane the new layout hides, as when the window narrows with a
+  // conversation open or Back returns to the narrow reader's entry from another mailbox. Only
+  // then does focus come back, and only to an element the move displaced: one in a moved host, an
+  // unmounted sidebar or a hidden pane. It goes to that element when it still shows, else to the
+  // same control in the version of its pane now shown (sameControl), else to the open mailbox in
+  // the sidebar shown, else to the reader when the reader is the only pane or had focus, else to
+  // the list's selected row. An element the person left, as by clicking an empty part of the
+  // window, is forgotten, so a later move never sends focus back to it.
   const focused = useRef<{ pane: string | null; element: HTMLElement | null }>({
     pane: null,
     element: null,
   });
+  // What a restore focused in place of the remembered element, while it keeps focus. The next
+  // move tries the remembered element again, as when the search field shows again after the
+  // narrow reader stood in for it.
+  const placed = useRef<HTMLElement | null>(null);
+  // What a restore is focusing: an element, or any element of the list while focusList looks for
+  // its row. Its focusin goes to `placed`, not to `focused`.
+  const restoring = useRef<HTMLElement | "list" | null>(null);
+  // Counts moves, so a focusout during a move's commit is not taken for the person leaving.
+  const moves = useRef(0);
   useEffect(() => {
     const remember = (event: FocusEvent) => {
       if (!(event.target instanceof HTMLElement)) return;
-      focused.current = {
-        pane: event.target.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null,
-        element: event.target,
-      };
+      const pane = paneOf(event.target);
+      const expected = restoring.current;
+      restoring.current = null;
+      if (expected === event.target || (expected === "list" && pane === "list")) {
+        placed.current = event.target === focused.current.element ? null : event.target;
+        return;
+      }
+      focused.current = { pane, element: event.target };
+      placed.current = null;
+    };
+    // Focus that leaves for the page while its element still shows and no pane moved was left
+    // by the person, as by a click on an empty part of the window.
+    const leave = (event: FocusEvent) => {
+      const target = event.target;
+      if (target !== focused.current.element && target !== placed.current) return;
+      if (!(target instanceof HTMLElement)) return;
+      const at = moves.current;
+      queueMicrotask(() => {
+        const active = document.activeElement;
+        if (moves.current !== at || (active && active !== document.body) || !shows(target)) return;
+        focused.current = { pane: null, element: null };
+        placed.current = null;
+      });
+    };
+    // A restore still waiting for the list's row gives way to the person's own input.
+    const input = () => {
+      restoring.current = null;
+    };
+    // A click in the element a restore focused makes it the person's own, though focus does not
+    // move and no focusin comes.
+    const press = (event: PointerEvent) => {
+      input();
+      const standIn = placed.current;
+      if (!standIn || !(event.target instanceof Node) || !standIn.contains(event.target)) return;
+      focused.current = { pane: paneOf(standIn), element: standIn };
+      placed.current = null;
     };
     document.addEventListener("focusin", remember);
-    return () => document.removeEventListener("focusin", remember);
+    document.addEventListener("focusout", leave);
+    document.addEventListener("pointerdown", press, true);
+    document.addEventListener("keydown", input, true);
+    return () => {
+      document.removeEventListener("focusin", remember);
+      document.removeEventListener("focusout", leave);
+      document.removeEventListener("pointerdown", press, true);
+      document.removeEventListener("keydown", input, true);
+    };
   }, []);
   // What the rendered layout shows, for the frame after a move. Layout effects run in the same
   // commit as the slot refs, so the frame never sees an older layout.
@@ -149,20 +238,34 @@ export function usePaneNavigation({
     latest.current = { shown, selectedId, focusList };
   });
   const moveFrame = useRef<number | null>(null);
-  const panesMoved = useCallback(() => {
+  const movedHosts = useRef(new Set<HTMLElement>());
+  const panesMoved = useCallback((host: HTMLElement) => {
+    moves.current += 1;
+    movedHosts.current.add(host);
     if (moveFrame.current !== null) cancelAnimationFrame(moveFrame.current);
     moveFrame.current = requestAnimationFrame(() => {
       moveFrame.current = null;
-      const active = document.activeElement;
-      if (active && active !== document.body && !active.closest("[hidden]")) return;
+      const hosts = [...movedHosts.current];
+      movedHosts.current.clear();
       const { pane, element } = focused.current;
-      if (element?.isConnected && !element.closest("[hidden]")) {
-        element.focus({ preventScroll: true });
-        if (document.activeElement === element) return;
-      }
+      if (!element || pane === null) return;
+      const active = document.activeElement;
+      const standIn = active !== null && active === placed.current;
+      const lost = !active || active === document.body || active.closest("[hidden]") !== null;
+      if (!lost && !standIn) return;
+      const displaced =
+        standIn || !shows(element) || hosts.some((moved) => moved.contains(element));
+      if (!displaced) return;
+      if (shows(element) && restore(element, restoring)) return;
+      if (restore(sameControl(element), restoring)) return;
+      if (pane === "sidebar" && restore(currentMailbox(), restoring)) return;
       const { shown: panes, selectedId: row, focusList: toList } = latest.current;
-      if (panes.reader && (pane === "reader" || !panes.list)) focusReaderNow();
-      else if (pane === "reader" || pane === "list") toList(row);
+      if (panes.reader && (pane === "reader" || !panes.list)) restore(readerPane(), restoring);
+      else {
+        // focusList may wait a few frames for the row, so its focusin comes later.
+        restoring.current = "list";
+        toList(row);
+      }
     });
   }, []);
   useEffect(

@@ -16,12 +16,19 @@ import {
   User,
   Users,
 } from "lucide-react";
-import { scopeAccountIds, type View } from "../../lib/view";
+import { scopeAccountIds, type SpaceId, type View } from "../../lib/view";
 import { AsyncResult } from "effect/reactivity";
 import { useAtomValue } from "@effect/atom-react";
 import { prefsAtom, unreadByLabelAtom } from "../../state/queries";
 
 export type Icon = ComponentType<{ className?: string }>;
+
+/**
+ * The `data-focus-key` of a mailbox or space control. The docked sidebar, the rail and the drawer
+ * use the same one, so a pane move can put focus on the same control when the layout swaps them.
+ */
+export const mailboxItem = (id: Mailbox) => `mailbox:${id}`;
+export const spaceItem = (id: SpaceId) => `space:${id}`;
 
 // Each mailbox gets its own icon color, as in Mimestream's sidebar.
 export const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [

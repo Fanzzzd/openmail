@@ -286,21 +286,63 @@ export const cases = [
     "crossing 960 px keeps focus on the element that had it",
     "crossing 960 px either way keeps focus",
     `${renderer}app/use-pane-navigation.ts`,
-    "        element.focus({ preventScroll: true });\n",
+    "      if (shows(element) && restore(element, restoring)) return;\n",
     "",
+  ],
+  [
+    "a pane move restores focus displaced from a moved host",
+    "crossing 960 px either way keeps focus",
+    `${renderer}app/use-pane-navigation.ts`,
+    "hosts.some((moved) => moved.contains(element))",
+    "false",
+  ],
+  [
+    "a pane move forgets focus the person left",
+    "when the person had left the element",
+    `${renderer}app/use-pane-navigation.ts`,
+    "        focused.current = { pane: null, element: null };\n",
+    "",
+  ],
+  [
+    "sidebar focus moves to the same control in the sidebar shown",
+    "moves to the same mailbox in the sidebar, rail or drawer",
+    `${renderer}app/use-pane-navigation.ts`,
+    "      if (restore(sameControl(element), restoring)) return;\n",
+    "",
+  ],
+  [
+    "sidebar focus falls back to the open mailbox",
+    "moves to the same mailbox in the sidebar, rail or drawer",
+    `${renderer}app/use-pane-navigation.ts`,
+    '      if (pane === "sidebar" && restore(currentMailbox(), restoring)) return;\n',
+    "",
+  ],
+  [
+    "the drawer's sidebar is the sidebar pane",
+    "moves to the same mailbox in the sidebar, rail or drawer",
+    `${renderer}app/App.tsx`,
+    '          <div data-mail-pane="sidebar" className="contents">',
+    '          <div className="contents">',
+  ],
+  [
+    "a restore's own focus keeps the remembered element",
+    "after the narrow reader stood in",
+    `${renderer}app/use-pane-navigation.ts`,
+    '      if (expected === event.target || (expected === "list" && pane === "list")) {',
+    "      if (false) {",
   ],
   [
     "a pane move restores focus from the page",
     "widening a narrow reader through 800 px and 960 px",
     `${renderer}app/PaneLayout.tsx`,
-    "      moved();\n",
+    "      moved(host);\n",
     "",
   ],
   [
     "the reader takes focus when it becomes the only pane",
     "the reader takes focus when it becomes the only pane",
     `${renderer}app/use-pane-navigation.ts`,
-    '      if (panes.reader && (pane === "reader" || !panes.list)) focusReaderNow();\n      else ',
+    '      if (panes.reader && (pane === "reader" || !panes.list)) restore(readerPane(), restoring);\n      else ',
     "      ",
   ],
   [
@@ -432,8 +474,8 @@ function run() {
         for (const [path, original] of originals) writeFileSync(path, original);
       }
     }
-    if (killed.size !== 75)
-      throw new Error(`Expected all 75 covered flows to fail at least once; got ${killed.size}`);
+    if (killed.size !== 78)
+      throw new Error(`Expected all 78 covered flows to fail at least once; got ${killed.size}`);
     process.stdout.write(`Verified ${killed.size} flows; all temporary changes restored.\n`);
   } finally {
     rmSync(directory, { recursive: true, force: true });

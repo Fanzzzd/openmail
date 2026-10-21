@@ -25,7 +25,7 @@ import {
   openMenuFromKeyboard,
   useFavoriteMenuText,
 } from "./SidebarItems";
-import { CATEGORY_ICONS, MAILBOXES, useMailboxCounts } from "./sidebar-mailboxes";
+import { CATEGORY_ICONS, MAILBOXES, mailboxItem, useMailboxCounts } from "./sidebar-mailboxes";
 import { accountColorValue, accountName } from "../../lib/format";
 import { favoriteView } from "./favorite-navigation";
 import { Effect } from "effect";
@@ -348,6 +348,7 @@ export function Sidebar({
                                     );
                                 },
                               }}
+                              item={mailboxItem(id)}
                               active={view.mailbox === id && !view.label}
                               onClick={() => onView({ ...view, mailbox: id, label: undefined })}
                               icon={<Icon className={`size-4.5 ${color}`} />}

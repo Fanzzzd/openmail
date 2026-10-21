@@ -587,7 +587,10 @@ export function App({ composeId }: { composeId?: string }) {
           onOpenChange={layout.setDrawerOpen}
           aria-label={t`Sidebar`}
         >
-          {sidebar}
+          {/* Marks the drawer's sidebar as the sidebar pane, as the docked one and the rail are. */}
+          <div data-mail-pane="sidebar" className="contents">
+            {sidebar}
+          </div>
         </Drawer>
       )}
       <MailAlerts mailActions={mailActions} composition={composition} navigation={navigation} />
