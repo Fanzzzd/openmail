@@ -144,3 +144,31 @@ it.effect.skipIf(process.env.OPENMAIL_SEARCH_PROFILE !== "1")(
   },
   { timeout: 1_200_000 },
 );
+
+it.effect("a repeated search reuses the visible text of the bodies it read before", () => {
+  let extractions = 0;
+  const profiler = {
+    begin: (step: string) => {
+      if (step === "visible body extraction") extractions++;
+      return () => {
+        // Only the count matters here.
+      };
+    },
+  };
+  return Effect.gen(function* () {
+    yield* TestClock.setTime(fixtureNow);
+    yield* seedMailbox(120);
+    const store = yield* Store;
+    const search = store.listThreads({ search: "weekly", limit: 50 });
+    const first = yield* search;
+    assert.isAbove(first.length, 0);
+    assert.isAbove(extractions, 0);
+    extractions = 0;
+    const again = yield* search;
+    assert.deepStrictEqual(again, first);
+    assert.strictEqual(extractions, 0);
+  }).pipe(
+    Effect.provideService(SearchProfile, profiler),
+    Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
+  );
+});

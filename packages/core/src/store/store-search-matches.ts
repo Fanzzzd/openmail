@@ -30,6 +30,16 @@ export function getOrSet<K, V>(memo: Map<K, V>, key: K, create: () => V): V {
   return value;
 }
 
+/** FNV-1a over UTF-16 code units: a cheap content key for a message body. */
+const bodyHash = (text: string) => {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
+  return (hash >>> 0).toString(36);
+};
+
+/** Visible text of this many message bodies stays cached between searches. */
+const VISIBLE_CACHE_SIZE = 500;
+
 export const nonzeroProximity = (q: LocalQuery) =>
   (q.criteria?.proximity?.distance ?? 0) > 0 ||
   q.criteria?.excluded?.some((condition) => (condition.proximity?.distance ?? 0) > 0) ||
@@ -72,6 +82,27 @@ export const makeSearchMatches = ({
   textFilter: ReturnType<typeof makeQueryStore>["textFilter"];
   listFilter: ReturnType<typeof makeQueryStore>["listFilter"];
 }) => {
+  // Visible text takes tens of milliseconds per HTML body (CSS parsing, hidden-text rules). A
+  // common word's 200 results spent 3.7 s of main-process time on a real 20k-message database,
+  // again on every refresh of the open search and on each change while it showed. Keyed by the
+  // body's content, so a body fetched or edited again is read again; oldest entries leave first.
+  const visibleCache = new Map<string, string>();
+  const cachedVisible = (key: string, create: () => string) => {
+    const hit = visibleCache.get(key);
+    if (hit !== undefined) {
+      visibleCache.delete(key);
+      visibleCache.set(key, hit);
+      return hit;
+    }
+    const value = create();
+    visibleCache.set(key, value);
+    if (visibleCache.size > VISIBLE_CACHE_SIZE) {
+      const oldest = visibleCache.keys().next();
+      if (!oldest.done) visibleCache.delete(oldest.value);
+    }
+    return value;
+  };
+
   const threadMessageIds = (threads: readonly ThreadSummary[]) =>
     sql`SELECT m.id FROM json_each(${JSON.stringify(threads.map(({ accountId, threadId }) => ({ accountId, threadId })))}) k
       JOIN messages m ON m.account_id=json_extract(k.value,'$.accountId') AND m.thread_id=json_extract(k.value,'$.threadId')`;
@@ -200,12 +231,11 @@ export const makeSearchMatches = ({
         derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [],
       }));
     }
-    const visible = new Map<string, string>();
     const visibleBody = (id: string) => {
       const body = bodies.get(id);
       if (!body) return "";
-      const key = JSON.stringify([body.body_text, body.body_html]);
-      return getOrSet(visible, key, () => {
+      const key = `${body.body_text.length}:${bodyHash(body.body_text)}:${body.body_html.length}:${bodyHash(body.body_html)}`;
+      return cachedVisible(key, () => {
         const model = searchStep(profile, "visible body extraction", () =>
           messageModelText(body.body_text, body.body_html),
         );
