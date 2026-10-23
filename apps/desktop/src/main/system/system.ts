@@ -281,91 +281,104 @@ export const DesktopLive = Layer.effect(
     /** The spaces the Go menu listed last, kept while no main window reports them. */
     let lastMenuSpaces: readonly string[] | undefined;
     const refreshLock = yield* Semaphore.make(1);
-    const refresh = refreshLock.withPermits(1)(
-      Effect.gen(function* () {
-        const accounts = yield* mailbox.accounts.accounts;
-        for (const [notification, ids] of notificationAccounts) {
-          if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
-            notification.close();
-            notifications.delete(notification);
-            notificationAccounts.delete(notification);
-          }
+    const menuLock = yield* Semaphore.make(1);
+    /**
+     * The unread counts and recent unread mail: the dock badge and menu and the menu-bar icon. It
+     * reads the database (a count per account and an unread inbox page), so it runs on mail
+     * changes, focus and the periodic tick, not on every selection change.
+     */
+    const refreshCounts = Effect.gen(function* () {
+      const accounts = yield* mailbox.accounts.accounts;
+      for (const [notification, ids] of notificationAccounts) {
+        if (ids.some((id) => accounts.find((a) => a.id === id)?.enabled === false)) {
+          notification.close();
+          notifications.delete(notification);
+          notificationAccounts.delete(notification);
         }
-        const profiles = yield* mailbox.accounts.profiles;
-        profileIds = profiles.map((profile) => profile.id);
-        if (
-          activeSpace !== "all" &&
-          activeSpace !== "overview" &&
-          !profiles.some((p) => p.id === activeSpace)
-        )
-          activeSpace = "all";
-        const accountIds = spaceAccountIds(activeSpace, accounts);
-        const prefs = yield* mailbox.app.prefs;
-        configureSpelling(prefs);
-        const folderCounts = yield* mailbox.reading.unreadCounts;
-        const counts = prefs.threadGrouping
-          ? Object.fromEntries(
-              yield* Effect.forEach(accounts, (account) =>
-                mailbox.reading
-                  .threadCount({
-                    mailbox: "inbox",
-                    accountIds: [account.id],
-                    unreadOnly: true,
-                    flat: true,
-                  })
-                  .pipe(
-                    Effect.orDie,
-                    Effect.map((count) => [account.id, count]),
-                  ),
-              ),
-            )
-          : folderCounts;
-        app.dock?.setMenu(
-          Menu.buildFromTemplate([
-            { label: labels.compose, click: () => command("compose") },
-            { type: "separator" },
-            ...accounts
-              .filter((a) => a.enabled !== false)
-              .map((a) => ({
-                label: `${a.description?.trim() || a.email} (${counts[a.id] ?? 0})`,
-                click: () =>
-                  navigate(mailHref({ space: "all", mailbox: "inbox", accountId: a.id })),
-              })),
-          ]),
-        );
-        const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
-        const recent = yield* mailbox.reading
-          .threads({
-            mailbox: "inbox",
-            unreadOnly: true,
-            accountIds,
-            limit: MENU_BAR_MAIL_LIMIT,
-            flat: true,
-          })
-          .pipe(Effect.orDie);
-        const title = profiles.find((p) => p.id === activeSpace)?.name ?? labels.allAccounts;
-        app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
-        if (process.platform === "darwin")
-          tray?.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
-        tray?.setToolTip(`${APP_TITLE} · ${title} (${unread})`);
-        tray?.setContextMenu(
-          Menu.buildFromTemplate([
-            { label: `${title} (${unread})`, enabled: false },
-            { type: "separator" },
-            ...recent.map((thread) => ({
-              label: `${thread.from.name || thread.from.address}: ${thread.subject || "…"}`.slice(
-                0,
-                100,
-              ),
-              click: () => openThread(thread.id),
+      }
+      const profiles = yield* mailbox.accounts.profiles;
+      profileIds = profiles.map((profile) => profile.id);
+      if (
+        activeSpace !== "all" &&
+        activeSpace !== "overview" &&
+        !profiles.some((p) => p.id === activeSpace)
+      )
+        activeSpace = "all";
+      const accountIds = spaceAccountIds(activeSpace, accounts);
+      const prefs = yield* mailbox.app.prefs;
+      configureSpelling(prefs);
+      const folderCounts = yield* mailbox.reading.unreadCounts;
+      const counts = prefs.threadGrouping
+        ? Object.fromEntries(
+            yield* Effect.forEach(accounts, (account) =>
+              mailbox.reading
+                .threadCount({
+                  mailbox: "inbox",
+                  accountIds: [account.id],
+                  unreadOnly: true,
+                  flat: true,
+                })
+                .pipe(
+                  Effect.orDie,
+                  Effect.map((count) => [account.id, count]),
+                ),
+            ),
+          )
+        : folderCounts;
+      app.dock?.setMenu(
+        Menu.buildFromTemplate([
+          { label: labels.compose, click: () => command("compose") },
+          { type: "separator" },
+          ...accounts
+            .filter((a) => a.enabled !== false)
+            .map((a) => ({
+              label: `${a.description?.trim() || a.email} (${counts[a.id] ?? 0})`,
+              click: () => navigate(mailHref({ space: "all", mailbox: "inbox", accountId: a.id })),
             })),
-            ...(recent.length ? [] : [{ label: labels.noUnread, enabled: false }]),
-            { type: "separator" },
-            { label: labels.showInbox, click: () => command("inbox") },
-            { label: labels.compose, click: () => command("compose") },
-            { label: labels.settings, click: () => command("settings") },
-          ]),
-        );
+        ]),
+      );
+      const unread = accountIds.reduce((total, id) => total + (counts[id] ?? 0), 0);
+      const recent = yield* mailbox.reading
+        .threads({
+          mailbox: "inbox",
+          unreadOnly: true,
+          accountIds,
+          limit: MENU_BAR_MAIL_LIMIT,
+          flat: true,
+        })
+        .pipe(Effect.orDie);
+      const title = profiles.find((p) => p.id === activeSpace)?.name ?? labels.allAccounts;
+      app.setBadgeCount(dockUnreadCount(activeSpace, accounts, counts, prefs, new Date()));
+      if (process.platform === "darwin")
+        tray?.setTitle(menuBarCountTitle(prefs.menuBarUnreadCount, unread));
+      tray?.setToolTip(`${APP_TITLE} · ${title} (${unread})`);
+      tray?.setContextMenu(
+        Menu.buildFromTemplate([
+          { label: `${title} (${unread})`, enabled: false },
+          { type: "separator" },
+          ...recent.map((thread) => ({
+            label: `${thread.from.name || thread.from.address}: ${thread.subject || "…"}`.slice(
+              0,
+              100,
+            ),
+            click: () => openThread(thread.id),
+          })),
+          ...(recent.length ? [] : [{ label: labels.noUnread, enabled: false }]),
+          { type: "separator" },
+          { label: labels.showInbox, click: () => command("inbox") },
+          { label: labels.compose, click: () => command("compose") },
+          { label: labels.settings, click: () => command("settings") },
+        ]),
+      );
+    });
+    /**
+     * The application menu, from the focused window's selection and send state. It reads only the
+     * prefs, so a selection change rebuilds the menu without the count queries above, which held
+     * the main process for over a second on a 20k-message database.
+     */
+    const refreshMenu = menuLock.withPermits(1)(
+      Effect.gen(function* () {
+        const prefs = yield* mailbox.app.prefs;
         const focused = BrowserWindow.getFocusedWindow();
         const undoAvailable = focused
           ? (sendStates.get(focused.webContents.id)?.undoAvailable ?? false)
@@ -454,6 +467,12 @@ export const DesktopLive = Layer.effect(
             ),
           );
         }
+      }),
+    );
+    const refresh = refreshLock.withPermits(1)(
+      Effect.gen(function* () {
+        yield* refreshCounts;
+        yield* refreshMenu;
         yield* notify;
       }),
     );
@@ -469,9 +488,16 @@ export const DesktopLive = Layer.effect(
       if ((await notificationPermission()) === "notDetermined") await notificationPermission(true);
     }).pipe(Effect.forkScoped);
 
+    // Each batch is every event waiting since the last one ran, so a burst of changes (a local
+    // write and its push, or a sync) runs one refresh rather than one refresh per change.
     yield* mailbox.app.events.pipe(
-      Stream.runForEach((event) =>
-        (event._tag === "NewMail" ? notify : event._tag === "Changed" ? refresh : Effect.void).pipe(
+      Stream.runForEachArray((events) =>
+        (events.some((event) => event._tag === "Changed")
+          ? refresh
+          : events.some((event) => event._tag === "NewMail")
+            ? notify
+            : Effect.void
+        ).pipe(
           Effect.catchCause((cause) =>
             logError("system-refresh-failed", "system event refresh failed", cause),
           ),
@@ -694,9 +720,12 @@ export const DesktopLive = Layer.effect(
           });
         }),
       setMenuState: (id, state) =>
-        Effect.sync(() => menuStates.set(id, state)).pipe(Effect.andThen(refresh), Effect.asVoid),
+        Effect.sync(() => menuStates.set(id, state)).pipe(
+          Effect.andThen(refreshMenu),
+          Effect.asVoid,
+        ),
       setSendState: (id, state) =>
-        Effect.sync(() => sendStates.update(id, state)).pipe(Effect.andThen(refresh)),
+        Effect.sync(() => sendStates.update(id, state)).pipe(Effect.andThen(refreshMenu)),
       setSpace: (id, space) =>
         Effect.gen(function* () {
           spaces.set(id, space);

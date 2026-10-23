@@ -1,6 +1,6 @@
 import { mailHref } from "../../shared/routes";
 import { NO_MENU_SELECTION } from "../../shared/native-actions";
-import { Deferred, Effect, Fiber, Layer, Logger, Schema, Stream } from "effect";
+import { Deferred, Effect, Fiber, Layer, Logger, PubSub, Schema, Stream } from "effect";
 import { TestClock } from "effect/testing";
 import { LockTimeoutError, SqlError } from "effect/sql/SqlError";
 import type { DesktopLabels } from "../../shared/desktop-labels";
@@ -168,6 +168,7 @@ vi.mock("electron", async () => {
 import { Mailbox, messageLink } from "@openmail/core";
 import { fakeServer, TestMailbox } from "@openmail/core/testing/node";
 import type { IncomingMessage } from "@openmail/core";
+import type { MailboxEvent } from "../../shared/api";
 import { Desktop, DesktopLive, receiveAppUrl, receiveOpenFile } from "./system";
 import { settle } from "../test-support/event-loop";
 import { createMainWindow, openComposeWindow, openThreadWindow } from "../windows/windows";
@@ -785,6 +786,43 @@ it("the notification event consumer logs a SQL defect and processes later events
   );
 });
 
+it("a burst of change events runs one count refresh", async () => {
+  let refreshes = 0;
+  const changes = Effect.runSync(PubSub.unbounded<MailboxEvent>());
+  const mailboxLayer = Layer.effect(
+    Mailbox,
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      return Mailbox.of({
+        ...mailbox,
+        app: { ...mailbox.app, events: Stream.fromPubSub(changes) },
+        reading: {
+          ...mailbox.reading,
+          unreadCounts: Effect.suspend(() => {
+            refreshes++;
+            return mailbox.reading.unreadCounts;
+          }),
+        },
+      });
+    }),
+  ).pipe(Layer.provide(TestMailbox()));
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        yield* settle();
+        const before = refreshes;
+        yield* PubSub.publishAll(
+          changes,
+          Array.from({ length: 5 }, (): MailboxEvent => ({ _tag: "Changed" })),
+        );
+        yield* settle();
+        // The burst arrives as one batch of events.
+        expect(refreshes - before).toBe(1);
+      }),
+    ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer))),
+  );
+});
+
 it("periodic refresh logs a SQL defect and runs again at the next interval", async () => {
   const logs = capturedErrors();
   let failNext = false;
@@ -1344,6 +1382,51 @@ it("killed renderers drop stale listeners and keep cached pending sends protecte
         expect(win.isDestroyed()).toBe(true);
       }),
     ).pipe(Effect.provide(desktopLayer(fakeServer("me@gmail.com")))),
+  );
+});
+
+it("a selection or send-state change rebuilds the menu without reading counts", async () => {
+  let reads = 0;
+  const mailboxLayer = Layer.effect(
+    Mailbox,
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const counted = <A, E, R>(effect: Effect.Effect<A, E, R>) =>
+        Effect.suspend(() => {
+          reads++;
+          return effect;
+        });
+      return Mailbox.of({
+        ...mailbox,
+        reading: {
+          ...mailbox.reading,
+          unreadCounts: counted(mailbox.reading.unreadCounts),
+          threadCount: (query) => counted(mailbox.reading.threadCount(query)),
+          threads: (query) => counted(mailbox.reading.threads(query)),
+        },
+      });
+    }),
+  ).pipe(Layer.provide(TestMailbox()));
+  await Effect.runPromise(
+    Effect.scoped(
+      Effect.gen(function* () {
+        const desktop = yield* Desktop;
+        const main = observations.testState.windows[0];
+        if (!main) throw new Error("Missing main window");
+        main.focus();
+        yield* settle();
+        const before = reads;
+        const menus = observations.testState.menu.mock.calls.length;
+        yield* desktop.setMenuState(main.webContents.id, {
+          selected: true,
+          composing: false,
+          important: false,
+        });
+        yield* desktop.setSendState(main.webContents.id, { pending: 0, undoAvailable: true });
+        expect(reads).toBe(before);
+        expect(observations.testState.menu.mock.calls.length).toBeGreaterThan(menus);
+      }),
+    ).pipe(Effect.provide(localizedDesktopLayer(mailboxLayer))),
   );
 });
 
