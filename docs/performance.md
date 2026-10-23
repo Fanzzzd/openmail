@@ -654,6 +654,29 @@ Not done, with the measured reason:
 - **Three invalidations per mark-read.** The renderer's own mutation, the `Changed` after the local write and the `Changed` after the push each refetch the views on screen. Merging them needs either scoped change events from core or a delay in the renderer.
 - **Smaller first pages.** With intent prefetch and warming, the first page is off the click path.
 
+## Memory across renders
+
+The owner's development app grew past 50 GB in two hours of online sync. The renderer leaked; the main process, the GPU process and native menus did not. [perf-list.mjs](../apps/desktop/scripts/perf-list.mjs) `--actions stress` reproduces it offline. It sends SetPrefs requests at 300 a minute, so the main process emits `Changed` and every view refreshes, and it samples each process's footprint and diffs renderer heap snapshots:
+
+```sh
+node apps/desktop/scripts/perf-list.mjs --db /path/to/copy/mail.db --actions stress --soak 4 --rate 300 --check
+```
+
+| Build               | Changes | Renderer footprint                        | Heap kept                                                      |
+| ------------------- | ------: | ----------------------------------------- | -------------------------------------------------------------- |
+| Development, before |   2,174 | 281 → 1,367 MB                            | –                                                              |
+| Production, before  |     993 | 115 → 671 MB                              | 77 MB of strings, 2 copies of each App hook closure per change |
+| Production, after   |     998 | 129 → 260 MB, flat after the first minute | 0.2 MB                                                         |
+
+Over the same runs the main process held 250 to 610 MB and the GPU process 54 MB, through 2,174 application menu rebuilds, 37,000 `Menu.buildFromTemplate` calls and 2,220 Dock menu and badge updates.
+
+What kept the memory: `useMailActions` defined `requestPermanentDelete` and `rowState` in one function body, and the React Compiler memoized them in separate cache slots with different dependencies. V8 gives all closures created in one call a single shared context. When a render reused the cached `requestPermanentDelete` from an earlier render, the new context held it, the old closure held its own render's context, and that context held the `rowState` reused from the render before. Each App render added a link, and each link kept everything that render's scope saw, thread lists included. Every `Changed` re-renders App, so a busy sync grew the chain without bound.
+
+The rule for hooks that run on every App render and hold large render data (thread lists, rows, selections):
+
+- Do not let one function body produce both closures that the compiler can keep across renders and data that changes every render. Either return closures that read the data from a ref (or `useEffectEvent`), so they need no cache slot, or opt the hook out with `"use no memo"`, as `useMailActions` does.
+- After changing such a hook, run the stress action with `--check`. It fails when a closure gains a copy for every few changes or when the renderer keeps more than 10 MB across the run.
+
 ## Write and disk cost
 
 ```sh
