@@ -14,7 +14,7 @@ import { AsyncResult } from "effect/reactivity";
 import { useAtomValue } from "@effect/atom-react";
 import { labelPreferencesAtom, labelsAtom, organizationAtom, prefsAtom } from "../../state/queries";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { useShortcutLabel } from "../../i18n/use-shortcut-text";
 import {
   AccountAvatar,
   FavoriteStar,
@@ -25,7 +25,13 @@ import {
   openMenuFromKeyboard,
   useFavoriteMenuText,
 } from "./SidebarItems";
-import { CATEGORY_ICONS, MAILBOXES, mailboxItem, useMailboxCounts } from "./sidebar-mailboxes";
+import {
+  accountItem,
+  CATEGORY_ICONS,
+  MAILBOXES,
+  mailboxItem,
+  useMailboxCounts,
+} from "./sidebar-mailboxes";
 import { accountColorValue, accountName } from "../../lib/format";
 import { favoriteView } from "./favorite-navigation";
 import { Effect } from "effect";
@@ -104,7 +110,7 @@ export function Sidebar({
   const [moreOpen, setMoreOpen] = useState(false);
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const { t, i18n } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   const favoriteMenuText = useFavoriteMenuText();
 
   const members = spaceAccounts(view.space, accounts);
@@ -227,6 +233,7 @@ export function Sidebar({
         {members.length > 1 && (
           <div className="mb-4 grid gap-1 @min-[240px]/sidebar:grid-cols-2 @min-[240px]/sidebar:gap-1.5">
             <Tile
+              item={accountItem(undefined)}
               active={!view.accountId}
               onClick={() => onView({ ...view, accountId: undefined, label: undefined })}
               icon={
@@ -241,6 +248,7 @@ export function Sidebar({
             {members.map((a) => (
               <Tile
                 key={a.id}
+                item={accountItem(a.id)}
                 active={view.accountId === a.id}
                 onClick={() => onView({ ...view, accountId: a.id, label: undefined })}
                 icon={<AccountAvatar account={a} />}
@@ -621,7 +629,7 @@ export function Sidebar({
 /** Brings back the sidebar when it is hidden or, in a narrow window, opens it as a drawer. */
 export function SidebarToggle({ onClick }: { onClick: () => void }) {
   const { t } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   return (
     <Tip label={t`Show sidebar`} shortcut={shortcut("toggleSidebar")}>
       <button

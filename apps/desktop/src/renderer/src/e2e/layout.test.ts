@@ -470,6 +470,33 @@ it("focus in the sidebar moves to the same mailbox in the sidebar, rail or drawe
   );
 });
 
+it("focus on an account tile in the drawer moves to the same tile in the docked sidebar", async () => {
+  width = 880;
+  current = await flow();
+  const h = current;
+  await h.run(h.m.accounts.connect({ provider: "outlook" }));
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const docked = () =>
+    document.querySelector<HTMLElement>('[data-mail-pane="sidebar"]:not([data-sidebar-rail])');
+  for (const tile of ["account:all", undefined]) {
+    await eventually(() => expect(rail()).not.toBeNull());
+    fireEvent.click(within(rail()!).getByRole("button", { name: "Show sidebar" }));
+    const drawer = await screen.findByRole("dialog", { name: "Sidebar" });
+    const tiles = () => [...drawer.querySelectorAll<HTMLElement>('[data-focus-key^="account:"]')];
+    await eventually(() => expect(tiles()).toHaveLength(3));
+    // All, then an account's own tile.
+    const target = tile ? tiles().find((each) => each.dataset.focusKey === tile)! : tiles()[2]!;
+    const key = target.dataset.focusKey!;
+    target.focus();
+    resize(1320);
+    await eventually(() => expect(screen.queryByRole("dialog", { name: "Sidebar" })).toBeNull());
+    await eventually(() =>
+      expect(document.activeElement).toBe(docked()?.querySelector(`[data-focus-key="${key}"]`)),
+    );
+    resize(880);
+  }
+});
+
 it("focus in a menu that a pane move closes goes where its trigger's focus would", async () => {
   width = 880;
   current = await flow();

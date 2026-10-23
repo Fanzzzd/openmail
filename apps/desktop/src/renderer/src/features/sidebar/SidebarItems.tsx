@@ -139,6 +139,8 @@ export function AccountAvatar({ account: a }: { account: Account }) {
 }
 
 export function Tile(props: {
+  /** The tile's `data-focus-key`, the same in the docked sidebar and the drawer. */
+  item: string;
   active: boolean;
   onClick: () => void;
   icon: ReactNode;
@@ -154,6 +156,7 @@ export function Tile(props: {
       <button
         type="button"
         onClick={props.onClick}
+        data-focus-key={props.item}
         aria-current={props.active ? "page" : undefined}
         // One row in a narrow sidebar, a card in two columns once it has room.
         className={`grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-2 rounded-card px-2 py-1.5 text-left [grid-template-areas:'icon_text_badge'] @min-[240px]/sidebar:grid-cols-[auto_minmax(0,1fr)] @min-[240px]/sidebar:gap-y-1.5 @min-[240px]/sidebar:px-2.5 @min-[240px]/sidebar:py-2 @min-[240px]/sidebar:[grid-template-areas:'icon_badge'_'text_text'] ${

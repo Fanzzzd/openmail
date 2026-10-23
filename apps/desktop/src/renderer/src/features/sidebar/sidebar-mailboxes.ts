@@ -29,6 +29,8 @@ export type Icon = ComponentType<{ className?: string }>;
  */
 export const mailboxItem = (id: Mailbox) => `mailbox:${id}`;
 export const spaceItem = (id: SpaceId) => `space:${id}`;
+/** The `data-focus-key` of an account tile: `account:all` for All, else the account's id. */
+export const accountItem = (id: string | undefined) => `account:${id ?? "all"}`;
 
 // Each mailbox gets its own icon color, as in Mimestream's sidebar.
 export const MAILBOXES: { id: Mailbox; icon: Icon; color: string }[] = [

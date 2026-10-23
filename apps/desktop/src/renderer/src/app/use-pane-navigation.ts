@@ -40,11 +40,11 @@ function sameControl(element: HTMLElement) {
     (control) => control.dataset.focusKey === key && shows(control),
   );
 }
-/** The open mailbox's control in the sidebar, rail or drawer that shows. */
+/** The open mailbox's control in the sidebar, rail or drawer that shows, not its account's tile. */
 const currentMailbox = () =>
   [
     ...document.querySelectorAll<HTMLElement>(
-      '[data-mail-pane="sidebar"] [data-focus-key][aria-current="page"]',
+      '[data-mail-pane="sidebar"] [data-focus-key^="mailbox:"][aria-current="page"]',
     ),
   ].find(shows);
 
