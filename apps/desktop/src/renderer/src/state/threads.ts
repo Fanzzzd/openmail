@@ -22,13 +22,12 @@ import type { AppError } from "../lib/errors";
 import { supportsInInboxFilter } from "../lib/folder-actions";
 import { MailClient } from "./rpc";
 import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
-import { type Loaded, refreshPages, searchExtent } from "./list-pages";
+import { type Loaded, PAGE, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
-const PAGE = 100;
 /** Initial server search stays bounded. Local ranked search grows its candidate window. */
 const SEARCH_LIMIT = 200;
 
@@ -66,6 +65,15 @@ export const threadsVersionAtom = Atom.make(
   (get): number => Option.getOrElse(get.self<number>(), () => 0) + 1,
 ).pipe(Atom.withReactivity([Keys.threads]), Atom.keepAlive);
 
+/**
+ * How many of a list's rows the person can reach without paging: through the last row its window
+ * renders or the last selected row, whichever is further. MessageList writes it; a refresh reads
+ * it once, without depending on it, to bound how many rows it reads again (see refreshPages).
+ */
+export const listReachAtom = Atom.family((_query: ListQuery) =>
+  Atom.make<number | undefined>(undefined).pipe(Atom.keepAlive),
+);
+
 // Atom.family holds members weakly, so each family returns the atom itself.
 // A wrapper object would be collected while its atoms are still mounted, and
 // the next lookup would start a second list from page one.
@@ -85,13 +93,17 @@ const loadedPages = Atom.family((query: ListQuery) => {
         .pipe(Option.flatMap(AsyncResult.value), Option.getOrUndefined);
       // Only an increased request may fetch history; invalidation refreshes cached rows.
       const continuing = increased ? previous : undefined;
-      // Refresh every loaded row so scroll coordinates and selection remain valid.
+      // Refresh the rows within reach so scroll coordinates and selection remain valid.
+      const reach = get.once(listReachAtom(query));
       return Effect.gen(function* () {
         if (!continuing && previous) {
           const call = yield* MailClient;
-          return yield* refreshPages(query, previous, (q) => call("Threads", { query: q })).pipe(
-            Effect.map((next) => ({ ...next, requested: want })),
-          );
+          return yield* refreshPages(
+            query,
+            previous,
+            (q) => call("Threads", { query: q }),
+            reach,
+          ).pipe(Effect.map((next) => ({ ...next, requested: want })));
         }
         let remoteDone =
           continuing?.remoteDone ??

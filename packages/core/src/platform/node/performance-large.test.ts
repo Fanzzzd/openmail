@@ -251,6 +251,18 @@ it.effect(
             ),
           ),
       );
+      // A change refreshes the list on screen. At the top it reads two pages however many rows
+      // are loaded (refreshPages in the renderer); the 2,000-row read is what it cost before.
+      yield* measure(
+        "list refresh at the top",
+        75,
+        store.listThreads({ mailbox: "inbox", limit: 200 }),
+      );
+      yield* measure(
+        "list refresh of 2,000 loaded rows",
+        600,
+        store.listThreads({ mailbox: "inbox", limit: 2000 }),
+      );
       // Every system refresh (each change, focus and 15 s tick) reads the notification queue.
       yield* measure("empty notification queue", 5, store.takeNotifications(fixtureNow));
       // Sparse matches: 100 of 100k messages carry a Google Sheet link.
