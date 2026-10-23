@@ -19,8 +19,7 @@ import { Keys } from "../../../state/keys";
 import { setContactHiddenAtom, setPrefsAtom } from "../../../state/mutations";
 import { accountsAtom, sendAsAtom, hiddenContactsAtom, prefsAtom } from "../../../state/queries";
 import { Select } from "../../../ui/Select";
-import { Checkbox } from "../../../ui/Checkbox";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import { buttonLink, settingsHint } from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 
@@ -55,20 +54,16 @@ function RecipientAddresses() {
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => null);
   const setPrefs = useAtomSet(setPrefsAtom);
   return (
-    <SettingsCheckRow>
-      <label className="flex items-center gap-2">
-        <Checkbox
-          checked={prefs?.showFullRecipientAddresses ?? false}
-          onCheckedChange={(showFullRecipientAddresses) =>
-            setPrefs({
-              payload: { patch: { showFullRecipientAddresses } },
-              reactivityKeys: [Keys.prefs],
-            })
-          }
-        />
-        <span>{t`Show full email addresses in recipient fields`}</span>
-      </label>
-    </SettingsCheckRow>
+    <SettingsSwitchRow
+      label={t`Show full email addresses in recipient fields`}
+      checked={prefs?.showFullRecipientAddresses ?? false}
+      onCheckedChange={(showFullRecipientAddresses) =>
+        setPrefs({
+          payload: { patch: { showFullRecipientAddresses } },
+          reactivityKeys: [Keys.prefs],
+        })
+      }
+    />
   );
 }
 
@@ -253,24 +248,16 @@ function ComposeAppearance() {
           }}
         />
       </SettingsRow>
-      <SettingsCheckRow>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={prefs.emojiReplacement}
-            onCheckedChange={(emojiReplacement) => save({ emojiReplacement })}
-          />
-          <span>{t`Replace emoji text as you type`}</span>
-        </label>
-      </SettingsCheckRow>
-      <SettingsCheckRow>
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={prefs.contactPhotos}
-            onCheckedChange={(contactPhotos) => save({ contactPhotos })}
-          />
-          <span>{t`Show Google contact photos`}</span>
-        </label>
-      </SettingsCheckRow>
+      <SettingsSwitchRow
+        label={t`Replace emoji text as you type`}
+        checked={prefs.emojiReplacement}
+        onCheckedChange={(emojiReplacement) => save({ emojiReplacement })}
+      />
+      <SettingsSwitchRow
+        label={t`Show Google contact photos`}
+        checked={prefs.contactPhotos}
+        onCheckedChange={(contactPhotos) => save({ contactPhotos })}
+      />
     </>
   );
 }

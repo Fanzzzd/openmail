@@ -19,7 +19,7 @@ import { Checkbox } from "../../ui/Checkbox";
 import { Select } from "../../ui/Select";
 import { LABEL_COLORS, labelColorName } from "./label-colors";
 
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../ui/SettingsRows";
 import {
   buttonLink,
   buttonPrimary,
@@ -105,29 +105,23 @@ export function OrganizationSettings({ accounts }: { accounts: readonly Account[
       </SettingsGroup>
       {account && caps?.inboxTabs && (
         <SettingsGroup>
-          <SettingsCheckRow>
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={organization.find((o) => o.accountId === accountId)?.categories ?? true}
-                onCheckedChange={(categories) =>
-                  setOrg({
-                    payload: {
-                      input: {
-                        accountId,
-                        categories,
-                        selectedCategories: organization.find((o) => o.accountId === accountId)
-                          ?.selectedCategories ?? [...categoryIds],
-                      },
-                    },
-                    reactivityKeys: [Keys.organization],
-                  })
-                }
-              />
-              <span>
-                {caps.inboxTabs === "focused" ? t`Show Focused/Other` : t`Show Gmail categories`}
-              </span>
-            </label>
-          </SettingsCheckRow>
+          <SettingsSwitchRow
+            label={caps.inboxTabs === "focused" ? t`Show Focused/Other` : t`Show Gmail categories`}
+            checked={organization.find((o) => o.accountId === accountId)?.categories ?? true}
+            onCheckedChange={(categories) =>
+              setOrg({
+                payload: {
+                  input: {
+                    accountId,
+                    categories,
+                    selectedCategories: organization.find((o) => o.accountId === accountId)
+                      ?.selectedCategories ?? [...categoryIds],
+                  },
+                },
+                reactivityKeys: [Keys.organization],
+              })
+            }
+          />
           {organization.find((o) => o.accountId === accountId)?.categories !== false && (
             <fieldset className="space-y-1.5 px-3 pt-1 pb-2.5">
               <legend className="px-0 pt-2 text-footnote font-medium text-a11y-muted">{t`Visible categories`}</legend>

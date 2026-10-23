@@ -8,7 +8,7 @@ import { setPrefsAtom } from "../../../state/mutations";
 import { Keys } from "../../../state/keys";
 import { Checkbox } from "../../../ui/Checkbox";
 import { resultError } from "../../../lib/errors";
-import { SettingsCheckRow, SettingsGroup } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsSwitchRow } from "../../../ui/SettingsRows";
 
 const languagesAtom = MailClient.query("SpellcheckLanguages", undefined);
 export function SpellcheckSettings() {
@@ -18,24 +18,18 @@ export function SpellcheckSettings() {
   const [result, save] = useAtom(setPrefsAtom);
   return (
     <SettingsGroup title={<Trans>Spelling</Trans>}>
-      <SettingsCheckRow
+      <SettingsSwitchRow
+        label={<Trans>Check spelling while typing</Trans>}
         hint={
           languages?.automatic ? (
             <Trans>macOS uses the system spellchecker and detects languages automatically.</Trans>
           ) : undefined
         }
-      >
-        <label htmlFor="compose-spellcheck" className="flex items-center gap-2">
-          <Checkbox
-            id="compose-spellcheck"
-            checked={prefs.spellcheck}
-            onCheckedChange={(spellcheck) =>
-              save({ payload: { patch: { spellcheck } }, reactivityKeys: [Keys.prefs] })
-            }
-          />
-          <Trans>Check spelling while typing</Trans>
-        </label>
-      </SettingsCheckRow>
+        checked={prefs.spellcheck}
+        onCheckedChange={(spellcheck) =>
+          save({ payload: { patch: { spellcheck } }, reactivityKeys: [Keys.prefs] })
+        }
+      />
       {!languages?.automatic && (
         <div className="px-3 py-2">
           <fieldset disabled={result.waiting} className="min-w-0">
