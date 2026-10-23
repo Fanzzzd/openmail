@@ -55,6 +55,17 @@ const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =
     return { threads, pages, done, requested: wanted } satisfies Loaded;
   });
 
+/**
+ * Counts invalidations of the thread lists. A list reads this rather than registering the key
+ * itself. The list on screen then refreshes at once, and a list kept only by its idle TTL goes
+ * stale and refreshes, from the rows it had, when it shows again. Atom.withReactivity kept every
+ * cached list observed, so each change re-ran every mailbox and search opened in the last five
+ * minutes: 3.7 s of main-process time for one cleared search on a 20k-message database.
+ */
+export const threadsVersionAtom = Atom.make(
+  (get): number => Option.getOrElse(get.self<number>(), () => 0) + 1,
+).pipe(Atom.withReactivity([Keys.threads]), Atom.keepAlive);
+
 // Atom.family holds members weakly, so each family returns the atom itself.
 // A wrapper object would be collected while its atoms are still mounted, and
 // the next lookup would start a second list from page one.
@@ -65,6 +76,7 @@ const loadedPages = Atom.family((query: ListQuery) => {
   let requested = 0;
   const loaded = MailClient.runtime
     .atom((get) => {
+      get(threadsVersionAtom);
       const want = get(wanted);
       const increased = want > requested;
       requested = want;
@@ -97,7 +109,7 @@ const loadedPages = Atom.family((query: ListQuery) => {
         return { ...next, remoteDone, requested: want };
       });
     })
-    .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
+    .pipe(Atom.setIdleTTL("5 minutes"));
   return query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded;
 });
 

@@ -1680,3 +1680,48 @@ it("a narrow window's list and reader are each the main landmark with an h1; wid
   expect(screen.getByRole("heading", { level: 3, name: /^Alice, / })).toBeTruthy();
   expect(await landmarks()).toEqual([]);
 });
+
+it("Back from a narrow reader keeps the list, and a cached mailbox off screen refreshes when it shows", async () => {
+  width = 520;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const lists = (mailbox: string) =>
+    h.requests.filter(
+      (request) =>
+        (request.tag === "Threads" || request.tag === "ThreadCount") &&
+        JSON.stringify(request.payload).includes(`"mailbox":"${mailbox}"`),
+    ).length;
+  const list = screen.getByRole("listbox");
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  const opened = lists("inbox");
+  clickButton("Back to messages");
+  await eventually(() => expect(reader()).toBeNull());
+  await wait(50);
+  // The rows come back from the mounted list: no read and no new list node.
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(lists("inbox")).toBe(opened);
+
+  resize(1320);
+  const mailbox = (id: string) =>
+    document.querySelector<HTMLElement>(
+      `[data-mail-pane="sidebar"]:not([data-sidebar-rail]) [data-focus-key="mailbox:${id}"]`,
+    );
+  await eventually(() => expect(mailbox("sent")).not.toBeNull());
+  fireEvent.click(mailbox("sent")!);
+  await eventually(() => expect(screen.getByRole("listbox").getAttribute("aria-label")).toBe("Sent"));
+  const inbox = lists("inbox");
+  const sent = lists("sent");
+  // New mail changes every list. Sent is on screen and reads again; the cached Inbox waits.
+  h.server.messages.set("three", incoming("three"));
+  await h.run(h.m.sync.sync());
+  await eventually(() => expect(lists("sent")).toBeGreaterThan(sent));
+  await wait(50);
+  expect(lists("inbox")).toBe(inbox);
+  fireEvent.click(mailbox("inbox")!);
+  // Its cached rows show at once, and one read brings in the new mail.
+  expect(row(h.id("one"))).toBeTruthy();
+  await eventually(() => expect(row(h.id("three"))).toBeTruthy());
+  expect(lists("inbox")).toBeGreaterThan(inbox);
+});

@@ -1,17 +1,20 @@
 import { setFlagsFromString } from "node:v8";
 import { runInNewContext } from "node:vm";
 import { afterAll, expect, it, vi } from "vitest";
-import { AtomRegistry } from "effect/reactivity";
+import { AtomRegistry, Reactivity } from "effect/reactivity";
 import { pagedList } from "./threads";
+import { MailClient } from "./rpc";
+import { Keys } from "./keys";
 import { waitLimit } from "../../../../../../packages/core/test-support/test-time.js";
 const calls = vi.hoisted(() => {
   vi.resetModules();
-  return { older: vi.fn() };
+  return { older: vi.fn(), threads: [] as string[] };
 });
 vi.mock("./rpc", async () => {
   const { Context, Effect, Layer } = await import("effect");
   const { Atom, AsyncResult } = await import("effect/reactivity");
-  const call = (tag: string) => {
+  const call = (tag: string, payload?: { query?: { mailbox?: string } }) => {
+    if (tag === "Threads") calls.threads.push(payload?.query?.mailbox ?? "");
     if (tag === "FetchOlder") {
       calls.older();
       return Effect.fail(new Error("Offline"));
@@ -72,6 +75,42 @@ it("keeps a mounted list after garbage collection", async () => {
     expect(pagedList(query).loaded).toBe(mounted.deref());
   } finally {
     unsubscribe();
+    registry.dispose();
+  }
+});
+
+it("a cached list off screen refreshes when it shows again, not on every change", async () => {
+  const registry = AtomRegistry.make();
+  const invalidate = MailClient.runtime.fn(() => Reactivity.invalidate([Keys.threads]));
+  const changed = async () => {
+    registry.set(invalidate, undefined);
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+  };
+  const starred = pagedList({ mailbox: "starred" }).loaded;
+  const trash = pagedList({ mailbox: "trash" }).loaded;
+  const keepInvalidate = registry.mount(invalidate);
+  try {
+    const leave = registry.subscribe(starred, () => null);
+    await vi.waitFor(() => expect(registry.get(starred)._tag).toBe("Success"), waitLimit);
+    // Starred leaves the screen but stays cached; Trash is the list on screen.
+    leave();
+    const shown = registry.subscribe(trash, () => null);
+    await vi.waitFor(() => expect(registry.get(trash)._tag).toBe("Success"), waitLimit);
+    calls.threads.length = 0;
+    await changed();
+    await changed();
+    await vi.waitFor(() => expect(calls.threads).toEqual(["trash", "trash"]), waitLimit);
+    shown();
+    // Shown again, the cached list keeps its rows while it reads the loaded extent once.
+    const back = registry.subscribe(starred, () => null);
+    const result = registry.get(starred);
+    expect(result._tag).toBe("Success");
+    await vi.waitFor(() => expect(calls.threads).toEqual(["trash", "trash", "starred"]), waitLimit);
+    back();
+  } finally {
+    keepInvalidate();
     registry.dispose();
   }
 });
