@@ -2,6 +2,7 @@
  * Loads the lists a person is likely to open next into the list cache while the window is idle,
  * one at a time, so a sidebar switch paints from the cache. See docs/list-loading.md.
  */
+import { constVoid } from "effect/Function";
 import type { AsyncResult, AtomRegistry } from "effect/reactivity";
 import type { View } from "../lib/view";
 import { prefetchView } from "./threads";
@@ -49,7 +50,7 @@ export function warmViews(
   clock: WarmClock = browserClock,
 ) {
   let stopped = false;
-  let cancel: () => void = () => undefined;
+  let cancel: () => void = constVoid;
   const queue = views.slice(0, WARM_LIMIT);
   const step = () => {
     if (stopped) return;

@@ -19,7 +19,7 @@ Before this, `Atom.withReactivity` kept every cached list observed. Each change 
 
 A refresh reads only the rows within reach: through the page after the last row the list renders or the last selected row (`refreshPages` in [list-pages.ts](../apps/desktop/src/renderer/src/state/list-pages.ts)). Deeper pages load again on scroll. A list scrolled 2,000 rows down used to read and send 1.6 MB on each change. It now reads 200 rows, 160 KB.
 
-The main process answers requests in order, so the thread count for a list waits until its rows have loaded. All Mail's count took 120 to 165 ms and used to run ahead of the rows a switch was waiting for.
+The main process answers requests in order, so the thread count for a list waits for its first rows. All Mail's count took 120 to 165 ms and used to run ahead of the rows a switch was waiting for. Once rows exist the count stays mounted, so a refresh counts once.
 
 Events from the main process arrive in batches, and each batch invalidates each key once. Layout prefs (sidebar, toolbar, reading pane) emit `PrefsChanged`, which refetches only the prefs. They no longer emit `Changed`, which refetched every view.
 
@@ -34,7 +34,7 @@ Warming is bounded so that it never competes with the person or with sync ([view
 
 - At most 12 views per pass, and only views with no cached list. A cached list, stale or not, refreshes when it shows or when the pointer reaches its row.
 - One list request at a time. The next view starts after the previous list arrived, 250 ms passed and the window was idle (`requestIdleCallback`).
-- A key press or click pauses the pass until one second has passed without input. Changing the view cancels it.
+- A key press, click, wheel or scroll pauses the pass until one second has passed without input. Changing the view cancels it.
 - Each warmed view holds one first page of up to 100 summaries, 30 to 90 KB as JSON, and leaves the cache after five idle minutes.
 
 ## Options considered

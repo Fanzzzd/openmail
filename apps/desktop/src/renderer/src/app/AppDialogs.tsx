@@ -29,6 +29,7 @@ import {
   ShortcutHelp,
 } from "./LazyDialogs";
 import type { useSettingsRequests } from "./use-settings-requests";
+import { browserClock } from "../state/view-warming";
 
 /** The main window's dialogs. Which one is open lives in atoms, so menus and shortcuts can open them. */
 export function AppDialogs({
@@ -83,13 +84,10 @@ export function AppDialogs({
   }, [dialog, signInAgainId, setSignInAgain]);
   // The first Settings open spent 1.5 s importing and evaluating its chunk. The window imports it
   // while idle after mail shows, so Settings paints on the first open as fast as on later ones.
-  useEffect(() => {
-    if (!hasAccounts) return constVoid;
-    const idle = globalThis.requestIdleCallback?.(() => Settings.preload(), { timeout: 5000 });
-    return () => {
-      if (idle !== undefined) globalThis.cancelIdleCallback(idle);
-    };
-  }, [hasAccounts]);
+  useEffect(
+    () => (hasAccounts ? browserClock.idle(() => Settings.preload()) : constVoid),
+    [hasAccounts],
+  );
   return (
     <>
       {editing && (

@@ -1,4 +1,5 @@
 import { RegistryContext } from "@effect/atom-react";
+import { constVoid } from "effect/Function";
 import { useCallback, useContext, useEffect, useRef } from "react";
 import type { Account } from "../../../shared/api";
 import { ALL, OVERVIEW, spaceAccounts, type View } from "../lib/view";
@@ -49,13 +50,16 @@ export function useViewWarming(view: View, accounts: readonly Account[], ready: 
         ]
       : []),
   ].filter((target) => JSON.stringify(target) !== JSON.stringify(current));
-  const key = JSON.stringify(targets);
-  const latest = useRef(targets);
+  // A pass restarts only when the targets change, not on every render.
+  const key = ready ? JSON.stringify(targets) : null;
+  const pass = useRef<{ key: string | null; stop: () => void }>({ key: null, stop: constVoid });
   useEffect(() => {
-    latest.current = targets;
+    if (pass.current.key === key) return;
+    pass.current.stop();
+    pass.current = {
+      key,
+      stop: key === null ? constVoid : warmViews(registry, targets, () => lastInput),
+    };
   });
-  useEffect(() => {
-    if (!ready) return undefined;
-    return warmViews(registry, latest.current, () => lastInput);
-  }, [registry, key, ready]);
+  useEffect(() => () => pass.current.stop(), []);
 }
