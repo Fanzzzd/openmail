@@ -1,12 +1,14 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "react", "jsx-a11y", "import", "promise"],
+  "jsPlugins": ["./scripts/repo-checks/oxlint/ui-controls.mjs"],
   "categories": {
     "correctness": "error",
     "suspicious": "error"
   },
   "rules": {
     "react/rules-of-hooks": "error",
+    "openmail-ui/raw-controls": "error",
     "unicorn/prefer-set-has": "error",
     "react/react-in-jsx-scope": "off",
     "eslint/no-underscore-dangle": "off",

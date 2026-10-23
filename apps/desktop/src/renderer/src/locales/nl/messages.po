@@ -6078,6 +6078,10 @@ msgid "Repeat end date"
 msgstr "Einddatum herhaling"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
+msgid "Repeat on"
+msgstr "Herhalen op"
+
+#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat pattern"
 msgstr "Herhalingspatroon"
 

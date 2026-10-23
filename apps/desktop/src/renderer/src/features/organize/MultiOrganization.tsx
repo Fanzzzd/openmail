@@ -6,6 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import type { Label, Provider } from "../../../../shared/api";
 import { MenuItem } from "../../ui/Menu";
 import { PickerPopover } from "../../ui/Picker";
+import { Checkbox } from "../../ui/Checkbox";
 import { buttonPrimary, formInput } from "../../ui/styles";
 import {
   multiOrganizationAtom,
@@ -151,22 +152,18 @@ function OrganizationForm({
       </legend>
       <div className="max-h-40 overflow-auto">
         {available.map((label) => (
-          <label key={label.id} className="flex items-center gap-2 py-1">
-            <input
-              type="checkbox"
-              className="size-3.5 accent-blue-600"
-              checked={selected.includes(label.id)}
-              onChange={(event) => {
-                setTouched((previous) => new Set([...previous, label.id]));
-                setSelected((previous) =>
-                  event.target.checked
-                    ? [...previous, label.id]
-                    : previous.filter((id) => id !== label.id),
-                );
-              }}
-            />
-            {label.name}
-          </label>
+          <Checkbox
+            key={label.id}
+            className="py-1"
+            label={label.name}
+            checked={selected.includes(label.id)}
+            onCheckedChange={(checked) => {
+              setTouched((previous) => new Set([...previous, label.id]));
+              setSelected((previous) =>
+                checked ? [...previous, label.id] : previous.filter((id) => id !== label.id),
+              );
+            }}
+          />
         ))}
       </div>
       {categories && (

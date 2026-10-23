@@ -6,6 +6,7 @@ import { resultError } from "../../lib/errors";
 import { MAIL_KEYS } from "../../state/keys";
 import { snoozeAtom } from "../../state/mutations";
 import { Dialog } from "../../ui/Dialog";
+import { DateInput } from "../../ui/DateInput";
 import { formButton, formInput } from "../../ui/form-styles";
 import { dateFormat } from "../../lib/format";
 
@@ -102,12 +103,11 @@ export function SnoozeDialog({
         )}
         <label className="block space-y-1">
           <span>{t`Custom time`}</span>
-          <input
+          <DateInput
             type="datetime-local"
-            className={formInput}
             value={custom}
-            onChange={(e) => {
-              setCustom(e.target.value);
+            onValueChange={(value) => {
+              setCustom(value);
               setPhrase("");
             }}
           />

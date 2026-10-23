@@ -1,6 +1,4 @@
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Radio } from "@base-ui/react/radio";
-import { RadioGroup } from "@base-ui/react/radio-group";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { RemoteImageMode } from "@openmail/core/schema";
 import { ImageIcon, X } from "lucide-react";
@@ -11,7 +9,8 @@ import { Keys } from "../../state/keys";
 import { setPrefsAtom } from "../../state/mutations";
 import { prefsAtom } from "../../state/queries";
 import { formButton } from "../../ui/form-styles";
-import { choiceRow, iconButton, radioDot } from "../../ui/styles";
+import { RadioCard, RadioGroup } from "../../ui/Radio";
+import { iconButton } from "../../ui/styles";
 
 /**
  * Floats over the bottom-right corner of the window: clear of the titlebar, above the
@@ -90,28 +89,13 @@ export function RemoteImagesPrompt({ hasAccounts }: { hasAccounts: boolean }) {
         className="mt-3 space-y-1"
       >
         {options.map((option) => (
-          <Radio.Root<RemoteImageMode>
+          <RadioCard
             key={option.value}
             value={option.value}
-            aria-labelledby={`${id}-${option.value}`}
-            aria-describedby={`${id}-${option.value}-hint`}
-            className={choiceRow}
-          >
-            <span className={`mt-[3px] ${radioDot}`}>
-              <Radio.Indicator className="size-1.5 rounded-full bg-white" />
-            </span>
-            <span className="min-w-0">
-              <span id={`${id}-${option.value}`} className="block font-medium">
-                {option.label}
-              </span>
-              <span
-                id={`${id}-${option.value}-hint`}
-                className="block text-caption leading-4 text-a11y-muted"
-              >
-                {option.hint}
-              </span>
-            </span>
-          </Radio.Root>
+            label={option.label}
+            hint={option.hint}
+            hintClassName="text-caption leading-4 text-a11y-muted"
+          />
         ))}
       </RadioGroup>
       <div className="mt-3 flex justify-end">

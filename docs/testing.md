@@ -28,6 +28,7 @@ Tests that read source from more than one package live in [scripts/repo-checks](
 - diagnostic codes on log sites
 - the Metro resolver
 - the turbo inputs of package tests
+- the `openmail-ui/raw-controls` oxlint rule in [ui-controls.mjs](../scripts/repo-checks/oxlint/ui-controls.mjs), against a flagged sample, an exempt sample and a sample inside `ui/`
 
 `@openmail/repo-checks#test` lists the trees they read as its turbo inputs.
 

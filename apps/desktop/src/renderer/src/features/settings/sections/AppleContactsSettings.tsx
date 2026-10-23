@@ -6,8 +6,7 @@ import { Keys } from "../../../state/keys";
 import { useRunMail, withMail } from "../../../state/mail";
 import { setAppleContactsAtom } from "../../../state/mutations";
 import { appleContactsStatusAtom, prefsAtom } from "../../../state/queries";
-import { Checkbox } from "../../../ui/Checkbox";
-import { SettingsCheckRow, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import { buttonSecondary } from "../../../ui/styles";
 
 /** Rows for a SettingsGroup: the Apple Contacts switch, its access state and actions. */
@@ -22,20 +21,15 @@ export function AppleContactsSettings() {
   const denied = state === "denied" || state === "restricted";
   return (
     <>
-      <SettingsCheckRow
+      <SettingsSwitchRow
+        label={t`Use Apple Contacts`}
         hint={<Trans>Apple Contacts stay on this device and are never sent to AI models.</Trans>}
-      >
-        <label className="flex items-center gap-2">
-          <Checkbox
-            checked={prefs.useAppleContacts}
-            disabled={result.waiting || state === null}
-            onCheckedChange={(enabled) =>
-              setEnabled({ payload: { enabled }, reactivityKeys: [Keys.contacts, Keys.prefs] })
-            }
-          />
-          <span>{t`Use Apple Contacts`}</span>
-        </label>
-      </SettingsCheckRow>
+        checked={prefs.useAppleContacts}
+        disabled={result.waiting || state === null}
+        onCheckedChange={(enabled) =>
+          setEnabled({ payload: { enabled }, reactivityKeys: [Keys.contacts, Keys.prefs] })
+        }
+      />
       {prefs.useAppleContacts && (
         <SettingsRow
           label={

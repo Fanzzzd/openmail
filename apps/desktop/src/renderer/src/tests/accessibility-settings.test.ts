@@ -141,10 +141,11 @@ it("AI Access names one setting for AI app changes, with Read only and Ask me fi
     ),
   );
   const group = screen.getByRole("radiogroup", { name: "Changes by AI apps" });
+  // Each card is named by its title and described by its detail line.
   expect(
     within(group)
       .getAllByRole("radio")
-      .map((r) => r.getAttribute("aria-label")),
+      .map((r) => document.getElementById(r.getAttribute("aria-labelledby") ?? "")?.textContent),
   ).toEqual(["Read only", "Ask me first"]);
   expect(
     within(group).getByRole("radio", { name: "Ask me first" }).getAttribute("aria-checked"),

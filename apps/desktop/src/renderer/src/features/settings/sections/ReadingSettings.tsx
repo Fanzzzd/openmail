@@ -19,8 +19,7 @@ import {
 import { imageSendersAtom, prefsAtom } from "../../../state/queries";
 import { shortcutText } from "../../../../../shared/shortcuts";
 import { useShortcutSet } from "../../../i18n/use-shortcut-text";
-import { Checkbox } from "../../../ui/Checkbox";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import { buttonLink, buttonSecondary, formInput, settingsHint } from "../../../ui/styles";
 import { SegmentedControl } from "../../../ui/SegmentedControl";
 import { canCall } from "../../../lib/platform";
@@ -38,58 +37,33 @@ export function ReadingSettings() {
   return (
     <>
       <SettingsGroup>
-        <SettingsCheckRow>
-          <label htmlFor="clean-mail-links" className="flex items-center gap-2">
-            <Checkbox
-              id="clean-mail-links"
-              checked={prefs?.cleanLinks !== false}
-              onCheckedChange={(cleanLinks) => setPrefs({ cleanLinks })}
-            />
-            <Trans>Remove tracking parameters from links</Trans>
-          </label>
-        </SettingsCheckRow>
-        <SettingsCheckRow>
-          <label htmlFor="show-account-labels" className="flex items-center gap-2">
-            <Checkbox
-              id="show-account-labels"
-              checked={prefs?.showAccountLabels ?? false}
-              onCheckedChange={(showAccountLabels) => setPrefs({ showAccountLabels })}
-            />
-            <Trans>Show account names in unified folders</Trans>
-          </label>
-        </SettingsCheckRow>
+        <SettingsSwitchRow
+          label={<Trans>Remove tracking parameters from links</Trans>}
+          checked={prefs?.cleanLinks !== false}
+          onCheckedChange={(cleanLinks) => setPrefs({ cleanLinks })}
+        />
+        <SettingsSwitchRow
+          label={<Trans>Show account names in unified folders</Trans>}
+          checked={prefs?.showAccountLabels ?? false}
+          onCheckedChange={(showAccountLabels) => setPrefs({ showAccountLabels })}
+        />
       </SettingsGroup>
       <SettingsGroup title={<Trans>Layout</Trans>}>
-        <SettingsCheckRow>
-          <label htmlFor="layout-sidebar" className="flex items-center gap-2">
-            <Checkbox
-              id="layout-sidebar"
-              checked={prefs?.sidebarVisible ?? true}
-              onCheckedChange={(sidebarVisible) => setPrefs({ sidebarVisible })}
-            />
-            <Trans>Show sidebar</Trans>
-          </label>
-        </SettingsCheckRow>
-        <SettingsCheckRow>
-          <label htmlFor="layout-toolbar" className="flex items-center gap-2">
-            <Checkbox
-              id="layout-toolbar"
-              checked={prefs?.toolbarVisible ?? true}
-              onCheckedChange={(toolbarVisible) => setPrefs({ toolbarVisible })}
-            />
-            <Trans>Show toolbar</Trans>
-          </label>
-        </SettingsCheckRow>
-        <SettingsCheckRow>
-          <label htmlFor="layout-reader" className="flex items-center gap-2">
-            <Checkbox
-              id="layout-reader"
-              checked={prefs?.readingPaneVisible ?? true}
-              onCheckedChange={(readingPaneVisible) => setPrefs({ readingPaneVisible })}
-            />
-            <Trans>Show reading pane</Trans>
-          </label>
-        </SettingsCheckRow>
+        <SettingsSwitchRow
+          label={<Trans>Show sidebar</Trans>}
+          checked={prefs?.sidebarVisible ?? true}
+          onCheckedChange={(sidebarVisible) => setPrefs({ sidebarVisible })}
+        />
+        <SettingsSwitchRow
+          label={<Trans>Show toolbar</Trans>}
+          checked={prefs?.toolbarVisible ?? true}
+          onCheckedChange={(toolbarVisible) => setPrefs({ toolbarVisible })}
+        />
+        <SettingsSwitchRow
+          label={<Trans>Show reading pane</Trans>}
+          checked={prefs?.readingPaneVisible ?? true}
+          onCheckedChange={(readingPaneVisible) => setPrefs({ readingPaneVisible })}
+        />
         <StackedRow label={<Trans>Message list density</Trans>}>
           <SegmentedControl
             aria-label={t`Message list density`}
@@ -113,37 +87,30 @@ export function ReadingSettings() {
             { id: "spam", label: t`Spam` },
           ] as const
         ).map(({ id, label }) => (
-          <SettingsCheckRow key={id}>
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={prefs?.specialFolderBadges[id] ?? true}
-                onCheckedChange={(checked) =>
-                  setPrefs({
-                    specialFolderBadges: {
-                      starred: true,
-                      drafts: true,
-                      spam: true,
-                      ...prefs?.specialFolderBadges,
-                      [id]: checked,
-                    },
-                  })
-                }
-              />
-              <span>{label}</span>
-            </label>
-          </SettingsCheckRow>
+          <SettingsSwitchRow
+            label={label}
+            key={id}
+            checked={prefs?.specialFolderBadges[id] ?? true}
+            onCheckedChange={(checked) =>
+              setPrefs({
+                specialFolderBadges: {
+                  starred: true,
+                  drafts: true,
+                  spam: true,
+                  ...prefs?.specialFolderBadges,
+                  [id]: checked,
+                },
+              })
+            }
+          />
         ))}
       </SettingsGroup>
       <SettingsGroup>
-        <SettingsCheckRow>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={prefs?.showMore ?? true}
-              onCheckedChange={(showMore) => setPrefs({ showMore })}
-            />
-            <span>{t`Show More in sidebar`}</span>
-          </label>
-        </SettingsCheckRow>
+        <SettingsSwitchRow
+          label={t`Show More in sidebar`}
+          checked={prefs?.showMore ?? true}
+          onCheckedChange={(showMore) => setPrefs({ showMore })}
+        />
       </SettingsGroup>
       {/* Folders on the Mac: the remote server refuses the folder picker and these settings. */}
       {canCall("ChooseAttachmentFolder") && <AttachmentFolderSettings />}
@@ -203,15 +170,11 @@ export function ReadingSettings() {
       </SettingsGroup>
 
       <SettingsGroup title={<Trans>Conversations</Trans>}>
-        <SettingsCheckRow>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={prefs?.threadGrouping ?? true}
-              onCheckedChange={(threadGrouping) => setPrefs({ threadGrouping })}
-            />
-            <span>{t`Group messages into conversations`}</span>
-          </label>
-        </SettingsCheckRow>
+        <SettingsSwitchRow
+          label={t`Group messages into conversations`}
+          checked={prefs?.threadGrouping ?? true}
+          onCheckedChange={(threadGrouping) => setPrefs({ threadGrouping })}
+        />
         <SettingsRow label={<Trans>Order</Trans>}>
           <SegmentedControl
             aria-label={t`Message order in a conversation`}

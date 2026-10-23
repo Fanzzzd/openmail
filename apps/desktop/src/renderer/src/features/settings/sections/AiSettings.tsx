@@ -17,7 +17,7 @@ import type { Account } from "../../../../../shared/api";
 import { MailClient, removeAiKey, submitAiKey } from "../../../state/rpc";
 import { errorText, resultError } from "../../../lib/errors";
 import { Keys } from "../../../state/keys";
-import { SettingsCheckRow, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import {
   buttonSecondary,
   formInput,
@@ -27,7 +27,6 @@ import {
 } from "../../../ui/styles";
 
 /** A native checkbox in the accent colour; the fieldset around it can still disable it. */
-const nativeCheck = "size-3.5 shrink-0 accent-blue-600";
 const summaryKb = AI_SUMMARY_INPUT / 1000;
 const summaryCap = AUTO_SUMMARY_DAILY_CAP;
 const triageKb = AI_TRIAGE_INPUT / 1000;
@@ -165,45 +164,37 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
             autoSummaries: false,
             autoTriage: false,
           };
+          const locked = !settings || accountResult.waiting;
           return (
-            <fieldset
-              key={account.id}
-              disabled={!settings || accountResult.waiting}
-              className="min-w-0"
-            >
+            <fieldset key={account.id} className="min-w-0">
               <legend className={`truncate ${settingsHeading}`}>{account.email}</legend>
               <div className={settingsGroup}>
-                <SettingsCheckRow
+                <SettingsSwitchRow
+                  label={<Trans>Allow AI to read this account</Trans>}
                   hint={
                     <Trans>
                       Built-in AI sends this account's subjects, addresses and message text to
                       Anthropic with your API key. Connected AI apps can also read this account.
                     </Trans>
                   }
-                >
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className={nativeCheck}
-                      checked={current.allowed}
-                      onChange={(event) =>
-                        setAccount({
-                          payload: {
-                            input: {
-                              ...current,
-                              allowed: event.target.checked,
-                              autoSummaries: event.target.checked && current.autoSummaries,
-                              autoTriage: event.target.checked && current.autoTriage,
-                            },
-                          },
-                          reactivityKeys: [Keys.ai],
-                        })
-                      }
-                    />
-                    <Trans>Allow AI to read this account</Trans>
-                  </label>
-                </SettingsCheckRow>
-                <SettingsCheckRow
+                  disabled={locked}
+                  checked={current.allowed}
+                  onCheckedChange={(allowed) =>
+                    setAccount({
+                      payload: {
+                        input: {
+                          ...current,
+                          allowed,
+                          autoSummaries: allowed && current.autoSummaries,
+                          autoTriage: allowed && current.autoTriage,
+                        },
+                      },
+                      reactivityKeys: [Keys.ai],
+                    })
+                  }
+                />
+                <SettingsSwitchRow
+                  label={<Trans>Automatically summarize new mail</Trans>}
                   hint={
                     <Trans>
                       Each automatic summary uses your Anthropic API key and sends up to {summaryKb}{" "}
@@ -211,24 +202,17 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                       Summaries that fail before any text arrives don't count.
                     </Trans>
                   }
-                >
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className={nativeCheck}
-                      disabled={!current.allowed}
-                      checked={current.autoSummaries}
-                      onChange={(event) =>
-                        setAccount({
-                          payload: { input: { ...current, autoSummaries: event.target.checked } },
-                          reactivityKeys: [Keys.ai],
-                        })
-                      }
-                    />
-                    <Trans>Automatically summarize new mail</Trans>
-                  </label>
-                </SettingsCheckRow>
-                <SettingsCheckRow
+                  disabled={locked || !current.allowed}
+                  checked={current.autoSummaries}
+                  onCheckedChange={(autoSummaries) =>
+                    setAccount({
+                      payload: { input: { ...current, autoSummaries } },
+                      reactivityKeys: [Keys.ai],
+                    })
+                  }
+                />
+                <SettingsSwitchRow
+                  label={<Trans>Suggest triage for new inbox mail</Trans>}
                   hint={
                     <Trans>
                       Each triage suggestion uses your Anthropic API key and sends up to {triageKb}{" "}
@@ -236,23 +220,15 @@ export function AiSettings({ accounts }: { accounts: readonly Account[] }) {
                       Suggestions that fail before any text arrives don't count.
                     </Trans>
                   }
-                >
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      className={nativeCheck}
-                      disabled={!current.allowed}
-                      checked={current.autoTriage ?? false}
-                      onChange={(event) =>
-                        setAccount({
-                          payload: { input: { ...current, autoTriage: event.target.checked } },
-                          reactivityKeys: [Keys.ai],
-                        })
-                      }
-                    />
-                    <Trans>Suggest triage for new inbox mail</Trans>
-                  </label>
-                </SettingsCheckRow>
+                  disabled={locked || !current.allowed}
+                  checked={current.autoTriage ?? false}
+                  onCheckedChange={(autoTriage) =>
+                    setAccount({
+                      payload: { input: { ...current, autoTriage } },
+                      reactivityKeys: [Keys.ai],
+                    })
+                  }
+                />
               </div>
             </fieldset>
           );

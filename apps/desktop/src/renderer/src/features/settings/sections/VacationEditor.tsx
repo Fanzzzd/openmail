@@ -8,6 +8,7 @@ import { Dialog } from "../../../ui/Dialog";
 import { Keys } from "../../../state/keys";
 import { Checkbox } from "../../../ui/Checkbox";
 import { fieldLabel } from "./server-settings-styles";
+import { DateInput } from "../../../ui/DateInput";
 import { buttonPrimary, formInput, settingsHint } from "../../../ui/styles";
 import { Select } from "../../../ui/Select";
 import { resultError } from "../../../lib/errors";
@@ -63,28 +64,26 @@ export function VacationEditor({
         <div className="grid grid-cols-2 gap-3">
           <label className="block">
             <span className={fieldLabel}>{t`Start`}</span>
-            <input
-              className={formInput}
+            <DateInput
               type="datetime-local"
               value={datetime(input.start)}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 setInput({
                   ...input,
-                  start: e.target.value ? new Date(e.target.value).getTime() : null,
+                  start: value ? new Date(value).getTime() : null,
                 })
               }
             />
           </label>
           <label className="block">
             <span className={fieldLabel}>{t`End`}</span>
-            <input
-              className={formInput}
+            <DateInput
               type="datetime-local"
               value={datetime(input.end)}
-              onChange={(e) =>
+              onValueChange={(value) =>
                 setInput({
                   ...input,
-                  end: e.target.value ? new Date(e.target.value).getTime() : null,
+                  end: value ? new Date(value).getTime() : null,
                 })
               }
             />

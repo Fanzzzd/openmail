@@ -10,6 +10,8 @@ import { fieldLabel } from "./server-settings-styles";
 import { formInput } from "../../../ui/styles";
 import { Select } from "../../../ui/Select";
 import { Checkbox } from "../../../ui/Checkbox";
+import { NumberField } from "../../../ui/NumberField";
+import { useId } from "react";
 
 export function OutlookPredicatesEditor({
   value,
@@ -19,6 +21,7 @@ export function OutlookPredicatesEditor({
   onChange: (value: OutlookRulePredicates) => void;
 }) {
   const { t } = useLingui();
+  const id = useId();
   const patch = (update: Partial<OutlookRulePredicates>) => {
     const next = { ...value, ...update };
     const entries: [string, unknown][] = Object.entries(next);
@@ -134,23 +137,23 @@ export function OutlookPredicatesEditor({
           { key: "maximumSize", label: t`Maximum size (KiB)` },
         ] as const
       ).map(({ key, label }) => (
-        <label key={key} className="block">
-          <span className={fieldLabel}>{label}</span>
-          <input
-            className={formInput}
-            type="number"
-            min="0"
-            step="1"
-            max="2147483647"
-            value={value.withinSizeRange?.[key] ?? ""}
-            onChange={(e) => {
+        <div key={key}>
+          <label htmlFor={`${id}-${key}`} className={fieldLabel}>
+            {label}
+          </label>
+          <NumberField
+            id={`${id}-${key}`}
+            min={0}
+            max={2147483647}
+            value={value.withinSizeRange?.[key] ?? null}
+            onValueChange={(size) => {
               const range = { ...value.withinSizeRange };
-              if (e.target.value) range[key] = Number(e.target.value);
+              if (size !== null) range[key] = size;
               else delete range[key];
               patch({ withinSizeRange: Object.keys(range).length ? range : undefined });
             }}
           />
-        </label>
+        </div>
       ))}
       {(
         [

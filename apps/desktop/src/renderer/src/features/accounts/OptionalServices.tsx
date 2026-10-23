@@ -1,5 +1,5 @@
 import { useAtom, useAtomValue } from "@effect/atom-react";
-import { Switch } from "@base-ui/react/switch";
+import { Switch } from "../../ui/Switch";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   consentBatch,
@@ -15,7 +15,7 @@ import { canCall } from "../../lib/platform";
 import { MailClient } from "../../state/rpc";
 import { Keys, MAIL_KEYS } from "../../state/keys";
 import { reauthAtom } from "../../state/mutations";
-import { buttonLink, switchThumb, switchTrack } from "../../ui/styles";
+import { buttonLink } from "../../ui/styles";
 
 const optionalServicesAtom = (accountId: string) =>
   MailClient.query("OptionalServices", { accountId }, { reactivityKeys: [Keys.accounts] });
@@ -130,8 +130,7 @@ export function OptionalServices({
               </button>
             </>
           )}
-          <Switch.Root
-            className={switchTrack}
+          <Switch
             aria-label={names[service]}
             checked={state === "granted"}
             disabled={authorization.waiting || result.waiting || state === "notGranted"}
@@ -141,9 +140,7 @@ export function OptionalServices({
                 reactivityKeys: MAIL_KEYS,
               })
             }
-          >
-            <Switch.Thumb className={switchThumb} />
-          </Switch.Root>
+          />
         </div>
       ))}
       {pending && (

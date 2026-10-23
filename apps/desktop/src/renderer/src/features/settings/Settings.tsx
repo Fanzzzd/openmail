@@ -7,8 +7,6 @@ import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
 import type { I18n, MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Radio } from "@base-ui/react/radio";
-import { RadioGroup } from "@base-ui/react/radio-group";
 import { Tabs } from "@base-ui/react/tabs";
 import { AsyncResult } from "effect/reactivity";
 import {
@@ -78,12 +76,11 @@ import { reauthText, syncErrorText } from "../sync-status";
 import { isKeychainLocked, printable, providerCapabilities } from "@openmail/core/schema";
 import { aiClientName } from "../ai/ai-names";
 import { Alert, AlertCancel, alertDanger, Dialog } from "../../ui/Dialog";
+import { RadioCard, RadioGroup } from "../../ui/Radio";
 import { SettingsGroup, SettingsRow } from "../../ui/SettingsRows";
 import {
   buttonLink,
   buttonSecondary,
-  choiceRow,
-  radioDot,
   settingsGroup,
   settingsHeading,
   settingsHint,
@@ -616,30 +613,16 @@ function AgentPolicy() {
           your mail. The assistant in OpenMail always asks first.
         </Trans>
       </p>
-      <RadioGroup<AgentWriteMode | null>
+      <RadioGroup<AgentWriteMode>
         aria-label={i18n._(WRITE_MODE_NAME)}
         value={mode}
-        onValueChange={(next) => {
-          if (next)
-            setMode({ payload: { mode: next }, reactivityKeys: [Keys.agentMode, Keys.audit] });
-        }}
+        onValueChange={(next) =>
+          setMode({ payload: { mode: next }, reactivityKeys: [Keys.agentMode, Keys.audit] })
+        }
         className="space-y-2"
       >
         {MODES.map((m) => (
-          <Radio.Root<AgentWriteMode | null>
-            key={m.id}
-            value={m.id}
-            aria-label={i18n._(m.label)}
-            className={choiceRow}
-          >
-            <span className={`mt-0.5 ${radioDot}`}>
-              <Radio.Indicator className="size-1.5 rounded-full bg-white" />
-            </span>
-            <span>
-              <span className="block font-medium">{i18n._(m.label)}</span>
-              <span className={`mt-0.5 block ${settingsHint}`}>{i18n._(m.detail)}</span>
-            </span>
-          </Radio.Root>
+          <RadioCard key={m.id} value={m.id} label={i18n._(m.label)} hint={i18n._(m.detail)} />
         ))}
       </RadioGroup>
     </section>

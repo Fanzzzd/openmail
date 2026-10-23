@@ -1,8 +1,14 @@
 import type { NotificationPermission } from "../../../../../shared/desktop";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import {
+  SettingsCheckRow,
+  SettingsGroup,
+  SettingsRow,
+  SettingsSwitchRow,
+} from "../../../ui/SettingsRows";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { Button } from "@base-ui/react/button";
 import { Input } from "@base-ui/react/input";
+import { DateInput } from "../../../ui/DateInput";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -100,9 +106,6 @@ const timeText = (minute: number) =>
 const timeMinute = (value: string) =>
   /^\d{2}:\d{2}$/.test(value) ? Number(value.slice(0, 2)) * 60 + Number(value.slice(3)) : null;
 
-/** formInput, sized to its content so two times and an action fit on one line. */
-const timeInput =
-  "rounded-control border border-control bg-white px-1.5 py-0.5 text-body tabular-nums outline-offset-0 outline-a11y-focus focus:border-transparent focus:outline-2 dark:bg-white/[0.05]";
 /** "Remove period": quieter than the accent link beside it. */
 const quietLink =
   "rounded-item text-footnote text-a11y-muted outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2";
@@ -292,18 +295,12 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
         ))}
       </SettingsGroup>
       <SettingsGroup>
-        <SettingsCheckRow
+        <SettingsSwitchRow
+          label={<Trans>Show unread count in the menu bar</Trans>}
           hint={<Trans>The menu lists up to 50 unread messages in the current space.</Trans>}
-        >
-          <label htmlFor="menu-bar-unread-count" className="flex items-center gap-2">
-            <Checkbox
-              id="menu-bar-unread-count"
-              checked={prefs.menuBarUnreadCount}
-              onCheckedChange={(menuBarUnreadCount) => save({ menuBarUnreadCount })}
-            />
-            <Trans>Show unread count in the menu bar</Trans>
-          </label>
-        </SettingsCheckRow>
+          checked={prefs.menuBarUnreadCount}
+          onCheckedChange={(menuBarUnreadCount) => save({ menuBarUnreadCount })}
+        />
       </SettingsGroup>
       <section>
         <h3 className={settingsHeading}>
@@ -377,14 +374,14 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                                       className="flex items-center gap-1.5"
                                     >
                                       <Trans>Start</Trans>
-                                      <Input
+                                      <DateInput
                                         id={`active-start-${profile.id}-${day}-${index}`}
                                         aria-label={t`Active hours start for ${profile.name} on ${dayName}, period ${index + 1}`}
                                         type="time"
+                                        variant="compact"
                                         value={timeText(window.start)}
-                                        className={timeInput}
-                                        onChange={(e) => {
-                                          const start = timeMinute(e.target.value);
+                                        onValueChange={(value) => {
+                                          const start = timeMinute(value);
                                           if (start !== null) change({ start });
                                         }}
                                       />
@@ -394,14 +391,14 @@ export function NotificationsSettings({ accounts }: { accounts: readonly Account
                                       className="flex items-center gap-1.5"
                                     >
                                       <Trans>Until</Trans>
-                                      <Input
+                                      <DateInput
                                         id={`active-end-${profile.id}-${day}-${index}`}
                                         aria-label={t`Active hours end for ${profile.name} on ${dayName}, period ${index + 1}`}
                                         type="time"
+                                        variant="compact"
                                         value={timeText(window.end)}
-                                        className={timeInput}
-                                        onChange={(e) => {
-                                          const end = timeMinute(e.target.value);
+                                        onValueChange={(value) => {
+                                          const end = timeMinute(value);
                                           if (end !== null) change({ end });
                                         }}
                                       />

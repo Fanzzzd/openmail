@@ -66,25 +66,51 @@ export const buttonDanger = `${buttonBase} bg-red-600 text-white shadow-control 
 export const buttonLink =
   "rounded-item font-medium text-a11y-accent outline-offset-1 outline-a11y-focus hover:underline focus-visible:outline-2 disabled:opacity-50";
 
-/** A single-line or multi-line text field. Its boundary is the 3:1 control token. */
+/**
+ * A single-line or multi-line text field, like an NSTextField: a 1 px boundary at the 3:1 control
+ * token, a faint inner shadow along the top edge, and the focus ring in place of the border.
+ */
 export const formInput =
-  "w-full rounded-control border border-control bg-white px-2 py-1 text-body outline-offset-0 outline-a11y-focus placeholder:text-a11y-muted focus:border-transparent focus:outline-2 disabled:opacity-50 dark:bg-white/[0.05]";
+  "w-full rounded-control border border-control bg-white px-2 py-1 text-body shadow-[inset_0_0.5px_1px_rgb(0_0_0/0.07)] outline-offset-0 outline-a11y-focus placeholder:text-a11y-muted focus:border-transparent focus:outline-2 disabled:opacity-50 dark:bg-white/[0.05] dark:shadow-[inset_0_0.5px_0_rgb(255_255_255/0.04)]";
 
-/** Checkbox box and radio dot. The ring is the 3:1 boundary; checked fills it with the accent. */
+/**
+ * Checkbox box and radio button, 14 px like the AppKit regular size. Unchecked is a white bezel
+ * with the 3:1 boundary and an inner shadow under its top edge. The boundary is drawn inside the
+ * box, so a container that clips its overflow never cuts it. Checked fills with the accent, with
+ * a slight top-to-bottom gradient as in AppKit, and draws a white mark. Pressing darkens either.
+ * The `group` on the root lets the mark inside read the state.
+ */
 const toggleBase =
-  "flex size-3.5 shrink-0 items-center justify-center bg-white shadow-control ring-1 ring-control dark:bg-white/[0.08]";
-export const checkboxBox = `${toggleBase} rounded-item outline-offset-1 outline-a11y-focus focus-visible:outline-[3px] data-checked:bg-blue-600 data-checked:ring-blue-600 dark:data-checked:bg-blue-600 dark:data-checked:ring-blue-500`;
-/** Inside a Radio.Root with `group`. */
-export const radioDot = `${toggleBase} rounded-full group-data-checked:bg-blue-600 group-data-checked:ring-blue-600 dark:group-data-checked:bg-blue-600 dark:group-data-checked:ring-blue-500`;
-/** A full-row radio: a card that tints when chosen. The dot inside is its 3:1 boundary. */
+  "group relative inline-flex size-3.5 shrink-0 items-center justify-center bg-white text-white shadow-[inset_0_1px_1px_rgb(0_0_0/0.06)] ring-1 ring-control ring-inset outline-offset-2 outline-a11y-focus transition-[background-color,box-shadow] duration-100 focus-visible:outline-2 not-data-disabled:active:bg-neutral-100 data-disabled:opacity-50 motion-reduce:transition-none dark:bg-white/[0.08] dark:shadow-[inset_0_0.5px_0_rgb(255_255_255/0.06)] dark:not-data-disabled:active:bg-white/[0.16]";
+export const checkboxBox = `${toggleBase} rounded-[3.5px] data-checked:bg-linear-to-b data-checked:from-blue-500 data-checked:to-blue-600 data-checked:shadow-[inset_0_0.5px_0_rgb(255_255_255/0.25)] data-checked:ring-blue-600 data-checked:not-data-disabled:active:from-blue-600 data-checked:not-data-disabled:active:to-blue-700 dark:data-checked:ring-blue-500 data-indeterminate:bg-linear-to-b data-indeterminate:from-blue-500 data-indeterminate:to-blue-600 data-indeterminate:shadow-[inset_0_0.5px_0_rgb(255_255_255/0.25)] data-indeterminate:ring-blue-600 data-indeterminate:not-data-disabled:active:from-blue-600 data-indeterminate:not-data-disabled:active:to-blue-700 dark:data-indeterminate:ring-blue-500`;
+export const radioCircle = `${toggleBase} rounded-full data-checked:bg-linear-to-b data-checked:from-blue-500 data-checked:to-blue-600 data-checked:shadow-[inset_0_0.5px_0_rgb(255_255_255/0.25)] data-checked:ring-blue-600 data-checked:not-data-disabled:active:from-blue-600 data-checked:not-data-disabled:active:to-blue-700 dark:data-checked:ring-blue-500`;
+/** A full-row radio: a card that tints when chosen. The circle inside is its 3:1 boundary. */
 export const choiceRow =
-  "group flex w-full cursor-default gap-2.5 rounded-card px-3 py-2 text-left ring-1 ring-edge outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-[3px] data-checked:bg-blue-600/[0.06] data-checked:ring-blue-600/40 motion-reduce:transition-none dark:data-checked:bg-blue-500/[0.1] dark:data-checked:ring-blue-400/40";
+  "group/choice flex w-full cursor-default gap-2.5 rounded-card px-3 py-2 text-left ring-1 ring-edge outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-blue-600/[0.06] data-checked:ring-blue-600/40 data-disabled:opacity-50 motion-reduce:transition-none dark:data-checked:bg-blue-500/[0.1] dark:data-checked:ring-blue-400/40";
 
-/** An on/off switch: Switch.Root and Switch.Thumb. */
+/**
+ * An on/off switch at the size System Settings uses (26 by 15 px). The knob stretches while it is
+ * pressed, as in AppKit. On a phone or tablet in the web build it grows to the iOS size.
+ */
 export const switchTrack =
-  "flex h-[18px] w-8 shrink-0 rounded-full bg-black/[0.14] p-0.5 outline-offset-2 outline-a11y-focus transition-colors duration-150 focus-visible:outline-2 data-checked:bg-blue-600 data-disabled:opacity-50 motion-reduce:transition-none dark:bg-white/20";
+  "group inline-flex h-[15px] w-[26px] shrink-0 items-center rounded-full bg-black/[0.12] p-px shadow-[inset_0_0_0_0.5px_rgb(0_0_0/0.06)] outline-offset-2 outline-a11y-focus transition-colors duration-150 focus-visible:outline-2 data-checked:bg-blue-600 data-disabled:opacity-50 motion-reduce:transition-none coarse:h-[31px] coarse:w-[51px] coarse:p-0.5 dark:bg-white/[0.18] dark:shadow-[inset_0_0_0_0.5px_rgb(255_255_255/0.06)] dark:data-checked:bg-blue-600";
 export const switchThumb =
-  "size-3.5 rounded-full bg-white shadow-control transition-transform duration-150 data-checked:translate-x-3.5 motion-reduce:transition-none";
+  "h-[13px] w-[13px] rounded-full bg-white shadow-[0_0_0_0.5px_rgb(0_0_0/0.06),0_1px_2px_rgb(0_0_0/0.22)] transition-[translate,width] duration-150 ease-out group-not-data-disabled:group-active:w-4 data-checked:translate-x-[11px] group-not-data-disabled:group-active:data-checked:translate-x-2 motion-reduce:transition-none coarse:size-[27px] coarse:data-checked:translate-x-5 coarse:group-active:w-[27px] coarse:group-active:data-checked:translate-x-5 dark:bg-neutral-100";
+
+/**
+ * A pop-up button in a form: the push button bezel with the accent chevron box AppKit draws at its
+ * trailing edge. The box turns grey when the control is disabled.
+ */
+export const popUpField =
+  "h-7 justify-between gap-2 rounded-control bg-white pr-1 pl-2.5 shadow-control ring-1 ring-edge outline-offset-1 not-data-disabled:hover:bg-neutral-50 not-data-disabled:active:bg-neutral-100 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:bg-neutral-100 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12] dark:not-data-disabled:active:bg-white/[0.16] dark:data-popup-open:bg-white/[0.16]";
+export const popUpChevrons =
+  "flex size-[17px] shrink-0 items-center justify-center rounded-[4px] bg-linear-to-b from-blue-500 to-blue-600 text-white shadow-[inset_0_0.5px_0_rgb(255_255_255/0.25)] group-data-disabled:from-neutral-400 group-data-disabled:to-neutral-400";
+
+/** The stepper beside a number field: two halves of one small bezel, like NSStepper. */
+export const stepperBezel =
+  "flex h-7 w-4 shrink-0 flex-col overflow-hidden rounded-[5px] bg-white shadow-control ring-1 ring-edge dark:bg-white/[0.08]";
+export const stepperHalf =
+  "flex flex-1 items-center justify-center text-neutral-600 outline-none not-disabled:active:bg-fill-pressed disabled:opacity-40 dark:text-neutral-300";
 
 /** A group of setting rows, like a macOS System Settings box. */
 export const settingsGroup =

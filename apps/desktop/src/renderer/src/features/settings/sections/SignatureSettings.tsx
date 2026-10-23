@@ -31,9 +31,8 @@ import {
   prefsAtom,
 } from "../../../state/queries";
 import { ComposeEditor } from "../../compose/components/ComposeEditor";
-import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import {
   buttonLink,
   buttonPrimary,
@@ -243,20 +242,16 @@ export function SignatureSettings({ accounts }: { accounts: readonly Account[] }
             }}
           />
         </SettingsRow>
-        <SettingsCheckRow>
-          <label className="flex items-center gap-2">
-            <Checkbox
-              checked={prefs.signatureSeparator}
-              onCheckedChange={(signatureSeparator) =>
-                setPrefs({
-                  payload: { patch: { signatureSeparator } },
-                  reactivityKeys: [Keys.prefs],
-                })
-              }
-            />
-            {t`Include signature separator`}
-          </label>
-        </SettingsCheckRow>
+        <SettingsSwitchRow
+          label={t`Include signature separator`}
+          checked={prefs.signatureSeparator}
+          onCheckedChange={(signatureSeparator) =>
+            setPrefs({
+              payload: { patch: { signatureSeparator } },
+              reactivityKeys: [Keys.prefs],
+            })
+          }
+        />
       </SettingsGroup>
       {form && (
         <SignatureEditor

@@ -6,9 +6,8 @@ import { useState } from "react";
 import { Keys } from "../../../state/keys";
 import { useRunMail, withMail } from "../../../state/mail";
 import { Effect } from "effect";
-import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import { buttonPrimary, buttonSecondary } from "../../../ui/styles";
 import { setPrefsAtom } from "../../../state/mutations";
 import { prefsAtom, updateStateAtom } from "../../../state/queries";
@@ -78,22 +77,16 @@ export function UpdateSettings() {
           }
         />
       </SettingsRow>
-      <SettingsCheckRow
+      <SettingsSwitchRow
+        label={<Trans>Automatically download updates</Trans>}
         hint={
           <Trans>Downloaded updates install when you quit, after pending drafts are checked.</Trans>
         }
-      >
-        <label htmlFor="update-auto-download" className="flex items-center gap-2">
-          <Checkbox
-            id="update-auto-download"
-            checked={prefs?.updateAutoDownload ?? true}
-            onCheckedChange={(updateAutoDownload) =>
-              setPrefs({ payload: { patch: { updateAutoDownload } }, reactivityKeys: [Keys.prefs] })
-            }
-          />
-          <Trans>Automatically download updates</Trans>
-        </label>
-      </SettingsCheckRow>
+        checked={prefs?.updateAutoDownload ?? true}
+        onCheckedChange={(updateAutoDownload) =>
+          setPrefs({ payload: { patch: { updateAutoDownload } }, reactivityKeys: [Keys.prefs] })
+        }
+      />
     </SettingsGroup>
   );
 }

@@ -1,5 +1,7 @@
+import { Field } from "@base-ui/react/field";
 import type { ReactNode } from "react";
 
+import { Switch } from "./Switch";
 import { settingsGroup, settingsHeading, settingsHint } from "./styles";
 
 /**
@@ -53,6 +55,42 @@ export function SettingsRow({
       </div>
       {children && <div className="flex shrink-0 items-center gap-2">{children}</div>}
     </div>
+  );
+}
+
+/**
+ * An on/off setting, as in System Settings: the label on the left, a switch on the right and a
+ * hint under the label. The label is a Base UI Field label, so a click on it toggles the switch,
+ * and the hint becomes the switch's description.
+ */
+export function SettingsSwitchRow({
+  label,
+  hint,
+  checked,
+  onCheckedChange,
+  disabled,
+  children,
+}: {
+  label: ReactNode;
+  hint?: ReactNode;
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+  disabled?: boolean;
+  /** More content under the hint, such as a status line or a link. */
+  children?: ReactNode;
+}) {
+  return (
+    <Field.Root
+      disabled={disabled}
+      className="flex min-h-10 items-center gap-x-6 px-3 py-2 data-disabled:text-a11y-muted"
+    >
+      <div className="min-w-0 flex-1">
+        <Field.Label className="block">{label}</Field.Label>
+        {hint && <Field.Description className={`mt-0.5 ${settingsHint}`}>{hint}</Field.Description>}
+        {children}
+      </div>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} disabled={disabled} />
+    </Field.Root>
   );
 }
 

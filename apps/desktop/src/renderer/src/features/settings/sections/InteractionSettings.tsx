@@ -14,7 +14,7 @@ import { moveToolbarAction } from "./toolbar-order";
 import { Select } from "../../../ui/Select";
 import { Checkbox } from "../../../ui/Checkbox";
 import { IndexingSettings } from "./IndexingSettings";
-import { SettingsCheckRow, SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
+import { SettingsGroup, SettingsRow, SettingsSwitchRow } from "../../../ui/SettingsRows";
 import { buttonSecondary } from "../../../ui/styles";
 
 import { actionNames } from "../../../i18n/action-names";
@@ -48,15 +48,13 @@ export function LabsSettings() {
             },
           ] as const
         ).map(({ key, label, hint }) => (
-          <SettingsCheckRow key={key} hint={hint}>
-            <label className="flex items-center gap-2">
-              <Checkbox
-                checked={prefs.labs[key]}
-                onCheckedChange={(enabled) => save({ labs: { ...prefs.labs, [key]: enabled } })}
-              />
-              {label}
-            </label>
-          </SettingsCheckRow>
+          <SettingsSwitchRow
+            label={label}
+            key={key}
+            hint={hint}
+            checked={prefs.labs[key]}
+            onCheckedChange={(enabled) => save({ labs: { ...prefs.labs, [key]: enabled } })}
+          />
         ))}
       </SettingsGroup>
       {/* The models and the index live on the Mac; the remote server refuses these switches. */}
