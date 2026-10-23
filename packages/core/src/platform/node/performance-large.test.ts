@@ -251,6 +251,8 @@ it.effect(
             ),
           ),
       );
+      // Every system refresh (each change, focus and 15 s tick) reads the notification queue.
+      yield* measure("empty notification queue", 5, store.takeNotifications(fixtureNow));
       // Sparse matches: 100 of 100k messages carry a Google Sheet link.
       for (const [name, search] of [
         ["search has:drive", "has:drive"],

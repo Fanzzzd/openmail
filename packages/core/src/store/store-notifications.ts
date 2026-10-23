@@ -57,8 +57,11 @@ export const makeNotificationsStore = ({
               digest: Schema.BooleanFromBit,
               enqueued_at: Schema.Number,
             }),
+            // CROSS JOIN keeps the queue as the outer loop. ANALYZE writes no statistics for an
+            // empty table, so with a plain JOIN the planner scanned every message and read past
+            // each body to labels_json: about 1 s on a 1.5 GB database, on every system refresh.
           )(sql`SELECT ${sql.literal(SUMMARY_COLUMNS)},n.digest,n.enqueued_at FROM pending_notifications n
-              JOIN messages m ON m.id=n.message_id ORDER BY n.rowid`);
+              CROSS JOIN messages m ON m.id=n.message_id ORDER BY n.rowid`);
           const accounts = yield* listAccounts;
           const prefs = yield* compose.prefs;
           const batches = new Map<
