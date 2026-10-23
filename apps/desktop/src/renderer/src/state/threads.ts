@@ -288,10 +288,11 @@ export const threadListAtom = Atom.writable(
     const { loaded: loadedAtom, wanted } = pagedList(local);
     const result = get(loadedAtom);
     // A search shows no count, and counting one walks every match (1.7 s on 100k messages).
-    // The count waits until the rows have loaded: the main process answers in order, and All
-    // Mail's count took 120-165 ms on a 20k-message database, ahead of the rows a switch needs.
+    // The count waits for the first rows: the main process answers in order, and All Mail's count
+    // took 120-165 ms on a 20k-message database, ahead of the rows a switch was waiting for. Once
+    // rows exist it stays mounted through refreshes, so a refresh counts once.
     const total =
-      query.search === undefined && AsyncResult.isSuccess(result) && !result.waiting
+      query.search === undefined && AsyncResult.value(result)._tag === "Some"
         ? AsyncResult.getOrElse(
             get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
             () => null,

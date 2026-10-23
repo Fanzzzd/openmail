@@ -8,6 +8,7 @@ import { warmViews } from "../state/view-warming";
 /** The mailboxes warmed in the open space, besides each account tile's target. */
 const WARM_MAILBOXES = ["inbox", "starred", "sent", "drafts", "all"] as const;
 
+const INPUT_EVENTS = ["pointerdown", "keydown", "click", "wheel", "scroll"] as const;
 let lastInput = 0;
 const remember = () => {
   lastInput = performance.now();
@@ -30,11 +31,11 @@ export function usePrefetchView() {
 export function useViewWarming(view: View, accounts: readonly Account[], ready: boolean) {
   const registry = useContext(RegistryContext);
   useEffect(() => {
-    globalThis.addEventListener("pointerdown", remember, true);
-    globalThis.addEventListener("keydown", remember, true);
+    // Scrolling and clicks count too: a list scrolled to its end loads older pages, and a
+    // keyboard or assistive click comes without a pointerdown.
+    for (const type of INPUT_EVENTS) globalThis.addEventListener(type, remember, true);
     return () => {
-      globalThis.removeEventListener("pointerdown", remember, true);
-      globalThis.removeEventListener("keydown", remember, true);
+      for (const type of INPUT_EVENTS) globalThis.removeEventListener(type, remember, true);
     };
   }, []);
   const current = shown(view);
