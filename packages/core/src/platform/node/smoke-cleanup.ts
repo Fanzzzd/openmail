@@ -59,7 +59,10 @@ export function createSmokeCleanup(options: {
       kill("SIGKILL");
       await exited;
     }
-    if (!options.keepDirectory) await rm(options.directory, { recursive: true, force: true });
+    // Electron's helper processes can still be writing the profile for a moment after the main
+    // process exits, so a single rmdir may see a file appear and fail with ENOTEMPTY.
+    if (!options.keepDirectory)
+      await rm(options.directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     for (const { signal, handler } of handlers) process.off(signal, handler);
   }
   function cleanup() {
