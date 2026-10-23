@@ -146,3 +146,25 @@ import { SqlClient } from "effect/sql";
       }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
   );
 }
+
+it.effect("a layout pref emits PrefsChanged and any other pref emits Changed", () =>
+  Effect.gen(function* () {
+    const mailbox = yield* Mailbox;
+    const listener = yield* mailbox.app.events.pipe(
+      Stream.filter((event) => event._tag === "Changed" || event._tag === "PrefsChanged"),
+      Stream.take(3),
+      Stream.runCollect,
+      Effect.forkScoped,
+    );
+    yield* Effect.yieldNow;
+    yield* mailbox.app.setPrefs({ sidebarVisible: false });
+    yield* mailbox.app.setPrefs({ readingPaneVisible: false, readingPanePosition: "bottom" });
+    yield* mailbox.app.setPrefs({ sidebarVisible: true, threadGrouping: false });
+    const events = yield* Fiber.join(listener);
+    assert.deepStrictEqual(
+      Array.from(events).map((event) => event._tag),
+      ["PrefsChanged", "PrefsChanged", "Changed"],
+    );
+    assert.strictEqual((yield* mailbox.app.prefs).sidebarVisible, true);
+  }).pipe(Effect.scoped, Effect.provide(TestMailbox())),
+);

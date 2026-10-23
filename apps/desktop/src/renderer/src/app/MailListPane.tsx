@@ -21,7 +21,7 @@ import { spaceAccounts } from "../lib/view";
 import { syncStateAtom } from "../state/events";
 import { syncNow, useRunMail } from "../state/mail";
 import { recentSearches } from "../state/recent-searches";
-import { serverList } from "../state/threads";
+import { listReachAtom, serverList } from "../state/threads";
 import { iconButton } from "../ui/styles";
 import type { ToastState } from "../ui/Toast";
 import { Tip } from "../ui/Tip";
@@ -29,6 +29,9 @@ import type { useMailActions } from "./use-mail-actions";
 import type { useMailCompose } from "./use-mail-compose";
 import type { useMailSelection } from "./use-mail-selection";
 import type { usePaneNavigation } from "./use-pane-navigation";
+
+/** The reach of a window with no list query, as on the overview; no list reads it. */
+const NO_LIST = {};
 
 /** The message list pane with its notices, search, folder actions and row actions. */
 export function MailListPane({
@@ -106,6 +109,7 @@ export function MailListPane({
     prefs,
   } = navigation;
   const { rowState, act, requestPermanentDelete } = mailActions;
+  const setReach = useAtomSet(listReachAtom(listQuery ?? NO_LIST));
   // The search the list runs. A last word too short to search yet is left out of it, so the
   // list, its header and its scroll position stay as they were.
   const listSearch = listQuery?.search ?? "";
@@ -253,6 +257,7 @@ export function MailListPane({
       onEndReached={() => {
         loadMore();
       }}
+      onReach={setReach}
     />
   );
 }

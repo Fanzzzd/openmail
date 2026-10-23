@@ -54,6 +54,7 @@ import { Sidebar, SidebarToggle } from "../features/sidebar/Sidebar";
 import { NoAccounts } from "./NoAccounts";
 import { Overview } from "../features/overview/Overview";
 import { MailListPane } from "./MailListPane";
+import { usePrefetchView, useViewWarming } from "./use-view-warming";
 import { drawerActions } from "./drawer-actions";
 import { Reader } from "../features/reader/Reader";
 import { canCall, isDesktop } from "../lib/platform";
@@ -268,6 +269,9 @@ export function App({ composeId }: { composeId?: string }) {
     view,
     mode: layout.mode,
   });
+  const prefetchView = usePrefetchView();
+  // Once the list on screen has loaded, the views one click away load into the cache while idle.
+  useViewWarming(view, accountList, hasAccounts && paneMode === "mail" && !threads.loading);
   const { host: listHost, slot: listSlot } = usePaneHost(paneNav.panesMoved);
   const { host: readerHost, slot: readerSlot } = usePaneHost(paneNav.panesMoved);
   if (composeId)
@@ -324,6 +328,7 @@ export function App({ composeId }: { composeId?: string }) {
       view={view}
       // The overview has no list; picking a mailbox there opens it in All.
       onView={viewFromDrawer((v) => changeView(v.space === OVERVIEW ? { ...v, space: ALL } : v))}
+      onPrefetch={prefetchView}
       onSpace={viewFromDrawer(switchSpace)}
       onEditProfile={fromDrawer(setEditing)}
       accounts={accountList}

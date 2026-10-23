@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
@@ -1679,4 +1680,124 @@ it("a narrow window's list and reader are each the main landmark with an h1; wid
   expect(screen.getByRole("heading", { level: 2, name: "Flow one" })).toBeTruthy();
   expect(screen.getByRole("heading", { level: 3, name: /^Alice, / })).toBeTruthy();
   expect(await landmarks()).toEqual([]);
+});
+
+it("Back from a narrow reader keeps the list, and a cached mailbox off screen refreshes when it shows", async () => {
+  width = 520;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const lists = (mailbox: string) =>
+    h.requests.filter(
+      (request) =>
+        (request.tag === "Threads" || request.tag === "ThreadCount") &&
+        JSON.stringify(request.payload).includes(`"mailbox":"${mailbox}"`),
+    ).length;
+  const list = screen.getByRole("listbox");
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  const opened = lists("inbox");
+  clickButton("Back to messages");
+  await eventually(() => expect(reader()).toBeNull());
+  await wait(50);
+  // The rows come back from the mounted list: no read and no new list node.
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(lists("inbox")).toBe(opened);
+
+  resize(1320);
+  const mailbox = (id: string) =>
+    document.querySelector<HTMLElement>(
+      `[data-mail-pane="sidebar"]:not([data-sidebar-rail]) [data-focus-key="mailbox:${id}"]`,
+    );
+  await eventually(() => expect(mailbox("sent")).not.toBeNull());
+  fireEvent.click(mailbox("sent")!);
+  await eventually(() =>
+    expect(screen.getByRole("listbox").getAttribute("aria-label")).toBe("Sent"),
+  );
+  const inbox = lists("inbox");
+  const sent = lists("sent");
+  // New mail changes every list. Sent is on screen and reads again; the cached Inbox waits.
+  h.server.messages.set("three", incoming("three"));
+  await h.run(h.m.sync.sync());
+  await eventually(() => expect(lists("sent")).toBeGreaterThan(sent));
+  await wait(50);
+  expect(lists("inbox")).toBe(inbox);
+  fireEvent.click(mailbox("inbox")!);
+  // Its cached rows show at once, and one read brings in the new mail.
+  expect(row(h.id("one"))).toBeTruthy();
+  await eventually(() => expect(row(h.id("three"))).toBeTruthy());
+  expect(lists("inbox")).toBeGreaterThan(inbox);
+});
+
+it("the docked sidebar hides and shows before its pref is stored, without remounting the list or reader", async () => {
+  width = 1320;
+  let release = constVoid;
+  const stored = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  current = await flow({
+    handlers: {
+      SetPrefs: ({ patch }) =>
+        Effect.promise(() => stored).pipe(Effect.andThen(() => current!.m.app.setPrefs(patch))),
+    },
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  const list = screen.getByRole("listbox");
+  const article = reader();
+  const docked = () =>
+    document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail]) nav');
+  expect(docked()).not.toBeNull();
+  key("s", { altKey: true, shiftKey: true, metaKey: true }, document.body);
+  // The main process has not stored the pref yet.
+  await eventually(() => expect(docked()).toBeNull());
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(reader()).toBe(article);
+  release();
+  await wait(50);
+  expect(docked()).toBeNull();
+  expect((await h.run(h.m.app.prefs)).sidebarVisible).toBe(false);
+  clickButton("Show sidebar");
+  await eventually(() => expect(docked()).not.toBeNull());
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(reader()).toBe(article);
+  await eventually(async () => expect((await h.run(h.m.app.prefs)).sidebarVisible).toBe(true));
+});
+
+it("a sidebar switch to a view loaded on pointer enter paints its rows before any list request", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const allMail = () =>
+    document.querySelector<HTMLElement>(
+      '[data-mail-pane="sidebar"]:not([data-sidebar-rail]) [data-focus-key="mailbox:all"]',
+    );
+  // First pages and refreshes; a short list then asks for older mail, which is not a reload.
+  const reads = () =>
+    h.requests.filter((request) => {
+      const payload = JSON.stringify(request.payload);
+      return (
+        request.tag === "Threads" &&
+        payload.includes('"mailbox":"all"') &&
+        !payload.includes('"before"')
+      );
+    }).length;
+  // The pointer reaches the row: its first page loads.
+  fireEvent.pointerEnter(allMail()!);
+  await eventually(() => expect(reads()).toBe(1));
+  await wait(50);
+  fireEvent.click(allMail()!);
+  // The click paints from the cache, in the same turn, with no new list request.
+  const list = screen.getByRole("listbox");
+  expect(list.getAttribute("aria-label")).toBe("All Mail");
+  // Not the Inbox rows held over while a request runs: All Mail's own, ready.
+  expect(list.getAttribute("aria-busy")).toBe("false");
+  expect(list.querySelector("[data-stale]")).toBeNull();
+  expect(row(h.id("one"))).toBeTruthy();
+  expect(reads()).toBe(1);
+  await wait(50);
+  expect(reads()).toBe(1);
 });

@@ -1,3 +1,4 @@
+import { constVoid } from "effect/Function";
 import { providerCapabilities } from "@openmail/core/schema";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
@@ -28,6 +29,7 @@ import {
   ShortcutHelp,
 } from "./LazyDialogs";
 import type { useSettingsRequests } from "./use-settings-requests";
+import { browserClock } from "../state/view-warming";
 
 /** The main window's dialogs. Which one is open lives in atoms, so menus and shortcuts can open them. */
 export function AppDialogs({
@@ -80,6 +82,12 @@ export function AppDialogs({
   useEffect(() => {
     if (dialog !== "add" && signInAgainId !== null) setSignInAgain(null);
   }, [dialog, signInAgainId, setSignInAgain]);
+  // The first Settings open spent 1.5 s importing and evaluating its chunk. The window imports it
+  // while idle after mail shows, so Settings paints on the first open as fast as on later ones.
+  useEffect(
+    () => (hasAccounts ? browserClock.idle(() => Settings.preload()) : constVoid),
+    [hasAccounts],
+  );
   return (
     <>
       {editing && (

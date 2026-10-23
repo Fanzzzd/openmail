@@ -45,6 +45,11 @@ export function useMailActions({
   showUndo: ReturnType<typeof useBatchUndo>["showUndo"];
   selectedAccount: Account | undefined;
 }) {
+  // Not compiled by the React Compiler. It memoized requestPermanentDelete and rowState apart,
+  // and every closure of one render shares one V8 context, so a closure kept from an earlier
+  // render held that render's whole context, including the closure kept from the render before.
+  // Each App render added a link: 0.6 MB per change event in the dev app, past 50 GB in two hours.
+  "use no memo";
   const setDialog = useAtomSet(dialogAtom);
   const setSignInAgain = useAtomSet(signInAgainAtom);
   const [snoozeIds, setSnoozeIds] = useAtom(snoozeIdsAtom);

@@ -10,6 +10,14 @@ import type { MailboxDependencies, MailboxRuntimeState } from "./mailbox-runtime
 import { cacheIO } from "./mailbox-shared.js";
 import type { MailboxApp } from "./mailbox.js";
 
+/** Prefs that only arrange a window. Changing them emits PrefsChanged rather than Changed. */
+const LAYOUT_PREFS: ReadonlySet<string> = new Set([
+  "sidebarVisible",
+  "toolbarVisible",
+  "readingPaneVisible",
+  "readingPanePosition",
+]);
+
 /** Settings, notifications, diagnostics, updates, remote access and the event stream. */
 export const makeAppMailbox = (
   deps: MailboxDependencies & {
@@ -26,7 +34,13 @@ export const makeAppMailbox = (
         const previous = yield* store.prefs;
         const resetState =
           patch.updateChannel !== undefined && patch.updateChannel !== previous.updateChannel;
-        return yield* mutate(store.setPrefs(patch)).pipe(
+        // A layout toggle refetches only the prefs. As a Changed event it refetched every list,
+        // count and open thread in each window (6 s per sidebar toggle on a 20k-message database).
+        const layoutOnly = Object.keys(patch).every((key) => LAYOUT_PREFS.has(key));
+        const write = layoutOnly
+          ? store.setPrefs(patch).pipe(Effect.tap(() => emit({ _tag: "PrefsChanged" })))
+          : mutate(store.setPrefs(patch));
+        return yield* write.pipe(
           Effect.tap(() =>
             (patch.bodyCacheBytes !== undefined &&
               patch.bodyCacheBytes !== previous.bodyCacheBytes) ||

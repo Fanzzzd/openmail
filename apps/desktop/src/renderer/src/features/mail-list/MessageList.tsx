@@ -100,6 +100,8 @@ interface Props {
   /** Home, End, Page Up or Page Down picked this row; it is selected as an arrow key would. */
   onKeyboardSelect?: (id: string) => void;
   onEndReached: () => void;
+  /** How many rows the person can reach without paging: the window's last row or the last selected row. */
+  onReach?: (rows: number) => void;
   /** What a row's context menu needs; the same handlers as the reader toolbar. */
   rowActions: RowActions;
 }
@@ -190,6 +192,7 @@ function MessageListBody({
   onSelect,
   onKeyboardSelect,
   onEndReached,
+  onReach,
   rowActions,
   scrollKey,
   rememberScroll,
@@ -406,6 +409,17 @@ function MessageListBody({
     });
     return () => cancelAnimationFrame(frame);
   }, [selectedIndex, selectedId, selectionSource, scrollToRow, listRef]);
+
+  const lastSelected = useMemo(() => {
+    if (selectedIds.size === 0) return -1;
+    for (let i = threads.length - 1; i >= 0; i--)
+      if (selectedIds.has(threads[i]?.id ?? "")) return i;
+    return -1;
+  }, [threads, selectedIds]);
+  const reach = Math.max(window.end, lastSelected + 1);
+  useEffect(() => {
+    onReach?.(reach);
+  }, [onReach, reach]);
 
   // Short first pages have no scrollbar. Ask for older mail once per list growth.
   useEffect(() => {

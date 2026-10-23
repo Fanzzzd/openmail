@@ -182,6 +182,24 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
   }).pipe(Effect.provide(PerformanceMailbox()), Effect.ensuring(Effect.sync(trace.restore)));
 });
 
+it.effect("an empty notification queue is read without scanning messages", () => {
+  const trace = traceQueries();
+  return Effect.gen(function* () {
+    yield* seedMailbox(120);
+    const sql = yield* SqlClient.SqlClient;
+    // As on an analyzed database: messages has statistics and the empty queue has none.
+    yield* sql`ANALYZE`;
+    const store = yield* Store;
+    trace.start();
+    yield* store.takeNotifications(fixtureNow);
+    const read = trace.stop().find((q) => q.sql.includes("FROM pending_notifications n"));
+    assert.ok(read);
+    const plan = read.plan.join("\n");
+    assert.match(plan, /SCAN n\b/);
+    assert.notMatch(plan, /SCAN m\b/);
+  }).pipe(Effect.provide(PerformanceMailbox()), Effect.ensuring(Effect.sync(trace.restore)));
+});
+
 it.effect("stale keyset pages wrap and include distinct orphan drafts", () =>
   Effect.gen(function* () {
     yield* seedMailbox(120);

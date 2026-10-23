@@ -41,12 +41,17 @@ export function makeFolderFiltersAtom(
   const saved = Atom.make<ReadonlyMap<string, ListFilters>>(
     storage ? readFolderFilters(storage) : new Map(),
   ).pipe(Atom.keepAlive);
-  return Atom.writable(
+  const filters = Atom.writable(
     (get) => get(saved).get(folderFilterKey(get(view))) ?? DEFAULT_LIST_FILTERS,
-    (ctx, filters: ListFilters) => {
-      const next = new Map(ctx.get(saved)).set(folderFilterKey(ctx.get(view)), filters);
-      ctx.set(saved, next);
-      if (storage) saveFolderFilters(storage, next);
+    (ctx, next: ListFilters) => {
+      const all = new Map(ctx.get(saved)).set(folderFilterKey(ctx.get(view)), next);
+      ctx.set(saved, all);
+      if (storage) saveFolderFilters(storage, all);
     },
   );
+  return Object.assign(filters, {
+    /** The filters another view would open with, for loading its list ahead of a switch. */
+    forView: (get: <A>(atom: Atom.Atom<A>) => A, other: View): ListFilters =>
+      get(saved).get(folderFilterKey(other)) ?? DEFAULT_LIST_FILTERS,
+  });
 }

@@ -49,24 +49,34 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
           failures = 0;
         }),
       ),
-      Stream.runForEach(
-        Match.typeTags<MailboxEvent, Effect.Effect<void>>()({
-          SyncState: ({ state }) =>
-            Effect.suspend(() => {
+      // Each batch is every event waiting since the last one ran. A burst, such as the change
+      // for a local write and the one for its push, invalidates each key once, so every view
+      // refetches once rather than once per event.
+      Stream.runForEachArray((events) => {
+        const keys = new Set<string>();
+        for (const event of events)
+          for (const key of Match.typeTags<MailboxEvent, readonly string[]>()({
+            SyncState: ({ state }) => {
               get.set(syncStateAtom, state);
-              if (state.running) return Effect.void;
+              if (state.running) return [];
               get.set(syncProgressAtom, null);
-              return reactivity.invalidate(MAIL_KEYS);
-            }),
-          SyncProgress: ({ progress }) => Effect.sync(() => get.set(syncProgressAtom, progress)),
-          UpdateSettingsChanged: () => reactivity.invalidate([Keys.cache]),
-          BackfillProgress: () => reactivity.invalidate([Keys.cache, Keys.counts]),
-          Changed: () => reactivity.invalidate(MAIL_KEYS),
-          // The main process posts notifications. The Changed or finished sync that follows refetches views.
-          NewMail: () => Effect.void,
-          SnoozeDue: () => Effect.void,
-        }),
-      ),
+              return MAIL_KEYS;
+            },
+            SyncProgress: ({ progress }) => {
+              get.set(syncProgressAtom, progress);
+              return [];
+            },
+            UpdateSettingsChanged: () => [Keys.cache],
+            BackfillProgress: () => [Keys.cache, Keys.counts],
+            Changed: () => MAIL_KEYS,
+            PrefsChanged: () => [Keys.prefs],
+            // The main process posts notifications. The Changed or finished sync that follows refetches views.
+            NewMail: () => [],
+            SnoozeDue: () => [],
+          })(event))
+            keys.add(key);
+        return keys.size === 0 ? Effect.void : reactivity.invalidate([...keys]);
+      }),
     );
   }).pipe(
     // Typed failures and defects alike. Interrupting the atom still stops it.

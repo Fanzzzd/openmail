@@ -52,6 +52,36 @@ describe("list invalidation", () => {
     expect(next.pages).toBe(3);
     expect(next.requested).toBe(3);
   });
+  it("reads only through the page after the reachable rows, however many are loaded", async () => {
+    const rows = Array.from({ length: 2000 }, (_, i) => row(i));
+    const refresh = (reach: number | undefined, query: ThreadQuery = { mailbox: "inbox" }) => {
+      const requests: ThreadQuery[] = [];
+      return Effect.runPromise(
+        refreshPages(
+          query,
+          { threads: rows, pages: 20, requested: 20, done: false },
+          (q) =>
+            Effect.sync(() => {
+              requests.push(q);
+              return rows.slice(0, q.limit);
+            }),
+          reach,
+        ),
+      ).then((next) => ({ next, limits: requests.map((q) => q.limit) }));
+    };
+    // At the top: two pages, and the list pages in again on scroll.
+    const top = await refresh(20);
+    expect(top.limits).toEqual([200]);
+    expect(top.next.threads).toHaveLength(200);
+    expect(top.next.pages).toBe(2);
+    expect(top.next.requested).toBe(20);
+    expect(top.next.done).toBe(false);
+    // Scrolled to row 1,450, or a selection that far down: through the page after it.
+    expect((await refresh(1450)).limits).toEqual([1600]);
+    // Unknown reach and ranked search keep the loaded extent.
+    expect((await refresh(undefined)).limits).toEqual([2000]);
+    expect((await refresh(20, { search: "invoice" })).limits).toEqual([2000]);
+  });
   it("removes deleted rows without collapsing to the first page", async () => {
     const rows = Array.from({ length: 300 }, (_, i) => row(i));
     const next = await Effect.runPromise(

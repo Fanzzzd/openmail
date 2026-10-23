@@ -15,20 +15,19 @@ import {
   searchInputProblem,
 } from "@openmail/core/schema";
 import { Effect, Option, Stream, Schedule } from "effect";
-import { AsyncResult, Atom } from "effect/reactivity";
+import { AsyncResult, Atom, type AtomRegistry } from "effect/reactivity";
 
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 import type { AppError } from "../lib/errors";
 import { supportsInInboxFilter } from "../lib/folder-actions";
 import { MailClient } from "./rpc";
-import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
-import { type Loaded, refreshPages, searchExtent } from "./list-pages";
+import { OVERVIEW, scopeAccountIds, categoryAccounts, type View } from "../lib/view";
+import { type Loaded, PAGE, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
 import { filtersAtom, searchScopeAtom, searchTextAtom, viewAtom } from "./ui";
 
 const searchRefresh = Atom.make(Stream.fromSchedule(Schedule.spaced("10 seconds")));
-const PAGE = 100;
 /** Initial server search stays bounded. Local ranked search grows its candidate window. */
 const SEARCH_LIMIT = 200;
 
@@ -55,6 +54,26 @@ const loadPages = (query: ListQuery, wanted: number, from: Loaded | undefined) =
     return { threads, pages, done, requested: wanted } satisfies Loaded;
   });
 
+/**
+ * Counts invalidations of the thread lists. A list reads this rather than registering the key
+ * itself. The list on screen then refreshes at once, and a list kept only by its idle TTL goes
+ * stale and refreshes, from the rows it had, when it shows again. Atom.withReactivity kept every
+ * cached list observed, so each change re-ran every mailbox and search opened in the last five
+ * minutes: 3.7 s of main-process time for one cleared search on a 20k-message database.
+ */
+export const threadsVersionAtom = Atom.make(
+  (get): number => Option.getOrElse(get.self<number>(), () => 0) + 1,
+).pipe(Atom.withReactivity([Keys.threads]), Atom.keepAlive);
+
+/**
+ * How many of a list's rows the person can reach without paging: through the last row its window
+ * renders or the last selected row, whichever is further. MessageList writes it; a refresh reads
+ * it once, without depending on it, to bound how many rows it reads again (see refreshPages).
+ */
+export const listReachAtom = Atom.family((_query: ListQuery) =>
+  Atom.make<number | undefined>(undefined).pipe(Atom.keepAlive),
+);
+
 // Atom.family holds members weakly, so each family returns the atom itself.
 // A wrapper object would be collected while its atoms are still mounted, and
 // the next lookup would start a second list from page one.
@@ -65,6 +84,7 @@ const loadedPages = Atom.family((query: ListQuery) => {
   let requested = 0;
   const loaded = MailClient.runtime
     .atom((get) => {
+      get(threadsVersionAtom);
       const want = get(wanted);
       const increased = want > requested;
       requested = want;
@@ -73,13 +93,17 @@ const loadedPages = Atom.family((query: ListQuery) => {
         .pipe(Option.flatMap(AsyncResult.value), Option.getOrUndefined);
       // Only an increased request may fetch history; invalidation refreshes cached rows.
       const continuing = increased ? previous : undefined;
-      // Refresh every loaded row so scroll coordinates and selection remain valid.
+      // Refresh the rows within reach so scroll coordinates and selection remain valid.
+      const reach = get.once(listReachAtom(query));
       return Effect.gen(function* () {
         if (!continuing && previous) {
           const call = yield* MailClient;
-          return yield* refreshPages(query, previous, (q) => call("Threads", { query: q })).pipe(
-            Effect.map((next) => ({ ...next, requested: want })),
-          );
+          return yield* refreshPages(
+            query,
+            previous,
+            (q) => call("Threads", { query: q }),
+            reach,
+          ).pipe(Effect.map((next) => ({ ...next, requested: want })));
         }
         let remoteDone =
           continuing?.remoteDone ??
@@ -97,7 +121,7 @@ const loadedPages = Atom.family((query: ListQuery) => {
         return { ...next, remoteDone, requested: want };
       });
     })
-    .pipe(Atom.withReactivity([Keys.threads]), Atom.setIdleTTL("5 minutes"));
+    .pipe(Atom.setIdleTTL("5 minutes"));
   return query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded;
 });
 
@@ -106,9 +130,10 @@ export const pagedList = (query: ListQuery) => ({
   loaded: loadedPages(query),
 });
 
-/** The query behind the list on screen; null on the overview, which has no list. */
-export const listQueryAtom = Atom.make((get): ListQuery | null => {
-  const view = get(viewAtom);
+type Read = <A>(atom: Atom.Atom<A>) => A;
+
+/** The list query a view opens with and no search; null on the overview, which has no list. */
+export function viewListQuery(get: Read, view: View): ListQuery | null {
   if (view.space === OVERVIEW) return null;
   const accounts = AsyncResult.getOrElse(get(accountsAtom), () => []);
   const baseScope = scopeAccountIds(view, accounts);
@@ -123,18 +148,7 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
         .map((a) => a.id)
     : baseScope;
   const common = scope ? { accountIds: scope } : {};
-  // A last word too short to search yet keeps the list on the search without it.
-  const search = searchedFieldText(get(searchTextAtom)).trim();
-  if (search)
-    return {
-      ...common,
-      search,
-      searchScope: get(searchScopeAtom),
-      mailbox: view.mailbox,
-      ...(view.label ? { label: view.label.id } : {}),
-      flat: !AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping,
-    };
-  const filters = get(filtersAtom);
+  const filters = filtersAtom.forView(get, view);
   const grouping = AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping;
   // Optional fields are left out rather than set to undefined: the main
   // process decodes the query strictly.
@@ -151,6 +165,42 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
           },
         }
       : {}),
+  };
+}
+
+/**
+ * Puts a view's list in the list cache ahead of a switch: its first page when the view has none,
+ * a revalidation when its cached rows went stale, and nothing when they are fresh. The switch then
+ * shows rows from the cache before any list request (see docs/list-loading.md).
+ */
+export function prefetchView(
+  registry: AtomRegistry.AtomRegistry,
+  view: View,
+  { missingOnly = false }: { missingOnly?: boolean } = {},
+) {
+  const query = viewListQuery((atom) => registry.get(atom), view);
+  if (!query) return null;
+  const { loaded } = pagedList(query);
+  // Background warming fills only lists the cache lacks. A cached list, stale or not, refreshes
+  // when it shows or when the pointer reaches its row, never because warming ran again.
+  if (missingOnly && registry.getNodes().has(loaded)) return null;
+  registry.get(loaded);
+  return loaded;
+}
+
+/** The query behind the list on screen; null on the overview, which has no list. */
+export const listQueryAtom = Atom.make((get): ListQuery | null => {
+  const view = get(viewAtom);
+  const query = viewListQuery(get, view);
+  // A last word too short to search yet keeps the list on the search without it.
+  const search = searchedFieldText(get(searchTextAtom)).trim();
+  if (!query || !search) return query;
+  const { listFilters: _filters, flat: _flat, ...common } = query;
+  return {
+    ...common,
+    search,
+    searchScope: get(searchScopeAtom),
+    flat: !AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping,
   };
 });
 
@@ -238,8 +288,11 @@ export const threadListAtom = Atom.writable(
     const { loaded: loadedAtom, wanted } = pagedList(local);
     const result = get(loadedAtom);
     // A search shows no count, and counting one walks every match (1.7 s on 100k messages).
+    // The count waits for the first rows: the main process answers in order, and All Mail's count
+    // took 120-165 ms on a 20k-message database, ahead of the rows a switch was waiting for. Once
+    // rows exist it stays mounted through refreshes, so a refresh counts once.
     const total =
-      query.search === undefined
+      query.search === undefined && AsyncResult.value(result)._tag === "Some"
         ? AsyncResult.getOrElse(
             get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
             () => null,

@@ -1,6 +1,9 @@
 import { Effect } from "effect";
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 
+/** Rows in one page of a date-ordered list. */
+export const PAGE = 100;
+
 export interface Loaded {
   threads: readonly ThreadSummary[];
   pages: number;
@@ -20,18 +23,34 @@ export function searchExtent<E>(
     Effect.map((threads) => ({ threads, pages, requested: pages, done: threads.length < limit })),
   );
 }
-/** Refresh the loaded extent in one query, keeping offscreen selections available. */
+/**
+ * Refresh the loaded extent in one query, keeping offscreen selections available.
+ *
+ * `reach` is how many rows the list can show without paging: down to its window's last row or
+ * its last selected row. A date-ordered list then reads only through the page after that row and
+ * leaves the deeper pages to load again on scroll, so a refresh costs the same with 2,000 rows
+ * loaded as with 100. Before, a list scrolled down 2,000 rows read and sent all of them (1.6 MB)
+ * on every change. Ranked search keeps its whole window.
+ */
 export function refreshPages<E>(
   query: ThreadQuery,
   previous: Loaded,
   read: (q: ThreadQuery) => Effect.Effect<readonly ThreadSummary[], E>,
+  reach?: number,
 ) {
-  const limit = previous.threads.length || (query.search ? 200 : 100);
+  const loaded = previous.threads.length;
+  const kept =
+    reach === undefined || query.search !== undefined
+      ? loaded
+      : Math.min(loaded, (Math.floor(Math.max(0, reach) / PAGE) + 2) * PAGE);
+  const limit = kept || (query.search ? 200 : PAGE);
+  const trimmed = kept < loaded;
   return read({ ...query, limit }).pipe(
     Effect.map((threads) => ({
       ...previous,
       threads,
-      done: threads.length < limit || (previous.threads.length > 0 && previous.done),
+      pages: trimmed ? Math.ceil(kept / PAGE) : previous.pages,
+      done: threads.length < limit || (!trimmed && loaded > 0 && previous.done),
     })),
   );
 }

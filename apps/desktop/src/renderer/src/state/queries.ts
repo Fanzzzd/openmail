@@ -7,7 +7,7 @@
 import { Duration, Schedule, Stream } from "effect";
 import { AsyncResult, Atom } from "effect/reactivity";
 
-import type { Message } from "../../../shared/api";
+import type { Message, PrefsPatch } from "../../../shared/api";
 import type { AppError } from "../lib/errors";
 import { MailClient } from "./rpc";
 import { Keys } from "./keys";
@@ -117,10 +117,25 @@ export const clientSetupAtom = MailClient.query("ClientSetup", undefined, {
 /** Server settings and notes for the IMAP providers core knows. Never changes. */
 export const imapPresetsAtom = MailClient.query("ImapPresets", undefined, always);
 
-export const prefsAtom = MailClient.query("Prefs", undefined, {
+const storedPrefsAtom = MailClient.query("Prefs", undefined, {
   reactivityKeys: [Keys.prefs],
   ...always,
 });
+
+/**
+ * Layout prefs this window set and has not read back yet (see setLayoutPrefs). The window shows
+ * them at once instead of waiting for the main process to store and return them.
+ */
+export const pendingPrefsAtom = Atom.make<PrefsPatch>({}).pipe(Atom.keepAlive);
+
+/** The stored prefs, with this window's pending layout prefs on top. */
+export const prefsAtom = Atom.make((get) => {
+  const stored = get(storedPrefsAtom);
+  const pending = get(pendingPrefsAtom);
+  return Object.keys(pending).length === 0
+    ? stored
+    : AsyncResult.map(stored, (prefs) => ({ ...prefs, ...pending }));
+}).pipe(Atom.keepAlive);
 
 export const namedSignaturesAtom = MailClient.query("NamedSignatures", undefined, {
   reactivityKeys: [Keys.signatures],

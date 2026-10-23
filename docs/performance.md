@@ -584,6 +584,99 @@ Fix: HTML extraction goes through the `HtmlText` service, which on Node uses a w
 | Before         |        37.1 |              527 |          387 |               241 |
 | After          |        17.3 |               48 |          7.8 |                 0 |
 
+## Message list transitions
+
+[perf-list.mjs](../apps/desktop/scripts/perf-list.mjs) times what a person does around the message list in a built app with hidden windows and offline sync. It copies a database into a fresh data directory (as the smoke test does), so the source is never opened. It drives the renderer over CDP and the main process over its inspector, and holds an App Nap assertion so that a hidden window runs the way a window in front does. For each action it reports:
+
+- paint: from the click or key to the first frame with the target rows (or panel) on screen
+- settled: until the DOM and the main process have been quiet for 500 ms
+- main CPU: the main process's JavaScript thread time over that span (`process.threadCpuUsage`)
+- the RPCs the action sent, renderer long tasks, rows in the DOM, list and reader remounts, the longest main-process event-loop block and every SQLite statement over 20 ms
+
+```sh
+pnpm build
+node apps/desktop/scripts/perf-list.mjs --db /path/to/copy/mail.db --runs 5 --launches 5 --out /tmp/list.json
+# The 100k fixture as a database file, with a common word it contains:
+OPENMAIL_PERF=1 node packages/core/scripts/write-perf-fixture.mjs /tmp/fixture-100k/mail.db
+node apps/desktop/scripts/perf-list.mjs --db /tmp/fixture-100k/mail.db --search weekly
+```
+
+`--actions` picks groups (`mailbox`, `account`, `switch`, `scroll`, `open`, `settings`, `search`, `sidebar`, `deep`, `narrow`), `--hover 150` moves the pointer onto a sidebar row 150 ms before each switch, `--profile <name>` writes a main-process CPU profile, and `--trace <name>` adds renderer trace totals (scripting, style, layout, paint).
+
+Medians of 5 runs on 2026-10-23, on a Mac with a one-minute load average of 9 to 17. "Real" is a copy of a 1.5 GB database with 20,131 messages in 5 accounts. "100k" is the fixture above. Before is `65579603`; after is this change. The real database's sidebar and Settings rows come from a 3-run pass, because the first pass did not have them. The 100k fixture has no starred mail, so that switch has no rows to wait for and is not timed.
+
+Times in ms, before → after. Paint and settled are wall-clock; main CPU is the main process's JavaScript thread time.
+
+| Action                          | Real: paint | Real: settled | Real: main CPU | 100k: paint | 100k: settled | 100k: main CPU |
+| ------------------------------- | ----------: | ------------: | -------------: | ----------: | ------------: | -------------: |
+| Inbox → Starred                 |     23 → 18 |     121 → 116 |        41 → 50 |       – → – |         – → – |     542 → 2115 |
+| Starred → All Mail              |     21 → 15 |     152 → 142 |        43 → 51 |     50 → 27 |     341 → 816 |       95 → 172 |
+| All → one account               |     22 → 19 |       22 → 85 |         8 → 21 |     38 → 33 |      38 → 412 |       29 → 108 |
+| One account → All               |     21 → 22 |       28 → 77 |        30 → 32 |     52 → 40 |      89 → 117 |        76 → 56 |
+| Sidebar mailbox, first visit    |     73 → 22 |       73 → 57 |        30 → 39 |      – → 59 |       – → 396 |        – → 203 |
+| Sidebar account, first visit    |     68 → 18 |      124 → 64 |        43 → 42 |      – → 39 |       – → 530 |        – → 163 |
+| Sidebar mailbox, cached         |     19 → 20 |       24 → 55 |        19 → 35 |      – → 29 |       – → 227 |        – → 123 |
+| Scroll 40 viewports             |   347 → 345 |     347 → 345 |        10 → 40 |   345 → 360 |     345 → 570 |       10 → 107 |
+| Open unread conversation (wide) |     36 → 28 |     1310 → 65 |       273 → 14 |   228 → 543 |    2229 → 559 |      1533 → 88 |
+| Open unread, 2,000 rows loaded  |     48 → 33 |    4832 → 109 |      7510 → 40 |    120 → 85 |   2268 → 1032 |     1065 → 588 |
+| Open conversation (narrow)      |     38 → 32 |       64 → 74 |        15 → 11 |    116 → 77 |      158 → 94 |       221 → 10 |
+| Back button (narrow)            |     21 → 22 |       27 → 22 |         11 → 8 |     23 → 18 |       23 → 18 |          7 → 6 |
+| Escape (narrow)                 |     21 → 18 |       22 → 21 |          8 → 8 |     21 → 19 |       21 → 23 |          7 → 7 |
+| ⌘[ (narrow)                     |     21 → 21 |      237 → 21 |         13 → 8 |     21 → 19 |       23 → 19 |         9 → 10 |
+| Open Settings                   |     17 → 23 |       94 → 23 |         94 → 9 |      – → 54 |        – → 54 |          – → 8 |
+| Leave Settings                  |     20 → 20 |      116 → 20 |        109 → 7 |     56 → 45 |      299 → 45 |        207 → 7 |
+| Clear search → Inbox            |     38 → 24 |     370 → 232 |      3006 → 56 |    82 → 106 |     651 → 353 |     300 → 1062 |
+| 25 s idle after clearing search |           – |             – |      477 → 479 |           – |             – |     692 → 1114 |
+| Show docked sidebar             |   6039 → 42 |     6578 → 78 |      5883 → 31 |      – → 86 |       – → 156 |         – → 19 |
+| Hide docked sidebar             |   6296 → 33 |     6876 → 78 |      5981 → 48 |      – → 48 |        – → 84 |         – → 41 |
+| Open sidebar drawer             |     19 → 29 |     221 → 230 |        92 → 12 |      – → 50 |       – → 253 |         – → 13 |
+| Launch → first row              | 1810 → 2550 |         – → – |          – → – | 1977 → 1757 |         – → – |          – → – |
+
+The real-database pass ran before the last fix (a list's count ran twice per refresh), which the 100k pass includes. On 100k the first actions after launch show warming in their settled time and main CPU: it loads up to 12 first pages in the background, and the harness clicks sooner than the one quiet second warming waits for after a real pointerdown.
+
+Settings' first open, which the median above hides: 2,121 ms before, 322 ms after (real database). Launch varies by more than a second between runs on this load and is unchanged in what it does.
+
+Causes, by measured cost:
+
+- **Cached lists refetched while off screen.** `Atom.withReactivity` kept each list in its five-minute idle cache observed, so every invalidation re-ran every mailbox and search opened in that time. A cleared search for a common word re-ran at 3.7 s of main-process time per change, and the docked sidebar toggle queued behind several of them. Lists now read `threadsVersionAtom`; see [list-loading.md](list-loading.md).
+- **The system refresh on every menu state.** Opening a conversation sends two menu states. Each ran the Dock and menu-bar refresh: unread counts, a thread count per account, an unread inbox page and the notification queue. The notification read scanned every message, because ANALYZE writes no statistics for an empty queue; on the 1.5 GB file that was about 1 s. Menu states now only rebuild the menu, the queue read keeps the queue as the outer loop, and a burst of change events runs one refresh.
+- **Layout prefs as mail changes.** Showing the sidebar waited for SetPrefs, which emitted `Changed` and refetched every view in every window. Layout prefs now apply at once and emit `PrefsChanged`.
+- **Refresh cost grew with loaded rows.** A list scrolled 2,000 rows down read and sent all of them (1.6 MB) on each change. It now reads through the page after the rows within reach (160 KB).
+- **Visible text on every search.** A common word's 200 results took 3.7 s of HTML visible-text extraction, again on each 10 s refresh of the open search. A 500-entry cache keyed by body content keeps it.
+- **Settings' chunk on first open.** About 1.5 s of import and evaluation; the window now imports it while idle.
+- **First visits in the sidebar.** 50 to 160 ms for a first page, with the thread count ahead of it. Views now load on pointer enter or focus and in idle warming, and the count waits for the rows.
+
+What was ruled out: Back from the narrow reader never remounted the list or refetched it (18 to 22 ms before and after), toggling the sidebar does not remount the list or the reader, and leaving Settings keeps the list mounted. The list window holds 13 to 21 rows in the DOM in every transition.
+
+Not done, with the measured reason:
+
+- **Core off the main process.** After these changes the main thread spends 8 to 56 ms of CPU per action on the real database. The remaining long blocks are the first search for a common word (3.5 to 4.6 s of visible-text extraction before the cache has it) and, on 100k, a mark-read that refetches the open thread (436 KB) and the list's count once per invalidation, three invalidations per mark-read. A utility process that owns core and the database, with renderers connected over a MessagePort and the Dock and menu code as one more client, would keep input and window work responsive during those. It moves every RPC and the Desktop service across a process boundary, so it is a separate change.
+- **Three invalidations per mark-read.** The renderer's own mutation, the `Changed` after the local write and the `Changed` after the push each refetch the views on screen. Merging them needs either scoped change events from core or a delay in the renderer.
+- **Smaller first pages.** With intent prefetch and warming, the first page is off the click path.
+
+## Memory across renders
+
+The owner's development app grew past 50 GB in two hours of online sync. The renderer leaked; the main process, the GPU process and native menus did not. [perf-list.mjs](../apps/desktop/scripts/perf-list.mjs) `--actions stress` reproduces it offline. It sends SetPrefs requests at 300 a minute, so the main process emits `Changed` and every view refreshes, and it samples each process's footprint and diffs renderer heap snapshots:
+
+```sh
+node apps/desktop/scripts/perf-list.mjs --db /path/to/copy/mail.db --actions stress --soak 4 --rate 300 --check
+```
+
+| Build               | Changes | Renderer footprint                        | Heap kept                                                      |
+| ------------------- | ------: | ----------------------------------------- | -------------------------------------------------------------- |
+| Development, before |   2,174 | 281 → 1,367 MB                            | –                                                              |
+| Production, before  |     993 | 115 → 671 MB                              | 77 MB of strings, 2 copies of each App hook closure per change |
+| Production, after   |     998 | 129 → 260 MB, flat after the first minute | 0.2 MB                                                         |
+
+Over the same runs the main process held 250 to 610 MB and the GPU process 54 MB, through 2,174 application menu rebuilds, 37,000 `Menu.buildFromTemplate` calls and 2,220 Dock menu and badge updates.
+
+What kept the memory: `useMailActions` defined `requestPermanentDelete` and `rowState` in one function body, and the React Compiler memoized them in separate cache slots with different dependencies. V8 gives all closures created in one call a single shared context. When a render reused the cached `requestPermanentDelete` from an earlier render, the new context held it, the old closure held its own render's context, and that context held the `rowState` reused from the render before. Each App render added a link, and each link kept everything that render's scope saw, thread lists included. Every `Changed` re-renders App, so a busy sync grew the chain without bound.
+
+The rule for hooks that run on every App render and hold large render data (thread lists, rows, selections):
+
+- Do not let one function body produce both closures that the compiler can keep across renders and data that changes every render. Either return closures that read the data from a ref (or `useEffectEvent`), so they need no cache slot, or opt the hook out with `"use no memo"`, as `useMailActions` does.
+- After changing such a hook, run the stress action with `--check`. It fails when a closure gains a copy for every few changes or when the renderer keeps more than 10 MB across the run.
+
 ## Write and disk cost
 
 ```sh

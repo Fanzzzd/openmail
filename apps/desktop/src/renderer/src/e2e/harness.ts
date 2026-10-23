@@ -571,7 +571,7 @@ export function clickButton(name: string | RegExp) {
 }
 export function key(
   stroke: string,
-  options: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean } = {},
+  options: { metaKey?: boolean; shiftKey?: boolean; ctrlKey?: boolean; altKey?: boolean } = {},
   target: EventTarget = document.activeElement ?? window,
 ) {
   const event = new KeyboardEvent("keydown", {

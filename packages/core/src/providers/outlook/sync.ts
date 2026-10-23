@@ -1,4 +1,4 @@
-import { Effect, Option, Schema } from "effect";
+import { Clock, Effect, Option, Schema } from "effect";
 import { HttpClientRequest } from "effect/http";
 import { categoryKey, mergeCategoryNames } from "../../domain/categories.js";
 import type { Account } from "../../domain/account.js";
@@ -42,6 +42,9 @@ import type { OutlookRead } from "./parse.js";
 import { expandedAttachments } from "./parse.js";
 import { makeOutlookPull } from "./pull.js";
 import { makeOutlookRecovery } from "./recovery.js";
+/** How long an account's system folder ids are reused before they are looked up again. */
+export const SYSTEM_FOLDERS_TTL_MS = 6 * 60 * 60 * 1000;
+
 /** `timeZone` is the PlatformHost zone, read per request: Graph returns calendar times in it. */
 export const makeOutlookSync = (
   client: OutlookClient,
@@ -109,8 +112,22 @@ export const makeOutlookSync = (
      * out together with their subfolders (Sync Issues holds Conflicts and so on),
      * including empty folders so newly created folders can be organized.
      */
-    const listCustomFolders = Effect.fnUntraced(function* (accountId: string) {
-      const systemIds = yield* Effect.forEach(
+    /**
+     * The ids of the well-known and skipped system folders, looked up by name. Most mailboxes lack
+     * several of them (archive, clutter, scheduled and others answer 404), and every folder listing
+     * asked again: four 404s at a time on each sync, 234 in two hours on one account. The ids do
+     * not change, so an account's answer is kept for SYSTEM_FOLDERS_TTL_MS; a folder created in the
+     * meantime, such as Archive, is found at the next lookup.
+     */
+    const systemFolderIds = new Map<
+      string,
+      { at: number; ids: readonly Option.Option<{ name: string; id: string }>[] }
+    >();
+    const lookUpSystemFolders = Effect.fnUntraced(function* (accountId: string) {
+      const now = yield* Clock.currentTimeMillis;
+      const cached = systemFolderIds.get(accountId);
+      if (cached && now - cached.at < SYSTEM_FOLDERS_TTL_MS) return cached.ids;
+      const ids = yield* Effect.forEach(
         [...WELL_KNOWN.map((f) => f.name), ...SKIPPED],
         (name) =>
           get(accountId, WithId, `/me/mailFolders/${encodeURIComponent(name)}?$select=id`).pipe(
@@ -120,6 +137,12 @@ export const makeOutlookSync = (
           ),
         { concurrency: 4 },
       );
+      systemFolderIds.set(accountId, { at: now, ids });
+      return ids;
+    });
+
+    const listCustomFolders = Effect.fnUntraced(function* (accountId: string) {
+      const systemIds = yield* lookUpSystemFolders(accountId);
       const system = new Set<string>();
       const skipped = new Set<string>();
       for (const found of systemIds) {

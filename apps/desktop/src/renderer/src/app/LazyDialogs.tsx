@@ -1,9 +1,9 @@
 import type { ComponentType } from "react";
-import { lazyDialog } from "../ui/lazy-dialog";
+import { type LazyDialog, lazyDialog } from "../ui/lazy-dialog";
 
 // Dialogs that a feature also opens itself live in that feature's lazy.tsx.
 
-export const Settings: ComponentType<
+export const Settings: LazyDialog<
   Parameters<typeof import("../features/settings/Settings").Settings>[0]
 > = lazyDialog<Parameters<typeof import("../features/settings/Settings").Settings>[0]>(() =>
   import("../features/settings/Settings").then((m) => ({ default: m.Settings })),
