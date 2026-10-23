@@ -150,7 +150,7 @@ Check that each flow catches faults:
 node apps/desktop/scripts/e2e-mutations.mjs
 ```
 
-The script temporarily changes behavior, one case at a time, requires every selected test to fail, and restores the file after each round. It covers the main flows and related regressions. When you add a flow, add its fault cases to the script. Afterwards run the normal tests and the repo checks.
+The script temporarily changes behavior, one case at a time, and restores the file after each round. Each case names the tests it must fail by their titles as the source writes them, with `%s` or `$field` where a parameterized test puts its value. The script requires each named test to fail. Other tests the run picks up may pass. `--case <name>`, repeated, runs only those cases. It covers the main flows and related regressions. When you add a flow, add its fault cases to the script. When you rename a test, rename it in its cases too: `tests/e2e-mutations.test.ts` fails on a title no e2e file has, and on an anchor no longer in its file. Afterwards run the normal tests and the repo checks.
 
 Regressions for the reset deletion guard are in [sync-reset.test.ts](../packages/core/src/sync/sync-reset.test.ts) and [sync-reset-imap.test.ts](../packages/core/src/sync/sync-reset-imap.test.ts). They cover keeping cached mail outside the window, failed existence checks and persistent re-verification, IMAP UID reuse, and the Prefer page size for the initial, 410 restart, next-page and incremental Outlook delta requests. The rules are maintained only in [sync correctness](sync-correctness.md#reset-deletion-guard).
 
