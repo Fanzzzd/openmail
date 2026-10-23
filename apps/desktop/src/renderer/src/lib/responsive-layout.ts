@@ -1,5 +1,6 @@
 import { useState, useSyncExternalStore } from "react";
 import { MEDIUM_MIN, WIDE_MIN } from "../../../shared/layout";
+import type { KeyStroke } from "../../../shared/shortcuts";
 
 /**
  * How many panes the main window shows. Three when wide; two when medium,
@@ -76,8 +77,8 @@ export function visiblePanes(
 }
 
 const BACK_KEY = "[";
-/** The label of the ⌘ shortcut that {@link isBackKey} accepts. */
-export const BACK_SHORTCUT = `⌘${BACK_KEY}`;
+/** The ⌘ stroke that {@link isBackKey} accepts. */
+export const BACK_SHORTCUT: KeyStroke = { key: BACK_KEY, cmd: true };
 
 /** Escape or ⌘[ returns from the reader to the list in the narrow layout. */
 export function isBackKey(

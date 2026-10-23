@@ -3,7 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { RefreshCw, Settings as SettingsIcon } from "lucide-react";
 import type { Account, SyncProgress, SyncState } from "../../../../shared/api";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { useShortcutLabel } from "../../i18n/use-shortcut-text";
 import { syncNow, useRunMail } from "../../state/mail";
 import { popupMotion, popupOffset, popupSurface, touchIcon } from "../../ui/styles";
 import { Tip } from "../../ui/Tip";
@@ -26,7 +26,7 @@ export function SidebarFooter({
   onSettings: () => void;
 }) {
   const { t, i18n } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   const run = useRunMail();
   const [open, setOpen] = useState(false);
   useOpenSurface(open, () => setOpen(false));

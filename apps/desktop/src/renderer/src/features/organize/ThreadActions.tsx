@@ -1,3 +1,4 @@
+import type { ShortcutLabel } from "../../../../shared/shortcuts";
 import { AsyncResult } from "effect/reactivity";
 import { prefsAtom } from "../../state/queries";
 import {
@@ -48,7 +49,7 @@ import {
 } from "../../ui/Menu";
 import { touchIcon } from "../../ui/styles";
 import { PickerPopover, pickerInput, pickerItem, pickerList } from "../../ui/Picker";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { useShortcutLabel, useShortcutText } from "../../i18n/use-shortcut-text";
 import { useElementWidth } from "../../lib/use-element-width";
 import { fittingCount, shownActions, withAnchor } from "../../lib/toolbar-fit";
 import { Tip } from "../../ui/Tip";
@@ -130,7 +131,7 @@ export function ThreadActions({
   threadMenu,
 }: Props) {
   const { t } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   const caps = providerCapabilities(state.provider);
   const folders = caps.organization === "folders";
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
@@ -613,7 +614,7 @@ function LabelPicker({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trigger: ReactElement;
-  tip: { label: string; shortcut: string };
+  tip: { label: string; shortcut: ShortcutLabel | undefined };
   labels: readonly Label[];
   current: string[];
   folders: boolean;
@@ -718,7 +719,7 @@ function Action({
 }: {
   icon: Icon;
   label: string;
-  shortcut?: string;
+  shortcut?: ShortcutLabel | undefined;
   onClick: () => void;
 }) {
   return (
@@ -746,7 +747,7 @@ function Switch({
   icon: Icon;
   name: string;
   label: string;
-  shortcut?: string;
+  shortcut?: ShortcutLabel | undefined;
   pressed: boolean;
   pressedClass: string;
   onPressedChange: (pressed: boolean) => void;

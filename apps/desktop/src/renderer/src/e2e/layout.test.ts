@@ -1520,6 +1520,13 @@ it("the thread ends with Reply, Reply all and Forward, and has one menu for the 
       .getAllByRole("button")
       .map((button) => button.textContent),
   ).toEqual(["Reply", "Reply all", "Forward"]);
+  // Screen readers skip the tooltips, so each toolbar button names its keys itself.
+  expect(screen.getByRole("button", { name: "Archive" }).getAttribute("aria-keyshortcuts")).toBe(
+    "Control+Meta+A",
+  );
+  expect(
+    within(bar).getByRole("button", { name: "Reply" }).getAttribute("aria-keyshortcuts"),
+  ).toMatch(/^(Meta|Control)\+R$/);
   // The subject row has no "…" of its own: its commands are in Conversation actions.
   const thread = screen.getByRole("document");
   expect(within(thread).queryByRole("button", { name: "More actions" })).toBeNull();

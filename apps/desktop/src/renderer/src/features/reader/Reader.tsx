@@ -16,6 +16,7 @@ import { iconButton, titlebarRow } from "../../ui/styles";
 import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { Tip } from "../../ui/Tip";
 import { BACK_SHORTCUT } from "../../lib/responsive-layout";
+import { strokesHint } from "../../i18n/use-shortcut-text";
 import { ChevronLeft, Mail } from "lucide-react";
 import { TOOLBAR_MIN_WIDTH } from "../../lib/toolbar-fit";
 import { SearchField } from "../search";
@@ -107,7 +108,7 @@ export function Reader({
       <header data-reader-toolbar className={`${titlebarRow} @container/bar gap-3 pr-4 pl-4`}>
         <TrafficLightSpace />
         {onBack && (
-          <Tip label={t`Back to messages`} shortcut={BACK_SHORTCUT}>
+          <Tip label={t`Back to messages`} shortcut={strokesHint([BACK_SHORTCUT])}>
             <button
               type="button"
               aria-label={t`Back to messages`}

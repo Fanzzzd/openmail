@@ -1,3 +1,4 @@
+import type { ShortcutLabel } from "../../../../shared/shortcuts";
 import {
   useCallback,
   useEffect,
@@ -37,7 +38,7 @@ import { TrafficLightSpace } from "../../ui/TrafficLights";
 import { TriangleAlert } from "lucide-react";
 import { ContextMenuContent, ContextMenuRoot, ContextMenuTrigger } from "../../ui/Menu";
 import { Tip } from "../../ui/Tip";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { useShortcutLabel } from "../../i18n/use-shortcut-text";
 import { Toggle } from "@base-ui/react/toggle";
 import { useScrollFade } from "../../lib/scroll-fade";
 
@@ -203,7 +204,7 @@ function MessageListBody({
   dimmed: boolean;
 }) {
   const { t, i18n } = useLingui();
-  const shortcutText = useShortcutText();
+  const shortcutLabel = useShortcutLabel();
   const { ref: chipsRef, mask: chipsMask } = useScrollFade();
   // One status region stays mounted, so screen readers hear each change of its text.
   const count = threads.length;
@@ -438,7 +439,7 @@ function MessageListBody({
               onChange={(enabled) => onFilters({ ...filters, enabled })}
               label={t`Quick filters`}
               tip={filters.enabled ? t`Turn off quick filters` : t`Turn on quick filters`}
-              shortcut={shortcutText("filterUnread")}
+              shortcut={shortcutLabel("filterUnread")}
             />
             <FilterChip
               active={quickFilterOn(filters, "unread")}
@@ -693,7 +694,7 @@ function FilterChip(props: {
   onChange: (active: boolean) => void;
   label: string;
   tip: string;
-  shortcut?: string;
+  shortcut?: ShortcutLabel | undefined;
 }) {
   return (
     <Tip label={props.tip} shortcut={props.shortcut}>

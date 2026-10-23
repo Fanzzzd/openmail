@@ -16,8 +16,10 @@ import {
   shortcutAction,
   shortcutText,
   shortcutAccelerator,
+  shortcutLabel,
   spaceShortcut,
   type KeyEvent,
+  type ShortcutSet,
 } from "./shortcuts";
 
 /** Accelerator tokens Electron parses: modifiers, single characters and named keys. */
@@ -463,4 +465,48 @@ it("Snooze has a key in every keymap: Gmail's b, and ⌃⌘Z in the Mac sets", (
     expect(shortcutAccelerator(set, "snooze")).toBe("Control+CommandOrControl+z");
   }
   expect(shortcutText("gmail", "snooze")).toBe("B");
+});
+
+it("aria-keyshortcuts names each action's keys in ARIA syntax", () => {
+  expect(shortcutLabel("mimestream", "archive", "MacIntel")).toEqual({
+    text: "⌃⌘A",
+    keys: "Control+Meta+A",
+  });
+  expect(shortcutLabel("mimestream", "compose", "MacIntel").keys).toBe("Meta+N");
+  expect(shortcutLabel("mimestream", "compose", "Win32").keys).toBe("Control+N");
+  expect(shortcutLabel("mimestream", "archive", "Win32").keys).toBe("Control+Meta+A");
+  expect(shortcutLabel("mimestream", "trash", "MacIntel").keys).toBe(
+    "Meta+Backspace Backspace Delete",
+  );
+  expect(shortcutLabel("mimestream", "toggleSidebar", "MacIntel").keys).toBe("Meta+Alt+Shift+S");
+  expect(shortcutLabel("mimestream", "zoomIn", "MacIntel").keys).toBe("Meta+Plus Meta+=");
+  expect(shortcutLabel("gmail", "archive", "MacIntel").keys).toBe("E");
+  expect(shortcutLabel("gmail", "markRead", "MacIntel").keys).toBe("Shift+I");
+  expect(shortcutLabel("mimestream", "select", "MacIntel")).toEqual({ text: "", keys: "" });
+});
+
+it("every aria-keyshortcuts stroke is a key event its action's handler takes", () => {
+  const keyOf = (name: string, shift: boolean) =>
+    ({ Space: " ", Plus: "+" })[name] ??
+    (/^[A-Z]$/.test(name) ? (shift ? name : name.toLowerCase()) : name);
+  for (const platform of ["MacIntel", "Win32"])
+    for (const set of ["mimestream", "apple", "gmail"] satisfies ShortcutSet[])
+      for (const action of Object.keys(KEYMAP[set]).filter(isShortcutAction)) {
+        const { keys } = shortcutLabel(set, action, platform);
+        for (const stroke of keys === "" ? [] : keys.split(" ")) {
+          const parts = stroke.split("+");
+          const name = parts.pop()!;
+          const shiftKey = parts.includes("Shift");
+          const pressed = event(keyOf(name, shiftKey), {
+            metaKey: parts.includes("Meta"),
+            ctrlKey: parts.includes("Control"),
+            altKey: parts.includes("Alt"),
+            shiftKey,
+          });
+          expect(
+            matchesShortcut(set, action, pressed),
+            `${set} ${action} ${stroke} ${platform}`,
+          ).toBe(true);
+        }
+      }
 });

@@ -7,14 +7,18 @@ import type { ReactNode } from "react";
 import type { Account, Mailbox, Profile } from "../../../../shared/api";
 import { PROFILE_BG } from "../../lib/format";
 import { prefsAtom } from "../../state/queries";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { spaceShortcutHint, strokesHint, useShortcutLabel } from "../../i18n/use-shortcut-text";
+import {
+  ALL_SPACES_STROKE,
+  OVERVIEW_STROKE,
+  type ShortcutLabel,
+} from "../../../../shared/shortcuts";
 import {
   ALL,
   MAILBOX_NAMES,
   OVERVIEW,
   type SpaceId,
   spaceAccounts,
-  spaceShortcutLabel,
   type View,
 } from "../../lib/view";
 import { MAILBOXES, mailboxItem, spaceItem, useMailboxCounts } from "./sidebar-mailboxes";
@@ -57,7 +61,7 @@ export function SidebarRail({
   onCompose,
 }: Props) {
   const { t, i18n } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   const prefs = AsyncResult.getOrElse(useAtomValue(prefsAtom), () => DEFAULT_PREFS);
   const counts = useMailboxCounts(view, accounts);
   const spaceUnread = (space: SpaceId) =>
@@ -126,7 +130,7 @@ export function SidebarRail({
             <RailButton
               item={spaceItem(OVERVIEW)}
               label={t`Overview`}
-              shortcut="⌃1"
+              shortcut={strokesHint([OVERVIEW_STROKE])}
               current={view.space === OVERVIEW || undefined}
               badge={0}
               onClick={() => onSpace(OVERVIEW)}
@@ -136,7 +140,7 @@ export function SidebarRail({
             <RailButton
               item={spaceItem(ALL)}
               label={t`All accounts`}
-              shortcut="⌃2"
+              shortcut={strokesHint([ALL_SPACES_STROKE])}
               current={view.space === ALL || undefined}
               badge={spaceUnread(ALL)}
               onClick={() => onSpace(ALL)}
@@ -148,7 +152,7 @@ export function SidebarRail({
                 key={p.id}
                 item={spaceItem(p.id)}
                 label={p.name}
-                shortcut={spaceShortcutLabel(prefs.shortcutSet, i)}
+                shortcut={spaceShortcutHint(prefs.shortcutSet, i)}
                 current={view.space === p.id || undefined}
                 badge={spaceUnread(p.id)}
                 onClick={() => onSpace(p.id)}
@@ -180,7 +184,7 @@ function RailButton({
   /** The `data-focus-key` the docked sidebar gives the same mailbox or space. */
   item: string;
   label: string;
-  shortcut?: string | undefined;
+  shortcut?: ShortcutLabel | undefined;
   current: "page" | true | undefined;
   badge: number;
   onClick: () => void;

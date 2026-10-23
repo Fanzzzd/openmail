@@ -286,7 +286,8 @@ export function primaryShortcutText(set: ShortcutSet, action: ShortcutAction): s
   const stroke = KEYMAP[set][action][0];
   return stroke ? strokeText(stroke) : "";
 }
-function strokeText(stroke: KeyStroke): string {
+/** A stroke in Mac glyphs, for example "⌃⌘A". */
+export function strokeText(stroke: KeyStroke): string {
   const symbol =
     {
       Enter: "↩",
@@ -302,13 +303,14 @@ function strokeText(stroke: KeyStroke): string {
   const shifted = /^[A-Z]$/.test(stroke.key);
   return `${stroke.control ? "⌃" : ""}${stroke.alt ? "⌥" : ""}${stroke.shift || shifted ? "⇧" : ""}${stroke.cmd ? "⌘" : ""}${symbol}`;
 }
+const isMac = (platform: string) => /Mac|darwin/i.test(platform);
 /** {@link shortcutText} on a Mac; elsewhere written out as Ctrl, Alt and Shift. */
 export function platformShortcutText(
   set: ShortcutSet,
   action: ShortcutAction,
   platform: string,
 ): string {
-  if (/Mac|darwin/i.test(platform)) return shortcutText(set, action);
+  if (isMac(platform)) return shortcutText(set, action);
   return KEYMAP[set][action]
     .map((stroke) =>
       [
@@ -320,6 +322,42 @@ export function platformShortcutText(
     )
     .join(" / ");
 }
+
+/** Key names that `aria-keyshortcuts` spells differently from KeyboardEvent.key. */
+const ARIA_KEYS: Record<string, string> = { " ": "Space", "+": "Plus" };
+/**
+ * A stroke in `aria-keyshortcuts` syntax, such as "Control+Meta+A". ⌘ is Meta on a Mac; elsewhere
+ * the handlers take Ctrl for it, so it reads Control there.
+ */
+function strokeKeys(stroke: KeyStroke, platform: string): string {
+  const mac = isMac(platform);
+  const name =
+    ARIA_KEYS[stroke.key] ?? (stroke.key.length === 1 ? stroke.key.toUpperCase() : stroke.key);
+  return [
+    ...(stroke.control || (stroke.cmd && !mac) ? ["Control"] : []),
+    ...(stroke.cmd && (mac || stroke.control) ? ["Meta"] : []),
+    ...(stroke.alt ? ["Alt"] : []),
+    ...(stroke.shift || /^[A-Z]$/.test(stroke.key) ? ["Shift"] : []),
+    name,
+  ].join("+");
+}
+/** A key combination as a tooltip shows it and as `aria-keyshortcuts` names it. */
+export interface ShortcutLabel {
+  /** Mac glyphs, for example "⌃⌘A". */
+  text: string;
+  /** Space-separated `aria-keyshortcuts` strokes, for example "Control+Meta+A". */
+  keys: string;
+}
+/** The label of these strokes, any of which does the same thing. */
+export function strokesLabel(strokes: readonly KeyStroke[], platform: string): ShortcutLabel {
+  return {
+    text: strokes.map(strokeText).join(" / "),
+    keys: strokes.map((stroke) => strokeKeys(stroke, platform)).join(" "),
+  };
+}
+/** An action's label, from the same keymap its handler matches. */
+export const shortcutLabel = (set: ShortcutSet, action: ShortcutAction, platform: string) =>
+  strokesLabel(KEYMAP[set][action], platform);
 /**
  * Keys whose DOM name differs from Electron's accelerator name. Electron rejects "ArrowRight"
  * as an invalid token and drops the menu shortcut, and a literal + would split the accelerator.
@@ -364,6 +402,17 @@ export const MENU_SHORTCUTS = {
 export type MenuShortcut = keyof typeof MENU_SHORTCUTS;
 export const menuShortcutText = (item: MenuShortcut) => strokeText(MENU_SHORTCUTS[item]);
 export const menuAccelerator = (item: MenuShortcut) => strokeAccelerator(MENU_SHORTCUTS[item]);
+
+/** ⌃1 opens the overview and ⌃2 All accounts in every set. */
+export const OVERVIEW_STROKE: KeyStroke = { key: "1", control: true };
+export const ALL_SPACES_STROKE: KeyStroke = { key: "2", control: true };
+/** The stroke that opens the space at `index` among the user's spaces, for the first nine. */
+export const spaceStroke = (set: string, index: number): KeyStroke | undefined =>
+  index < 9
+    ? set === "gmail"
+      ? cmd(String(index + 1))
+      : controlCmd(String(index + 1))
+    : undefined;
 
 /** Native sets use ⌃⌘1…9 for profiles, Gmail uses ⌘1…9. ⌃1/2 retain overview/all. */
 export function spaceShortcut(

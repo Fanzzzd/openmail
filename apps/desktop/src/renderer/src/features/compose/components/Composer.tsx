@@ -6,7 +6,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useComposeMessages } from "../hooks/use-compose-messages";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useComposeDraft } from "../hooks/use-compose-draft";
-import { useShortcutText } from "../../../i18n/use-shortcut-text";
+import { useShortcutLabel, useShortcutText } from "../../../i18n/use-shortcut-text";
 import { AsyncResult } from "effect/reactivity";
 import { useAtomSet, useAtomValue } from "@effect/atom-react";
 import { nativeComposeCapabilitiesAtom, threadAtom } from "../../../state/queries";
@@ -121,6 +121,7 @@ export function Composer({
   const { t, i18n } = useLingui();
   const { draft, setDraft, prefs } = useComposeDraft(initial);
   const shortcut = useShortcutText();
+  const shortcutLabel = useShortcutLabel();
   const nativeCapabilities = AsyncResult.getOrElse(
     useAtomValue(nativeComposeCapabilitiesAtom),
     () => ({ photos: false, continuity: false, grammar: false }),
@@ -369,7 +370,7 @@ export function Composer({
                   </span>
                 </button>
               )}
-              <Tip label={t`Close`} shortcut={shortcut("closeCompose")}>
+              <Tip label={t`Close`} shortcut={shortcutLabel("closeCompose")}>
                 <button
                   type="button"
                   aria-label={t`Close`}
@@ -526,7 +527,7 @@ export function Composer({
               ref={setFooter}
               className="sticky bottom-0 z-10 flex shrink-0 items-center gap-2 border-t border-separator bg-raised px-4 py-2.5"
             >
-              <Tip label={t`Send`} shortcut={shortcut("send")} side="top">
+              <Tip label={t`Send`} shortcut={shortcutLabel("send")} side="top">
                 <button
                   type="submit"
                   className={`h-7 shrink-0 rounded-control bg-blue-600 px-3.5 ${touchTarget} font-medium whitespace-nowrap text-white hover:bg-blue-700`}
@@ -535,7 +536,7 @@ export function Composer({
                 </button>
               </Tip>
               {replying && !compact && (
-                <Tip label={t`Send and archive`} shortcut={shortcut("sendArchive")} side="top">
+                <Tip label={t`Send and archive`} shortcut={shortcutLabel("sendArchive")} side="top">
                   <button
                     type="button"
                     onClick={() => submit(true)}
@@ -600,7 +601,7 @@ export function Composer({
                 draft={draft}
                 onInsert={insertTemplate}
                 bodyRef={bodyRef}
-                tip={{ label: t`Templates`, shortcut: shortcut("templates") }}
+                tip={{ label: t`Templates`, shortcut: shortcutLabel("templates") }}
                 anchor={compact ? footer : undefined}
                 trigger={
                   compact ? null : (

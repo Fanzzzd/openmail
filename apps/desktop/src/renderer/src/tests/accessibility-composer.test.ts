@@ -95,7 +95,7 @@ it("roves the one-row format toolbar and moves groups that do not fit into More 
             onCommand: vi.fn(),
             onLink: vi.fn(),
             more: null,
-            shortcut: () => "",
+            shortcutSet: "mimestream",
           }),
         ),
       ),

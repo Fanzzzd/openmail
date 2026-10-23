@@ -1,3 +1,4 @@
+import type { ShortcutLabel } from "../../../shared/shortcuts";
 import { useOpenSurface } from "./open-surfaces";
 import { useLingui } from "@lingui/react/macro";
 import { Popover } from "@base-ui/react/popover";
@@ -18,7 +19,7 @@ interface PopoverProps {
   /** Without a trigger, such as when a menu item opens it: the element it is placed against. */
   anchor?: ComponentProps<typeof Popover.Positioner>["anchor"];
   /** Tooltip on the trigger. */
-  tip?: { label: string; shortcut?: string };
+  tip?: { label: string; shortcut?: ShortcutLabel | undefined };
   side?: Side;
   finalFocus?: FinalFocus;
   className?: string;

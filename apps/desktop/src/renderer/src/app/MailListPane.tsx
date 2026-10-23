@@ -13,7 +13,7 @@ import { SearchField } from "../features/search/SearchField";
 import { filterSeedAtom } from "../features/settings/filter-seed";
 import { MailStatusNotice } from "../features/sync-status/MailStatusNotice";
 import { UndoHistory } from "../features/undo/UndoHistory";
-import { useShortcutText } from "../i18n/use-shortcut-text";
+import { useShortcutLabel } from "../i18n/use-shortcut-text";
 import { supportsInInboxFilter } from "../lib/folder-actions";
 import { accountName } from "../lib/format";
 import { isDesktop } from "../lib/platform";
@@ -79,7 +79,7 @@ export function MailListPane({
 }) {
   const { t } = useLingui();
   const run = useRunMail();
-  const shortcutText = useShortcutText();
+  const shortcutLabel = useShortcutLabel();
   const syncState = useAtomValue(syncStateAtom);
   const registry = useContext(RegistryContext);
   const setLabelCreation = useAtomSet(labelCreationAtom);
@@ -176,7 +176,7 @@ export function MailListPane({
       folderActions={
         <>
           {composeButton && (
-            <Tip label={t`New message`} shortcut={shortcutText("compose")}>
+            <Tip label={t`New message`} shortcut={shortcutLabel("compose")}>
               <button
                 type="button"
                 aria-label={t`New message`}

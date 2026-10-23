@@ -1,4 +1,6 @@
-import { ALL, OVERVIEW, spaceShortcutLabel, type SpaceId } from "../../lib/view";
+import { ALL, OVERVIEW, type SpaceId } from "../../lib/view";
+import { spaceShortcutHint, strokesHint } from "../../i18n/use-shortcut-text";
+import { ALL_SPACES_STROKE, OVERVIEW_STROKE } from "../../../../shared/shortcuts";
 import { spaceItem } from "./sidebar-mailboxes";
 import type { Profile } from "../../../../shared/api";
 import { useLingui } from "@lingui/react/macro";
@@ -48,7 +50,7 @@ export function SpaceSwitcher({
       aria-label={t`Spaces`}
       className="flex items-center gap-1 overflow-x-auto border-t border-separator px-2.5 py-2"
     >
-      <Tip label={t`Overview`} shortcut="⌃1" side="top">
+      <Tip label={t`Overview`} shortcut={strokesHint([OVERVIEW_STROKE])} side="top">
         <Toolbar.Button
           aria-label={t`Overview`}
           data-focus-key={spaceItem(OVERVIEW)}
@@ -59,7 +61,7 @@ export function SpaceSwitcher({
           <LayoutGrid className="size-4" />
         </Toolbar.Button>
       </Tip>
-      <Tip label={t`All accounts`} shortcut="⌃2" side="top">
+      <Tip label={t`All accounts`} shortcut={strokesHint([ALL_SPACES_STROKE])} side="top">
         <Toolbar.Button
           aria-label={t`All accounts`}
           data-focus-key={spaceItem(ALL)}
@@ -94,7 +96,7 @@ export function SpaceSwitcher({
           }
         >
           {profiles.map((p, i) => (
-            <Tip key={p.id} label={p.name} shortcut={spaceShortcutLabel(shortcutSet, i)} side="top">
+            <Tip key={p.id} label={p.name} shortcut={spaceShortcutHint(shortcutSet, i)} side="top">
               <Toolbar.Button
                 aria-label={p.name}
                 data-focus-key={spaceItem(p.id)}

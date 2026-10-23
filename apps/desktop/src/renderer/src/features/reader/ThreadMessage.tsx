@@ -1,5 +1,5 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useShortcutText } from "../../i18n/use-shortcut-text";
+import { useShortcutLabel, useShortcutText } from "../../i18n/use-shortcut-text";
 import {
   AppWindow,
   ChevronDown,
@@ -57,7 +57,7 @@ export function ReplyBar({
   onCompose: (mode: "reply" | "replyAll" | "forward", attachment?: boolean) => void;
 }) {
   const { t } = useLingui();
-  const shortcut = useShortcutText();
+  const shortcut = useShortcutLabel();
   const actions = [
     { mode: "reply", icon: Reply, label: t`Reply` },
     { mode: "replyAll", icon: ReplyAll, label: t`Reply all` },

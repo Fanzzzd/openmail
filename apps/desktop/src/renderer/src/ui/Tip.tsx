@@ -1,5 +1,6 @@
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ComponentProps, ReactElement, ReactNode } from "react";
+import type { ShortcutLabel } from "../../../shared/shortcuts";
 
 const DELAY_MS = 500;
 
@@ -10,8 +11,11 @@ export function TipProvider({ children }: { children: ReactNode }) {
 
 interface Props {
   label: ReactNode;
-  /** Shown after the label, for example "⌘N". Not translated. */
-  shortcut?: string | undefined;
+  /**
+   * Shown after the label, for example "⌘N", and given to the trigger as `aria-keyshortcuts`,
+   * since screen readers skip the tooltip. Not translated.
+   */
+  shortcut?: ShortcutLabel | undefined;
   side?: ComponentProps<typeof Tooltip.Positioner>["side"];
   /** The trigger. Icon-only triggers keep their own aria-label. */
   children: ReactElement;
@@ -21,7 +25,11 @@ interface Props {
 export function Tip({ label, shortcut, side = "bottom", children }: Props) {
   return (
     <Tooltip.Root>
-      <Tooltip.Trigger delay={DELAY_MS} render={children} />
+      <Tooltip.Trigger
+        delay={DELAY_MS}
+        render={children}
+        aria-keyshortcuts={shortcut?.keys || undefined}
+      />
       <Tooltip.Portal>
         {/* Base UI tooltips are visual only: the trigger carries the name, and no aria-describedby
             points here. Screen readers skip the copy, so it is not page content outside a
@@ -29,9 +37,9 @@ export function Tip({ label, shortcut, side = "bottom", children }: Props) {
         <Tooltip.Positioner aria-hidden side={side} sideOffset={6} className="z-[70]">
           <Tooltip.Popup className="no-drag flex max-w-72 items-center gap-2 rounded-control bg-overlay px-2 py-1 text-footnote text-neutral-700 shadow-popup transition-opacity duration-100 data-ending-style:opacity-0 data-instant:transition-none data-starting-style:opacity-0 motion-reduce:transition-none dark:bg-neutral-700 dark:text-neutral-100">
             <span>{label}</span>
-            {shortcut && (
+            {shortcut?.text && (
               <kbd className="rounded-item bg-fill-hover px-1 font-sans text-caption text-a11y-muted dark:text-neutral-300">
-                {shortcut}
+                {shortcut.text}
               </kbd>
             )}
           </Tooltip.Popup>

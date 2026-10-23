@@ -3,6 +3,7 @@ import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 
 import type { Account, Mailbox } from "../../../shared/api";
+import { spaceStroke, strokeText } from "../../../shared/shortcuts";
 
 /** "overview", "all", or a profile id. Spaces switch like Arc spaces. */
 export type SpaceId = string;
@@ -88,5 +89,6 @@ export function categoryAccounts(view: View, accounts: readonly Account[]): read
 
 /** The shortcut that opens the space at `index` among the user's spaces, for the first nine. */
 export function spaceShortcutLabel(shortcutSet: string, index: number) {
-  return index < 9 ? `${shortcutSet === "gmail" ? "⌘" : "⌃⌘"}${index + 1}` : undefined;
+  const stroke = spaceStroke(shortcutSet, index);
+  return stroke && strokeText(stroke);
 }

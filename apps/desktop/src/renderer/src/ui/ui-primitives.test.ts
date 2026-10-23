@@ -10,6 +10,8 @@ import { ConfirmHost, confirmDialog, confirmOpen } from "./Confirm";
 import { Disclosure } from "./Disclosure";
 import { Select } from "./Select";
 import { ProgressBar } from "./Progress";
+import { Tip, TipProvider } from "./Tip";
+import { shortcutLabel } from "../../../shared/shortcuts";
 
 afterEach(cleanup);
 const localized = (node: ReactNode) =>
@@ -139,4 +141,25 @@ it("confirmDialog replaces window.confirm: Cancel has focus, Escape cancels, con
   await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
   expect(confirmOpen()).toBe(false);
   opener.remove();
+});
+
+it("Tip gives its trigger the shortcut as aria-keyshortcuts, since screen readers skip the tooltip", () => {
+  render(
+    h(
+      TipProvider,
+      null,
+      h(Tip, {
+        label: "Archive",
+        shortcut: shortcutLabel("mimestream", "archive", "MacIntel"),
+        children: h("button", { type: "button" }, "Archive"),
+      }),
+      h(Tip, { label: "Edit space", children: h("button", { type: "button" }, "Edit space") }),
+    ),
+  );
+  expect(screen.getByRole("button", { name: "Archive" }).getAttribute("aria-keyshortcuts")).toBe(
+    "Control+Meta+A",
+  );
+  expect(screen.getByRole("button", { name: "Edit space" }).hasAttribute("aria-keyshortcuts")).toBe(
+    false,
+  );
 });

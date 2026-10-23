@@ -20,7 +20,8 @@ import {
   Underline,
 } from "lucide-react";
 import { type ComponentType, type ReactNode, useRef, useState } from "react";
-import type { ShortcutAction } from "../../../../../shared/shortcuts";
+import type { ShortcutAction, ShortcutSet } from "../../../../../shared/shortcuts";
+import { shortcutHint, shortcutLabelHint } from "../../../i18n/use-shortcut-text";
 import type { FormatAction } from "../compose-format-dom";
 import { useElementWidth } from "../../../lib/use-element-width";
 import { KeyboardToolbar } from "../../../ui/KeyboardToolbar";
@@ -60,7 +61,7 @@ interface Props {
   onLink: () => void;
   /** Editor items after the formatting groups in "More formatting". */
   more: ReactNode;
-  shortcut: (action: ShortcutAction) => string;
+  shortcutSet: ShortcutSet;
 }
 
 /** One formatting command, shown as a toolbar button when it fits and as a menu item otherwise. */
@@ -86,7 +87,7 @@ export function ComposeToolbar({
   onCommand,
   onLink,
   more,
-  shortcut,
+  shortcutSet,
 }: Props) {
   const { t } = useLingui();
   const ref = useRef<HTMLDivElement>(null);
@@ -138,7 +139,7 @@ export function ComposeToolbar({
   const quote = format(t`Increase quote level`, "quoteIncrease", TextQuote);
 
   const toolButton = ({ label, icon: Icon, run, shortcut: action }: Command) => (
-    <Tip key={label} label={label} shortcut={action && shortcut(action)}>
+    <Tip key={label} label={label} shortcut={action && shortcutLabelHint(shortcutSet, action)}>
       <button
         type="button"
         disabled={disabled}
@@ -152,7 +153,12 @@ export function ComposeToolbar({
     </Tip>
   );
   const menuItem = ({ label, run, shortcut: action }: Command) => (
-    <MenuItem key={label} disabled={disabled} shortcut={action && shortcut(action)} onClick={run}>
+    <MenuItem
+      key={label}
+      disabled={disabled}
+      shortcut={action && shortcutHint(shortcutSet, action)}
+      onClick={run}
+    >
       {label}
     </MenuItem>
   );

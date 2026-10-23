@@ -456,7 +456,7 @@ export function ComposeEditor({
           onStyle={style}
           onCommand={command}
           onLink={openLink}
-          shortcut={shortcut}
+          shortcutSet={shortcutSet}
           leading={
             <>
               <Select

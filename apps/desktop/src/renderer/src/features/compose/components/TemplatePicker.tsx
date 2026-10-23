@@ -1,3 +1,4 @@
+import type { ShortcutLabel } from "../../../../../shared/shortcuts";
 import { useState, type ReactElement, type RefObject } from "react";
 import { parseAddresses, type Draft } from "../draft";
 import type { Template } from "../../../../../shared/api";
@@ -34,7 +35,7 @@ export function TemplatePicker({
   /** Null when a menu item opens it; it then sits against `anchor`. */
   trigger: ReactElement | null;
   anchor?: Element | null | undefined;
-  tip: { label: string; shortcut: string };
+  tip: { label: string; shortcut: ShortcutLabel | undefined };
   draft: Draft;
   onInsert: (t: Template) => void;
   bodyRef: RefObject<ComposeElement | null>;
