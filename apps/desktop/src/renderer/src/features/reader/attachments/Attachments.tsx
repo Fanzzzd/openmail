@@ -31,6 +31,7 @@ import { OpenWithSubmenu } from "./OpenWithMenu";
 import type { Notify } from "../notify";
 import { LazyEmailFrame } from "../body/MessageBodyShell";
 import { DropdownMenu, MenuItem } from "../../../ui/Menu";
+import { Checkbox } from "../../../ui/Checkbox";
 import { touchIcon } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 import { Heading } from "../../../ui/Heading";
@@ -350,17 +351,13 @@ export function AttachmentList({
               className={`flex h-8 coarse:h-11 max-w-[min(20rem,100%)] items-center rounded-control border text-body ${hit ? "border-amber-500 bg-amber-500/10" : "border-edge"}`}
               title={hit ? hit.snippet : undefined}
             >
-              <input
-                type="checkbox"
+              <Checkbox
                 aria-label={t`Select ${file.filename}`}
-                checked={selected.has(pathKey(file.path))}
-                onChange={(event) =>
-                  toggle(
-                    file,
-                    event.nativeEvent instanceof MouseEvent && event.nativeEvent.shiftKey,
-                  )
-                }
                 className="ml-2"
+                checked={selected.has(pathKey(file.path))}
+                onCheckedChange={(_, event) =>
+                  toggle(file, event instanceof MouseEvent && event.shiftKey)
+                }
               />
               <button
                 type="button"

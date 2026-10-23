@@ -22,6 +22,7 @@ import { Proposals } from "./lazy";
 import { openAiSettings } from "./open-ai-settings";
 import { isDesktop } from "../../lib/platform";
 import { Dialog } from "../../ui/Dialog";
+import { Checkbox } from "../../ui/Checkbox";
 import { buttonLink, buttonPrimary, buttonSecondary, formInput } from "../../ui/styles";
 import { citedParts } from "./citations";
 
@@ -440,24 +441,25 @@ export function Assistant({
             <AiAccessLink onOpen={() => setOpen(false)} />
           </p>
         )}
-        {eligible.map((account) => (
-          <label key={account.id} className="mr-4 inline-flex items-center gap-2">
-            <input
-              type="checkbox"
-              className="size-3.5 accent-blue-600"
-              checked={ids.includes(account.id)}
-              disabled={result.status === "running"}
-              onChange={(event) =>
-                setSelected((previous) =>
-                  event.target.checked
-                    ? [...previous, account.id]
-                    : previous.filter((id) => id !== account.id),
-                )
-              }
-            />
-            {account.email}
-          </label>
-        ))}
+        {eligible.length > 0 && (
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5">
+            {eligible.map((account) => (
+              <Checkbox
+                key={account.id}
+                label={account.email}
+                checked={ids.includes(account.id)}
+                disabled={result.status === "running"}
+                onCheckedChange={(checked) =>
+                  setSelected((previous) =>
+                    checked
+                      ? [...previous, account.id]
+                      : previous.filter((id) => id !== account.id),
+                  )
+                }
+              />
+            ))}
+          </div>
+        )}
         <form
           onSubmit={(event) => {
             event.preventDefault();

@@ -42,6 +42,7 @@ import { useRunMail } from "../../state/mail";
 import { searchScopeAtom } from "../../state/ui";
 import { labelsAtom, suggestionsAtom } from "../../state/queries";
 import { listQueryAtom } from "../../state/threads";
+import { DateInput } from "../../ui/DateInput";
 import { DropdownMenu, MenuItem, MenuSeparator } from "../../ui/Menu";
 
 import { useOpenSurface } from "../../ui/open-surfaces";
@@ -440,12 +441,13 @@ export function SearchField({
         </Tip>
       )}
       {dateTarget && (
-        <input
+        <DateInput
           type="date"
+          variant="inline"
           aria-label={
             dateTarget.operator.replace(/^-/, "") === "before:" ? t`Before date` : t`After date`
           }
-          className="w-32 rounded-item border border-edge bg-transparent px-1 text-footnote"
+          className="w-32"
           min="1970-01-01"
           max="9999-12-31"
           onBlur={(event) => commitDate(event.currentTarget.value)}

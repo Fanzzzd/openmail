@@ -16,7 +16,7 @@ import {
   type ServerFilter,
 } from "@openmail/core/schema";
 import { categoryNames, importanceNames } from "../../../i18n/organization-labels";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import {
   applyFilterAtom,
@@ -42,6 +42,7 @@ import {
 } from "../../../ui/styles";
 import { Select } from "../../../ui/Select";
 import { Checkbox } from "../../../ui/Checkbox";
+import { NumberField } from "../../../ui/NumberField";
 import { Disclosure } from "../../../ui/Disclosure";
 import { OutlookPredicatesEditor } from "./OutlookPredicatesEditor";
 import { resultError, settingsScopeMissing } from "../../../lib/errors";
@@ -74,6 +75,7 @@ export function FilterEditor({
   onClose: () => void;
 }) {
   const { t, i18n } = useLingui();
+  const sizeId = useId();
   const categories = categoryNames(t);
   const importance = importanceNames(t);
   const [input, setInput] = useState<FilterInput>(() => {
@@ -268,23 +270,24 @@ export function FilterEditor({
               onValueChange={(sizeComparison) => criteria({ sizeComparison })}
             />
           </div>
-          <label className="block">
-            <span className={fieldLabel}>{t`Size in bytes`}</span>
-            <input
-              type="number"
-              min="0"
-              step={String(rules?.sizeStep ?? 1)}
-              className={formInput}
+          <div>
+            <label htmlFor={sizeId} className={fieldLabel}>
+              {t`Size in bytes`}
+            </label>
+            <NumberField
+              id={sizeId}
+              min={0}
+              step={rules?.sizeStep ?? 1}
               disabled={!!input.criteria.outlook?.withinSizeRange}
-              value={input.criteria.size ?? ""}
-              onChange={(e) =>
+              value={input.criteria.size ?? null}
+              onValueChange={(size) =>
                 criteria({
-                  size: e.target.value ? Number(e.target.value) : undefined,
+                  size: size ?? undefined,
                   sizeComparison: input.criteria.sizeComparison ?? "larger",
                 })
               }
             />
-          </label>
+          </div>
         </div>
         <label className="flex items-center gap-2">
           <Checkbox

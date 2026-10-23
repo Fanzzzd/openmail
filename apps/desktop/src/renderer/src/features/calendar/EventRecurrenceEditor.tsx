@@ -11,8 +11,10 @@ import {
   type EventRecurrence,
 } from "@openmail/core/schema";
 import { ORDINAL_LABELS, recurrenceSummary } from "./recurrence-summary";
-import { formInput } from "../../ui/form-styles";
+import { DateInput } from "../../ui/DateInput";
+import { NumberField } from "../../ui/NumberField";
 import { Select } from "../../ui/Select";
+import { ToggleButtons } from "../../ui/ToggleButtons";
 
 type Pattern = EventRecurrence["pattern"];
 type Ending = EventRecurrence["ending"];
@@ -50,46 +52,58 @@ function PatternFields({
   const dayName = (value: typeof RecurrenceWeekday.Type) =>
     recurrenceWeekdayName(value, i18n.locale);
   const ordinalName = (ordinal: typeof Ordinal.Type) => i18n._(ORDINAL_LABELS[ordinal]);
-  const ids = { position: useId(), weekday: useId() };
+  const ids = {
+    interval: useId(),
+    day: useId(),
+    month: useId(),
+    position: useId(),
+    weekday: useId(),
+  };
   return (
     <>
       <div className="grid grid-cols-2 gap-2">
-        <label>
-          {t`Interval`}
-          <input
-            className={formInput}
-            type="number"
-            min="1"
-            max="2147483647"
-            value={pattern.interval}
-            onChange={(e) => updatePattern({ ...pattern, interval: Number(e.target.value) })}
-          />
-        </label>
-        {(pattern.kind === "monthly-date" || pattern.kind === "yearly-date") && (
-          <label>
-            {t`Day of month`}
-            <input
-              className={formInput}
-              type="number"
-              min="1"
-              max="31"
-              value={pattern.day}
-              onChange={(e) => updatePattern({ ...pattern, day: Number(e.target.value) })}
-            />
+        <div className="space-y-1">
+          <label htmlFor={ids.interval} className="block">
+            {t`Interval`}
           </label>
+          <NumberField
+            id={ids.interval}
+            min={1}
+            max={2147483647}
+            disabled={disabled}
+            value={pattern.interval}
+            onValueChange={(interval) => updatePattern({ ...pattern, interval: interval ?? 0 })}
+          />
+        </div>
+        {(pattern.kind === "monthly-date" || pattern.kind === "yearly-date") && (
+          <div className="space-y-1">
+            <label htmlFor={ids.day} className="block">
+              {t`Day of month`}
+            </label>
+            <NumberField
+              id={ids.day}
+              min={1}
+              max={31}
+              disabled={disabled}
+              value={pattern.day}
+              onValueChange={(day) => updatePattern({ ...pattern, day: day ?? 0 })}
+            />
+          </div>
         )}
         {(pattern.kind === "yearly-date" || pattern.kind === "yearly-weekday") && (
-          <label>
-            {t`Month`}
-            <input
-              className={formInput}
-              type="number"
-              min="1"
-              max="12"
+          <div className="space-y-1">
+            <label htmlFor={ids.month} className="block">
+              {t`Month`}
+            </label>
+            <NumberField
+              id={ids.month}
+              min={1}
+              max={12}
+              disabled={disabled}
               value={pattern.month}
-              onChange={(e) => updatePattern({ ...pattern, month: Number(e.target.value) })}
+              onValueChange={(month) => updatePattern({ ...pattern, month: month ?? 0 })}
             />
-          </label>
+          </div>
         )}
         {(pattern.kind === "monthly-weekday" || pattern.kind === "yearly-weekday") && (
           <>
@@ -128,25 +142,13 @@ function PatternFields({
         )}
       </div>
       {pattern.kind === "weekly" && (
-        <div className="flex flex-wrap gap-2">
-          {weekdays.map((d) => (
-            <label key={d} className="flex items-center gap-1">
-              <input
-                type="checkbox"
-                checked={pattern.weekdays.includes(d)}
-                onChange={(e) =>
-                  updatePattern({
-                    ...pattern,
-                    weekdays: e.target.checked
-                      ? weekdays.filter((day) => day === d || pattern.weekdays.includes(day))
-                      : pattern.weekdays.filter((day) => day !== d),
-                  })
-                }
-              />
-              {dayName(d)}
-            </label>
-          ))}
-        </div>
+        <ToggleButtons
+          aria-label={t`Repeat on`}
+          disabled={disabled}
+          options={weekdays.map((d) => ({ value: d, label: dayName(d) }))}
+          value={pattern.weekdays}
+          onValueChange={(next) => updatePattern({ ...pattern, weekdays: next })}
+        />
       )}
     </>
   );
@@ -163,7 +165,7 @@ function EndingFields({
   disabled: boolean;
 }) {
   const { t } = useLingui();
-  const ids = { ends: useId() };
+  const ids = { ends: useId(), count: useId(), until: useId() };
   return (
     <>
       <div className="space-y-1">
@@ -197,29 +199,34 @@ function EndingFields({
         />
       </div>
       {ending.kind === "count" && (
-        <label className="block">
-          {t`Occurrences`}
-          <input
-            className={formInput}
-            type="number"
-            min="1"
-            max="2147483647"
+        <div className="space-y-1">
+          <label htmlFor={ids.count} className="block">
+            {t`Occurrences`}
+          </label>
+          <NumberField
+            id={ids.count}
+            min={1}
+            max={2147483647}
+            disabled={disabled}
             value={ending.count}
-            onChange={(e) => onChange({ kind: "count", count: Number(e.target.value) })}
+            onValueChange={(count) => onChange({ kind: "count", count: count ?? 0 })}
           />
-        </label>
+        </div>
       )}
       {ending.kind === "until" && (
-        <label className="block">
-          {t`Repeat end date`}
-          <input
-            className={formInput}
+        <div className="space-y-1">
+          <label htmlFor={ids.until} className="block">
+            {t`Repeat end date`}
+          </label>
+          <DateInput
+            id={ids.until}
             type="date"
             min={date}
+            disabled={disabled}
             value={ending.date}
-            onChange={(e) => onChange({ kind: "until", date: e.target.value })}
+            onValueChange={(value) => onChange({ kind: "until", date: value })}
           />
-        </label>
+        </div>
       )}
     </>
   );

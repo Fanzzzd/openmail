@@ -6078,6 +6078,10 @@ msgid "Repeat end date"
 msgstr "Fecha de fin de repetición"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
+msgid "Repeat on"
+msgstr "Repetir los"
+
+#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat pattern"
 msgstr "Patrón de repetición"
 

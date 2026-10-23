@@ -6088,6 +6088,10 @@ msgid "Repeat end date"
 msgstr "重复截止日期"
 
 #: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
+msgid "Repeat on"
+msgstr "重复于"
+
+#: src/renderer/src/features/calendar/EventRecurrenceEditor.tsx
 msgid "Repeat pattern"
 msgstr "重复规则"
 

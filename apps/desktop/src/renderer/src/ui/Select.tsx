@@ -4,7 +4,14 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { useOpenSurface } from "./open-surfaces";
-import { itemClass, popupMotion, popupOffset, popupSurface } from "./styles";
+import {
+  itemClass,
+  popUpChevrons,
+  popUpField,
+  popupMotion,
+  popupOffset,
+  popupSurface,
+} from "./styles";
 
 interface SelectOption<T extends string> {
   value: T;
@@ -30,8 +37,8 @@ interface Props<T extends string> {
   /** Classes for the current label in the button, e.g. to hide it in a narrow container. */
   valueClassName?: string;
   /**
-   * "inline" is a borderless pop-up button for toolbars and setting rows.
-   * "field" is a control with the 3:1 control boundary, like text inputs in forms.
+   * "inline" is a borderless pop-up button for toolbars and setting rows, as in System Settings.
+   * "field" is the AppKit pop-up button for forms: a bezel with the accent chevron box.
    */
   variant?: "inline" | "field";
   /**
@@ -44,8 +51,7 @@ interface Props<T extends string> {
 const triggerStyles = {
   inline:
     "h-7 gap-2 rounded-control px-1.5 -mx-1.5 outline-offset-0 not-data-disabled:hover:bg-fill-hover focus-visible:outline-[3px] data-popup-open:bg-fill-pressed",
-  field:
-    "h-7 justify-between gap-2 rounded-control bg-white px-2.5 shadow-control ring-1 ring-control outline-offset-1 not-data-disabled:hover:bg-neutral-50 focus-visible:outline-2 data-disabled:opacity-50 data-popup-open:ring-blue-600/60 dark:bg-white/[0.08] dark:not-data-disabled:hover:bg-white/[0.12]",
+  field: popUpField,
 } as const;
 
 /**
@@ -91,11 +97,15 @@ export function Select<T extends string>({
         <BaseSelect.Value
           className={`min-w-0 truncate ${variant === "field" ? "flex-1" : ""} ${valueClassName}`}
         />
-        <BaseSelect.Icon
-          className={`shrink-0 text-a11y-muted ${variant === "inline" ? "group-data-disabled:hidden" : ""}`}
-        >
-          <ChevronsUpDown className="size-3.5" />
-        </BaseSelect.Icon>
+        {variant === "field" ? (
+          <BaseSelect.Icon className={popUpChevrons}>
+            <ChevronsUpDown className="size-3" strokeWidth={2.5} />
+          </BaseSelect.Icon>
+        ) : (
+          <BaseSelect.Icon className="shrink-0 text-a11y-muted group-data-disabled:hidden">
+            <ChevronsUpDown className="size-3.5" />
+          </BaseSelect.Icon>
+        )}
       </BaseSelect.Trigger>
       <BaseSelect.Portal>
         <BaseSelect.Positioner

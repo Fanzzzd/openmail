@@ -1,5 +1,5 @@
 import { useAtom, useAtomMount, useAtomSet, useAtomValue } from "@effect/atom-react";
-import { Switch } from "@base-ui/react/switch";
+import { Switch } from "../../../ui/Switch";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Copy, RefreshCw, X } from "lucide-react";
 import createQrCode from "qrcode-generator";
@@ -22,14 +22,7 @@ import {
 } from "../../../state/remote-access";
 import { Disclosure } from "../../../ui/Disclosure";
 import { SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
-import {
-  buttonLink,
-  buttonSecondary,
-  formInput,
-  settingsHint,
-  switchThumb,
-  switchTrack,
-} from "../../../ui/styles";
+import { buttonLink, buttonSecondary, formInput, settingsHint } from "../../../ui/styles";
 
 const DOWNLOAD_URL = "https://tailscale.com/download";
 const ADMIN_DNS_URL = "https://login.tailscale.com/admin/dns";
@@ -415,15 +408,12 @@ export function RemoteAccessSettings() {
             )
           }
         >
-          <Switch.Root
-            className={switchTrack}
+          <Switch
             checked={on}
             disabled={view.status === "starting" || (!on && !view.tailscale.installed)}
             aria-label={t`Allow access from my tailnet`}
             onCheckedChange={(enabled) => toggle({ payload: { enabled } })}
-          >
-            <Switch.Thumb className={switchThumb} />
-          </Switch.Root>
+          />
         </SettingsRow>
         {view.status === "on" && view.url && <Address url={view.url} />}
       </SettingsGroup>

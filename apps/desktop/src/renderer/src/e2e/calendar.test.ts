@@ -72,7 +72,7 @@ it("confirmation edits dates and multi-weekday recurrence through RPC with a rea
   });
   await choose("Repeat pattern", "Weekly");
   fireEvent.change(screen.getByLabelText("Interval"), { target: { value: "2" } });
-  fireEvent.click(screen.getByRole("checkbox", { name: "Wed" }));
+  fireEvent.click(screen.getByRole("button", { name: "Wed" }));
   await choose("Ends", "On a date");
   fireEvent.change(screen.getByLabelText("Repeat end date"), { target: { value: "2026-12-31" } });
   expect(screen.getByText("Every 2 weeks on Mon & Wed until Dec 31, 2026")).toBeTruthy();
@@ -185,7 +185,7 @@ it("changing the start flags the rule mismatch and leaves the editor available t
     screen.getByLabelText("Repeat pattern").closest("fieldset")?.hasAttribute("disabled"),
   ).toBe(false);
   expect(h.requests.some((request) => request.tag === "CreateCalendarEvent")).toBe(false);
-  fireEvent.click(screen.getByRole("checkbox", { name: "Tue" }));
+  fireEvent.click(screen.getByRole("button", { name: "Tue" }));
   expect(
     screen.getByRole("button", { name: "Confirm and add event" }).hasAttribute("disabled"),
   ).toBe(false);

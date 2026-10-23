@@ -10,6 +10,7 @@ import { setAccountSettingsAtom } from "../../../state/mutations";
 import { profilesAtom } from "../../../state/queries";
 import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
+import { ColorWell } from "../../../ui/ColorWell";
 import { buttonLink, formInput, settingsHint } from "../../../ui/styles";
 
 /** A small borderless button for secondary actions inside an account row. */
@@ -89,13 +90,7 @@ export function AccountControls({
           <Checkbox checked={customColor} onCheckedChange={setCustomColor} />
           <Trans>Custom color</Trans>
           {customColor && (
-            <input
-              aria-label={t`Account color`}
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="h-5 w-7 cursor-default rounded-item"
-            />
+            <ColorWell aria-label={t`Account color`} value={color} onValueChange={setColor} />
           )}
         </label>
       </div>

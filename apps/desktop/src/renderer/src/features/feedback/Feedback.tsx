@@ -12,7 +12,8 @@ import { useCopyText } from "../../state/clipboard";
 import { useRunMail, withMail } from "../../state/mail";
 import { Alert, AlertCancel, alertPrimary } from "../../ui/Dialog";
 import { Select } from "../../ui/Select";
-import { buttonLink, buttonSecondary } from "../../ui/styles";
+import { Checkbox } from "../../ui/Checkbox";
+import { buttonLink, buttonSecondary, formInput } from "../../ui/styles";
 
 /** How long Copy diagnostics says Copied. */
 const COPIED_FOR_MS = 2000;
@@ -100,7 +101,7 @@ export function Feedback({
           <Trans>Feedback address</Trans>
           <input
             aria-label={t`Feedback address`}
-            className="my-1 block w-full rounded border p-2 border-separator"
+            className={`my-1 block h-8 ${formInput}`}
             type="email"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
@@ -125,20 +126,18 @@ export function Feedback({
         </div>
         <textarea
           aria-label={t`Feedback`}
-          className="my-2 w-full rounded border p-2 border-separator"
+          className={`my-2 min-h-20 resize-y py-1.5 ${formInput}`}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder={t`Describe what happened`}
         />
-        <label className="flex items-center gap-2 text-callout">
-          <input
-            type="checkbox"
-            checked={attach}
-            disabled={!preview}
-            onChange={(e) => setAttach(e.target.checked)}
-          />
-          <Trans>Attach the redacted diagnostics shown below</Trans>
-        </label>
+        <Checkbox
+          className="text-callout"
+          label={<Trans>Attach the redacted diagnostics shown below</Trans>}
+          checked={attach}
+          disabled={!preview}
+          onCheckedChange={setAttach}
+        />
         {preview === false ? (
           <div
             role="alert"

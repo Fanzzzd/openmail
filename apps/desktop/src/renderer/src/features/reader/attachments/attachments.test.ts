@@ -257,7 +257,7 @@ it("marks the matching attachment index and escapes snippet text", () => {
     expect(
       dom.element
         .querySelector(".border-amber-500")
-        ?.querySelector("input")
+        ?.querySelector('[role="checkbox"]')
         ?.getAttribute("aria-label"),
     ).toBe("Select same.pdf");
     expect(dom.element.querySelector("mark")?.textContent).toBe("amount");

@@ -2,8 +2,6 @@ import { useAtom } from "@effect/atom-react";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Radio } from "@base-ui/react/radio";
-import { RadioGroup } from "@base-ui/react/radio-group";
 import { PROFILE_COLORS } from "@openmail/core/schema";
 import { Exit } from "effect";
 import { useId, useState } from "react";
@@ -20,6 +18,7 @@ import {
 import { Keys } from "../../state/keys";
 import { deleteProfileAtom, saveProfileAtom } from "../../state/mutations";
 import { Checkbox } from "../../ui/Checkbox";
+import { RadioGroup, RadioTile } from "../../ui/Radio";
 import { Dialog } from "../../ui/Dialog";
 import { buttonPrimary, buttonSecondary, formInput, settingsGroup } from "../../ui/styles";
 
@@ -139,13 +138,13 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
               className="flex items-center gap-1"
             >
               {ICONS.map((i) => (
-                <Radio.Root
+                <RadioTile
                   key={i}
                   value={i}
                   className="flex size-8 items-center justify-center rounded-control text-title outline-offset-1 outline-a11y-focus transition-colors duration-100 hover:bg-fill-hover focus-visible:outline-2 data-checked:bg-fill-pressed data-checked:ring-2 data-checked:ring-neutral-900 dark:ring-1 dark:ring-white/20 dark:not-data-checked:bg-white/[0.08] dark:data-checked:ring-2 dark:data-checked:ring-white motion-reduce:transition-none"
                 >
                   {i}
-                </Radio.Root>
+                </RadioTile>
               ))}
             </RadioGroup>
             <div className="ml-1 w-14 shrink-0">
@@ -173,7 +172,7 @@ export function ProfileEditor({ profile, accounts, profiles, onClose, onSaved, o
             className="flex gap-2.5 px-1 py-1"
           >
             {PROFILE_COLORS.map((c) => (
-              <Radio.Root
+              <RadioTile
                 key={c}
                 value={c}
                 aria-label={i18n._(COLOR_NAMES[c])}

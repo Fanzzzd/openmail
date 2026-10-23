@@ -29,14 +29,14 @@ it("the crash report says when diagnostics fail, retries them, and can continue 
     expect(screen.getByText(/^Couldn't load diagnostics\./).closest('[role="alert"]')).toBeTruthy(),
   );
   expect(screen.getByRole("alertdialog", { name: "OpenMail stopped unexpectedly" })).toBeTruthy();
-  expect(checkbox()).toHaveProperty("disabled", true);
+  expect(checkbox().getAttribute("aria-disabled")).toBe("true");
   // Continuing without the attachment stays possible.
   expect(continueButton()).toHaveProperty("disabled", false);
   fireEvent.click(screen.getByRole("button", { name: "Try again" }));
   await eventually(() =>
     expect(screen.getByLabelText("Diagnostics preview").textContent).toContain("snapshot"),
   );
-  expect(checkbox()).toHaveProperty("disabled", false);
+  expect(checkbox().hasAttribute("aria-disabled")).toBe(false);
   expect(calls).toBe(2);
 });
 

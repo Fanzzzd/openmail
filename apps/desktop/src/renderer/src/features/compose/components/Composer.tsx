@@ -21,6 +21,7 @@ import { buttonPrimary, buttonSecondary, titlebarRow, touchTarget } from "../../
 import { Dialog } from "@base-ui/react/dialog";
 import { SheetDragStrip, narrowSheet } from "../../../ui/Dialog";
 import { TrafficLightSpace } from "../../../ui/TrafficLights";
+import { Checkbox } from "../../../ui/Checkbox";
 import { Select } from "../../../ui/Select";
 import {
   AppWindow,
@@ -502,17 +503,15 @@ export function Composer({
             />
 
             {original && !draft.forwardAsAttachment && (
-              <label className="flex items-center gap-2 px-4 py-2">
-                <input
-                  type="checkbox"
-                  checked={
-                    draft.includeOriginalAttachments ?? inheritsOriginals(draft, account?.provider)
-                  }
-                  disabled={adding}
-                  onChange={toggleOriginalAttachments}
-                />
-                <span>{t`Include original attachments`}</span>
-              </label>
+              <Checkbox
+                className="px-4 py-2"
+                label={t`Include original attachments`}
+                checked={
+                  draft.includeOriginalAttachments ?? inheritsOriginals(draft, account?.provider)
+                }
+                disabled={adding}
+                onCheckedChange={toggleOriginalAttachments}
+              />
             )}
             {inheritsOriginals(draft, account?.provider) && original?.attachments.length ? (
               <output className="px-4 py-2">{t`Original attachments are kept in Outlook without uploading them again.`}</output>

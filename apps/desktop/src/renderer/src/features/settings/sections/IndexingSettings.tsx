@@ -5,9 +5,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { AsyncResult } from "effect/reactivity";
 import { MailClient } from "../../../state/rpc";
 import { indexingProgressAtom } from "../../../state/queries";
-import { Switch } from "@base-ui/react/switch";
+import { Switch } from "../../../ui/Switch";
 import { SettingsGroup, SettingsRow } from "../../../ui/SettingsRows";
-import { settingsHint, switchThumb, switchTrack } from "../../../ui/styles";
+import { settingsHint } from "../../../ui/styles";
 
 const modelsAtom = MailClient.mutation("SetModelsEnabled");
 const pauseAtom = MailClient.mutation("SetIndexingPaused");
@@ -40,17 +40,14 @@ export function IndexingSettings() {
           )
         }
       >
-        <Switch.Root
-          className={switchTrack}
+        <Switch
           disabled={unsupported}
           checked={!unsupported && (progress.modelsEnabled ?? false)}
           aria-label={t`Download on-device models, ~226 MB`}
           onCheckedChange={(enabled) =>
             models({ payload: { enabled }, reactivityKeys: ["indexing"] })
           }
-        >
-          <Switch.Thumb className={switchThumb} />
-        </Switch.Root>
+        />
       </SettingsRow>
       <div className="space-y-1 px-3 py-2">
         {progress.modelsEnabled && !progress.semanticAvailable && (
@@ -97,14 +94,11 @@ export function IndexingSettings() {
           ) : undefined
         }
       >
-        <Switch.Root
-          className={switchTrack}
+        <Switch
           checked={progress.paused}
           aria-label={t`Pause indexing`}
           onCheckedChange={(paused) => pause({ payload: { paused }, reactivityKeys: ["indexing"] })}
-        >
-          <Switch.Thumb className={switchThumb} />
-        </Switch.Root>
+        />
       </SettingsRow>
     </SettingsGroup>
   );

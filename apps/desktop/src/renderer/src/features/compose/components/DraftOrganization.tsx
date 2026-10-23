@@ -5,8 +5,9 @@ import { useState } from "react";
 import { providerCapabilities } from "@openmail/core/schema";
 import type { OutgoingMessage, Provider } from "../../../../../shared/api";
 import { labelsAtom } from "../../../state/queries";
-import { Tag } from "lucide-react";
-import { iconButton, touchIcon } from "../../../ui/styles";
+import { Star, Tag } from "lucide-react";
+import { Checkbox } from "../../../ui/Checkbox";
+import { buttonPrimary, buttonSecondary, formInput, iconButton } from "../../../ui/styles";
 import { Tip } from "../../../ui/Tip";
 
 type Organization = NonNullable<OutgoingMessage["draftOrganization"]>;
@@ -71,9 +72,9 @@ export function DraftOrganization({
             aria-label={controls.star}
             aria-pressed={value.starred}
             onClick={() => onChange({ ...value, starred: !value.starred })}
-            className={`rounded px-2 py-1 ${touchIcon} hover:bg-black/5`}
+            className={`${iconButton} ${value.starred ? "text-amber-600 dark:text-amber-400" : "text-a11y-muted"}`}
           >
-            {value.starred ? "★" : "☆"}
+            <Star className={`size-4 ${value.starred ? "fill-current" : ""}`} />
           </button>
           <Tip label={controls.organize} side="top">
             <button
@@ -97,21 +98,20 @@ export function DraftOrganization({
             <div className="max-h-48 overflow-auto">
               {labels.length ? (
                 labels.map((label) => (
-                  <label key={label.id} className="flex gap-2 py-1">
-                    <input
-                      type="checkbox"
-                      checked={value.labels.includes(label.id)}
-                      onChange={(event) =>
-                        onChange({
-                          ...value,
-                          labels: event.target.checked
-                            ? [...value.labels, label.id]
-                            : value.labels.filter((id) => id !== label.id),
-                        })
-                      }
-                    />
-                    {label.name}
-                  </label>
+                  <Checkbox
+                    key={label.id}
+                    className="py-1"
+                    label={label.name}
+                    checked={value.labels.includes(label.id)}
+                    onCheckedChange={(checked) =>
+                      onChange({
+                        ...value,
+                        labels: checked
+                          ? [...value.labels, label.id]
+                          : value.labels.filter((id) => id !== label.id),
+                      })
+                    }
+                  />
                 ))
               ) : (
                 <p>{t`No custom labels`}</p>
@@ -126,7 +126,7 @@ export function DraftOrganization({
                 <input
                   value={names}
                   onChange={(event) => setNames(event.target.value)}
-                  className="mt-1 w-full rounded border bg-transparent px-2 py-1 border-separator"
+                  className={`mt-1 ${formInput}`}
                   onKeyDown={(event) => {
                     if (event.key === "Enter") {
                       event.preventDefault();
@@ -148,6 +148,7 @@ export function DraftOrganization({
               </label>
               <button
                 type="button"
+                className={buttonPrimary}
                 onClick={() => {
                   onChange({
                     ...value,
@@ -165,7 +166,11 @@ export function DraftOrganization({
               >{t`Apply`}</button>
             </>
           )}
-          <button type="button" onClick={() => onOpenChange(false)}>{t`Close`}</button>
+          <div className="flex justify-end pt-1">
+            <button type="button" className={buttonSecondary} onClick={() => onOpenChange(false)}>
+              {t`Close`}
+            </button>
+          </div>
         </div>
       )}
     </>
