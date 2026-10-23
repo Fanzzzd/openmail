@@ -1,3 +1,4 @@
+import { constVoid } from "effect/Function";
 import { providerCapabilities } from "@openmail/core/schema";
 import { useAtom, useAtomValue } from "@effect/atom-react";
 import { useLingui } from "@lingui/react/macro";
@@ -80,6 +81,15 @@ export function AppDialogs({
   useEffect(() => {
     if (dialog !== "add" && signInAgainId !== null) setSignInAgain(null);
   }, [dialog, signInAgainId, setSignInAgain]);
+  // The first Settings open spent 1.5 s importing and evaluating its chunk. The window imports it
+  // while idle after mail shows, so Settings paints on the first open as fast as on later ones.
+  useEffect(() => {
+    if (!hasAccounts) return constVoid;
+    const idle = globalThis.requestIdleCallback?.(() => Settings.preload(), { timeout: 5000 });
+    return () => {
+      if (idle !== undefined) globalThis.cancelIdleCallback(idle);
+    };
+  }, [hasAccounts]);
   return (
     <>
       {editing && (
