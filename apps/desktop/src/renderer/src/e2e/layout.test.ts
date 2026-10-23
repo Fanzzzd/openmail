@@ -470,6 +470,32 @@ it("focus in the sidebar moves to the same mailbox in the sidebar, rail or drawe
   );
 });
 
+it("focus in a menu that a pane move closes goes where its trigger's focus would", async () => {
+  width = 880;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  // Select a row without opening it: the narrow layout then shows the list, not the reader.
+  row(h.id("one")).focus();
+  key("Home");
+  await eventually(() => expect(screen.getAllByRole("option", { selected: true })).toHaveLength(1));
+  const picked = screen.getByRole("option", { selected: true });
+  await eventually(() => expect(reader()).not.toBeNull());
+  const more = within(reader()!.closest<HTMLElement>('[data-mail-pane="reader"]')!).getByRole(
+    "button",
+    { name: "Conversation actions" },
+  );
+  more.focus();
+  fireEvent.click(more);
+  const menu = await screen.findByRole("menu", { name: "Conversation actions" });
+  await eventually(() => expect(menu.contains(document.activeElement)).toBe(true));
+  // The narrow layout hides the reader, which closes the menu; focus goes to the selected row.
+  resize(780);
+  await eventually(() => expect(reader()).toBeNull());
+  await eventually(() => expect(screen.queryByRole("menu")).toBeNull());
+  await eventually(() => expect(document.activeElement).toBe(picked));
+});
+
 it("the search field gets focus back when it shows again after the narrow reader stood in", async () => {
   width = 1320;
   current = await flow();

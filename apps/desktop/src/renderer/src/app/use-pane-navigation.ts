@@ -13,6 +13,18 @@ const focusReader = () => requestAnimationFrame(() => readerPane()?.focus());
 
 const paneOf = (element: Element) =>
   element.closest<HTMLElement>("[data-mail-pane]")?.dataset.mailPane ?? null;
+/**
+ * The control that opened the menu or popover holding `element`, a popup portalled out of every
+ * pane: the element whose `aria-controls` names the popup or one of its ancestors.
+ */
+function triggerOf(element: Element) {
+  for (const control of document.querySelectorAll<HTMLElement>("[aria-controls]")) {
+    const ids = control.getAttribute("aria-controls")?.split(/\s+/) ?? [];
+    if (ids.some((id) => id !== "" && document.getElementById(id)?.contains(element)))
+      return control;
+  }
+  return null;
+}
 /** Whether an element is in the document and not in a hidden pane. */
 const shows = (element: Element) => element.isConnected && !element.closest("[hidden]");
 
@@ -184,6 +196,15 @@ export function usePaneNavigation({
     const remember = (event: FocusEvent) => {
       if (!(event.target instanceof HTMLElement)) return;
       const pane = paneOf(event.target);
+      // Focus in a popup stands for its trigger, so a move that closes the popup puts focus
+      // where the trigger's would go.
+      const trigger = pane === null ? triggerOf(event.target) : null;
+      if (trigger) {
+        restoring.current = null;
+        focused.current = { pane: paneOf(trigger), element: trigger };
+        placed.current = null;
+        return;
+      }
       const expected = restoring.current;
       restoring.current = null;
       if (expected === event.target || (expected === "list" && pane === "list")) {
