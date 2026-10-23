@@ -30,6 +30,10 @@ const { values } = parseArgs({
     profile: { type: "string" },
     // A common word in the database: "weekly" for the 100k fixture.
     search: { type: "string", default: "the" },
+    // Records a renderer trace for the actions whose name contains this text.
+    trace: { type: "string" },
+    // Sidebar switches move the pointer onto the row this long before the click.
+    hover: { type: "string", default: "0" },
     keep: { type: "boolean", default: false },
   },
 });
@@ -98,6 +102,8 @@ const HELPERS = `(() => {
       const token = ++mark;
       if (before) before.__perfToken = token;
       const bodyBefore = before?.firstElementChild ?? null;
+      const frameBefore = document.querySelector('[data-mail-pane="reader"] iframe');
+      if (frameBefore) frameBefore.__perfToken = token;
       await frame();
       const t0 = performance.now();
       const t0Wall = Date.now();
@@ -129,9 +135,14 @@ const HELPERS = `(() => {
         longTaskMs: tasks.reduce((sum, [, d]) => sum + d, 0),
         maxLongTaskMs: tasks.reduce((max, [, d]) => Math.max(max, d), 0),
         t0Wall,
+        resources: performance
+          .getEntriesByType("resource")
+          .filter((e) => e.startTime >= t0)
+          .map((e) => [e.name.split("/").pop(), Math.round(e.startTime - t0), Math.round(e.duration)]),
         rowsAtReady: readyRows,
         maxRowsInDom: maxRows,
         listRemounted: !!before && (!after || after.__perfToken !== token),
+        readerRemounted: !!frameBefore && document.querySelector('[data-mail-pane="reader"] iframe')?.__perfToken !== token,
         bodyRemounted: !!bodyBefore && after?.firstElementChild !== bodyBefore,
       };
     },
@@ -377,9 +388,49 @@ async function run(app, actions) {
       await main.send("Profiler.setSamplingInterval", { interval: 200 });
       await main.send("Profiler.start");
     }
+    const tracing = values.trace && name.includes(values.trace);
+    const traceEvents = [];
+    let stopListening = null;
+    if (tracing) {
+      stopListening = cdp.onEvent((message) => {
+        if (message.method === "Tracing.dataCollected") traceEvents.push(...message.params.value);
+      });
+      await cdp.send("Tracing.start", {
+        categories: "devtools.timeline,blink.user_timing,v8.execute",
+        transferMode: "ReportEvents",
+      });
+    }
     const result = await evaluate(
       `window.__perfApi.measure(${JSON.stringify(name)}, () => { ${act} }, () => (${ready}), ${JSON.stringify(options)})`,
     );
+    if (tracing) {
+      const done = new Promise((resolve) => {
+        const off = cdp.onEvent((message) => {
+          if (message.method === "Tracing.tracingComplete") {
+            off();
+            resolve();
+          }
+        });
+      });
+      await cdp.send("Tracing.end");
+      await done;
+      stopListening?.();
+      // Renderer main thread: time by event name over the action.
+      const thread = traceEvents.find(
+        (e) => e.name === "thread_name" && e.args?.name === "CrRendererMain",
+      );
+      const byName = {};
+      for (const e of traceEvents)
+        if (e.ph === "X" && thread && e.pid === thread.pid && e.tid === thread.tid && e.dur)
+          byName[e.name] = (byName[e.name] ?? 0) + e.dur / 1000;
+      result.trace = Object.fromEntries(
+        Object.entries(byName)
+          .filter(([, ms]) => ms >= 1)
+          .toSorted((a, b) => b[1] - a[1])
+          .slice(0, 12)
+          .map(([k, ms]) => [k, Math.round(ms * 10) / 10]),
+      );
+    }
     [result.mainLoopMaxMs, result.mainCpuMs] = await mainDelay(false);
     if (profiling) {
       const { profile } = await main.send("Profiler.stop");
@@ -489,10 +540,13 @@ async function run(app, actions) {
     }
     if (want("settings")) {
       await sleep(300);
-      await evaluate(
-        `document.querySelector('[data-mail-pane="sidebar"] button[aria-label="Settings"]').click()`,
+      results.push(
+        await measure(
+          "wide: open Settings",
+          `document.querySelector('[data-mail-pane="sidebar"] button[aria-label="Settings"]').click()`,
+          `(() => { const d = document.querySelector('[role="dialog"][aria-label="Settings"]'); return !!d && d.querySelectorAll("button, input, select").length > 5; })()`,
+        ),
       );
-      await until(`!!document.querySelector('[role="dialog"][aria-label="Settings"]')`, "settings");
       await sleep(800);
       results.push(
         await measure(
@@ -529,6 +583,83 @@ async function run(app, actions) {
           { timeout: 40_000, quiet: 100 },
         ),
       );
+    }
+    // Sidebar switches: each view once cold (first visit in this launch), then once warm.
+    if (want("switch")) {
+      await setSize(1320);
+      await evaluate(clickSidebar("Inbox"));
+      await until(titleIs("Inbox"), "inbox");
+      const nav = `document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail]) nav[aria-label="Mailboxes"]')`;
+      const views = await evaluate(`(() => {
+        const nav = ${nav};
+        const keys = ["starred", "sent", "drafts", "all", "important", "inbox"].map((id) => "[data-focus-key='mailbox:" + id + "']");
+        const tiles = [...nav.querySelectorAll(":scope > div.grid button")].map((_, i) => ":scope > div.grid button:nth-of-type(" + (i + 1) + ")");
+        return [...keys, ...tiles.slice(1), tiles[0]].filter(Boolean);
+      })()`);
+      const settledList = `(() => { const l = ${api}.listbox(); return !!l && l.getAttribute("aria-busy") === "false" && !l.querySelector("[data-stale]"); })()`;
+      for (const pass of i === 0 ? ["cold", "warm"] : ["warm"])
+        for (const selector of views) {
+          const el = `${nav}.querySelector(${JSON.stringify(selector)})`;
+          const label = await evaluate(
+            `(${el}?.textContent ?? "").trim().split(/\\s+/).slice(0, 2).join(" ")`,
+          );
+          const kind = selector.includes("mailbox:") ? "mailbox" : "account";
+          await sleep(300);
+          if (Number(values.hover) > 0) {
+            await evaluate(
+              `${el}.dispatchEvent(new PointerEvent("pointerover", { bubbles: true })); ${el}.dispatchEvent(new PointerEvent("pointerenter"))`,
+            );
+            await sleep(Number(values.hover));
+          }
+          results.push(
+            await measure(
+              `switch ${pass}: ${kind}`,
+              `const el = ${el}; el.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true })); el.click()`,
+              `${el}?.getAttribute("aria-current") === "page" && ${settledList}`,
+              { quiet: 300 },
+            ),
+          );
+          results.at(-1).view = label;
+        }
+    }
+    // The sidebar: hidden and shown again while docked (wide), and the drawer (medium width).
+    if (want("sidebar")) {
+      await setSize(1320);
+      const docked = `document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail]) nav[aria-label="Mailboxes"]')`;
+      if (!(await evaluate(`!!document.querySelector("article[data-message-id]")`))) {
+        await evaluate(`${api}.unreadRow(1).click()`);
+        await until(`!!document.querySelector("article[data-message-id]")`, "reader");
+      }
+      await until(`!!${docked}`, "docked sidebar");
+      await sleep(800);
+      const toggleKey = `document.dispatchEvent(new KeyboardEvent("keydown", { key: "s", code: "KeyS", altKey: true, shiftKey: true, metaKey: true, bubbles: true }))`;
+      results.push(await measure("wide: hide docked sidebar", toggleKey, `!${docked}`));
+      await sleep(800);
+      results.push(
+        await measure(
+          "wide: show docked sidebar (button)",
+          `document.querySelector('button[aria-label="Show sidebar"]').click()`,
+          `!!${docked}`,
+        ),
+      );
+      await sleep(800);
+      await setSize(880);
+      const drawer = `[...document.querySelectorAll('[data-mail-pane="sidebar"] nav[aria-label="Mailboxes"]')].find((el) => el.closest('[role="dialog"]') && el.getBoundingClientRect().width > 100)`;
+      await until(`!!document.querySelector('button[aria-label="Show sidebar"]')`, "rail");
+      await sleep(800);
+      results.push(
+        await measure(
+          "medium: open sidebar drawer",
+          `document.querySelector('button[aria-label="Show sidebar"]').click()`,
+          `!!(${drawer})`,
+        ),
+      );
+      await sleep(500);
+      await evaluate(
+        `document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))`,
+      );
+      await sleep(800);
+      await setSize(1320);
     }
     // Many loaded rows: scroll until about 2000 threads are loaded, then open unread mail at the
     // top, so marking it read refreshes the whole loaded extent.
@@ -663,6 +794,7 @@ for (const name of names) {
     mainCpuMs: median(xs.map((r) => r.mainCpuMs)),
     maxRowsInDom: Math.max(...xs.map((r) => r.maxRowsInDom ?? 0)),
     listRemounted: xs.filter((r) => r.listRemounted).length,
+    readerRemounted: xs.filter((r) => r.readerRemounted).length,
     bodyRemounted: xs.filter((r) => r.bodyRemounted).length,
     rpcPerRun: rpcCounts,
     rpcMaxMs: median(xs.map((r) => Math.max(0, ...(r.rpc ?? []).map(([, ms]) => ms)))),
