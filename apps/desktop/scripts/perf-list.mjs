@@ -34,6 +34,16 @@ const { values } = parseArgs({
     trace: { type: "string" },
     // Sidebar switches move the pointer onto the row this long before the click.
     hover: { type: "string", default: "0" },
+    // Minutes of mixed list work for the soak action, which samples memory every 30 s.
+    soak: { type: "string", default: "20" },
+    // Runs the development server (electron-vite dev: React's development build, Vite's client).
+    dev: { type: "boolean", default: false },
+    // Changed events per minute for the stress action, sent as SetPrefs requests.
+    rate: { type: "string", default: "300" },
+    // The stress action changes a pref the window shows (shortcut set) or one it does not.
+    "stress-pref": { type: "string", default: "neutral" },
+    // Fails the run when the stress action retains render closures or more than 10 MB of heap.
+    check: { type: "boolean", default: false },
     keep: { type: "boolean", default: false },
   },
 });
@@ -62,6 +72,10 @@ const median = (xs) => {
   const middle = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
 };
+
+/** Heap bytes in a snapshot summary. Compiled code grows while the JIT warms up; renders keep none. */
+const heapKb = (counts) =>
+  [...counts].reduce((sum, [name, v]) => (name === "(code)" ? sum : sum + v.bytes), 0) / 1024;
 
 // Runs in every new document before the app: RPC frames, long tasks, DOM activity, first row.
 const INSTRUMENT = `(() => {
@@ -200,15 +214,27 @@ async function launch(home, size) {
   const inspectPort = await freePort();
   const env = smokeEnvironment(process.env, home, false, "hidden");
   const spawnedAt = Date.now();
+  const root = fileURLToPath(new URL("..", import.meta.url));
   const child = spawn(
-    join(fileURLToPath(new URL("..", import.meta.url)), "node_modules/.bin/electron"),
-    [
-      `--inspect=${inspectPort}`,
-      ".",
-      `--remote-debugging-port=${port}`,
-      `--user-data-dir=${home}`,
-      "--enable-automation",
-    ],
+    join(root, values.dev ? "node_modules/.bin/electron-vite" : "node_modules/.bin/electron"),
+    values.dev
+      ? [
+          "dev",
+          "--inspect",
+          String(inspectPort),
+          "--remoteDebuggingPort",
+          String(port),
+          "--",
+          `--user-data-dir=${home}`,
+          "--enable-automation",
+        ]
+      : [
+          `--inspect=${inspectPort}`,
+          ".",
+          `--remote-debugging-port=${port}`,
+          `--user-data-dir=${home}`,
+          "--enable-automation",
+        ],
     {
       cwd: fileURLToPath(new URL("..", import.meta.url)),
       env,
@@ -305,7 +331,7 @@ async function launch(home, size) {
       await sleep(10);
     }
   }
-  return { child, cdp, main, browser, spawnedAt, stderr: () => stderr };
+  return { child, cdp, main, browser, spawnedAt, home, stderr: () => stderr };
 }
 
 async function run(app, actions) {
@@ -332,7 +358,14 @@ async function run(app, actions) {
       `Timeout: ${label} ${JSON.stringify(await evaluate("({ href: location.href, rpc: typeof window.openmailRpc, perf: typeof window.__perf, rows: document.querySelectorAll('[role=option]').length })"))}`,
     );
   };
-  await until(`!!window.__perf`, "instrumentation");
+  try {
+    await until(`!!window.__perf`, "instrumentation", 15_000);
+  } catch {
+    // The development server's page can load before the auto-attached script applies.
+    await cdp.send("Page.addScriptToEvaluateOnNewDocument", { source: INSTRUMENT });
+    await cdp.send("Page.reload");
+    await until(`!!window.__perf`, "instrumentation");
+  }
   await until(
     `!!document.querySelector('[role="listbox"][aria-busy="false"] [role="option"][data-id]')`,
     "first rows",
@@ -583,6 +616,249 @@ async function run(app, actions) {
           { timeout: 40_000, quiet: 100 },
         ),
       );
+    }
+    // Stress: Changed events at --rate per minute (SetPrefs that alternate the shortcut set and the
+    // menu-bar count, so the application menu and tray inputs change each time), counting the
+    // native menu, Dock and badge calls the main process makes, with footprint every 30 s.
+    if (want("stress")) {
+      const { execFileSync } = await import("node:child_process");
+      await main.send("Runtime.evaluate", {
+        includeCommandLineAPI: true,
+        expression: `(() => {
+          const { app, Menu } = require("electron");
+          const C = (globalThis.__nativeCalls = { appMenu: 0, dockMenu: 0, badge: 0, build: 0 });
+          const wrap = (target, key, counter) => { const f = target[key].bind(target); target[key] = (...a) => { C[counter]++; return f(...a); }; };
+          wrap(Menu, "setApplicationMenu", "appMenu");
+          wrap(Menu, "buildFromTemplate", "build");
+          if (app.dock) wrap(app.dock, "setMenu", "dockMenu");
+          wrap(app, "setBadgeCount", "badge");
+          return 1;
+        })()`,
+      });
+      const pids = () =>
+        execFileSync("ps", ["-axo", "pid=,command="], { encoding: "utf8" })
+          .split("\n")
+          .filter(
+            (line) =>
+              line.includes(app.home) &&
+              !line.includes("electron-vite") &&
+              !line.includes("cli.js"),
+          )
+          .map((line) => {
+            const [pid, ...rest] = line.trim().split(/\s+/);
+            const command = rest.join(" ");
+            return { pid: Number(pid), type: /--type=([\w-]+)/.exec(command)?.[1] ?? "main" };
+          });
+      const footprintOf = (pid) => {
+        try {
+          const out = execFileSync("footprint", [String(pid)], { encoding: "utf8" });
+          const m = /phys_footprint:\s+([\d.]+)\s+(KB|MB|GB)/.exec(out);
+          return m ? Number(m[1]) * { KB: 1 / 1024, MB: 1, GB: 1024 }[m[2]] : 0;
+        } catch {
+          return 0;
+        }
+      };
+      const samples = [];
+      const start = Date.now();
+      let sent = 0;
+      const sample = async () => {
+        const byType = {};
+        for (const p of pids())
+          byType[p.type] = Math.round((byType[p.type] ?? 0) + footprintOf(p.pid));
+        const { result } = await main.send("Runtime.evaluate", {
+          expression:
+            "JSON.stringify({ calls: globalThis.__nativeCalls, mem: process.memoryUsage() })",
+          returnByValue: true,
+        });
+        const { calls, mem } = JSON.parse(result.value);
+        const heap = await cdp.send("Runtime.getHeapUsage");
+        const row = {
+          minutes: Math.round((Date.now() - start) / 600) / 100,
+          sent,
+          ...calls,
+          footprintMb: byType,
+          mainHeapMb: Math.round(mem.heapUsed / 1048576),
+          mainExternalMb: Math.round(mem.external / 1048576),
+          rendererHeapMb: Math.round(heap.usedSize / 1048576),
+        };
+        samples.push(row);
+        process.stderr.write(`${JSON.stringify(row)}\n`);
+      };
+      const snapshot = async () => {
+        await cdp.send("HeapProfiler.enable");
+        await cdp.send("HeapProfiler.collectGarbage");
+        const chunks = [];
+        const off = cdp.onEvent((m) => {
+          if (m.method === "HeapProfiler.addHeapSnapshotChunk") chunks.push(m.params.chunk);
+        });
+        await cdp.send(
+          "HeapProfiler.takeHeapSnapshot",
+          { reportProgress: false },
+          { timeoutMs: 300_000 },
+        );
+        off();
+        const raw = chunks.join("");
+        if (process.env.PERF_LIST_SNAPSHOT) await writeFile(process.env.PERF_LIST_SNAPSHOT, raw);
+        const snap = JSON.parse(raw);
+        const fields = snap.snapshot.meta.node_fields;
+        const width = fields.length;
+        const nameAt = fields.indexOf("name");
+        const typeAt = fields.indexOf("type");
+        const sizeAt = fields.indexOf("self_size");
+        const types = snap.snapshot.meta.node_types[0];
+        const counts = new Map();
+        for (let at = 0; at < snap.nodes.length; at += width) {
+          const type = types[snap.nodes[at + typeAt]];
+          const name =
+            type === "closure"
+              ? `ƒ ${snap.strings[snap.nodes[at + nameAt]]}`
+              : type === "object" || type === "native"
+                ? snap.strings[snap.nodes[at + nameAt]]
+                : `(${type})`;
+          const entry = counts.get(name) ?? { count: 0, bytes: 0 };
+          entry.count++;
+          entry.bytes += snap.nodes[at + sizeAt];
+          counts.set(name, entry);
+        }
+        return counts;
+      };
+      await sample();
+      const firstSnapshot = await snapshot();
+      const gap = 60_000 / Number(values.rate);
+      let lastSample = Date.now();
+      while (Date.now() - start < Number(values.soak) * 60_000) {
+        const set = sent % 2 === 0 ? "apple" : "mimestream";
+        const patch =
+          values["stress-pref"] === "shortcuts"
+            ? `{ shortcutSet: "${set}", menuBarUnreadCount: ${sent % 2 === 0} }`
+            : `{ undoSendSeconds: ${sent % 2 === 0 ? 5 : 10} }`;
+        await evaluate(
+          `window.openmailRpc.send(JSON.stringify({ _tag: "Request", id: "9${String(sent).padStart(8, "0")}", tag: "SetPrefs", payload: { patch: ${patch} }, headers: [] }))`,
+        );
+        sent++;
+        await sleep(gap);
+        if (Date.now() - lastSample >= 30_000) {
+          lastSample = Date.now();
+          await sample();
+        }
+      }
+      await sample();
+      const lastSnapshot = await snapshot();
+      const growth = [...lastSnapshot]
+        .map(([name, { count, bytes }]) => {
+          const before = firstSnapshot.get(name) ?? { count: 0, bytes: 0 };
+          return {
+            name,
+            count: count - before.count,
+            kb: Math.round((bytes - before.bytes) / 1024),
+          };
+        })
+        .filter((g) => g.count > 0)
+        .toSorted((a, b) => b.kb - a.kb)
+        .slice(0, 40);
+      process.stderr.write(`Heap growth: ${JSON.stringify(growth)}\n`);
+      // A closure that gains a copy for every few events is a render's closure kept alive, the
+      // chain docs/performance.md#memory-across-renders describes.
+      const retained = growth.filter((g) => g.name.startsWith("ƒ ") && g.count >= sent / 4);
+      const retainedKb = heapKb(lastSnapshot) - heapKb(firstSnapshot);
+      process.stderr.write(
+        `Retained after ${sent} changes: ${Math.round(retainedKb)} KB; render closures kept: ${retained.map((g) => `${g.name}×${g.count}`).join(", ") || "none"}\n`,
+      );
+      if (values.check && (retained.length > 0 || retainedKb > 10_240)) process.exitCode = 1;
+      results.push({ name: "stress", samples, growth, retainedKb, retained });
+    }
+    // Soak: mailbox and account switches, opened threads, a search left in the cache and idle
+    // periods, with every process's memory sampled every 30 s.
+    if (want("soak")) {
+      const { execFileSync } = await import("node:child_process");
+      const footprint = (pid) => {
+        try {
+          const out = execFileSync("footprint", [String(pid)], { encoding: "utf8" });
+          const match = /phys_footprint:\s+([\d.]+)\s+(KB|MB|GB)/.exec(out);
+          if (!match) return null;
+          return Number(match[1]) * { KB: 1 / 1024, MB: 1, GB: 1024 }[match[2]];
+        } catch {
+          return null;
+        }
+      };
+      const processes = () =>
+        execFileSync("ps", ["-axo", "pid=,rss=,command="], { encoding: "utf8" })
+          .split("\n")
+          .filter((line) => line.includes(`--user-data-dir=${app.home}`) || line.includes(app.home))
+          .map((line) => {
+            const [pid, rss, ...rest] = line.trim().split(/\s+/);
+            const command = rest.join(" ");
+            const type =
+              /--type=([\w-]+)/.exec(command)?.[1] ??
+              (command.includes("cli.js") ? "launcher" : "main");
+            const sub = /--utility-sub-type=([\w.]+)/.exec(command)?.[1];
+            return {
+              pid: Number(pid),
+              type: sub ? `${type}:${sub.split(".").at(-2)}` : type,
+              rssMb: Number(rss) / 1024,
+            };
+          })
+          .filter((p) => p.type !== "launcher");
+      const sample = async (label) => {
+        const list = processes();
+        const byType = {};
+        for (const p of list)
+          byType[p.type] = (byType[p.type] ?? 0) + (footprint(p.pid) ?? p.rssMb);
+        const { result } = await main.send("Runtime.evaluate", {
+          expression: "JSON.stringify(process.memoryUsage())",
+          returnByValue: true,
+        });
+        const mainMemory = JSON.parse(result.value);
+        const heap = await cdp.send("Runtime.getHeapUsage");
+        const dom = await evaluate(`document.getElementsByTagName("*").length`);
+        const row = {
+          label,
+          minutes: Math.round((Date.now() - soakStart) / 600) / 100,
+          footprintMb: Object.fromEntries(
+            Object.entries(byType).map(([k, v]) => [k, Math.round(v)]),
+          ),
+          mainHeapMb: Math.round(mainMemory.heapUsed / 1048576),
+          mainExternalMb: Math.round(mainMemory.external / 1048576),
+          mainArrayBuffersMb: Math.round(mainMemory.arrayBuffers / 1048576),
+          mainRssMb: Math.round(mainMemory.rss / 1048576),
+          rendererHeapMb: Math.round(heap.usedSize / 1048576),
+          domNodes: dom,
+        };
+        samples.push(row);
+        process.stderr.write(`${JSON.stringify(row)}\n`);
+      };
+      const samples = [];
+      const soakStart = Date.now();
+      await setSize(1320);
+      await evaluate(`document.querySelector('input[aria-label="Search mail"]').focus()`);
+      await cdp.send("Input.insertText", { text: values.search });
+      await sleep(4000);
+      await evaluate(`document.querySelector('button[aria-label="Clear search"]').click()`);
+      await sample("start");
+      const soakTiles = `[...document.querySelectorAll('[data-mail-pane="sidebar"] nav > div.grid button')]`;
+      const steps = [
+        () => clickSidebar("Starred"),
+        () => clickSidebar("All Mail"),
+        () => `${soakTiles}[1]?.click()`,
+        () => clickSidebar("Inbox"),
+        () => `${api}.unreadRow(1)?.click()`,
+        () => `${soakTiles}[2]?.click()`,
+        () => `${api}.unreadRow(2)?.click()`,
+        () => `${soakTiles}[0]?.click()`,
+        () => `${api}.unreadRow(0)?.click()`,
+      ];
+      let k = 0;
+      let lastSample = Date.now();
+      while (Date.now() - soakStart < Number(values.soak) * 60_000) {
+        await evaluate(steps[k++ % steps.length]());
+        await sleep(k % 40 === 0 ? 15_000 : 1200);
+        if (Date.now() - lastSample >= 30_000) {
+          lastSample = Date.now();
+          await sample(`step ${k}`);
+        }
+      }
+      await sample("end");
+      results.push({ name: "soak", samples });
     }
     // Sidebar switches: each view once cold (first visit in this launch), then once warm.
     if (want("switch")) {
