@@ -69,6 +69,7 @@ export const liveUpdatesAtom = MailClient.runtime.atom((get) => {
             UpdateSettingsChanged: () => [Keys.cache],
             BackfillProgress: () => [Keys.cache, Keys.counts],
             Changed: () => MAIL_KEYS,
+            PrefsChanged: () => [Keys.prefs],
             // The main process posts notifications. The Changed or finished sync that follows refetches views.
             NewMail: () => [],
             SnoozeDue: () => [],

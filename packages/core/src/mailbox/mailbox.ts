@@ -125,6 +125,11 @@ export const MailboxEvent = Schema.Union([
   Schema.TaggedStruct("UpdateSettingsChanged", { resetState: Schema.Boolean }),
   /** Local mail, accounts, proposals or settings changed; views should refetch. */
   Schema.TaggedStruct("Changed", {}),
+  /**
+   * Only window layout prefs changed (sidebar, toolbar, reading pane). Views refetch the prefs
+   * alone; no mail, count or list depends on them.
+   */
+  Schema.TaggedStruct("PrefsChanged", {}),
 ]);
 export type MailboxEvent = typeof MailboxEvent.Type;
 

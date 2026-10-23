@@ -1,3 +1,4 @@
+import { Effect } from "effect";
 import { constVoid } from "effect/Function";
 import { AuthError, ProviderError } from "@openmail/core/portable";
 import { afterEach, beforeEach, expect, it, onTestFinished, vi } from "vitest";
@@ -1710,7 +1711,9 @@ it("Back from a narrow reader keeps the list, and a cached mailbox off screen re
     );
   await eventually(() => expect(mailbox("sent")).not.toBeNull());
   fireEvent.click(mailbox("sent")!);
-  await eventually(() => expect(screen.getByRole("listbox").getAttribute("aria-label")).toBe("Sent"));
+  await eventually(() =>
+    expect(screen.getByRole("listbox").getAttribute("aria-label")).toBe("Sent"),
+  );
   const inbox = lists("inbox");
   const sent = lists("sent");
   // New mail changes every list. Sent is on screen and reads again; the cached Inbox waits.
@@ -1724,4 +1727,41 @@ it("Back from a narrow reader keeps the list, and a cached mailbox off screen re
   expect(row(h.id("one"))).toBeTruthy();
   await eventually(() => expect(row(h.id("three"))).toBeTruthy());
   expect(lists("inbox")).toBeGreaterThan(inbox);
+});
+
+it("the docked sidebar hides and shows before its pref is stored, without remounting the list or reader", async () => {
+  width = 1320;
+  let release = constVoid;
+  const stored = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  current = await flow({
+    handlers: {
+      SetPrefs: ({ patch }) =>
+        Effect.promise(() => stored).pipe(Effect.andThen(() => current!.m.app.setPrefs(patch))),
+    },
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  fireEvent.click(row(h.id("one")));
+  await eventually(() => expect(reader()?.textContent).toContain("Original one"));
+  const list = screen.getByRole("listbox");
+  const article = reader();
+  const docked = () =>
+    document.querySelector('[data-mail-pane="sidebar"]:not([data-sidebar-rail]) nav');
+  expect(docked()).not.toBeNull();
+  key("s", { altKey: true, shiftKey: true, metaKey: true }, document.body);
+  // The main process has not stored the pref yet.
+  await eventually(() => expect(docked()).toBeNull());
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(reader()).toBe(article);
+  release();
+  await wait(50);
+  expect(docked()).toBeNull();
+  expect((await h.run(h.m.app.prefs)).sidebarVisible).toBe(false);
+  clickButton("Show sidebar");
+  await eventually(() => expect(docked()).not.toBeNull());
+  expect(screen.getByRole("listbox")).toBe(list);
+  expect(reader()).toBe(article);
+  await eventually(async () => expect((await h.run(h.m.app.prefs)).sidebarVisible).toBe(true));
 });

@@ -12,9 +12,10 @@ import { AtomRegistry, Reactivity } from "effect/reactivity";
 import { useCallback, useContext } from "react";
 import { RegistryContext } from "@effect/atom-react";
 
-import type { DraftInput, MailOp, OutgoingMessage } from "../../../shared/api";
+import type { DraftInput, MailOp, OutgoingMessage, PrefsPatch } from "../../../shared/api";
 import { MailClient } from "./rpc";
 import { Keys, MAIL_KEYS, threadChangeKeys } from "./keys";
+import { pendingPrefsAtom } from "./queries";
 
 /** What the Effects below need; `MailClient.runtime` provides all of it. */
 export type MailEnv = MailClient | Reactivity.Reactivity | AtomRegistry.AtomRegistry | Scope.Scope;
@@ -24,6 +25,33 @@ type Call = Context.Service.Shape<typeof MailClient>;
 export const withMail = <A, E, R>(f: (call: Call) => Effect.Effect<A, E, R>) =>
   Effect.gen(function* () {
     return yield* f(yield* MailClient);
+  });
+
+/**
+ * Shows a layout pref (sidebar, toolbar, reading pane) at once and stores it after. The pending
+ * value stays on top of the stored prefs until a read after the write has returned, so the
+ * layout never flips back while the main process catches up. Toggling the docked sidebar used
+ * to wait for that round trip, which took seconds while the main process was busy.
+ */
+export const setLayoutPrefs = (patch: PrefsPatch) =>
+  Effect.gen(function* () {
+    const registry = yield* AtomRegistry.AtomRegistry;
+    registry.update(pendingPrefsAtom, (pending) => ({ ...pending, ...patch }));
+    const settle = Effect.sync(() =>
+      registry.update(pendingPrefsAtom, (pending) => {
+        const rest: Record<string, unknown> = { ...pending };
+        for (const [key, value] of Object.entries(patch))
+          if (Object.is(rest[key], value)) delete rest[key];
+        return rest;
+      }),
+    );
+    yield* withMail((call) =>
+      call("SetPrefs", { patch }).pipe(
+        Reactivity.mutation([Keys.prefs]),
+        // The refetch the mutation started is ahead of this read in the main process's queue.
+        Effect.andThen(call("Prefs", undefined)),
+      ),
+    ).pipe(Effect.ensuring(settle));
   });
 
 /** Applies `op` to whole threads, given any message id in each. */

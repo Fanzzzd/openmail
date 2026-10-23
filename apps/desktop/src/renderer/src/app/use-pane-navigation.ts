@@ -1,11 +1,9 @@
 import { RegistryContext, useAtomValue } from "@effect/atom-react";
-import { Reactivity } from "effect/reactivity";
 import { useCallback, useContext, useEffect, useLayoutEffect, useRef } from "react";
 import { visiblePanes, type MailLayout } from "../lib/responsive-layout";
-import { Keys } from "../state/keys";
 import { historyAtom, locationAtom, locationOf } from "../state/location";
 import { mailHref } from "../../../shared/routes";
-import { useRunMail, withMail } from "../state/mail";
+import { setLayoutPrefs, useRunMail } from "../state/mail";
 import type { useMailSelection } from "./use-mail-selection";
 
 const readerPane = () => document.querySelector<HTMLElement>('[data-mail-pane="reader"]');
@@ -325,11 +323,7 @@ export function usePaneNavigation({
         layout.setDrawerOpen((open) => !open);
         return;
       }
-      run(
-        withMail((call) =>
-          call("SetPrefs", { patch: { sidebarVisible: !prefs.sidebarVisible } }),
-        ).pipe(Reactivity.mutation([Keys.prefs])),
-      );
+      run(setLayoutPrefs({ sidebarVisible: !prefs.sidebarVisible }));
     },
   };
 }

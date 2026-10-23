@@ -1,6 +1,5 @@
 import { providerCapabilities, supportsOp } from "@openmail/core/schema";
 import { isDesktop } from "../lib/platform";
-import { Reactivity } from "effect/reactivity";
 import { type RefObject, useEffect, useEffectEvent } from "react";
 import type { Profile } from "../../../shared/api";
 import {
@@ -17,8 +16,7 @@ import type { ThreadState } from "../lib/focused-inbox";
 import { usesDeletePreference } from "../lib/delete-key";
 import { favoriteView, numberedFavorites } from "../features/sidebar/favorite-navigation";
 import { moveMailPaneFocus } from "./pane-navigation";
-import { Keys } from "../state/keys";
-import { syncNow, useRunMail, withMail } from "../state/mail";
+import { setLayoutPrefs, syncNow, useRunMail, withMail } from "../state/mail";
 import { useBatchUndo } from "../state/undo";
 import { ALL, OVERVIEW } from "../lib/view";
 import { useAtom, useAtomSet, useAtomValue } from "@effect/atom-react";
@@ -316,25 +314,18 @@ export function useMailShortcuts({
       case "toggleToolbar":
       case "toggleReader":
         run(
-          withMail((call) =>
-            call("SetPrefs", {
-              patch:
-                action === "toggleToolbar"
-                  ? { toolbarVisible: !prefs.toolbarVisible }
-                  : { readingPaneVisible: !prefs.readingPaneVisible },
-            }),
-          ).pipe(Reactivity.mutation([Keys.prefs])),
+          setLayoutPrefs(
+            action === "toggleToolbar"
+              ? { toolbarVisible: !prefs.toolbarVisible }
+              : { readingPaneVisible: !prefs.readingPaneVisible },
+          ),
         );
         break;
       case "toggleReadingPane":
         run(
-          withMail((call) =>
-            call("SetPrefs", {
-              patch: {
-                readingPanePosition: prefs.readingPanePosition === "right" ? "bottom" : "right",
-              },
-            }),
-          ).pipe(Reactivity.mutation([Keys.prefs])),
+          setLayoutPrefs({
+            readingPanePosition: prefs.readingPanePosition === "right" ? "bottom" : "right",
+          }),
         );
         break;
       case "toggleSidebar":

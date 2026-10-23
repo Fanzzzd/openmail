@@ -496,7 +496,9 @@ export const DesktopLive = Layer.effect(
           ? refresh
           : events.some((event) => event._tag === "NewMail")
             ? notify
-            : Effect.void
+            : events.some((event) => event._tag === "PrefsChanged")
+              ? refreshMenu
+              : Effect.void
         ).pipe(
           Effect.catchCause((cause) =>
             logError("system-refresh-failed", "system event refresh failed", cause),
