@@ -137,6 +137,7 @@ it("every Electron harness either hides its windows or requires a virtual displa
         : "unguarded";
   }
   expect(modes).toEqual({
+    "apps/desktop/scripts/perf-list.mjs": "hidden",
     "apps/desktop/scripts/smoke.mjs": "hidden",
     "apps/desktop/scripts/titlebar-resize.mjs": "visible on a virtual display",
     "scripts/smoke-dist.mjs": "visible on a virtual display",
