@@ -16,6 +16,7 @@ import { incoming } from "./testing.js";
 import { PERF_FACTOR, perfBudget } from "../../../test-support/perf-budget.js";
 import { calibratedMs, perfCalibration } from "../../../test-support/perf-calibration.js";
 import {
+  HELD_FIXTURE_DRAFTS,
   PerformanceMailbox,
   fixtureAccounts,
   fixtureNow,
@@ -166,6 +167,13 @@ it.effect(
         });
       const gmail = fixtureAccounts[0],
         imap = fixtureAccounts[2];
+      // The provider copies of the drafts whose discard is held.
+      const heldDrafts = new Set(
+        Schema.decodeUnknownSync(Schema.Array(Schema.Struct({ id: Schema.String })))(
+          yield* sql`SELECT d.account_id || '/' || d.remote_message_id AS id FROM drafts d JOIN draft_discards x ON x.id=d.id`,
+        ).map((row) => row.id),
+      );
+      assert.strictEqual(heldDrafts.size, HELD_FIXTURE_DRAFTS);
       yield* measure("provider identity miss", 5, store.messageIdForProvider(gmail, "absent"));
       yield* measure("sync health label", 150, store.syncHealthLocal(gmail, "Folder_0", false));
       yield* measure("sync health IMAP", 100, store.syncHealthLocal(imap, "Folder_2", true));
@@ -218,6 +226,31 @@ it.effect(
         store.unreadByLabel(undefined, "INBOX", false),
       );
       yield* measure("list first page", 75, store.listThreads({ mailbox: "inbox", limit: 50 }));
+      // 2,000 draft messages, each linked to its local draft, and a few held for their Undo.
+      yield* measure(
+        "drafts first page",
+        50,
+        store.listThreads({ mailbox: "drafts", limit: 50 }).pipe(
+          Effect.tap((rows) =>
+            Effect.sync(() => {
+              assert.strictEqual(rows.length, 50);
+              assert.ok(rows.every((row) => row.labels.includes("DRAFT") && row.recipients));
+              assert.ok(rows.every((row) => !heldDrafts.has(row.id)));
+            }),
+          ),
+        ),
+      );
+      yield* measure(
+        "badges with drafts",
+        100,
+        store
+          .unreadByLabel(undefined, undefined, false)
+          .pipe(
+            Effect.tap((counts) =>
+              Effect.sync(() => assert.strictEqual(counts["DRAFT"], 2_000 - HELD_FIXTURE_DRAFTS)),
+            ),
+          ),
+      );
       // Sparse matches: 100 of 100k messages carry a Google Sheet link.
       for (const [name, search] of [
         ["search has:drive", "has:drive"],

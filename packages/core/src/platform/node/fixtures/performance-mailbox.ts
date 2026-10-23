@@ -34,6 +34,11 @@ const prefix = `<html><head><style>.hidden{display:none}td{font-family:Arial}</s
 const paddingBytes = 200 * 1024 - Buffer.byteLength(`${prefix}</body></html>`);
 export const largeHtml = `${prefix}${fragment.repeat(Math.floor(paddingBytes / Buffer.byteLength(fragment)))}${" ".repeat(paddingBytes % Buffer.byteLength(fragment))}</body></html>`;
 
+/** One message in 50 is a draft, in place of the inbox: 2,000 in the 100k fixture. */
+export const isFixtureDraft = (i: number) => i % 50 === 25;
+/** The first few drafts have a discard held for its Undo, so lists and counts leave them out. */
+export const HELD_FIXTURE_DRAFTS = 5;
+
 export function fixtureMessage(i: number, large = false): IncomingMessage {
   // Exactly 20k threads: 4 messages each, plus 200 extra replies in each of 100 long chains.
   const thread = large && i >= 80_000 ? Math.floor((i - 80_000) / 200) : Math.floor(i / 4);
@@ -56,14 +61,14 @@ export function fixtureMessage(i: number, large = false): IncomingMessage {
     rfcMessageId: `<message${i}@example.com>`,
     // One message in a thousand is important, so is:important with a common word walks far.
     labels: [
-      "INBOX",
+      isFixtureDraft(i) ? "DRAFT" : "INBOX",
       folder,
-      ...(i % 4 === 0 ? ["UNREAD"] : []),
+      ...(i % 4 === 0 && !isFixtureDraft(i) ? ["UNREAD"] : []),
       ...(i % 1000 === 3 ? ["IMPORTANT"] : []),
     ],
     attachments:
       i % 10 === 0 ? [{ filename: "report.pdf", mimeType: "application/pdf", size: 2048 }] : [],
-    isUnread: i % 4 === 0,
+    isUnread: i % 4 === 0 && !isFixtureDraft(i),
     isStarred: i % 100 === 0,
   };
 }
@@ -113,6 +118,7 @@ export const PerformanceMailbox = () =>
 /** Wall-clock milliseconds of each seeding phase, for the perf report. */
 export interface SeedPhases {
   messagesMs: number;
+  draftsMs: number;
   ocrChunksMs: number;
   wordIndexMs: number;
   bigramsMs: number;
@@ -165,6 +171,40 @@ export const seedMailbox = (
         process.stdout.write(`Seeded ${start + 500}/100000\n`);
     }
     const messagesMs = lap();
+    // Each draft message is the provider copy of a local draft, as after a save and a pull.
+    let drafts = 0;
+    for (let start = 25; start < count; start += 500 * 50) {
+      yield* store.transaction(
+        Effect.gen(function* () {
+          for (let i = start; i < Math.min(start + 500 * 50, count); i += 50) {
+            const message = fixtureMessage(i, count === 100_000);
+            const account = fixtureAccounts[Number(message.threadId.slice(6)) % 3];
+            if (!account || !isFixtureDraft(i)) continue;
+            const id = `draft:perf${i}`;
+            yield* store.putDraft({
+              id,
+              accountId: account,
+              message: {
+                to: message.to,
+                cc: [],
+                bcc: [],
+                subject: message.subject,
+                text: message.bodyText,
+                attachments: [],
+              },
+            });
+            yield* store.setDraftRemote(
+              id,
+              { draftId: `d${i}`, messageId: message.providerId },
+              null,
+            );
+            if (drafts++ < HELD_FIXTURE_DRAFTS)
+              yield* store.holdDraftDiscard(id, fixtureNow + 60_000);
+          }
+        }),
+      );
+    }
+    const draftsMs = lap();
     // One extracted OCR chunk for each attachment: 10k chunks in the 100k fixture.
     for (let start = 0; start < count; start += 500) {
       yield* store.transaction(
@@ -206,6 +246,7 @@ export const seedMailbox = (
     if (analyze) yield* sql`ANALYZE`;
     return {
       messagesMs,
+      draftsMs,
       ocrChunksMs,
       wordIndexMs,
       bigramsMs,
