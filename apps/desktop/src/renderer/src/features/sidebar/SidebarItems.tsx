@@ -14,6 +14,7 @@ export function LabelSections({
   accounts,
   view,
   onView,
+  onPrefetch,
   unread,
   actions,
   favorite,
@@ -28,6 +29,8 @@ export function LabelSections({
   accounts: readonly Account[];
   view: View;
   onView: (v: View) => void;
+  /** Loads a target's list before the click; see usePrefetchView. */
+  onPrefetch?: (v: View) => void;
   unread: Readonly<Record<string, number>>;
   actions?: (label: Label) => ButtonHTMLAttributes<HTMLButtonElement>;
   favorite?: (label: Label) => void;
@@ -77,6 +80,9 @@ export function LabelSections({
                 }
                 active={view.label?.id === l.id && view.label.accountId === accountId}
                 onClick={() => onView({ ...view, mailbox: "all", label: { id: l.id, accountId } })}
+                onIntent={() =>
+                  onPrefetch?.({ ...view, mailbox: "all", label: { id: l.id, accountId } })
+                }
                 icon={
                   l.color ? (
                     <span className="size-2.5 rounded-full" style={{ backgroundColor: l.color }} />
@@ -143,6 +149,8 @@ export function Tile(props: {
   item: string;
   active: boolean;
   onClick: () => void;
+  /** Pointer enter or focus: the click is likely next. */
+  onIntent?: () => void;
   icon: ReactNode;
   label: string;
   sublabel?: string;
@@ -156,6 +164,8 @@ export function Tile(props: {
       <button
         type="button"
         onClick={props.onClick}
+        onPointerEnter={props.onIntent}
+        onFocus={props.onIntent}
         data-focus-key={props.item}
         aria-current={props.active ? "page" : undefined}
         // One row in a narrow sidebar, a card in two columns once it has room.
@@ -192,6 +202,8 @@ export function Tile(props: {
 export function Item(props: {
   active: boolean;
   onClick: () => void;
+  /** Pointer enter or focus: the click is likely next. */
+  onIntent?: () => void;
   icon: ReactNode;
   label: string;
   badge: number;
@@ -216,6 +228,8 @@ export function Item(props: {
         {...props.buttonProps}
         data-focus-key={props.item}
         onClick={props.onClick}
+        onPointerEnter={props.onIntent}
+        onFocus={props.onIntent}
         aria-current={props.active ? "page" : undefined}
         className={`flex h-full min-w-0 flex-1 items-center gap-2.5 text-left ${
           props.indent ? "pl-8" : "pl-2"

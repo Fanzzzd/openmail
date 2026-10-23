@@ -263,6 +263,17 @@ it.effect(
         600,
         store.listThreads({ mailbox: "inbox", limit: 2000 }),
       );
+      // A sidebar switch or a warming step reads one first page of 100 rows; the count follows it.
+      yield* measure(
+        "switch first page, All Mail",
+        150,
+        store.listThreads({ mailbox: "all", limit: 100 }),
+      );
+      yield* measure(
+        "switch first page, Sent",
+        150,
+        store.listThreads({ mailbox: "sent", limit: 100 }),
+      );
       // Every system refresh (each change, focus and 15 s tick) reads the notification queue.
       yield* measure("empty notification queue", 5, store.takeNotifications(fixtureNow));
       // Sparse matches: 100 of 100k messages carry a Google Sheet link.

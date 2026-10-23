@@ -71,6 +71,8 @@ interface Props {
   landmark?: boolean;
   view: View;
   onView: (v: View) => void;
+  /** Loads a target's list on pointer enter or focus, before the click. */
+  onPrefetch?: (v: View) => void;
   onSpace: (space: SpaceId) => void;
   onEditProfile: (profile: Profile | "new") => void;
   accounts: readonly Account[];
@@ -91,6 +93,7 @@ interface Props {
 export function Sidebar({
   view,
   onView,
+  onPrefetch,
   onSpace,
   onEditProfile,
   accounts,
@@ -236,6 +239,7 @@ export function Sidebar({
               item={accountItem(undefined)}
               active={!view.accountId}
               onClick={() => onView({ ...view, accountId: undefined, label: undefined })}
+              onIntent={() => onPrefetch?.({ ...view, accountId: undefined, label: undefined })}
               icon={
                 <span className="flex size-6 items-center justify-center rounded-full bg-neutral-500 text-white">
                   <Layers className="size-3.5" />
@@ -251,6 +255,7 @@ export function Sidebar({
                 item={accountItem(a.id)}
                 active={view.accountId === a.id}
                 onClick={() => onView({ ...view, accountId: a.id, label: undefined })}
+                onIntent={() => onPrefetch?.({ ...view, accountId: a.id, label: undefined })}
                 icon={<AccountAvatar account={a} />}
                 label={accountName(a)}
                 sublabel={a.needsReauth ? t`Needs sign-in` : a.email.split("@")[1]}
@@ -359,6 +364,9 @@ export function Sidebar({
                               item={mailboxItem(id)}
                               active={view.mailbox === id && !view.label}
                               onClick={() => onView({ ...view, mailbox: id, label: undefined })}
+                              onIntent={() =>
+                                onPrefetch?.({ ...view, mailbox: id, label: undefined })
+                              }
                               icon={<Icon className={`size-4.5 ${color}`} />}
                               label={i18n._(MAILBOX_NAMES[id])}
                               badge={specialFolderBadge(
@@ -441,6 +449,9 @@ export function Sidebar({
                                   onClick={() =>
                                     onView({ ...view, mailbox: "inbox", label: { id: cat } })
                                   }
+                                  onIntent={() =>
+                                    onPrefetch?.({ ...view, mailbox: "inbox", label: { id: cat } })
+                                  }
                                   icon={
                                     <CatIcon className="size-4 text-blue-600 dark:text-blue-400" />
                                   }
@@ -510,6 +521,7 @@ export function Sidebar({
                             : view.label?.id === l.id && view.label.accountId === l.accountId
                         }
                         onClick={() => onView(favoriteView(view, l))}
+                        onIntent={() => onPrefetch?.(favoriteView(view, l))}
                         icon={<Star className="size-4 text-amber-600 dark:text-amber-400" />}
                         label={index < 9 ? `${l.name}  ⌥⌘${index + 1}` : l.name}
                         badge={0}
@@ -532,6 +544,7 @@ export function Sidebar({
               accounts={accounts}
               view={view}
               onView={onView}
+              onPrefetch={onPrefetch}
               unread={byLabel}
               actions={labelActions}
               unnest={unnest}
@@ -544,6 +557,7 @@ export function Sidebar({
                 accounts={accounts}
                 view={view}
                 onView={onView}
+                onPrefetch={onPrefetch}
                 unread={byLabel}
                 categories
                 actions={(label) => ({
@@ -568,6 +582,7 @@ export function Sidebar({
                     accounts={accounts}
                     view={view}
                     onView={onView}
+                    onPrefetch={onPrefetch}
                     unread={byLabel}
                     actions={labelActions}
                     unnest={unnest}

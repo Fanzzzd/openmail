@@ -15,13 +15,13 @@ import {
   searchInputProblem,
 } from "@openmail/core/schema";
 import { Effect, Option, Stream, Schedule } from "effect";
-import { AsyncResult, Atom } from "effect/reactivity";
+import { AsyncResult, Atom, type AtomRegistry } from "effect/reactivity";
 
 import type { ThreadQuery, ThreadSummary } from "../../../shared/api";
 import type { AppError } from "../lib/errors";
 import { supportsInInboxFilter } from "../lib/folder-actions";
 import { MailClient } from "./rpc";
-import { OVERVIEW, scopeAccountIds, categoryAccounts } from "../lib/view";
+import { OVERVIEW, scopeAccountIds, categoryAccounts, type View } from "../lib/view";
 import { type Loaded, PAGE, refreshPages, searchExtent } from "./list-pages";
 import { Keys } from "./keys";
 import { accountsAtom, organizationAtom, prefsAtom } from "./queries";
@@ -130,9 +130,10 @@ export const pagedList = (query: ListQuery) => ({
   loaded: loadedPages(query),
 });
 
-/** The query behind the list on screen; null on the overview, which has no list. */
-export const listQueryAtom = Atom.make((get): ListQuery | null => {
-  const view = get(viewAtom);
+type Read = <A>(atom: Atom.Atom<A>) => A;
+
+/** The list query a view opens with and no search; null on the overview, which has no list. */
+export function viewListQuery(get: Read, view: View): ListQuery | null {
   if (view.space === OVERVIEW) return null;
   const accounts = AsyncResult.getOrElse(get(accountsAtom), () => []);
   const baseScope = scopeAccountIds(view, accounts);
@@ -147,18 +148,7 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
         .map((a) => a.id)
     : baseScope;
   const common = scope ? { accountIds: scope } : {};
-  // A last word too short to search yet keeps the list on the search without it.
-  const search = searchedFieldText(get(searchTextAtom)).trim();
-  if (search)
-    return {
-      ...common,
-      search,
-      searchScope: get(searchScopeAtom),
-      mailbox: view.mailbox,
-      ...(view.label ? { label: view.label.id } : {}),
-      flat: !AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping,
-    };
-  const filters = get(filtersAtom);
+  const filters = filtersAtom.forView(get, view);
   const grouping = AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping;
   // Optional fields are left out rather than set to undefined: the main
   // process decodes the query strictly.
@@ -175,6 +165,42 @@ export const listQueryAtom = Atom.make((get): ListQuery | null => {
           },
         }
       : {}),
+  };
+}
+
+/**
+ * Puts a view's list in the list cache ahead of a switch: its first page when the view has none,
+ * a revalidation when its cached rows went stale, and nothing when they are fresh. The switch then
+ * shows rows from the cache before any list request (see docs/list-loading.md).
+ */
+export function prefetchView(
+  registry: AtomRegistry.AtomRegistry,
+  view: View,
+  { missingOnly = false }: { missingOnly?: boolean } = {},
+) {
+  const query = viewListQuery((atom) => registry.get(atom), view);
+  if (!query) return null;
+  const { loaded } = pagedList(query);
+  // Background warming fills only lists the cache lacks. A cached list, stale or not, refreshes
+  // when it shows or when the pointer reaches its row, never because warming ran again.
+  if (missingOnly && registry.getNodes().has(loaded)) return null;
+  registry.get(loaded);
+  return loaded;
+}
+
+/** The query behind the list on screen; null on the overview, which has no list. */
+export const listQueryAtom = Atom.make((get): ListQuery | null => {
+  const view = get(viewAtom);
+  const query = viewListQuery(get, view);
+  // A last word too short to search yet keeps the list on the search without it.
+  const search = searchedFieldText(get(searchTextAtom)).trim();
+  if (!query || !search) return query;
+  const { listFilters: _filters, flat: _flat, ...common } = query;
+  return {
+    ...common,
+    search,
+    searchScope: get(searchScopeAtom),
+    flat: !AsyncResult.getOrElse(get(prefsAtom), () => DEFAULT_PREFS).threadGrouping,
   };
 });
 
@@ -262,8 +288,10 @@ export const threadListAtom = Atom.writable(
     const { loaded: loadedAtom, wanted } = pagedList(local);
     const result = get(loadedAtom);
     // A search shows no count, and counting one walks every match (1.7 s on 100k messages).
+    // The count waits until the rows have loaded: the main process answers in order, and All
+    // Mail's count took 120-165 ms on a 20k-message database, ahead of the rows a switch needs.
     const total =
-      query.search === undefined
+      query.search === undefined && AsyncResult.isSuccess(result) && !result.waiting
         ? AsyncResult.getOrElse(
             get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
             () => null,

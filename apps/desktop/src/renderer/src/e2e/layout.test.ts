@@ -1765,3 +1765,39 @@ it("the docked sidebar hides and shows before its pref is stored, without remoun
   expect(reader()).toBe(article);
   await eventually(async () => expect((await h.run(h.m.app.prefs)).sidebarVisible).toBe(true));
 });
+
+it("a sidebar switch to a view loaded on pointer enter paints its rows before any list request", async () => {
+  width = 1320;
+  current = await flow();
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  const allMail = () =>
+    document.querySelector<HTMLElement>(
+      '[data-mail-pane="sidebar"]:not([data-sidebar-rail]) [data-focus-key="mailbox:all"]',
+    );
+  // First pages and refreshes; a short list then asks for older mail, which is not a reload.
+  const reads = () =>
+    h.requests.filter((request) => {
+      const payload = JSON.stringify(request.payload);
+      return (
+        request.tag === "Threads" &&
+        payload.includes('"mailbox":"all"') &&
+        !payload.includes('"before"')
+      );
+    }).length;
+  // The pointer reaches the row: its first page loads.
+  fireEvent.pointerEnter(allMail()!);
+  await eventually(() => expect(reads()).toBe(1));
+  await wait(50);
+  fireEvent.click(allMail()!);
+  // The click paints from the cache, in the same turn, with no new list request.
+  const list = screen.getByRole("listbox");
+  expect(list.getAttribute("aria-label")).toBe("All Mail");
+  // Not the Inbox rows held over while a request runs: All Mail's own, ready.
+  expect(list.getAttribute("aria-busy")).toBe("false");
+  expect(list.querySelector("[data-stale]")).toBeNull();
+  expect(row(h.id("one"))).toBeTruthy();
+  expect(reads()).toBe(1);
+  await wait(50);
+  expect(reads()).toBe(1);
+});
