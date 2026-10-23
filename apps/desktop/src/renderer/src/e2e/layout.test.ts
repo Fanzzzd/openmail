@@ -523,6 +523,46 @@ it("focus in a menu that a pane move closes goes where its trigger's focus would
   await eventually(() => expect(document.activeElement).toBe(picked));
 });
 
+it("a key pressed while a pane move waits for the list keeps the person's focus there", async () => {
+  width = 880;
+  current = await flow({
+    messages: [incoming("one"), incoming("kept", { labels: ["STARRED"], isUnread: false })],
+  });
+  const h = current;
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  // A starred conversation opened by its route while the lists are held: the reader shows it,
+  // and the list still shows the Inbox's rows, none of them for it.
+  const release = await h.holdLists();
+  onTestFinished(release);
+  await act(() =>
+    h.router.navigate({
+      href: mailHref({ space: "all", mailbox: "starred" }, { thread: h.id("kept") }),
+    }),
+  );
+  await eventually(() => expect(reader()?.textContent).toContain("Original kept"));
+  expect(document.querySelector(`[data-id="${h.id("kept")}"]`)).toBeNull();
+  const bar = await screen.findByRole("group", { name: "Reply to this conversation" });
+  const reply = within(bar).getByRole("button", { name: "Reply" });
+  reply.focus();
+  // The narrow layout hides the reader, so focus goes to the list, which waits a few frames for
+  // the row before it takes focus itself.
+  resize(780);
+  await eventually(() => expect(reader()).toBeNull());
+  await new Promise<void>((done) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => done()));
+  });
+  expect(document.activeElement).toBe(document.body);
+  key("Shift", {}, document.body);
+  const list = document.querySelector<HTMLElement>('[data-mail-pane="list"]');
+  await eventually(() => expect(list?.contains(document.activeElement)).toBe(true));
+  const kept = document.activeElement;
+  // The Reply button shows again, yet the list the person kept has focus.
+  resize(880);
+  await eventually(() => expect(reader()).not.toBeNull());
+  await wait(100);
+  expect(document.activeElement).toBe(kept);
+});
+
 it("the search field gets focus back when it shows again after the narrow reader stood in", async () => {
   width = 1320;
   current = await flow();
