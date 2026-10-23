@@ -74,6 +74,25 @@ export const MessageRow = Schema.Struct({
   body_cached: Schema.BooleanFromBit,
 });
 
+/** The recipient lists of a message, for a list row of mail the user wrote. */
+export const RecipientsRow = Schema.Struct({
+  id: Schema.String,
+  to_json: MessageRow.fields.to_json,
+  cc_json: MessageRow.fields.cc_json,
+  bcc_json: MessageRow.fields.bcc_json,
+});
+
+/** To, then Cc and Bcc, each address once. */
+export function recipientList(lists: readonly (readonly Address[])[]): Address[] {
+  const seen = new Set<string>();
+  return lists.flat().filter((a) => {
+    const key = a.address.toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
 export const MESSAGE_COLUMNS = `m.*, (SELECT d.id FROM drafts d
   WHERE d.account_id = m.account_id AND d.remote_message_id = m.provider_id) AS draft_id`;
 

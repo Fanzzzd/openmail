@@ -77,11 +77,30 @@ export function RowMenu({ thread, actions }: { thread: ThreadSummary; actions: R
 /** Marks a selected row while the list is not focused, in both themes. */
 export const SELECTION_BAR = "bg-neutral-500 dark:bg-neutral-400";
 
-/** "Keith, Bruce, Neil": first names of the thread's senders. */
-function senders(t: ThreadSummary): string {
-  const people = t.participants.length ? t.participants : [t.from];
+/** "Keith, Bruce, Neil": first names, or the whole name of one person. */
+function names(people: ThreadSummary["participants"]): string {
   if (people.length === 1) return displayName(people[0]!);
   return people.map((p) => displayName(p).split(/\s+/)[0]).join(", ");
+}
+
+/**
+ * Who a row names. Sent mail and drafts name their recipients, as in Mail and Mimestream: in
+ * Sent and Drafts, and for a draft of its own anywhere. A draft with no recipients yet says Draft.
+ * Every other row names the thread's senders.
+ */
+function useRowPeople(thread: ThreadSummary, byRecipients: boolean) {
+  const { t } = useLingui();
+  const draft = thread.labels.includes("DRAFT");
+  const recipients = thread.recipients;
+  if (recipients && (byRecipients || (draft && thread.threadCount === 1))) {
+    const to = names(recipients);
+    if (recipients.length) return { text: t`To: ${to}`, draft: false };
+    if (draft) return { text: t`Draft`, draft: true };
+  }
+  return {
+    text: names(thread.participants.length ? thread.participants : [thread.from]),
+    draft: false,
+  };
 }
 
 export const Row = memo(function Row({
@@ -97,6 +116,7 @@ export const Row = memo(function Row({
   menuOpen,
   rule,
   showAccount,
+  byRecipients,
   onSelect,
   onOpen,
   dragData,
@@ -116,6 +136,8 @@ export const Row = memo(function Row({
   menuOpen: boolean;
   rule: boolean;
   showAccount: boolean;
+  /** Sent and Drafts, whose rows name the people the mail goes to. */
+  byRecipients: boolean;
   onSelect: SelectRow;
   /** Double-click: open in a window of its own. */
   onOpen: (thread: ThreadSummary) => void;
@@ -125,6 +147,7 @@ export const Row = memo(function Row({
 }) {
   const { i18n, t } = useLingui();
   const accountLabel = useAccountName(m.accountId);
+  const people = useRowPeople(m, byRecipients);
   const messageCount = m.threadCount;
   const row = useRef<HTMLButtonElement>(null);
   const swipe = useMessageSwipe(row, swipeActions, (action) => onSwipe(m, action));
@@ -218,7 +241,7 @@ export const Row = memo(function Row({
             reads the preview and its hits as the description. */}
         <span className="sr-only">
           {[
-            senders(m),
+            people.text,
             m.subject || t`(No subject)`,
             shortDate(m.date, i18n),
             ...(messageCount > 1
@@ -239,7 +262,11 @@ export const Row = memo(function Row({
               className={`absolute top-1/2 -left-[18px] size-2 -translate-y-1/2 rounded-full ${accent ? "bg-white" : "bg-blue-500"}`}
             />
           )}
-          <span className="min-w-0 truncate text-callout font-semibold">{senders(m)}</span>
+          <span
+            className={`min-w-0 truncate text-callout font-semibold ${people.draft && !accent ? "text-a11y-danger" : ""}`}
+          >
+            {people.text}
+          </span>
           {m.threadCount > 1 && (
             <span className={`shrink-0 text-body tabular-nums ${muted}`}>{m.threadCount}</span>
           )}

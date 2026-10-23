@@ -2713,6 +2713,7 @@ msgstr "Stahuje se aktualizace {version}…"
 msgid "Downloads"
 msgstr "Stahování"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Koncept"
@@ -8031,6 +8032,7 @@ msgstr "Pro mě nebo kopie pro mě"
 msgid "To sign in again, add the address again with its new password."
 msgstr "Chcete-li se znovu přihlásit, přidejte adresu znovu s novým heslem."
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "Komu: {to}"

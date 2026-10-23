@@ -28,7 +28,14 @@ import {
   type makeQueryStore,
   SUMMARY_COLUMNS,
 } from "./store-query.js";
-import { DerivedSearchRow, SummaryRow, ThreadRow, toSummary } from "./store-rows.js";
+import {
+  DerivedSearchRow,
+  RecipientsRow,
+  recipientList,
+  SummaryRow,
+  ThreadRow,
+  toSummary,
+} from "./store-rows.js";
 import { type makeWordIndexStore } from "./store-word-index.js";
 import { makeLabelsStore } from "./store-labels.js";
 import {
@@ -239,6 +246,30 @@ export const makeThreadsStore = ({
     ).pipe(Effect.map((rows) => rows[0]?.n ?? 0));
   });
 
+  /**
+   * Adds the recipients of rows whose message the user wrote, sent mail or a draft, which a list
+   * names by the people they go to. One lookup by id for the page's rows that need it.
+   */
+  const withRecipients = (rows: ThreadSummary[]) => {
+    const ids = rows
+      .filter((row) => row.labels.includes("SENT") || row.labels.includes("DRAFT"))
+      .map((row) => row.id);
+    if (!ids.length) return Effect.succeed(rows);
+    return all(RecipientsRow)(
+      sql`SELECT id,to_json,cc_json,bcc_json FROM messages WHERE id IN ${sql.in(ids)}`,
+    ).pipe(
+      Effect.map((found) => {
+        const byId = new Map(
+          found.map((r) => [r.id, recipientList([r.to_json, r.cc_json, r.bcc_json])]),
+        );
+        return rows.map((row) => {
+          const recipients = byId.get(row.id);
+          return recipients ? { ...row, recipients } : row;
+        });
+      }),
+    );
+  };
+
   const threadPage = Effect.fn("Store.threadPage")(function* (q: LocalQuery, limit: number) {
     // Exact passes group the candidate scope, or the corpus after fallback.
     const materialize = q.proximityPage?.kind === "exact";
@@ -327,20 +358,22 @@ export const makeThreadsStore = ({
       rows = decodeThreads(raw.filter((_, at) => window[at]?.id !== null));
       if (rows.length < (window[0]?.recent_count ?? 0)) rows = decodeThreads(yield* query(false));
     } else rows = decodeThreads(yield* query(false));
-    return rows.map((r): ThreadSummary => ({
-      ...toSummary(r),
-      ...(r.attachments_json.length
-        ? {
-            attachmentNames: r.attachments_json
-              .slice(0, 2)
-              .map((a) => attachmentFilename(a.filename)),
-          }
-        : {}),
-      isUnread: r.any_unread,
-      isStarred: r.any_starred,
-      threadCount: r.thread_count,
-      participants: r.participants_json,
-    }));
+    return yield* withRecipients(
+      rows.map((r): ThreadSummary => ({
+        ...toSummary(r),
+        ...(r.attachments_json.length
+          ? {
+              attachmentNames: r.attachments_json
+                .slice(0, 2)
+                .map((a) => attachmentFilename(a.filename)),
+            }
+          : {}),
+        isUnread: r.any_unread,
+        isStarred: r.any_starred,
+        threadCount: r.thread_count,
+        participants: r.participants_json,
+      })),
+    );
   });
 
   const threadList = Effect.fn("Store.threadList")(function* (q: LocalQuery, limit: number) {
@@ -422,6 +455,7 @@ export const makeThreadsStore = ({
           };
         }),
       ),
+      Effect.flatMap(withRecipients),
     );
 
   const messageList = Effect.fn("Store.messageList")(function* (q: LocalQuery, limit: number) {

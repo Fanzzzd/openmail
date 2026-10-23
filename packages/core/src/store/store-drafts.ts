@@ -18,6 +18,7 @@ import {
 import { normalizeComposeMessage } from "../compose/compose-body.js";
 import type { DraftDiscard, StoredDraft } from "./service.js";
 import { all, first, run } from "./sql-rows.js";
+import { recipientList } from "./store-rows.js";
 
 const DraftRow = Schema.Struct({
   id: Schema.String,
@@ -359,6 +360,7 @@ export function makeDraftStore(sql: SqlClient.SqlClient) {
               : {}),
             threadCount: 1,
             participants: [me],
+            recipients: recipientList([m.to, m.cc, m.bcc]),
           };
         }),
       ),

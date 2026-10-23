@@ -749,6 +749,63 @@ it.effect("local drafts join the Drafts list only for unfiltered views", () =>
   ),
 );
 
+it.effect("sent mail and drafts carry their recipients for the list; other rows do not", () =>
+  withStore(
+    Effect.gen(function* () {
+      const store = yield* Store;
+      const { id } = yield* store.upsertAccount("gmail", "alex@example.com");
+      const me = { name: "Alex", address: "alex@example.com" };
+      const oakridge = { name: "Oakridge Property", address: "lease@oakridge.example" };
+      const sam = { name: "Sam", address: "sam@example.com" };
+      yield* store.upsertMessage(id, message({ providerId: "in", threadId: "t-in", date: 1 }));
+      yield* store.upsertMessage(
+        id,
+        message({
+          providerId: "sent",
+          threadId: "t-sent",
+          labels: ["SENT"],
+          from: me,
+          to: [oakridge],
+          cc: [sam, { ...oakridge, name: "" }],
+          date: 2,
+        }),
+      );
+      yield* store.upsertMessage(
+        id,
+        message({ providerId: "d1", threadId: "t-d1", labels: ["DRAFT"], from: me, date: 3 }),
+      );
+      yield* store.putDraft({
+        id: "draft:a",
+        accountId: id,
+        message: {
+          to: [oakridge],
+          cc: [],
+          bcc: [sam],
+          subject: "Lease",
+          text: "",
+          attachments: [],
+        },
+      });
+      const recipients = (rows: readonly { id: string; recipients?: unknown }[]) =>
+        rows.map((row) => [row.id, row.recipients]);
+      assert.deepStrictEqual(recipients(yield* store.listThreads({})), [[`${id}/in`, undefined]]);
+      // To, then Cc, each address once.
+      assert.deepStrictEqual(recipients(yield* store.listThreads({ mailbox: "sent" })), [
+        [`${id}/sent`, [oakridge, sam]],
+      ]);
+      assert.deepStrictEqual(
+        recipients(yield* store.listThreads({ mailbox: "sent", flat: true })),
+        [[`${id}/sent`, [oakridge, sam]]],
+      );
+      // A provider draft with no recipients yet has an empty list; a local draft has its own.
+      assert.deepStrictEqual(recipients(yield* store.listThreads({ mailbox: "drafts" })), [
+        [`${id}/d1`, []],
+        ["draft:a", [oakridge, sam]],
+      ]);
+    }),
+  ),
+);
+
 it.effect(
   "reminders, sidebar preferences and Gmail signatures persist after closing and reopening SQLite",
   () =>

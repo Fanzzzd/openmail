@@ -72,6 +72,11 @@ export const ThreadSummary = Schema.Struct({
   threadCount: Schema.Number,
   /** Distinct senders in the thread, oldest first. */
   participants: Schema.Array(Address),
+  /**
+   * To, then Cc and Bcc, of the row's message when the user wrote it: sent mail and drafts, which
+   * a list names by the people they go to. Absent on other rows.
+   */
+  recipients: Schema.optionalKey(Schema.Array(Address)),
   derivedMatches: Schema.optionalKey(Schema.Array(DerivedChunk)),
   searchMatches: Schema.optionalKey(Schema.Array(SearchMatch)),
   /** Only on-device semantic ranking found it: no query word matched, so nothing is highlighted. */

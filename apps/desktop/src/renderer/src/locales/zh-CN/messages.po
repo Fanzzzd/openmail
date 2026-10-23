@@ -2723,6 +2723,7 @@ msgstr "正在下载更新 {version}…"
 msgid "Downloads"
 msgstr "下载目录"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "草稿"
@@ -8041,6 +8042,7 @@ msgstr "发送或抄送给我"
 msgid "To sign in again, add the address again with its new password."
 msgstr "如需重新登录，请用新密码重新添加此地址。"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "收件人：{to}"

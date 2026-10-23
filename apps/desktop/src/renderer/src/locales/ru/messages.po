@@ -2713,6 +2713,7 @@ msgstr "Загрузка обновления {version}…"
 msgid "Downloads"
 msgstr "Загрузки"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Черновик"
@@ -8031,6 +8032,7 @@ msgstr "Мне или копия мне"
 msgid "To sign in again, add the address again with its new password."
 msgstr "Чтобы войти снова, добавьте адрес ещё раз с новым паролем."
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "Кому: {to}"

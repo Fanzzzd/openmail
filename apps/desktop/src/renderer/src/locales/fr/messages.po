@@ -2713,6 +2713,7 @@ msgstr "Téléchargement de la mise à jour {version}…"
 msgid "Downloads"
 msgstr "Téléchargements"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Brouillon"
@@ -8031,6 +8032,7 @@ msgstr "À moi ou en copie à moi"
 msgid "To sign in again, add the address again with its new password."
 msgstr "Pour vous reconnecter, ajoutez de nouveau l’adresse avec son nouveau mot de passe."
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "À : {to}"

@@ -1027,3 +1027,34 @@ it("the menu state says no sheet with nothing open, and Close window then closes
   expect(row(h.id("one"))).toBeTruthy();
   closeWindow.mockRestore();
 });
+
+it("Sent and Drafts rows name the people the mail goes to, and a draft with none says Draft", async () => {
+  const me = { name: "Alex", address: "me@gmail.com" };
+  const oakridge = { name: "Oakridge Property", address: "lease@oakridge.example" };
+  current = await flow({
+    messages: [
+      incoming("one"),
+      incoming("sent", { labels: ["SENT"], from: me, to: [oakridge], cc: [], isUnread: false }),
+      incoming("empty", { labels: ["DRAFT"], from: me, to: [], cc: [], isUnread: false }),
+    ],
+  });
+  const h = current;
+  await h.run(
+    h.store.putDraft({
+      id: "draft:lease",
+      accountId: h.account.id,
+      message: { to: [oakridge], cc: [], bcc: [], subject: "Lease", text: "", attachments: [] },
+    }),
+  );
+  await eventually(() => expect(row(h.id("one"))).toBeTruthy());
+  // The inbox names the senders; the row's text starts with its screen reader summary.
+  expect(row(h.id("one")).textContent).toMatch(/^Alice/);
+  fireEvent.click(screen.getByRole("button", { name: /^Sent/ }));
+  await eventually(() => expect(row(h.id("sent")).textContent).toMatch(/^To: Oakridge Property/));
+  fireEvent.click(screen.getByRole("button", { name: /^Drafts/ }));
+  await eventually(() => expect(row("draft:lease").textContent).toMatch(/^To: Oakridge Property/));
+  const empty = row(h.id("empty"));
+  expect(empty.textContent).toMatch(/^Draft/);
+  expect(empty.textContent).not.toContain("Alex");
+  expect(empty.querySelector(".text-a11y-danger")?.textContent).toBe("Draft");
+});

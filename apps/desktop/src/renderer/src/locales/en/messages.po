@@ -2717,6 +2717,7 @@ msgstr "Downloading update {version}…"
 msgid "Downloads"
 msgstr "Downloads"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Draft"
@@ -8035,6 +8036,7 @@ msgstr "To or CC me"
 msgid "To sign in again, add the address again with its new password."
 msgstr "To sign in again, add the address again with its new password."
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "To: {to}"

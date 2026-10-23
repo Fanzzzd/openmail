@@ -2713,6 +2713,7 @@ msgstr "Descargando la actualización {version}…"
 msgid "Downloads"
 msgstr "Descargas"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "Borrador"
@@ -8031,6 +8032,7 @@ msgstr "A mí o CC a mí"
 msgid "To sign in again, add the address again with its new password."
 msgstr "Para volver a iniciar sesión, añade de nuevo la dirección con su nueva contraseña."
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "Para: {to}"

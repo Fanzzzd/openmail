@@ -2713,6 +2713,7 @@ msgstr "アップデート {version} をダウンロード中…"
 msgid "Downloads"
 msgstr "ダウンロード"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "Draft"
 msgstr "下書き"
@@ -8031,6 +8032,7 @@ msgstr "自分宛てまたは CC"
 msgid "To sign in again, add the address again with its new password."
 msgstr "もう一度サインインするには、新しいパスワードでアドレスを追加し直してください。"
 
+#: src/renderer/src/features/mail-list/MessageRow.tsx
 #: src/renderer/src/features/reader/ThreadMessage.tsx
 msgid "To: {to}"
 msgstr "宛先：{to}"

@@ -251,6 +251,8 @@ function MessageListBody({
   const selectedIndex = threads.findIndex((m) => m.id === selectedId);
   const removeLabelId = moveSourceLabel(rowActions.mailbox, rowActions.currentLabel);
   const flat = !rowActions.grouped;
+  const byRecipients =
+    !rowActions.currentLabel && (rowActions.mailbox === "sent" || rowActions.mailbox === "drafts");
   const dragDataFor = (ids: readonly string[]) => JSON.stringify({ ids, removeLabelId, flat });
   // Built once per render, not once per selected row: a large selection is quadratic otherwise.
   const selectedDragData = dragDataFor(
@@ -640,6 +642,7 @@ function MessageListBody({
                       !selectedIds.has(threads[i + 1]?.id ?? "")
                     }
                     showAccount={showAccount}
+                    byRecipients={byRecipients}
                     onSelect={select}
                     dragData={selectedIds.has(m.id) ? selectedDragData : dragDataFor([m.id])}
                     onOpen={openRow}
