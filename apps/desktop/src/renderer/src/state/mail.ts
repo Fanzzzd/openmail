@@ -60,8 +60,10 @@ export const sendMessage = (
 export const saveDraft = (draft: DraftInput) =>
   withMail((call) => call("SaveDraft", { draft })).pipe(Reactivity.mutation([Keys.threads]));
 
-/** With `holdMs`, core keeps the draft until the undo window ends; true when it does. */
-/** A held discard leaves the Drafts list and count at once, so both refresh. */
+/**
+ * With `holdMs`, core keeps the draft until the undo window ends; true when it does. A held
+ * discard leaves the Drafts list and count at once, so both refresh.
+ */
 export const discardDraft = (id: string, holdMs?: number) =>
   withMail((call) => call("DiscardDraft", holdMs === undefined ? { id } : { id, holdMs })).pipe(
     Reactivity.mutation([Keys.threads, Keys.thread, Keys.counts, Keys.proposals, Keys.audit]),
