@@ -60,7 +60,7 @@
     "axe-core": "4.14.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "colorjs.io": "0.7.1",
-    "electron": "^44.7.2",
+    "electron": "^45.0.0",
     "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
     "fast-check": "^4.10.2",
