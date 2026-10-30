@@ -79,20 +79,47 @@ export const listReachAtom = Atom.family((_query: ListQuery) =>
 // the next lookup would start a second list from page one.
 const wantedPages = Atom.family((_query: ListQuery) => Atom.make(1));
 
+/**
+ * How long a new search waits after the last key before it asks the main process. A key within
+ * this time replaces the search before it starts; see loadedPages.
+ */
+export const SEARCH_TYPING_DELAY_MS = 180;
+
+/**
+ * A search's loaded rows and the threads version they were read at, kept five minutes after its
+ * list leaves the screen, like a mailbox's. loadedPages writes it and starts from it.
+ */
+const keptSearch = Atom.family((_query: ListQuery) =>
+  Atom.make<{ readonly loaded: Loaded; readonly version: number } | undefined>(undefined).pipe(
+    Atom.setIdleTTL("5 minutes"),
+  ),
+);
+
 const loadedPages = Atom.family((query: ListQuery) => {
   const wanted = wantedPages(query);
+  const kept = query.search ? keptSearch(query) : undefined;
   let requested = 0;
   const loaded = MailClient.runtime
     .atom((get) => {
-      get(threadsVersionAtom);
+      const version = get(threadsVersionAtom);
       const want = get(wanted);
       const increased = want > requested;
       requested = want;
-      const previous = get
+      const self = get
         .self<AsyncResult.AsyncResult<Loaded, AppError>>()
         .pipe(Option.flatMap(AsyncResult.value), Option.getOrUndefined);
+      const stored = kept ? get.once(kept) : undefined;
+      const previous = self ?? stored?.loaded;
+      // A search shown again with nothing changed since its rows were read needs no request.
+      if (!self && stored?.version === version && want <= stored.loaded.requested)
+        return Effect.succeed(stored.loaded);
+      const keep = (next: Loaded) =>
+        Effect.sync(() => {
+          if (kept) get.set(kept, { loaded: next, version });
+        });
       // Only an increased request may fetch history; invalidation refreshes cached rows.
-      const continuing = increased ? previous : undefined;
+      const continuing =
+        increased && (self !== undefined || stored?.version === version) ? previous : undefined;
       // Refresh the rows within reach so scroll coordinates and selection remain valid.
       const reach = get.once(listReachAtom(query));
       return Effect.gen(function* () {
@@ -105,6 +132,9 @@ const loadedPages = Atom.family((query: ListQuery) => {
             reach,
           ).pipe(Effect.map((next) => ({ ...next, requested: want })));
         }
+        // A search's first page waits out typing. A search typed over meanwhile is removed
+        // (a search list has no idle time), which interrupts this sleep or its request.
+        if (query.search && !continuing) yield* Effect.sleep(SEARCH_TYPING_DELAY_MS);
         let remoteDone =
           continuing?.remoteDone ??
           previous?.remoteDone ??
@@ -119,11 +149,18 @@ const loadedPages = Atom.family((query: ListQuery) => {
           continuing ? { ...continuing, done: false } : undefined,
         );
         return { ...next, remoteDone, requested: want };
-      });
+      }).pipe(Effect.tap(keep));
     })
-    .pipe(Atom.setIdleTTL("5 minutes"));
+    // A search's request stops when its list leaves the screen: each key of a typed search
+    // makes a new list, and the one before it is removed at once, which interrupts its request
+    // in the renderer and in the main process. Its rows stay in keptSearch.
+    .pipe(Atom.setIdleTTL(query.search ? 0 : "5 minutes"));
   return query.search ? loaded.pipe(Atom.makeRefreshOnSignal(searchRefresh)) : loaded;
 });
+
+/** Rows kept for a search whose request is in flight again, shown until it answers. */
+const keptRows = (get: Read, query: ListQuery) =>
+  query.search ? get(keptSearch(query))?.loaded : undefined;
 
 export const pagedList = (query: ListQuery) => ({
   wanted: wantedPages(query),
@@ -271,7 +308,7 @@ export const serverList = Atom.family((query: ListQuery) =>
         return yield* call("SearchServer", { query: { ...query, limit: SEARCH_LIMIT } });
       }),
     )
-    .pipe(Atom.setIdleTTL("5 minutes")),
+    .pipe(Atom.setIdleTTL(0)),
 );
 
 /**
@@ -292,7 +329,9 @@ export const threadListAtom = Atom.writable(
     // took 120-165 ms on a 20k-message database, ahead of the rows a switch was waiting for. Once
     // rows exist it stays mounted through refreshes, so a refresh counts once.
     const total =
-      query.search === undefined && AsyncResult.value(result)._tag === "Some"
+      query.search === undefined &&
+      get(searchTextAtom).trim() === "" &&
+      AsyncResult.value(result)._tag === "Some"
         ? AsyncResult.getOrElse(
             get(MailClient.query("ThreadCount", { query }, { reactivityKeys: [Keys.threads] })),
             () => null,
@@ -316,28 +355,33 @@ export const threadListAtom = Atom.writable(
       searchReauthAccounts:
         remote?.errors.filter((e) => e.requiresReauth).map((e) => e.accountId) ?? [],
     };
-    const liveRemote = remote
-      ? get(
-          MailClient.query(
-            "Threads",
-            {
-              query: {
-                ...query,
-                messageIds: remote.threads.map((row) => row.id),
-                limit: SEARCH_LIMIT,
-                flat: query.flat ?? false,
-                mailbox: query.searchScope === "folder" ? (query.mailbox ?? "inbox") : "all",
-                ...(query.searchScope === "folder" && query.label ? { label: query.label } : {}),
+    // Only provider hits need their live rows. The server search no longer repeats the local
+    // search, so with no hits this would run a whole search for `messageIds: []`.
+    const liveRemote =
+      remote && remote.threads.length > 0
+        ? get(
+            MailClient.query(
+              "Threads",
+              {
+                query: {
+                  ...query,
+                  messageIds: remote.threads.map((row) => row.id),
+                  limit: SEARCH_LIMIT,
+                  flat: query.flat ?? false,
+                  mailbox: query.searchScope === "folder" ? (query.mailbox ?? "inbox") : "all",
+                  ...(query.searchScope === "folder" && query.label ? { label: query.label } : {}),
+                },
               },
-            },
-            { reactivityKeys: [Keys.threads] },
-          ),
-        )
-      : null;
+              { reactivityKeys: [Keys.threads] },
+            ),
+          )
+        : null;
     const remoteRows = liveRemote
       ? AsyncResult.getOrElse(liveRemote, () => remote?.threads ?? [])
       : [];
-    const loaded = AsyncResult.value(result);
+    const loaded = Option.orElse(AsyncResult.value(result), () =>
+      Option.fromNullishOr(keptRows(get, local)),
+    );
     if (loaded._tag === "None") {
       const shown = Option.getOrElse(get.self<ThreadList>(), () => EMPTY);
       return {
@@ -353,15 +397,17 @@ export const threadListAtom = Atom.writable(
         canLoadMore: false,
       };
     }
+    // Kept rows of a search whose request is in flight again count as a refresh in flight.
+    const waiting = result.waiting || result._tag === "Initial";
     return {
       ...serverState,
       threads: remote
         ? mergeSearchResults(loaded.value.threads, remoteRows, query.flat)
         : loaded.value.threads,
       loading: false,
-      waiting: result.waiting,
+      waiting,
       // A refresh of the loaded pages is not an older page.
-      loadingMore: result.waiting && get(wanted) > loaded.value.requested,
+      loadingMore: waiting && get(wanted) > loaded.value.requested,
       moreNotLoaded:
         total === null ||
         query.search !== undefined ||
@@ -373,7 +419,7 @@ export const threadListAtom = Atom.writable(
       canLoadMore:
         (!loaded.value.done ||
           (!query.search && !loaded.value.remoteDone && query.mailbox !== "drafts")) &&
-        !result.waiting &&
+        !waiting &&
         (total === null ||
           query.search !== undefined ||
           query.mailbox === "drafts" ||

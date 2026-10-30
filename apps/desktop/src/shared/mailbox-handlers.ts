@@ -144,7 +144,7 @@ export function mailboxHandlers(m: MailboxService, options: MailboxHandlerOption
     CompactCache: () => m.sync.compactCache,
     CacheWindows: () => m.sync.cacheWindows,
     SetCacheWindow: ({ input }) => m.sync.setCacheWindow(input),
-    SearchServer: ({ query }) => m.reading.searchServer(query),
+    SearchServer: ({ query }) => m.reading.searchServer(query, { includeLocal: false }),
     ChangeLabel: ({ accountId, change }) => m.organize.changeLabel(accountId, change),
     ReorderFavorites: ({ order }) => m.organize.reorderFavorites(order),
     LabelPreferences: () => m.organize.labelPreferences,

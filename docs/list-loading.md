@@ -4,7 +4,9 @@ This note covers how the main window loads, caches, refreshes and warms thread l
 
 ## The cache
 
-Each list query (mailbox, label, account scope, filters, search) owns one `loadedPages` atom in [threads.ts](../apps/desktop/src/renderer/src/state/threads.ts). The atom holds the pages loaded so far. It stays in the registry for five minutes after the last component stops reading it (`Atom.setIdleTTL`). This is the only list cache. Prefetch and warming put lists into it. They do not keep a second copy.
+Each list query (mailbox, label, account scope, filters, search) owns one `loadedPages` atom in [threads.ts](../apps/desktop/src/renderer/src/state/threads.ts). The atom holds the pages loaded so far. A mailbox list stays in the registry for five minutes after the last component stops reading it (`Atom.setIdleTTL`). Prefetch and warming put lists into that cache; they do not keep another copy.
+
+A search's request atom has no idle time. It stops as soon as the next key replaces it, so its Effect and RPC are interrupted. `keptSearch` holds its completed rows and the threads version they were read at for five minutes. Returning to a fresh search shows those rows without a request; returning to a stale one shows them while it refreshes. These atoms share the same loaded-row object. See [search while typing](performance.md#search-while-typing) for the typing delay and the core reader process.
 
 A switch to a view whose list is cached renders those rows in the same commit, with no list request before paint: 14 to 22 ms from click to painted rows on the real database. A view with no cached list shows the previous rows dimmed until its first page arrives: 50 to 160 ms on the same database.
 
@@ -19,7 +21,7 @@ Before this, `Atom.withReactivity` kept every cached list observed. Each change 
 
 A refresh reads only the rows within reach: through the page after the last row the list renders or the last selected row (`refreshPages` in [list-pages.ts](../apps/desktop/src/renderer/src/state/list-pages.ts)). Deeper pages load again on scroll. A list scrolled 2,000 rows down used to read and send 1.6 MB on each change. It now reads 200 rows, 160 KB.
 
-The main process answers requests in order, so the thread count for a list waits for its first rows. All Mail's count took 120 to 165 ms and used to run ahead of the rows a switch was waiting for. Once rows exist the count stays mounted, so a refresh counts once.
+The main process answers requests in order, so the thread count for a list waits for its first rows. All Mail's count took 120 to 165 ms and used to run ahead of the rows a switch was waiting for. Once rows exist the count stays mounted, so a refresh counts once. A search, including unfinished input whose effective query is still the mailbox, never mounts the mailbox count.
 
 Events from the main process arrive in batches, and each batch invalidates each key once. Layout prefs (sidebar, toolbar, reading pane) emit `PrefsChanged`, which refetches only the prefs. They no longer emit `Changed`, which refetched every view.
 

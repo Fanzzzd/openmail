@@ -163,7 +163,7 @@ export const cases = [
       "server search fallback names the skipped operators and keeps local filtering",
     ],
     shared,
-    "m.reading.searchServer(query)",
+    "m.reading.searchServer(query, { includeLocal: false })",
     "Effect.succeed({ threads: [], truncated: false, errors: [] })",
   ],
   [

@@ -1,3 +1,4 @@
+import { traceQueries } from "../platform/node/fixtures/performance-mailbox.js";
 import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/node/testing.js";
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
@@ -57,6 +58,19 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
         const offline = yield* m.reading.searchServer({ search: "report" });
         assert.strictEqual(offline.threads.length, 3);
         assert.strictEqual(offline.errors.length, 1);
+        // Desktop already has a local search. A failed provider search must not repeat it.
+        const trace = traceQueries();
+        server.failNext = new ProviderError({ message: "offline" });
+        trace.start();
+        const serverOnly = yield* m.reading.searchServer(
+          { search: "report" },
+          { includeLocal: false },
+        );
+        const queries = trace.stop();
+        trace.restore();
+        assert.strictEqual(serverOnly.threads.length, 0);
+        assert.strictEqual(serverOnly.errors.length, 1);
+        assert.isFalse(queries.some((query) => query.sql.includes("WITH candidates AS")));
         assert.strictEqual((yield* m.accounts.accounts)[0]?.needsReauth, false);
         assert.strictEqual(
           (yield* m.reading.searchServer({ search: "report", accountIds: [] })).threads.length,

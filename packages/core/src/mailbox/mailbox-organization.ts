@@ -43,7 +43,10 @@ export function makeOrganizationMailbox(
   const mutation = <A, E>(effect: Effect.Effect<A, E>) => effect.pipe(Effect.tap(() => changed));
   const ruleMutation = <A, E>(effect: Effect.Effect<A, E>) =>
     ruleLock.withPermits(1)(mutation(effect));
-  const searchServer = Effect.fn("Mailbox.searchServer")(function* (query: ThreadQuery) {
+  const searchServer = Effect.fn("Mailbox.searchServer")(function* (
+    query: ThreadQuery,
+    options: { readonly includeLocal?: boolean } = {},
+  ) {
     const invalid = searchQueryError(query);
     if (invalid) return yield* invalid;
     // A provider would read an empty query as "all mail".
@@ -111,18 +114,26 @@ export function makeOrganizationMailbox(
         )),
       );
     }
-    const local = yield* store.listThreads({ ...query, limit: query.limit ?? 200 });
-    const remote = yield* store.listThreads({
-      mailbox: "all",
-      ...query,
-      searchScope: "all",
-      criteria,
-      unreadOnly: parsed.unreadOnly,
-      starredOnly: parsed.starredOnly,
-      messageIds: ids,
-      flat: query.flat ?? false,
-      limit: Math.max(ids.length, 1),
-    });
+    // The desktop's local request is already in flight. Repeating it here serialized two heavy
+    // searches on every prefix, even when every provider failed offline. CLI callers keep their
+    // local fallback, while the desktop asks only for provider hits.
+    const local =
+      options.includeLocal === false
+        ? []
+        : yield* store.listThreads({ ...query, limit: query.limit ?? 200 });
+    const remote = ids.length
+      ? yield* store.listThreads({
+          mailbox: "all",
+          ...query,
+          searchScope: "all",
+          criteria,
+          unreadOnly: parsed.unreadOnly,
+          starredOnly: parsed.starredOnly,
+          messageIds: ids,
+          flat: query.flat ?? false,
+          limit: Math.max(ids.length, 1),
+        })
+      : [];
     if (ids.length) yield* changed;
     const merged = mergeSearchResults(local, remote, query.flat);
     return {

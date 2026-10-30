@@ -212,7 +212,11 @@ export interface MailboxReading {
     conversations?: boolean,
   ): Effect.Effect<Record<string, number>>;
 
-  searchServer(query: ThreadQuery): Effect.Effect<SearchResult, InvalidInput>;
+  /** Desktop already runs local search separately; includeLocal=false avoids doing it twice. */
+  searchServer(
+    query: ThreadQuery,
+    options?: { readonly includeLocal?: boolean },
+  ): Effect.Effect<SearchResult, InvalidInput>;
   /**
    * Whether the word index covers every message. Until it does (after an upgrade rebuilds it),
    * search is approximate: AROUND matches as AND, and words also match inside longer words.

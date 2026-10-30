@@ -1,5 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest";
 import { fireEvent, screen } from "@testing-library/react/pure";
+import { SEARCH_TYPING_DELAY_MS } from "../state/threads";
 import { advance, eventually, flow, incoming, key, row, wait } from "./harness";
 
 const reader = () => document.querySelector('[data-mail-pane="reader"]')?.textContent ?? "";
@@ -281,10 +282,13 @@ it("typing a search one key at a time keeps the open conversation", async () => 
   field.focus();
   // A half typed word can match nothing; the conversation stays open meanwhile.
   fireEvent.change(field, { target: { value: "az" } });
+  // A new search waits out the typing delay on the faked clock.
+  await advance(SEARCH_TYPING_DELAY_MS);
   await eventually(() => expect(() => row(h.id("one"))).toThrow());
   expect(reader()).toContain("async retro");
   for (const typed of ["a", "as", "asy", "asyn", "async"])
     fireEvent.change(field, { target: { value: typed } });
+  await advance(SEARCH_TYPING_DELAY_MS);
   await eventually(() => expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true"));
   await advance(500);
   expect(row(h.id("one")).getAttribute("aria-selected")).toBe("true");
@@ -292,6 +296,7 @@ it("typing a search one key at a time keeps the open conversation", async () => 
 
   // Settled results without it close it.
   fireEvent.change(field, { target: { value: "asyncz" } });
+  await advance(SEARCH_TYPING_DELAY_MS);
   await eventually(() => expect(() => row(h.id("one"))).toThrow());
   expect(reader()).toContain("async retro");
   await advance(500);

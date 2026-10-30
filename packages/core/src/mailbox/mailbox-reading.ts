@@ -394,10 +394,10 @@ export const makeReadingMailbox = (
       ),
 
       // A server search also pages older mail into the cache in the background.
-      searchServer: (query) =>
+      searchServer: (query, searchOptions) =>
         deps
           .organization()
-          .searchServer(query)
+          .searchServer(query, searchOptions)
           .pipe(Effect.tap(() => FiberSet.run(runtime.background, deps.cache.fetchOlder(query)))),
     } satisfies MailboxReading,
   };
