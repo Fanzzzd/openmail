@@ -1,4 +1,4 @@
-import { fork } from "node:child_process";
+import { fork, type Serializable } from "node:child_process";
 import type { SearchProcessLauncher } from "../search-reader.js";
 
 /** Node CLI/MCP transport. Electron injects utilityProcess instead; RunAsNode is never used. */
@@ -22,8 +22,9 @@ export const nodeSearchProcess: SearchProcessLauncher = (entry, database) => {
   });
   return {
     send: (message) => {
-      // IPC frames are objects; the child validates them with the request schema.
-      child.send(JSON.stringify(message));
+      // Advanced IPC sends objects; the child validates them with the request schema.
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- IPC boundary: SearchProcess sends a JSON-normalized request object.
+      child.send(message as Serializable);
     },
     onMessage: (listener) => {
       child.on("message", listener);

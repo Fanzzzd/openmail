@@ -23,7 +23,7 @@ const utility = (
 ).parentPort;
 const send = (value: unknown) => {
   if (utility) utility.postMessage(value, []);
-  else if (process.send) process.send(JSON.stringify(value));
+  else if (process.send) process.send(value);
 };
 const file = Schema.decodeUnknownSync(Schema.String)(process.argv[2]);
 // No migrations, writes, provider APIs or access-lock acquisition here. The main connection owns

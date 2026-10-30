@@ -25,8 +25,8 @@ const fixture = (source: string) => {
       /import \{ parentPort(?:, workerData)? \} from "node:worker_threads";/,
       `
     const parentPort = {
-      on: (_, listener) => process.on("message", (frame) => listener(JSON.parse(frame))),
-      postMessage: (message) => process.send(JSON.stringify(message)),
+      on: (_, listener) => process.on("message", (frame) => listener(frame)),
+      postMessage: (message) => process.send(message),
     };
     const workerData = process.argv[2];
   `,
@@ -280,12 +280,12 @@ it(
   async () => {
     const crashing = fixture(`
     process.on("message", (frame) => {
-      const {query}=JSON.parse(frame);
+      const {query}=frame;
       if (query.search === "crash") process.exit(1);
       else if (query.search === "bad") process.send("bad JSON");
-      else process.send(JSON.stringify({kind:"threads",value:[]}));
+      else process.send({kind:"threads",value:[]});
     });
-    process.send(JSON.stringify({kind:"ready"}));
+    process.send({kind:"ready"});
   `);
     await Effect.runPromise(
       Effect.gen(function* () {

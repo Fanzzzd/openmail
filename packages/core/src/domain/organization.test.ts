@@ -3,11 +3,12 @@ import { incoming as makeIncoming, fakeServer, TestMailbox } from "../platform/n
 import { assert, it } from "@effect/vitest";
 import { Effect, Layer, Schema } from "effect";
 import { TestClock } from "effect/testing";
-import type { IncomingMessage } from "./message.js";
+import type { IncomingMessage, ThreadQuery } from "./message.js";
 import type { Account } from "./account.js";
 import { ProviderError, SettingsScopeMissing } from "./errors.js";
 import { makeFakeProvider } from "../platform/node/fake-provider.js";
 import { MailboxLive } from "../mailbox/mailbox-live.js";
+import { makeOrganizationMailbox } from "../mailbox/mailbox-organization.js";
 import { Mailbox } from "../mailbox/mailbox.js";
 import { EMPTY_FILTER, EMPTY_VACATION, snoozeTimes, sameFilterRule } from "./organization.js";
 import { MemoryPlatform } from "../platform/node/platform-memory.js";
@@ -77,6 +78,49 @@ import { makeOutlookSettings } from "../providers/outlook/outlook-settings.js";
           0,
         );
       }),
+    ),
+  );
+
+  it.effect("server-only local shortcuts never repeat the local store read", () =>
+    Effect.gen(function* () {
+      const mailbox = yield* Mailbox;
+      const live = yield* Store;
+      let reads = 0;
+      const organization = makeOrganizationMailbox(
+        {
+          ...live,
+          listThreads: (query) => {
+            reads++;
+            return live.listThreads(query);
+          },
+        },
+        Providers.of({
+          get: () => {
+            throw new Error("local shortcuts must not call a provider");
+          },
+        }),
+        Effect.void,
+        Effect.void,
+        (...args) => mailbox.organize.modifyWithUndo(...args),
+      );
+      const queries: ThreadQuery[] = [
+        { search: "report", mailbox: "snoozed", searchScope: "folder" },
+        { search: "in:attachment report" },
+        { search: "-in:attachment report" },
+      ];
+      for (const query of queries) {
+        reads = 0;
+        assert.deepStrictEqual(yield* organization.searchServer(query, { includeLocal: false }), {
+          threads: [],
+          truncated: false,
+          errors: [],
+        });
+        assert.strictEqual(reads, 0, query.search);
+        yield* organization.searchServer(query);
+        assert.strictEqual(reads, 1, "the default CLI/local fallback must be preserved");
+      }
+    }).pipe(
+      Effect.provide(TestMailbox({}, { backgroundFlush: false, backgroundReady: Effect.never })),
     ),
   );
 

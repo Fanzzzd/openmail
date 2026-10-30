@@ -59,7 +59,12 @@ export function makeOrganizationMailbox(
       criteria?.excluded?.some((condition) => condition.attachmentText) ||
       (query.searchScope === "folder" && query.mailbox === "snoozed")
     )
-      return { threads: yield* store.listThreads(query), truncated: false, errors: [] };
+      // These searches have no provider form. The desktop already ran this local search.
+      return {
+        threads: options.includeLocal === false ? [] : yield* store.listThreads(query),
+        truncated: false,
+        errors: [],
+      };
     const accounts = (yield* store.listAccounts).filter(
       (a) =>
         a.enabled !== false && (query.accountIds === undefined || query.accountIds.includes(a.id)),
