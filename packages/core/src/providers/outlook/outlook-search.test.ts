@@ -70,6 +70,7 @@ it.effect("Outlook server search extracts HTML text only for messages within the
   let extractions = 0;
   const counting: HtmlText = {
     htmlToText: (html) => Effect.sync(() => (extractions++, html)),
+    visibleText: (plain) => Effect.succeed(plain),
     concurrency: 4,
   };
   return run(http, (a) => a.search(account, { search: "from:wang", limit: 3 })).pipe(

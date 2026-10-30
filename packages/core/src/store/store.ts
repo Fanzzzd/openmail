@@ -1,3 +1,4 @@
+import { SearchReader } from "../platform/search-reader.js";
 import { CacheMaintenance } from "../platform/cache-storage.js";
 import { Effect, Layer, Option } from "effect";
 import { SqlClient } from "effect/sql";
@@ -28,6 +29,8 @@ import { makeSignatureStore } from "./store-signatures.js";
 import { makeSyncHealthStore } from "./store-sync-health.js";
 import { makeThreadsStore } from "./store-threads.js";
 import { makeWordIndexStore } from "./store-word-index.js";
+import { makeVisibleTextStore } from "./store-visible-text.js";
+import { HtmlText } from "../platform/html-text.js";
 import { makeBriefLockWait, makeWriteLockProbe } from "./store-brief-lock.js";
 import { makeUndoStore } from "../mailbox/undo-journal.js";
 export { applyOpToLabels, folderTarget } from "../domain/mail-ops.js";
@@ -66,6 +69,8 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     const organization = makeOrganizationStore(sql);
 
     const wordIndex = makeWordIndexStore(sql);
+    const htmlText = yield* HtmlText;
+    const briefLockWait = makeBriefLockWait(sql);
     const query = makeQueryStore({ sql });
     const policy = makePolicyStore({ sql, compose });
     const accounts = makeAccountsStore({
@@ -95,6 +100,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       listSource: query.listSource,
       searchDrivenList: query.searchDrivenList,
       planTextPage: query.planTextPage,
+      htmlText,
     });
     const reminders = makeRemindersStore({
       sql,
@@ -121,6 +127,18 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
     );
 
     yield* policy.initialize;
+    const searchReader = yield* SearchReader;
+    // Reads inside a transaction must see its uncommitted writes; everything else can use the
+    // read-only worker. Non-search lists keep the existing connection and cache.
+    const offThread = <A, E>(
+      enabled: boolean,
+      inline: Effect.Effect<A, E>,
+      read: () => Effect.Effect<A, E>,
+    ) =>
+      Effect.gen(function* () {
+        const transaction = yield* Effect.serviceOption(sql.transactionService);
+        return yield* enabled && searchReader && Option.isNone(transaction) ? read() : inline;
+      });
 
     return Store.of({
       ...composeService,
@@ -129,7 +147,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ...organization,
       transaction: (effect) =>
         sql.withTransaction(effect).pipe(Effect.catchIf(isSqlError, (e) => Effect.die(e))),
-      briefLockWait: makeBriefLockWait(sql),
+      briefLockWait,
       probeWriteLock: makeWriteLockProbe(sql),
       ...makeSyncHealthStore(sql),
       ...makeDiagnosticsStore(sql),
@@ -138,6 +156,7 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       semantics,
       ...makeHeaderBackfillStore(sql),
       ...wordIndex,
+      ...makeVisibleTextStore(sql, htmlText, briefLockWait),
       ...makeInviteStatusStore(sql),
       ...signatureLibrary,
       ...makeUndoStore(sql),
@@ -145,6 +164,14 @@ export const StoreLive: Layer.Layer<Store, never, SqlClient.SqlClient> = Layer.e
       ...accounts,
       ...messages,
       ...threads,
+      listThreads: (q) =>
+        offThread(q.search !== undefined, threads.listThreads(q), () =>
+          searchReader ? searchReader.threads(q) : threads.listThreads(q),
+        ),
+      countThreads: (q) =>
+        offThread(q.search !== undefined, threads.countThreads(q), () =>
+          searchReader ? searchReader.count(q) : threads.countThreads(q),
+        ),
       ...opqueue,
       ...makeSmtpAcceptedStore({ sql }),
       ...policy.service,

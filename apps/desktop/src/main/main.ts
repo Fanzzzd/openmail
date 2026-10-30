@@ -23,7 +23,7 @@ import { nativeBinary } from "./app/native-binary";
 import { builtInOAuthClients } from "./security/oauth-clients";
 import { app, BrowserWindow, powerMonitor } from "electron";
 import { desktopVision } from "./app/vision";
-import { desktopInferenceProcess } from "./app/inference";
+import { desktopInferenceProcess, desktopSearchProcess } from "./app/inference";
 
 import { UpdatesLive } from "./updates/updates";
 import { RpcServerLive } from "./rpc/rpc-server";
@@ -207,6 +207,7 @@ if (mcp) {
                 autoSync: "2 minutes",
                 resumeDesktopSends: true,
                 inferenceProcess: desktopInferenceProcess,
+                searchProcess: desktopSearchProcess,
                 dataDir: directory,
                 oauthClients: builtInOAuthClients,
                 oauthPage: nativeAuthorizePage,

@@ -1,3 +1,5 @@
+import type { SearchProcessLauncher } from "../search-reader.js";
+import { NodeSearchReader } from "./search-reader.js";
 import { MailCodec } from "../mail-codec.js";
 import { logWarning } from "../../domain/diagnostic-log.js";
 // Subpaths avoid loading unused Redis peers from the platform barrel in packaged apps.
@@ -49,6 +51,8 @@ export type PlatformServices =
   | ChildProcessSpawner.ChildProcessSpawner;
 
 export interface NodePlatformOptions {
+  /** Only the transport: core chooses the fixed search entry and database path. */
+  searchProcess?: SearchProcessLauncher;
   onDatabaseUpgrade?: () => Promise<() => void>;
   /** The desktop app owns the mailbox and refreshes planner statistics on every open. */
   plannerStatsOwner?: boolean;
@@ -157,6 +161,7 @@ export function NodePlatform(opts: NodePlatformOptions = {}): Layer.Layer<Platfo
             ? { busyTimeoutMs: busyTimeout.value }
             : {}),
         }),
+        NodeSearchReader(path.join(dir, "mail.db"), undefined, opts.searchProcess),
         appConfigFile(
           dir,
           firstClients(

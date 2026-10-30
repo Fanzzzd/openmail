@@ -135,3 +135,28 @@ it("the portable default stays inline", async () => {
   );
   expect(text).toBe("a");
 });
+
+it(
+  "a failed visible-text worker leaves work queued instead of parsing CSS on main",
+  async () => {
+    const exits = await Effect.runPromise(
+      Effect.gen(function* () {
+        const service = yield* HtmlText;
+        return [
+          yield* service.visibleText("plain", "<p>visible</p>").pipe(Effect.exit),
+          yield* service.visibleText("plain", "<p>next</p>").pipe(Effect.exit),
+        ];
+      }).pipe(
+        Effect.provide(
+          NodeHtmlText({
+            workerUrl: new URL("./missing-worker.js", import.meta.url),
+            startupMs: 50,
+          }),
+        ),
+        Effect.scoped,
+      ),
+    );
+    expect(exits.map((exit) => exit._tag)).toEqual(["Failure", "Failure"]);
+  },
+  scaledMs(30_000),
+);

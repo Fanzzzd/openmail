@@ -6,7 +6,7 @@ import { NodeMailbox } from "@openmail/core";
 import { Effect, type LogLevel, Logger, References } from "effect";
 import { app } from "electron";
 
-import { desktopInferenceProcess } from "../app/inference";
+import { desktopInferenceProcess, desktopSearchProcess } from "../app/inference";
 import { builtInOAuthClients } from "../security/oauth-clients";
 
 /**
@@ -75,6 +75,7 @@ export function runMcpMode({
           NodeMailbox({
             oauthClients: builtInOAuthClients,
             inferenceProcess: desktopInferenceProcess,
+            searchProcess: desktopSearchProcess,
           }),
         ),
         Effect.provideService(Logger.LogToStderr, true),

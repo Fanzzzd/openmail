@@ -300,6 +300,15 @@ export class Store extends Context.Service<
     readonly operatorTextReady: Effect.Effect<boolean>;
     /** Fills message_operator_text for messages stored before migration 57, one batch per call. */
     backfillOperatorText(batchSize?: number): Effect.Effect<{ processed: number; ready: boolean }>;
+    /**
+     * Computes the visible text of up to `batchSize` queued HTML bodies on the HtmlText worker and
+     * stores it for search snippets; `ready` when the queue is empty.
+     */
+    fillVisibleText(
+      batchSize?: number,
+    ): Effect.Effect<{ processed: number; ready: boolean }, DatabaseBusy>;
+    /** HTML bodies whose visible text is not stored yet. */
+    readonly visibleTextPending: Effect.Effect<number>;
     listThreads(q: ThreadQuery): Effect.Effect<ThreadSummary[], InvalidInput>;
     /** Cached matches without page cursors; counts rows, not conversation members. */
     countThreads(q: ThreadQuery): Effect.Effect<number, InvalidInput>;

@@ -249,6 +249,38 @@ export const MailboxLive = (
         );
       }).pipe(Effect.forkScoped);
 
+      // Search's visible text for queued HTML bodies, newest first, on the HtmlText worker: at
+      // startup until the queue is empty (minutes for a large database), then after changes
+      // settle. A fiber of its own, so the bigram queue above does not wait for it. It emits no
+      // change event: an open search picks the text up on its next refresh.
+      yield* Effect.gen(function* () {
+        // Subscribe before the first drain: a write between its final empty read and the stream
+        // starting must remain queued. This subscription also retains changes while a drain runs.
+        const changes = yield* PubSub.subscribe(runtime.pubsub);
+        yield* backgroundReady;
+        const visibleTextFailed = throttledWarning("search-index-failed");
+        const fillVisibleText = Effect.gen(function* () {
+          let ready = false;
+          while (!ready) {
+            ready = (yield* store.fillVisibleText()).ready;
+            if (!ready) yield* Effect.sleep("20 millis");
+          }
+        }).pipe(
+          Effect.catchTag("DatabaseBusy", () => searchIndexLockBusy("retrying on the next change")),
+          Effect.catchCause((cause) =>
+            Cause.hasInterrupts(cause)
+              ? Effect.failCause(cause)
+              : visibleTextFailed("Search visible text failed; retrying on the next change"),
+          ),
+        );
+        yield* fillVisibleText;
+        yield* Stream.fromSubscription(changes).pipe(
+          Stream.filter((event) => event._tag === "Changed" || event._tag === "NewMail"),
+          Stream.debounce("2 seconds"),
+          Stream.runForEach(() => fillVisibleText),
+        );
+      }).pipe(Effect.forkScoped);
+
       const imapPullLock = (accountId: string) => {
         let lock = runtime.imapPullLocks.get(accountId);
         if (!lock) {

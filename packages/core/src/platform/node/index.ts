@@ -22,6 +22,8 @@ export {
   LOG_CODE_ANNOTATION,
   LogCode,
   type InferenceProcessLauncher,
+  type SearchProcessLauncher,
+  type SearchProcess,
   MAILBOXES,
   MENU_BAR_MAIL_LIMIT,
   MailToolError,

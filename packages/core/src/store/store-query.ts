@@ -582,7 +582,11 @@ export const makeQueryStore = ({ sql }: { sql: SqlClient.SqlClient }) => {
     if (mailbox === "all") {
       if (q.messageIds === undefined && !searchIncludesSpecialFolders(q))
         where.push(
-          q.textPage || q.proximityPage || q.search === "" || q.metaEligible
+          // A search that starts from the word index's rowids reads each matching row from the
+          // table, where labels_json sits after the message text: `meet*` on a 20k-message
+          // database read 1,139 rows' overflow pages, 1.8 s cold. message_search_meta keeps the
+          // same Spam and Trash rule per row (migration 30), so every search tests it there.
+          q.textPage || q.proximityPage || q.search !== undefined || q.metaEligible
             ? sql`EXISTS (SELECT 1 FROM message_search_meta s WHERE s.row_id=m.rowid AND s.eligible=1)`
             : sql`NOT ${hasLabel("SPAM")} AND NOT ${hasLabel("TRASH")}`,
         );

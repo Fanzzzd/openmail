@@ -8,7 +8,7 @@ import {
   mergeSearchRanges,
   searchTermRanges,
 } from "../search/search-snippets.js";
-import { searchStep, type SearchProfiler } from "../search/search-profile.js";
+import { searchEffect, searchStep, type SearchProfiler } from "../search/search-profile.js";
 import { DerivedChunk } from "../ai/media.js";
 import { ftsSearchTerm, usesSubstringSearch, wordTokens } from "../search/fts.js";
 import { keyOf } from "../search/ranking.js";
@@ -17,7 +17,8 @@ import { all } from "./sql-rows.js";
 import { expressionMedia, type LocalQuery, type makeQueryStore } from "./store-query.js";
 import { DerivedSearchRow, SummaryRow } from "./store-rows.js";
 import { type WordIndexState } from "./store-word-index.js";
-import { messageModelText, visibleHtmlText } from "../visible-text/visible-text.js";
+import { visibleHtmlText } from "../visible-text/visible-text.js";
+import type { HtmlText } from "../platform/html-text.js";
 
 export const rowKey = (row: typeof DerivedSearchRow.Type, flat?: boolean) =>
   flat ? row.provenance_json.messageId : `${row.account_id}/${row.thread_id}`;
@@ -30,15 +31,14 @@ export function getOrSet<K, V>(memo: Map<K, V>, key: K, create: () => V): V {
   return value;
 }
 
-/** FNV-1a over UTF-16 code units: a cheap content key for a message body. */
-const bodyHash = (text: string) => {
-  let hash = 0x811c9dc5;
-  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193);
-  return (hash >>> 0).toString(36);
-};
-
-/** Visible text of this many message bodies stays cached between searches. */
-const VISIBLE_CACHE_SIZE = 500;
+/**
+ * Results whose visible text is not stored yet (store-visible-text.ts) get it computed on the
+ * HtmlText worker while the search waits, at most this many: about two screens of rows. The rest
+ * show no body snippet until the background fill reaches them.
+ */
+export const SEARCH_VISIBLE_ROWS = 30;
+/** Visible text computed for unstored results, kept by row and body version until it is stored. */
+const COMPUTED_CACHE_SIZE = 500;
 
 export const nonzeroProximity = (q: LocalQuery) =>
   (q.criteria?.proximity?.distance ?? 0) > 0 ||
@@ -47,13 +47,17 @@ export const nonzeroProximity = (q: LocalQuery) =>
 
 export const SearchBodyRow = Schema.Struct({
   id: Schema.String,
+  row_id: Schema.Int,
+  visible: Schema.NullOr(Schema.String),
+  version: Schema.NullOr(Schema.String),
   body_text: Schema.String,
   body_html: Schema.String,
 });
 
 const SearchRelevanceRow = Schema.Struct({ id: Schema.String, relevance: Schema.Number });
 
-export type SearchBodies = ReadonlyMap<string, typeof SearchBodyRow.Type>;
+/** Visible text by message id; undefined when it is not stored and was not computed. */
+export type SearchBodies = ReadonlyMap<string, string | undefined>;
 
 export type SearchContext = {
   profile: SearchProfiler | null;
@@ -72,35 +76,34 @@ export type MatchedSearch = {
   exactAttachments: ReadonlySet<string>;
 };
 
+/** The selected conversations' messages whose text a result shows, first rows first. */
+const shownBodyIds = ({ q, threads, mailCandidates }: SearchContext) =>
+  threads.map((thread) => [
+    mailCandidates.get(keyOf(thread, q.flat))?.id ?? thread.id,
+    ...(thread.derivedMatches ?? [])
+      .filter((chunk) => chunk.source.kind === "body")
+      .map((chunk) => chunk.messageId),
+  ]);
+
 /** Adds the match context a search result shows: snippets, highlight ranges, field and attachment matches, and source ranking. */
 export const makeSearchMatches = ({
   sql,
   textFilter,
   listFilter,
+  htmlText,
 }: {
   sql: SqlClient.SqlClient;
   textFilter: ReturnType<typeof makeQueryStore>["textFilter"];
   listFilter: ReturnType<typeof makeQueryStore>["listFilter"];
+  htmlText: HtmlText;
 }) => {
-  // Visible text takes tens of milliseconds per HTML body (CSS parsing, hidden-text rules). A
-  // common word's 200 results spent 3.7 s of main-process time on a real 20k-message database,
-  // again on every refresh of the open search and on each change while it showed. Keyed by the
-  // body's content, so a body fetched or edited again is read again; oldest entries leave first.
-  const visibleCache = new Map<string, string>();
-  const cachedVisible = (key: string, create: () => string) => {
-    const hit = visibleCache.get(key);
-    if (hit !== undefined) {
-      visibleCache.delete(key);
-      visibleCache.set(key, hit);
-      return hit;
+  const computed = new Map<string, string>();
+  const remember = (key: string, text: string) => {
+    computed.set(key, text);
+    if (computed.size > COMPUTED_CACHE_SIZE) {
+      const oldest = computed.keys().next();
+      if (!oldest.done) computed.delete(oldest.value);
     }
-    const value = create();
-    visibleCache.set(key, value);
-    if (visibleCache.size > VISIBLE_CACHE_SIZE) {
-      const oldest = visibleCache.keys().next();
-      if (!oldest.done) visibleCache.delete(oldest.value);
-    }
-    return value;
   };
 
   const threadMessageIds = (threads: readonly ThreadSummary[]) =>
@@ -118,26 +121,58 @@ export const makeSearchMatches = ({
     };
   };
 
-  /** The selected conversations' messages whose text a result shows. */
-  const selectedBodyIds = ({ q, threads, mailCandidates }: SearchContext) => {
-    const ids = [
-      ...new Set(
-        threads.flatMap((thread) => [
-          mailCandidates.get(keyOf(thread, q.flat))?.id ?? thread.id,
-          ...(thread.derivedMatches ?? [])
-            .filter((chunk) => chunk.source.kind === "body")
-            .map((chunk) => chunk.messageId),
-        ]),
-      ),
-    ];
+  const selectedBodyIds = (context: SearchContext) => {
+    const ids = [...new Set(shownBodyIds(context).flat())];
     return sql`SELECT rowid FROM messages WHERE id IN (SELECT value FROM json_each(${JSON.stringify(ids)}))`;
   };
 
+  /**
+   * The visible text of the selected messages. Stored text and plain-text bodies are read as
+   * they are. An HTML body not stored yet is computed on the HtmlText worker, ahead of the
+   * background fill, when it belongs to the first SEARCH_VISIBLE_ROWS results; the HTML is read
+   * only for those rows.
+   */
   const loadBodies = Effect.fn("Store.loadSearchBodies")(function* (context: SearchContext) {
+    const urgent = new Set(shownBodyIds(context).slice(0, SEARCH_VISIBLE_ROWS).flat());
+    const urgentIds = JSON.stringify([...urgent]);
     const rows = yield* all(SearchBodyRow)(
-      sql`SELECT m.id,m.body_text,m.body_html FROM messages m WHERE m.rowid IN (${selectedBodyIds(context)})`,
+      sql`SELECT m.id,m.rowid AS row_id,v.text AS visible,p.version,
+        CASE WHEN v.row_id IS NULL AND (p.row_id IS NULL OR m.id IN (SELECT value FROM json_each(${urgentIds})))
+          THEN m.body_text ELSE '' END AS body_text,
+        CASE WHEN v.row_id IS NULL AND m.id IN (SELECT value FROM json_each(${urgentIds}))
+          THEN m.body_html ELSE '' END AS body_html
+        FROM messages m LEFT JOIN message_visible_text v ON v.row_id=m.rowid
+        LEFT JOIN message_visible_text_pending p ON p.row_id=m.rowid
+        WHERE m.rowid IN (${selectedBodyIds(context)})`,
     );
-    return new Map(rows.map((row) => [row.id, row]));
+    const texts = new Map<string, string | undefined>();
+    const missing: (typeof SearchBodyRow.Type)[] = [];
+    for (const row of rows) {
+      const key = `${row.row_id}:${row.version}`;
+      if (row.visible !== null) texts.set(row.id, row.visible);
+      else if (computed.has(key)) texts.set(row.id, computed.get(key));
+      else if (row.version !== null && !urgent.has(row.id)) texts.set(row.id, undefined);
+      else if (!row.body_html.trim()) texts.set(row.id, row.body_text);
+      else if (urgent.has(row.id)) missing.push(row);
+      else texts.set(row.id, undefined);
+    }
+    const fresh = missing.length
+      ? yield* searchEffect(
+          context.profile,
+          "visible body extraction",
+          Effect.forEach(
+            missing,
+            (row) => htmlText.visibleText(row.body_text, row.body_html, { urgent: true }),
+            { concurrency: "unbounded" },
+          ),
+        )
+      : [];
+    for (const [i, row] of missing.entries()) {
+      const text = fresh[i] ?? "";
+      texts.set(row.id, text);
+      if (row.version !== null) remember(`${row.row_id}:${row.version}`, text);
+    }
+    return texts satisfies SearchBodies;
   });
 
   /**
@@ -231,17 +266,7 @@ export const makeSearchMatches = ({
         derivedMatches: grouped.get(keyOf(thread, q.flat)) ?? [],
       }));
     }
-    const visibleBody = (id: string) => {
-      const body = bodies.get(id);
-      if (!body) return "";
-      const key = `${body.body_text.length}:${bodyHash(body.body_text)}:${body.body_html.length}:${bodyHash(body.body_html)}`;
-      return cachedVisible(key, () => {
-        const model = searchStep(profile, "visible body extraction", () =>
-          messageModelText(body.body_text, body.body_html),
-        );
-        return model.flags.includes("budget-exceeded") ? "" : model.text;
-      });
-    };
+    const visibleBody = (id: string) => bodies.get(id);
     const exactMail = new Set<string>();
     const exactAttachments = new Set<string>();
     const annotated = searchStep(profile, "result annotation", () =>
@@ -251,11 +276,12 @@ export const makeSearchMatches = ({
         const subject = snippetFor(mailCandidate.subject);
         if (subject.highlights.length && !q.criteria?.attachmentText)
           matches.push({ source: "subject", messageId: mailCandidate.id, ...subject });
+        // Not stored or computed yet: no body snippet or body match until the fill reaches it.
         const visibleText = visibleBody(mailCandidate.id);
-        const body = snippetFor(visibleText);
+        const body = snippetFor(visibleText ?? "");
         if (
           !q.criteria?.attachmentText &&
-          (exactFor(mailCandidate.subject) || exactFor(visibleText))
+          (exactFor(mailCandidate.subject) || (visibleText !== undefined && exactFor(visibleText)))
         )
           exactMail.add(keyOf(thread, q.flat));
         if (body.highlights.length && !q.criteria?.attachmentText)
@@ -263,7 +289,7 @@ export const makeSearchMatches = ({
         const derivedMatches = (thread.derivedMatches ?? []).flatMap((chunk) => {
           const text =
             chunk.source.kind === "body"
-              ? visibleBody(chunk.messageId)
+              ? (visibleBody(chunk.messageId) ?? "")
               : /<\/?[a-z][^>]*>/i.test(chunk.text)
                 ? visibleHtmlText(chunk.text).text
                 : chunk.text;

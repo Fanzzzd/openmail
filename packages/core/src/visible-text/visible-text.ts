@@ -383,6 +383,16 @@ export function visibleHtmlMarkup(html: string, onHiddenText?: () => void): stri
     ? DomUtils.getOuterHTML(prune(body.children), { encodeEntities: "utf8" })
     : "";
 }
+/**
+ * The message text search snippets and highlights read: what the reader shows, without text the
+ * HTML hides. Empty when the HTML is too complex to inspect, so a snippet never shows hidden text.
+ * Stored per message in `message_visible_text` (migration 58).
+ */
+export function searchVisibleText(plain: string, html: string): string {
+  const model = messageModelText(plain, html);
+  return model.flags.includes("budget-exceeded") ? "" : model.text;
+}
+
 export function messageModelText(
   plain: string,
   html: string,

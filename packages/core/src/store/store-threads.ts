@@ -4,6 +4,7 @@ import { attachmentFilename } from "../mime/attachment-filename.js";
 import type { ThreadQuery, ThreadSummary } from "../domain/message.js";
 import { searchHighlightTerms, searchSnippet } from "../search/search-snippets.js";
 import { SearchProfile, searchEffect, searchStep } from "../search/search-profile.js";
+import type { HtmlText } from "../platform/html-text.js";
 import { DerivedChunk } from "../ai/media.js";
 import {
   hasSearchExpression,
@@ -147,6 +148,7 @@ export const makeThreadsStore = ({
   listSource,
   searchDrivenList,
   planTextPage,
+  htmlText,
 }: {
   sql: SqlClient.SqlClient;
   compose: ReturnType<typeof makeComposeStore>;
@@ -157,6 +159,7 @@ export const makeThreadsStore = ({
   listSource: ReturnType<typeof makeQueryStore>["listSource"];
   searchDrivenList: ReturnType<typeof makeQueryStore>["searchDrivenList"];
   planTextPage: ReturnType<typeof makeQueryStore>["planTextPage"];
+  htmlText: HtmlText;
 }) => {
   const {
     threadMessageIds,
@@ -165,7 +168,7 @@ export const makeThreadsStore = ({
     loadRelevance,
     attachMatches,
     pageFieldMatches,
-  } = makeSearchMatches({ sql, textFilter, listFilter });
+  } = makeSearchMatches({ sql, textFilter, listFilter, htmlText });
   const labels = makeLabelsStore({ sql, compose, hasLabel });
 
   // For a simple atom, ASCII columns use exactly unicode61's token boundaries.

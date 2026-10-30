@@ -122,3 +122,5 @@ export { SyncFailureDetailLog } from "./sync/sync-failure.js";
 
 export * from "./search/search-snippets.js";
 export * from "./app/remote-access.js";
+
+export type { SearchProcess, SearchProcessLauncher } from "./platform/search-reader.js";

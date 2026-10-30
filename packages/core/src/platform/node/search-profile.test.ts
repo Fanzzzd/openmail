@@ -145,30 +145,41 @@ it.effect.skipIf(process.env.OPENMAIL_SEARCH_PROFILE !== "1")(
   { timeout: 1_200_000 },
 );
 
-it.effect("a repeated search reuses the visible text of the bodies it read before", () => {
-  let extractions = 0;
-  const profiler = {
-    begin: (step: string) => {
-      if (step === "visible body extraction") extractions++;
-      return () => {
-        // Only the count matters here.
-      };
-    },
-  };
-  return Effect.gen(function* () {
-    yield* TestClock.setTime(fixtureNow);
-    yield* seedMailbox(120);
-    const store = yield* Store;
-    const search = store.listThreads({ search: "weekly", limit: 50 });
-    const first = yield* search;
-    assert.isAbove(first.length, 0);
-    assert.isAbove(extractions, 0);
-    extractions = 0;
-    const again = yield* search;
-    assert.deepStrictEqual(again, first);
-    assert.strictEqual(extractions, 0);
-  }).pipe(
-    Effect.provideService(SearchProfile, profiler),
-    Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
-  );
-});
+it.effect(
+  "a search reads stored visible text, and reuses what it computed for unstored bodies",
+  () => {
+    let extractions = 0;
+    const profiler = {
+      begin: (step: string) => {
+        if (step === "visible body extraction") extractions++;
+        return () => {
+          // Only the count matters here.
+        };
+      },
+    };
+    return Effect.gen(function* () {
+      yield* TestClock.setTime(fixtureNow);
+      yield* seedMailbox(120);
+      const store = yield* Store;
+      const sql = yield* SqlClient.SqlClient;
+      const search = store.listThreads({ search: "weekly", limit: 50 });
+      // The fixture stored every body's visible text: nothing to extract.
+      const stored = yield* search;
+      assert.isAbove(stored.length, 0);
+      assert.strictEqual(extractions, 0);
+      // As after an upgrade, before the background fill: the first rows are computed once.
+      yield* sql`INSERT INTO message_visible_text_pending(row_id) SELECT row_id FROM message_visible_text`;
+      yield* sql`DELETE FROM message_visible_text`;
+      const first = yield* search;
+      assert.deepStrictEqual(first, stored);
+      assert.isAbove(extractions, 0);
+      extractions = 0;
+      const again = yield* search;
+      assert.deepStrictEqual(again, first);
+      assert.strictEqual(extractions, 0);
+    }).pipe(
+      Effect.provideService(SearchProfile, profiler),
+      Effect.provide(StoreLive.pipe(Layer.provideMerge(MemoryPlatform()))),
+    );
+  },
+);

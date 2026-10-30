@@ -132,7 +132,12 @@ it.effect("actual health, stale, reset and budget queries use indexed metadata",
     assert.notInclude(proximity.plan.join("\n"), "MATERIALIZE matches");
     assert.include(proximity.plan.join("\n"), "MATERIALIZE page");
     assert.notInclude(proximity.plan.join("\n"), "TEMP B-TREE FOR GROUP BY");
-    assert.include(proximity.plan.join("\n"), "SEARCH m USING INDEX messages_thread_list_date_id");
+    // Spam and Trash come from message_search_meta, so the newer-in-thread check no longer reads
+    // labels_json from the table and stays on the index.
+    assert.include(
+      proximity.plan.join("\n"),
+      "SEARCH m USING COVERING INDEX messages_thread_list_date_id",
+    );
     const spacedProximity = proximityQueries.find(
       (q) => q.sql.includes("WITH matches AS MATERIALIZED") && q.sql.includes("positions AS"),
     );

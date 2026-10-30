@@ -1,34 +1,47 @@
 import { utilityProcess } from "electron";
-import type { InferenceProcessLauncher } from "@openmail/core";
+import type { InferenceProcessLauncher, SearchProcessLauncher } from "@openmail/core";
 
 /** A native decoder/ONNX crash is confined to this utility process. */
-export const desktopInferenceProcess: InferenceProcessLauncher = (entry, root) => {
+const desktopChild = (entry: string, root: string, serviceName: string, stopMs: number) => {
   const child = utilityProcess.fork(entry, [root], {
-    serviceName: "OpenMail local inference",
+    serviceName,
     allowLoadingUnsignedLibraries: process.platform === "darwin",
     stdio: "ignore",
     execArgv: ["--max-old-space-size=192"],
   });
   let exited = false;
   let stopping = false;
+  let closing: Promise<void> | undefined;
+  let resolveClosed: (() => void) | undefined;
   const done = new Promise<void>((resolve) => {
-    child.once("exit", () => {
-      exited = true;
-      resolve();
-    });
+    resolveClosed = resolve;
+  });
+  const finish = () => {
+    exited = true;
+    resolveClosed?.();
+  };
+  child.once("exit", finish);
+  // Keep this listener after the request's onFailure listener is removed. IPC can report an
+  // error while cancellation is closing the child. A failed launch with no PID owns no running
+  // process; settle shutdown even if Electron emits no spawn/exit pair for that failure.
+  child.on("error", () => {
+    if (child.pid === undefined) {
+      stopping = true;
+      finish();
+    }
   });
   child.once("spawn", () => {
     if (stopping) child.kill();
   });
   return {
-    send: (message) => child.postMessage(message, []),
-    onMessage: (listener) => {
+    send: (message: unknown) => child.postMessage(message, []),
+    onMessage: (listener: (message: unknown) => void) => {
       child.on("message", listener);
       return () => {
         child.off("message", listener);
       };
     },
-    onFailure: (listener) => {
+    onFailure: (listener: () => void) => {
       child.on("exit", listener);
       child.on("error", listener);
       return () => {
@@ -36,9 +49,10 @@ export const desktopInferenceProcess: InferenceProcessLauncher = (entry, root) =
         child.off("error", listener);
       };
     },
-    kill: async () => {
-      if (exited) return;
+    kill: () => {
       stopping = true;
+      if (exited) return Promise.resolve();
+      if (closing) return closing;
       child.kill();
       const force = setTimeout(() => {
         if (!exited && child.pid)
@@ -47,12 +61,15 @@ export const desktopInferenceProcess: InferenceProcessLauncher = (entry, root) =
           } catch {
             /* The owned child may have exited before the signal. */
           }
-      }, 2000);
-      try {
-        await done;
-      } finally {
-        clearTimeout(force);
-      }
+      }, stopMs);
+      closing = done.finally(() => clearTimeout(force));
+      return closing;
     },
   };
 };
+
+/** Model requests may finish on shutdown; search cancellation stops native SQLite promptly. */
+export const desktopInferenceProcess: InferenceProcessLauncher = (entry, root) =>
+  desktopChild(entry, root, "OpenMail local inference", 2000);
+export const desktopSearchProcess: SearchProcessLauncher = (entry, database) =>
+  desktopChild(entry, database, "OpenMail local search", 200);

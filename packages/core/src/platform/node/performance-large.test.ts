@@ -276,6 +276,7 @@ it.effect(
       );
       // Every system refresh (each change, focus and 15 s tick) reads the notification queue.
       yield* measure("empty notification queue", 5, store.takeNotifications(fixtureNow));
+      yield* measure("empty visible text queue", 5, store.fillVisibleText());
       // Sparse matches: 100 of 100k messages carry a Google Sheet link.
       for (const [name, search] of [
         ["search has:drive", "has:drive"],
@@ -466,6 +467,17 @@ it.effect(
           store
             .listThreads({ search, limit: 50 })
             .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 50)))),
+        );
+      // The search field as a person types `weekly`: 200 threads per key, as the desktop list
+      // asks. Each result's visible text is stored (message_visible_text), so a page only reads
+      // it; computing it for 200 HTML results took 2.8-5.2 s on a real 20k-message database.
+      for (const search of ["we*", "wee*", "week*", "weekl*", "weekly*", "re*", "预算*"])
+        yield* measure(
+          `search typing ${search}, 200 threads`,
+          250,
+          store
+            .listThreads({ search, limit: 200 })
+            .pipe(Effect.tap((rows) => Effect.sync(() => assert.strictEqual(rows.length, 200)))),
         );
       // Ten of 100k messages contain 鲸鱼. One and two CJK characters are too short for trigrams;
       // a sparse lookup gets the has:drive budget, a term in every message the CJK search budget.

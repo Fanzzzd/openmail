@@ -802,6 +802,9 @@ test.concurrent(
     db.exec(`DROP TRIGGER message_operator_text_ai; DROP TRIGGER message_operator_text_au;
       DROP TRIGGER message_operator_text_ad; DROP TABLE message_operator_text;
       DROP TABLE message_operator_text_backfill;`);
+    db.exec(`DROP TRIGGER message_visible_text_ai; DROP TRIGGER message_visible_text_au;
+      DROP TRIGGER message_visible_text_ad; DROP TABLE message_visible_text;
+      DROP TABLE message_visible_text_pending;`);
     db.exec("PRAGMA user_version = 49");
     db.close();
     const status = await run(process.execPath, ["dist/cli.js", "agents", "write-mode"], options);

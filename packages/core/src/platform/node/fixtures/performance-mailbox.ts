@@ -11,6 +11,7 @@ import { Providers } from "../../../providers/adapter.js";
 import { StoreLive } from "../../../store/store.js";
 import { MailCodec } from "../../mail-codec.js";
 import { MemoryPlatform } from "../platform-memory.js";
+import { searchVisibleText } from "../../../visible-text/visible-text.js";
 import { fakeServer, makeFakeProvider } from "../fake-provider.js";
 
 export const fixtureNow = Date.parse("2026-10-03T00:00:00Z");
@@ -122,6 +123,7 @@ export interface SeedPhases {
   ocrChunksMs: number;
   wordIndexMs: number;
   bigramsMs: number;
+  visibleTextMs: number;
   analyzeMs: number;
 }
 
@@ -243,6 +245,17 @@ export const seedMailbox = (
       /* and the bigram queue the same background loop drains */
     }
     const bigramsMs = lap();
+    // Search's visible text, which the app fills on a worker. The fixture repeats about a hundred
+    // bodies, so each distinct body is computed once and stored for every message that has it.
+    const groups = yield* sql<{ body_text: string; body_html: string; rows: string }>`
+      SELECT m.body_text,m.body_html,json_group_array(p.row_id) AS rows
+      FROM message_visible_text_pending p JOIN messages m ON m.rowid=p.row_id
+      GROUP BY m.body_text,m.body_html`;
+    for (const group of groups)
+      yield* sql`INSERT OR REPLACE INTO message_visible_text(row_id,text)
+        SELECT value,${searchVisibleText(group.body_text, group.body_html)} FROM json_each(${group.rows})`;
+    yield* sql`DELETE FROM message_visible_text_pending`;
+    const visibleTextMs = lap();
     if (analyze) yield* sql`ANALYZE`;
     return {
       messagesMs,
@@ -250,6 +263,7 @@ export const seedMailbox = (
       ocrChunksMs,
       wordIndexMs,
       bigramsMs,
+      visibleTextMs,
       analyzeMs: lap(),
     } satisfies SeedPhases;
   });

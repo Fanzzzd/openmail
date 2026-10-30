@@ -1495,6 +1495,32 @@ CREATE TRIGGER snoozed_list_date_insert AFTER INSERT ON snoozed_messages BEGIN
    CREATE TRIGGER message_operator_text_ad AFTER DELETE ON messages BEGIN
      DELETE FROM message_operator_text WHERE row_id=old.rowid;
    END;`,
+  // user_version 58: search snippets show only the text an HTML body shows (searchVisibleText in
+  // visible-text/visible-text.ts), which takes tens of milliseconds per body. Search computed it
+  // for every result on the main thread: the first search for a common word on a 20k-message
+  // database took 2.8-5.2 s of it. message_visible_text stores it per message. The triggers queue
+  // new and changed HTML bodies in message_visible_text_pending, and a background loop fills the
+  // queue on a worker (store-visible-text.ts). `version` changes on each body write, so text computed
+  // from a body that changed meanwhile is not stored. No HTML is parsed during this migration.
+  `CREATE TABLE message_visible_text (row_id INTEGER PRIMARY KEY, text TEXT NOT NULL);
+   CREATE TABLE message_visible_text_pending (row_id INTEGER PRIMARY KEY, version TEXT NOT NULL DEFAULT (lower(hex(randomblob(16)))));
+   INSERT INTO message_visible_text_pending(row_id) SELECT rowid FROM messages WHERE body_html != '';
+   CREATE TRIGGER message_visible_text_ai AFTER INSERT ON messages BEGIN
+     DELETE FROM message_visible_text WHERE row_id=new.rowid;
+     INSERT INTO message_visible_text_pending(row_id) SELECT new.rowid WHERE new.body_html != ''
+       ON CONFLICT(row_id) DO UPDATE SET version=lower(hex(randomblob(16)));
+   END;
+   CREATE TRIGGER message_visible_text_au AFTER UPDATE OF body_text,body_html ON messages
+     WHEN old.body_text IS NOT new.body_text OR old.body_html IS NOT new.body_html BEGIN
+     DELETE FROM message_visible_text WHERE row_id=new.rowid;
+     DELETE FROM message_visible_text_pending WHERE row_id=new.rowid AND new.body_html = '';
+     INSERT INTO message_visible_text_pending(row_id) SELECT new.rowid WHERE new.body_html != ''
+       ON CONFLICT(row_id) DO UPDATE SET version=lower(hex(randomblob(16)));
+   END;
+   CREATE TRIGGER message_visible_text_ad AFTER DELETE ON messages BEGIN
+     DELETE FROM message_visible_text WHERE row_id=old.rowid;
+     DELETE FROM message_visible_text_pending WHERE row_id=old.rowid;
+   END;`,
 ];
 
 /** Index of migration 37, the cache rowid rebuild. It runs when user_version equals this index. */
