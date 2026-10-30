@@ -681,37 +681,37 @@ Measured with [perf-list.mjs](../apps/desktop/scripts/perf-list.mjs) `--actions 
 
 ### Results
 
-Medians of five fresh launches per database on 2026-10-30, Node 24.21.0, hidden windows, offline, keys every 150 ms. These were not idle-machine runs. "Rows" is from the last key to the next list DOM update after the final local reply, including revalidations before settling. It is a conservative completion measure, not React Profiler self time. "Echo" is the longest delay from a key to the field's input event. "Main block" is the longest main-process event-loop block during the typing. "Main CPU per key" divides the typing span's main-thread CPU by its number of keys; it is an average, not isolated CPU attribution for each key. "Searches" is started/interrupted; completed is their difference. Obsolete successful replies are retained in the JSON; that conservative counter does not mean obsolete rows appeared. The e2e test checks that older requests never finish into the current list.
+Medians of five fresh launches per database on 2026-10-30 at the final commit, Node 24.21.0, hidden windows, offline, keys every 150 ms. These were not idle-machine runs. "Rows" is from the last key to the next list DOM update after the final local reply, including revalidations before settling. It is a conservative completion measure, not React Profiler self time. "Echo" is the longest delay from a key to the field's input event. "Main block" is the longest main-process event-loop block during the typing. "Main CPU per key" divides the typing span's main-thread CPU by its number of keys; it is an average, not isolated CPU attribution for each key. "Searches" is started/interrupted; completed is their difference. Obsolete successful replies are retained in the JSON; that conservative counter does not mean obsolete rows appeared. The e2e test checks that older requests never finish into the current list.
 
 Real copy, All Mail:
 
 | Typed                             |      Rows ms |  Echo ms | Main block ms | Main CPU per key ms |   Searches |
 | --------------------------------- | -----------: | -------: | ------------: | ------------------: | ---------: |
-| `meeting`                         | 18035 → 1199 | 5577 → 2 |    11048 → 10 |            2157 → 8 |  7/0 → 1/0 |
-| `the`                             |   7394 → 495 | 2580 → 2 |     5029 → 91 |           2467 → 20 |  3/0 → 1/0 |
-| `re`                              |    792 → 457 |    1 → 1 |     1627 → 10 |           1027 → 10 |  1/0 → 1/0 |
-| `优惠` (discount) <!-- cjk-ok --> |   1200 → 290 |    1 → 1 |     1196 → 17 |            554 → 19 |  1/0 → 1/0 |
-| `apple watch`                     | 22329 → 1378 | 3846 → 1 |    10989 → 19 |            1579 → 5 | 11/1 → 2/1 |
-| `from:apple`                      |  3105 → 1351 | 2056 → 1 |     2173 → 33 |             346 → 5 |  8/0 → 1/0 |
-| `has:attachment invoice`          |   8920 → 802 | 3622 → 1 |     6933 → 14 |             380 → 3 | 11/0 → 2/1 |
-| `is:unread the`                   |   6111 → 376 | 1038 → 1 |    5478 → 110 |             591 → 7 |  4/0 → 2/0 |
+| `meeting`                         | 18035 → 1650 | 5577 → 1 |    11048 → 23 |            2157 → 8 |  7/0 → 1/0 |
+| `the`                             |   7394 → 494 | 2580 → 1 |     5029 → 33 |           2467 → 10 |  3/0 → 1/0 |
+| `re`                              |    792 → 499 |    1 → 1 |     1627 → 21 |           1027 → 15 |  1/0 → 1/0 |
+| `优惠` (discount) <!-- cjk-ok --> |   1200 → 311 |    1 → 1 |      1196 → 9 |            554 → 11 |  1/0 → 1/0 |
+| `apple watch`                     | 22329 → 1587 | 3846 → 1 |    10989 → 21 |            1579 → 6 | 11/1 → 2/1 |
+| `from:apple`                      |  3105 → 1459 | 2056 → 1 |     2173 → 42 |            346 → 10 |  8/0 → 1/0 |
+| `has:attachment invoice`          |   8920 → 921 | 3622 → 1 |     6933 → 12 |             380 → 3 | 11/0 → 2/1 |
+| `is:unread the`                   |   6111 → 478 | 1038 → 1 |     5478 → 49 |             591 → 6 |  4/0 → 2/0 |
 
 100k fixture, All Mail:
 
-| Typed                           |     Rows ms |   Echo ms | Main block ms | Main CPU per key ms |   Searches |
-| ------------------------------- | ----------: | --------: | ------------: | ------------------: | ---------: |
-| `weekly`                        | 2846 → 1254 |   510 → 2 |     1290 → 36 |            358 → 18 |  5/0 → 1/0 |
-| `re`                            |   337 → 590 |     1 → 2 |      316 → 22 |             76 → 21 |  1/0 → 1/0 |
-| `预算` (budget) <!-- cjk-ok --> |   174 → 514 |     1 → 2 |      262 → 12 |             96 → 15 |  1/0 → 1/0 |
-| `delivery schedule`             | 3908 → 1912 |  2048 → 4 |     2185 → 52 |             307 → 9 | 15/0 → 6/5 |
-| `from:person1 weekly`           | 2103 → 1082 | 381 → 669 |     967 → 707 |            118 → 43 | 15/0 → 4/3 |
-| `has:attachment weekly`         | 2252 → 1019 |   230 → 2 |     1243 → 70 |             101 → 8 |  8/0 → 3/2 |
-| `is:unread report`              |  1707 → 590 |   138 → 2 |     1334 → 13 |              66 → 7 |  7/0 → 3/2 |
-| `label:Folder_5 we`             |   714 → 727 | 458 → 163 |     424 → 233 |            104 → 25 | 13/0 → 4/3 |
+| Typed                           |     Rows ms |  Echo ms | Main block ms | Main CPU per key ms |   Searches |
+| ------------------------------- | ----------: | -------: | ------------: | ------------------: | ---------: |
+| `weekly`                        |  2846 → 985 |  510 → 2 |     1290 → 34 |            358 → 13 |  5/0 → 1/0 |
+| `re`                            |   337 → 380 |    1 → 1 |      316 → 33 |             76 → 27 |  1/0 → 1/0 |
+| `预算` (budget) <!-- cjk-ok --> |   174 → 248 |    1 → 1 |       262 → 6 |              96 → 9 |  1/0 → 1/0 |
+| `delivery schedule`             | 3908 → 1090 | 2048 → 1 |     2185 → 38 |             307 → 7 | 15/0 → 3/2 |
+| `from:person1 weekly`           |  2103 → 677 |  381 → 1 |      967 → 13 |             118 → 3 | 15/0 → 2/1 |
+| `has:attachment weekly`         |  2252 → 868 |  230 → 1 |     1243 → 54 |             101 → 6 |  8/0 → 3/1 |
+| `is:unread report`              |  1707 → 301 |  138 → 2 |      1334 → 8 |              66 → 3 |  7/0 → 2/0 |
+| `label:Folder_5 we`             |   714 → 410 |  458 → 1 |      424 → 10 |             104 → 3 | 13/0 → 2/0 |
 
-A short search that was already fast is slower to its rows: `re` and `预算` on the 100k fixture went from 174 to 337 ms to about 500 to 600 ms. That is the 180 ms typing delay, the process start on the first search after launch and the result's trip over IPC. Their main-thread block dropped from 262 to 316 ms to 12 to 22 ms. On the 100k fixture, `from:person1 weekly` and `label:Folder_5 we` still block the main thread in some launches. The SQL trace shows launch work, not search: the unread-by-label badge query (400 to 550 ms) and Inbox refreshes, which overlap the typing that starts 1.5 s after launch. <!-- cjk-ok -->
+A short search that was already fast is slower to its rows on the 100k fixture: `re` went from 337 to 380 ms and `预算` from 174 to 248 ms. That is the 180 ms typing delay, the process start on the first search after launch and the result's trip over IPC. Their main-thread blocks dropped from 316 and 262 ms to 33 and 6 ms. An earlier run of the same code without the no-hit guard ran a follow-up search for `messageIds: []` after each offline server search; on the 100k fixture that put `from:person1 weekly` at 707 ms of main block and 669 ms of echo. With the guard, both are under 15 ms. The unread-by-label badge query still takes 400 to 550 ms at launch on the 100k fixture; that is not search and is left for a separate change. <!-- cjk-ok -->
 
-Opening the first result with Down: 56 → 36 ms on the real copy and 270 → 269 ms on the 100k fixture. Clearing the search back to Inbox: 36 → 27 ms and 82 → 103 ms. With the scope set to Current folder (5 launches, Enter into results), typing took 244 to 958 ms to rows on the real copy (`snowflake`, `meeting`, `优惠`, `to:fan`, `subject:meeting`), with main blocks of 10 to 94 ms. The contacts lookup (`SuggestContacts`, debounced 150 ms) had a median of 16 ms and at most 29 ms. <!-- cjk-ok -->
+Opening the first result with Down: 56 → 35 ms on the real copy and 270 → 231 ms on the 100k fixture. Clearing the search back to Inbox: 36 → 28 ms and 82 → 94 ms. With the scope set to Current folder (5 launches, Enter into results), typing took 244 to 958 ms to rows on the real copy (`snowflake`, `meeting`, `优惠`, `to:fan`, `subject:meeting`), with main blocks of 10 to 94 ms. The contacts lookup (`SuggestContacts`, debounced 150 ms) had a median of 16 ms and at most 29 ms. <!-- cjk-ok -->
 
 Per page in core (`search-breakdown.mjs`, 200 rows, a fresh Store each run, median of five), real copy, All Mail, before → after in ms:
 
