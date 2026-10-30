@@ -42,6 +42,8 @@ A median over budget whose slowest run is more than 3 times its fastest gets one
 | rare one/two-character CJK search, 50 threads            |        50 |
 | common one/two-character CJK search, 50 threads          |       150 |
 | prefix and two-word search while typing, 50 threads      |       150 |
+| prefixes as the field types them, 200 threads            |       250 |
+| empty visible text queue                                 |         5 |
 | has:drive / has:spreadsheet, 50 threads                  |        50 |
 | label: search (ID, name, plus common word), 50 threads   |       200 |
 | label list view (all accounts / one account), 50 threads |       200 |
@@ -642,7 +644,7 @@ Causes, by measured cost:
 - **The system refresh on every menu state.** Opening a conversation sends two menu states. Each ran the Dock and menu-bar refresh: unread counts, a thread count per account, an unread inbox page and the notification queue. The notification read scanned every message, because ANALYZE writes no statistics for an empty queue; on the 1.5 GB file that was about 1 s. Menu states now only rebuild the menu, the queue read keeps the queue as the outer loop, and a burst of change events runs one refresh.
 - **Layout prefs as mail changes.** Showing the sidebar waited for SetPrefs, which emitted `Changed` and refetched every view in every window. Layout prefs now apply at once and emit `PrefsChanged`.
 - **Refresh cost grew with loaded rows.** A list scrolled 2,000 rows down read and sent all of them (1.6 MB) on each change. It now reads through the page after the rows within reach (160 KB).
-- **Visible text on every search.** A common word's 200 results took 3.7 s of HTML visible-text extraction, again on each 10 s refresh of the open search. A 500-entry cache keyed by body content keeps it.
+- **Visible text on every search.** A common word's 200 results took 3.7 s of HTML visible-text extraction, again on each 10 s refresh of the open search. A 500-entry cache keyed by body content kept it. [Search while typing](#search-while-typing) replaced that cache with stored text.
 - **Settings' chunk on first open.** About 1.5 s of import and evaluation; the window now imports it while idle.
 - **First visits in the sidebar.** 50 to 160 ms for a first page, with the thread count ahead of it. Views now load on pointer enter or focus and in idle warming, and the count waits for the rows.
 
@@ -650,9 +652,158 @@ What was ruled out: Back from the narrow reader never remounted the list or refe
 
 Not done, with the measured reason:
 
-- **Core off the main process.** After these changes the main thread spends 8 to 56 ms of CPU per action on the real database. The remaining long blocks are the first search for a common word (3.5 to 4.6 s of visible-text extraction before the cache has it) and, on 100k, a mark-read that refetches the open thread (436 KB) and the list's count once per invalidation, three invalidations per mark-read. A utility process that owns core and the database, with renderers connected over a MessagePort and the Dock and menu code as one more client, would keep input and window work responsive during those. It moves every RPC and the Desktop service across a process boundary, so it is a separate change.
+- **Core off the main process.** After these changes the main thread spends 8 to 56 ms of CPU per action on the real database. Search and its counts later moved to a read-only process; see [Search while typing](#search-while-typing). Other RPCs, including a mark-read that refetches the open thread (436 KB) and the list's count once per invalidation, still run on the main process.
 - **Three invalidations per mark-read.** The renderer's own mutation, the `Changed` after the local write and the `Changed` after the push each refetch the views on screen. Merging them needs either scoped change events from core or a delay in the renderer.
 - **Smaller first pages.** With intent prefetch and warming, the first page is off the click path.
+
+## Search while typing
+
+Typing a common word in the search field froze the app for seconds. On a copy of a real 1.5 GB database (20,785 messages, 97.5% HTML), typing `meeting` at 150 ms a key showed the final rows 18 s after the last key. The main process blocked for up to 11 s, and a typed character took up to 5.6 s to appear in the field. Electron routes input through the main process, so a blocked main thread delays keystrokes too.
+
+### Causes
+
+Measured with [perf-list.mjs](../apps/desktop/scripts/perf-list.mjs) `--actions typing` and [search-breakdown.mjs](../packages/core/scripts/search-breakdown.mjs), by cost:
+
+- **Visible text for every result, on the main thread.** Snippets show only the text the HTML shows, so search ran `messageModelText` (CSS parsing and hidden-text rules) on each of the 200 results, 10 to 30 ms a body. That was 2.3 to 7.8 s of a first search: `the` spent 2,338 ms of 2,572 on it, `meeting` 4,124 of 4,274 and `from:apple the` 7,758 of 7,988. The 500-entry cache still hashed the full bodies on every warm search.
+- **Every key ran a search to the end.** Each key past two characters sent `Threads` with 200 rows. A typed-over search kept running: its atom stayed alive for five minutes, so nothing interrupted the request. `meeting` started 7 searches, none interrupted. `mee*` waited 6.5 s behind `me*` and then took 10.5 s itself.
+- **Spam and Trash read from labels_json.** A search that starts from the word index's rowids tested Spam and Trash with `json_each(m.labels_json)`. That column sits after the HTML body (43,000 characters on average), so each match read its overflow pages: 1.8 s cold for `meet*` (1,139 matches).
+- **The server search repeated the local one.** `SearchServer` ran the local search again to merge results, also when every provider failed. Offline, that doubled the database work of every typed prefix.
+- **Unfinished operators counted the Inbox.** While the field held `is:` or `has:`, the list kept the Inbox query and mounted its thread count: up to 213 ms per key on the main thread.
+
+### Changes
+
+- **Stored visible text.** Migration 58 adds `message_visible_text` and a queue, `message_visible_text_pending`. Triggers queue new and changed HTML bodies with a random version, drop the stored text when a body changes, and clean up on delete. A background loop on the `HtmlText` worker fills the queue, newest first: 20 bodies per step, computed with no connection held, then one short write under `briefLockWait`. A write is skipped when the body's queued version changed meanwhile. The loop subscribes to change events before its first drain, so a write during a drain is never missed. Filling the remaining 17,741 HTML bodies took 401 s on one worker and 5.5 s of main-thread CPU. The completed table held 20,281 rows and 33.24 million visible characters; the copy grew by about 44 MiB. Search reads the stored text. For bodies not filled yet, it computes the first 30 results' text in the reader process; later uncached rows show no body snippet until the fill reaches them. The text never falls back to the main thread, and HTML too complex to inspect stores an empty string, as before.
+- **Search in a read-only process.** Search pages and search counts run in a child process with its own read-only `node:sqlite` connection, through the same core planner ([platform inventory](platform-inventory.md)). One query runs at a time. A typed-over request kills the process and waits for it to exit before the next one starts. `node:sqlite` has no interrupt or progress handler, and `Worker.terminate()` waited 5.2 s for a running statement in a test, so a worker thread could not stop a query. Desktop starts the process with `utilityProcess`; the CLI uses `fork`.
+- **One search per pause in typing.** A new search waits 180 ms after the last key, and a search list leaves the registry as soon as the next key replaces it, which interrupts its RPC and its process. Finished rows stay in `keptSearch` for five minutes, so returning to a search shows them at once ([list-loading.md](list-loading.md)). The server search has no idle time either.
+- **Spam and Trash from message_search_meta** for every search, as text pages and counts already did. The newer-in-thread check now stays on a covering index.
+- **Server search returns provider hits only** when the desktop asks (`includeLocal: false`), and the list skips the follow-up query when there are none. The CLI keeps its merged result.
+- **No mailbox count while the field has text.**
+
+### Results
+
+Medians of five fresh launches per database on 2026-10-30, Node 24.21.0, hidden windows, offline, keys every 150 ms. These were not idle-machine runs. "Rows" is from the last key to the next list DOM update after the final local reply, including revalidations before settling. It is a conservative completion measure, not React Profiler self time. "Echo" is the longest delay from a key to the field's input event. "Main block" is the longest main-process event-loop block during the typing. "Main CPU per key" divides the typing span's main-thread CPU by its number of keys; it is an average, not isolated CPU attribution for each key. "Searches" is started/interrupted; completed is their difference. Obsolete successful replies are retained in the JSON; that conservative counter does not mean obsolete rows appeared. The e2e test checks that older requests never finish into the current list.
+
+Real copy, All Mail:
+
+| Typed                             |      Rows ms |  Echo ms | Main block ms | Main CPU per key ms |   Searches |
+| --------------------------------- | -----------: | -------: | ------------: | ------------------: | ---------: |
+| `meeting`                         | 18035 → 1199 | 5577 → 2 |    11048 → 10 |            2157 → 8 |  7/0 → 1/0 |
+| `the`                             |   7394 → 495 | 2580 → 2 |     5029 → 91 |           2467 → 20 |  3/0 → 1/0 |
+| `re`                              |    792 → 457 |    1 → 1 |     1627 → 10 |           1027 → 10 |  1/0 → 1/0 |
+| `优惠` (discount) <!-- cjk-ok --> |   1200 → 290 |    1 → 1 |     1196 → 17 |            554 → 19 |  1/0 → 1/0 |
+| `apple watch`                     | 22329 → 1378 | 3846 → 1 |    10989 → 19 |            1579 → 5 | 11/1 → 2/1 |
+| `from:apple`                      |  3105 → 1351 | 2056 → 1 |     2173 → 33 |             346 → 5 |  8/0 → 1/0 |
+| `has:attachment invoice`          |   8920 → 802 | 3622 → 1 |     6933 → 14 |             380 → 3 | 11/0 → 2/1 |
+| `is:unread the`                   |   6111 → 376 | 1038 → 1 |    5478 → 110 |             591 → 7 |  4/0 → 2/0 |
+
+100k fixture, All Mail:
+
+| Typed                           |     Rows ms |   Echo ms | Main block ms | Main CPU per key ms |   Searches |
+| ------------------------------- | ----------: | --------: | ------------: | ------------------: | ---------: |
+| `weekly`                        | 2846 → 1254 |   510 → 2 |     1290 → 36 |            358 → 18 |  5/0 → 1/0 |
+| `re`                            |   337 → 590 |     1 → 2 |      316 → 22 |             76 → 21 |  1/0 → 1/0 |
+| `预算` (budget) <!-- cjk-ok --> |   174 → 514 |     1 → 2 |      262 → 12 |             96 → 15 |  1/0 → 1/0 |
+| `delivery schedule`             | 3908 → 1912 |  2048 → 4 |     2185 → 52 |             307 → 9 | 15/0 → 6/5 |
+| `from:person1 weekly`           | 2103 → 1082 | 381 → 669 |     967 → 707 |            118 → 43 | 15/0 → 4/3 |
+| `has:attachment weekly`         | 2252 → 1019 |   230 → 2 |     1243 → 70 |             101 → 8 |  8/0 → 3/2 |
+| `is:unread report`              |  1707 → 590 |   138 → 2 |     1334 → 13 |              66 → 7 |  7/0 → 3/2 |
+| `label:Folder_5 we`             |   714 → 727 | 458 → 163 |     424 → 233 |            104 → 25 | 13/0 → 4/3 |
+
+A short search that was already fast is slower to its rows: `re` and `预算` on the 100k fixture went from 174 to 337 ms to about 500 to 600 ms. That is the 180 ms typing delay, the process start on the first search after launch and the result's trip over IPC. Their main-thread block dropped from 262 to 316 ms to 12 to 22 ms. On the 100k fixture, `from:person1 weekly` and `label:Folder_5 we` still block the main thread in some launches. The SQL trace shows launch work, not search: the unread-by-label badge query (400 to 550 ms) and Inbox refreshes, which overlap the typing that starts 1.5 s after launch. <!-- cjk-ok -->
+
+Opening the first result with Down: 56 → 36 ms on the real copy and 270 → 269 ms on the 100k fixture. Clearing the search back to Inbox: 36 → 27 ms and 82 → 103 ms. With the scope set to Current folder (5 launches, Enter into results), typing took 244 to 958 ms to rows on the real copy (`snowflake`, `meeting`, `优惠`, `to:fan`, `subject:meeting`), with main blocks of 10 to 94 ms. The contacts lookup (`SuggestContacts`, debounced 150 ms) had a median of 16 ms and at most 29 ms. <!-- cjk-ok -->
+
+Per page in core (`search-breakdown.mjs`, 200 rows, a fresh Store each run, median of five), real copy, All Mail, before → after in ms:
+
+| Search             |      Total | Visible text | FTS page | Snippets |    Count | JSON KiChars |
+| ------------------ | ---------: | -----------: | -------: | -------: | -------: | -----------: |
+| `the`              |  2572 → 67 |     2338 → 0 |  36 → 32 |  26 → 18 |    7 → 7 |          304 |
+| `re*`              | 2097 → 146 |     1925 → 0 |  80 → 79 |  20 → 18 |  32 → 31 |          314 |
+| `meeting`          |  4274 → 98 |     4124 → 0 |  11 → 11 |  78 → 72 |    2 → 2 |          208 |
+| `"apple watch"`    |  3131 → 38 |     3073 → 0 |    4 → 4 |  17 → 15 |    1 → 1 |           62 |
+| `from:apple the`   |  7988 → 80 |     7758 → 0 | 116 → 52 |  27 → 20 | 321 → 16 |          282 |
+| `snowflake` (rare) |  1235 → 26 |     1161 → 0 |   22 → 2 |    6 → 7 |    1 → 1 |           27 |
+
+The page step includes FTS, grouping and decoding. Counts were measured separately and are not on the desktop typing path. JSON size is characters divided by 1024, not wire bytes. Each step is its own median and need not sum to the median total. The 100k fixture repeats about a hundred bodies, so its old content cache was already effective: `weekly` was 71 → 73 ms and `re*` 83 → 82 ms in core. No general SQL speedup is claimed for the fixture.
+
+The complete All Mail/Inbox matrix below uses five fresh Stores per cell, warm OS pages, 200-row limit. Page sizes and exact counts agreed before and after for every case. The plan/differential tests separately compare IDs, ordering, flags and counts.
+
+Real copy:
+
+| Query                    | All Mail page ms | Inbox page ms | All Mail count ms | Inbox count ms |
+| ------------------------ | ---------------: | ------------: | ----------------: | -------------: |
+| `the`                    |        2572 → 67 |     2156 → 69 |             7 → 7 |     1143 → 183 |
+| `re*`                    |       2097 → 146 |    2077 → 150 |           32 → 31 |      474 → 372 |
+| `meeting`                |        4274 → 98 |     4316 → 98 |             2 → 2 |          8 → 7 |
+| `优惠` <!-- cjk-ok -->   |         1128 → 5 |      1075 → 6 |             1 → 0 |          2 → 1 |
+| `zzzqqq`                 |            1 → 1 |         1 → 1 |             0 → 0 |          0 → 0 |
+| `mee*`                   |        3213 → 98 |    3421 → 103 |             4 → 3 |        24 → 22 |
+| `"apple watch"`          |        3131 → 38 |     3103 → 38 |             1 → 1 |          2 → 2 |
+| `from:apple`             |          20 → 17 |       17 → 17 |             5 → 5 |          8 → 8 |
+| `to:fan`                 |          10 → 10 |       10 → 11 |             9 → 8 |          7 → 9 |
+| `subject:meeting`        |          160 → 3 |       147 → 3 |             0 → 0 |          0 → 0 |
+| `has:attachment`         |        379 → 209 |     203 → 317 |         231 → 211 |      211 → 443 |
+| `is:unread`              |            5 → 5 |         6 → 6 |             7 → 7 |          9 → 9 |
+| `label:INBOX`            |            6 → 5 |         5 → 6 |         347 → 217 |        14 → 15 |
+| `has:attachment invoice` |          256 → 7 |      246 → 12 |             3 → 2 |          3 → 3 |
+| `is:important the`       |        1475 → 63 |     1439 → 59 |         389 → 308 |      179 → 191 |
+| `from:apple the`         |        7988 → 80 |     7753 → 82 |          321 → 16 |       267 → 19 |
+
+100k fixture:
+
+| Query                   | All Mail page ms | Inbox page ms | All Mail count ms | Inbox count ms |
+| ----------------------- | ---------------: | ------------: | ----------------: | -------------: |
+| `weekly`                |          71 → 73 |       82 → 75 |           30 → 30 |      129 → 138 |
+| `re*`                   |          83 → 82 |       92 → 88 |           31 → 31 |      131 → 131 |
+| `预算` <!-- cjk-ok -->  |          41 → 40 |       45 → 40 |         137 → 133 |      151 → 157 |
+| `鲸鱼` <!-- cjk-ok -->  |            4 → 2 |         4 → 2 |             0 → 0 |          0 → 0 |
+| `week*`                 |          98 → 93 |     107 → 103 |           32 → 32 |      134 → 133 |
+| `"delivery schedule"`   |        123 → 112 |     148 → 111 |           40 → 40 |      142 → 141 |
+| `from:person1`          |          28 → 29 |       28 → 28 |           19 → 19 |        27 → 27 |
+| `to:recipient`          |          78 → 78 |       85 → 84 |           63 → 63 |        56 → 56 |
+| `subject:report`        |          36 → 36 |       42 → 37 |           29 → 30 |      123 → 121 |
+| `has:attachment`        |          28 → 32 |       27 → 27 |           82 → 94 |        76 → 74 |
+| `is:unread`             |          16 → 17 |       17 → 16 |           14 → 14 |          9 → 9 |
+| `label:Folder_5`        |          29 → 30 |       33 → 33 |         108 → 113 |        46 → 47 |
+| `has:attachment weekly` |         80 → 125 |       76 → 72 |           75 → 90 |        74 → 72 |
+| `is:important weekly`   |        101 → 107 |      101 → 99 |          87 → 100 |      110 → 106 |
+
+### Tests
+
+- [visible-text.test.ts](../packages/core/src/store/visible-text.test.ts): queueing on insert, change and eviction; a label change queues nothing; a fill delayed across an update or delete stores nothing stale; the empty queue's plan scans only the queue; hidden text never reaches a snippet; the first 30 unstored rows are computed once, as urgent worker jobs.
+- [visible-text-fill.test.ts](../packages/core/src/mailbox/visible-text-fill.test.ts): a write during the first or a later drain triggers another drain, and filling emits no change event. With the subscription moved after the first drain, it fails.
+- [search-reader.test.ts](../packages/core/src/platform/node/search-reader.test.ts): the main event loop stays responsive while the child runs a 10M-row SQLite query; an interrupted 50M-row statement does not delay the next search; one child at most during eight rapid supersessions; a crash or bad frame fails only its own request; closing the layer stops the child; the read-only child returns the same pages and counts as the main connection and sees committed fills and deletes.
+- [inference.test.ts](../apps/desktop/src/main/app/inference.test.ts): the Electron launcher passes only the core entry and database path, survives late IPC errors, settles a launch that never started and force-kills a busy child after 200 ms.
+- [search-typing.test.ts](../apps/desktop/src/renderer/src/e2e/search-typing.test.ts): typing in the field interrupts each earlier search and only the last one finishes; keys within the delay send one search; a search typed again shows its kept rows with no request; local rows stay when every provider fails, with no follow-up query; unfinished input mounts no count.
+- [performance-large.test.ts](../packages/core/src/platform/node/performance-large.test.ts): seven prefixes as the field types them, 200 threads, under 250 ms; an empty fill under 5 ms.
+
+### Check results and reproduction
+
+The final full sequence passed with Node 24.21.0 and pnpm 11.17.0: build, type checks, `VITEST_MAX_WORKERS=3 pnpm turbo run test --force --concurrency=1`, oxlint and `oxfmt --check .` (9/9 tasks). Core had 3,108 passing tests; desktop had 1,187 unit/integration tests and 266 e2e tests. `pnpm --filter @openmail/core test:perf` passed 62 tests under the original budgets. The seven 200-row typing medians were 39–103 ms (budget 250); an empty visible-text queue was 0.02 ms (budget 5). The read-only entry also loaded from `core.asar` in an Electron utility process and returned three real-copy search rows, then exited.
+
+Earlier runs are not hidden: one sync perf run failed its 300 ms block limit at 1,029 ms, with a 968 ms message INSERT and a 312 ms GC pause at load 20.9. The passing final sync run had a 22.5 ms maximum and 9 ms p99. Another run measured `weekly de*` at 234 ms against 150, and one measured mixed body/OCR 200 at 153 ms against 100. Three isolated reruns measured 101.90/101.82/99.85 ms and 76.16/76.62/74.94 ms respectively. The final full perf run measured 99.47 ms and 68.66 ms. This variation supports contention rather than a repeatable regression; no threshold or retry rule was changed. Builds/tests that hit ENOSPC or were stopped by the disk-space guard do not count as verification.
+
+The subscription race test was also checked negatively: moving subscription after the initial drain failed immediately (`expected 1 to equal 2`); subscribing first passed. Worker-thread termination was rejected with a native SQLite test, not just a JavaScript loop. The Electron launcher has tests for cancel-before-spawn, no-PID failure, late IPC errors and idempotent shutdown.
+
+```sh
+pnpm build
+# Use a prepared copy only, never the live profile. The harness stays hidden and offline.
+node apps/desktop/scripts/perf-list.mjs --home /tmp/search-perf/realhome --actions typing \
+  --runs 1 --launches 5 --every-launch --type 'meeting|the|re|from:apple' --out /tmp/search-ui.json
+node apps/desktop/scripts/perf-list.mjs --home /tmp/search-perf/realhome --actions typing \
+  --runs 1 --launches 5 --every-launch --scope folder --results-key Enter --type snowflake
+OPENMAIL_BREAKDOWN_FRESH=1 OPENMAIL_BREAKDOWN_RUNS=5 \
+  node packages/core/scripts/search-breakdown.mjs /tmp/search-perf/realhome/mail.db \
+  the 're*' meeting '"apple watch"' 'has:attachment invoice'
+# OPENMAIL_BREAKDOWN_SCOPE=folder measures the Inbox scope; default is All Mail.
+```
+
+### Not done
+
+- **Cancelling the main connection's statements.** Lists, counts and reads other than search still run on the main thread. `node:sqlite` cannot interrupt them.
+- **Snippets for visible rows only.** With stored text, snippets for 200 rows cost 7 to 72 ms in the search process and no longer touch the main thread. Fetching them per row would need a second RPC from the list.
+- **Approximate counts.** Search shows no count. Exact folder/operator counts can still take hundreds of milliseconds, but run in the reader process when they are search counts.
+- **A prefix index.** See [prefix search while typing](#prefix-search-while-typing).
 
 ## Memory across renders
 

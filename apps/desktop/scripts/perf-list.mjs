@@ -30,6 +30,13 @@ const { values } = parseArgs({
     profile: { type: "string" },
     // A common word in the database: "weekly" for the 100k fixture.
     search: { type: "string", default: "the" },
+    // Queries the typing action types, separated by "|", and the time between keys.
+    type: { type: "string", default: "meeting|the|re" },
+    "key-ms": { type: "string", default: "150" },
+    // Runs the actions after every launch rather than only the first: each run starts cold.
+    "every-launch": { type: "boolean", default: false },
+    scope: { type: "string", default: "all" },
+    "results-key": { type: "string", default: "ArrowDown" },
     // Records a renderer trace for the actions whose name contains this text.
     trace: { type: "string" },
     // Sidebar switches move the pointer onto the row this long before the click.
@@ -174,6 +181,10 @@ const MAIN_RPC_LOG = `(() => {
   ipcMain.prependListener("openmail:rpc", (e, frame) => {
     for (const m of parse(frame)) if (m && m._tag === "Request" && !STREAMS.has(m.tag))
       L.req.set(e.sender.id + ":" + m.id, { tag: m.tag, start: Date.now(), hr: performance.now(), payload: JSON.stringify(m.payload ?? null).slice(0, 300) });
+      else if (m && m._tag === "Interrupt") {
+        const r = L.req.get(e.sender.id + ":" + m.requestId);
+        if (r) r.interruptedAt = Date.now();
+      }
   });
   const proto = Object.getPrototypeOf(webContents.getAllWebContents()[0] ?? {});
   const patch = (target) => {
@@ -183,7 +194,7 @@ const MAIN_RPC_LOG = `(() => {
         for (const m of parse(args[0])) if (m && m._tag === "Exit") {
           const key = this.id + ":" + m.requestId;
           const r = L.req.get(key);
-          if (r) { L.req.delete(key); L.log.push({ tag: r.tag, start: r.start, end: Date.now(), ms: performance.now() - r.hr, bytes: args[0].length, payload: r.payload }); }
+          if (r) { L.req.delete(key); L.log.push({ tag: r.tag, start: r.start, end: Date.now(), ms: performance.now() - r.hr, bytes: args[0].length, payload: r.payload, interruptedAt: r.interruptedAt ?? null, exit: m.exit?._tag ?? null }); }
         }
       return send.call(this, channel, ...args);
     };
@@ -208,6 +219,8 @@ const MAIN_RPC_LOG = `(() => {
   }
   return "ok";
 })()`;
+
+const searchOf = (r) => /"search":"((?:[^"\\]|\\.)*)"/.exec(r.payload)?.[1] ?? null;
 
 async function launch(home, size) {
   const port = await freePort();
@@ -616,6 +629,152 @@ async function run(app, actions) {
           { timeout: 40_000, quiet: 100 },
         ),
       );
+    }
+    // Typing: each query typed one character at a time at --key-ms, as a person does. Keys go out
+    // on schedule whether or not the app kept up, so a blocked main process shows as input lag.
+    if (want("typing")) {
+      for (const text of values.type.split("|")) {
+        await evaluate(`document.querySelector('button[aria-label="Clear search"]')?.click()`);
+        await sleep(300);
+        await evaluate(clickSidebar("Inbox"));
+        await until(titleIs("Inbox"), "inbox before typing");
+        const scopeName = values.scope === "folder" ? "Current folder" : "All Mail";
+        const scopeLabel = `Search scope: ${scopeName}`;
+        const scopeSet = await evaluate(`!!document.querySelector('[aria-label="${scopeLabel}"]')`);
+        if (!scopeSet) {
+          await evaluate(`document.querySelector('[aria-label^="Search scope:"]').click()`);
+          const option = `[...document.querySelectorAll('[role="option"]')].find((el) => el.textContent.trim() === ${JSON.stringify(scopeName)})`;
+          await until(`!!(${option})`, "search scope option");
+          await evaluate(`(${option}).click()`);
+          await until(
+            `!!document.querySelector('[aria-label="${scopeLabel}"]')`,
+            "search scope set",
+          );
+        }
+        await sleep(1500);
+        await evaluate(`(() => {
+          const f = document.querySelector('input[aria-label="Search mail"]');
+          window.__typing = { input: [], rows: [] };
+          if (!window.__typingObserver) {
+            window.__typingObserver = new MutationObserver((records) => {
+              if (records.some((r) => (r.target.nodeType === 1 ? r.target : r.target.parentElement)?.closest?.('[role="listbox"]')))
+                window.__typing.rows.push(Date.now());
+            });
+            window.__typingObserver.observe(document, { subtree: true, childList: true, characterData: true });
+          }
+          if (f.__typingListener !== true) {
+            f.addEventListener("input", (e) => window.__typing.input.push([Date.now(), e.target.value]));
+            f.__typingListener = true;
+          }
+          f.focus();
+          return 1;
+        })()`);
+        await sleep(300);
+        await mainDelay(true);
+        const started = Date.now();
+        const keyMs = Number(values["key-ms"]);
+        const keys = [];
+        const sends = [];
+        // Code points, as a keyboard sends them; the queries are plain words and CJK.
+        for (const ch of Array.from(text)) {
+          const at = Date.now();
+          keys.push(at);
+          sends.push(cdp.send("Input.insertText", { text: ch }));
+          await sleep(Math.max(0, keyMs - (Date.now() - at)));
+        }
+        await Promise.all(sends);
+        const lastKey = keys.at(-1);
+        let error = null;
+        for (const deadline = Date.now() + 90_000; ;) {
+          const pending = (await mainRpc(started)).pending;
+          const state = await evaluate(
+            `({ busy: ${api}.listbox()?.getAttribute("aria-busy"), label: ${api}.listbox()?.getAttribute("aria-label"), last: Math.max(0, ...window.__typing.rows) })`,
+          );
+          if (
+            !pending.includes("Threads") &&
+            state.busy === "false" &&
+            state.label === "Search results" &&
+            Date.now() - Math.max(state.last, lastKey) > 500
+          )
+            break;
+          if (Date.now() > deadline) {
+            error = "settle timeout";
+            break;
+          }
+          await sleep(50);
+        }
+        const [loopMax, cpu] = await mainDelay(false);
+        const { log, sql: slowSql } = await mainRpc(started);
+        const page = await evaluate(`window.__typing`);
+        const threads = log
+          .filter(
+            (r) => r.tag === "Threads" && searchOf(r) !== null && !r.payload.includes("messageIds"),
+          )
+          .map((r) => ({ ...r, search: searchOf(r) }));
+        const final = threads.at(-1)?.search;
+        const rowsAfter = (at) => page.rows.find((t) => t >= at) ?? null;
+        const perRequest = threads.map((r) => {
+          const key = keys.findLast((k) => k <= r.start) ?? started;
+          const nextKey = keys.find((k) => k > key) ?? Infinity;
+          const rowsAt = rowsAfter(r.end);
+          return {
+            search: r.search,
+            mainMs: Math.round(r.ms),
+            kb: Math.round(r.bytes / 1024),
+            waitMs: Math.round(r.end - r.ms - key),
+            toRowsMs: rowsAt === null ? null : rowsAt - key,
+            interrupted: r.interruptedAt !== null || r.exit === "Failure",
+            // Its reply came after the person typed on: rows for older text.
+            stale: r.exit !== "Failure" && r.end > nextKey && r.search !== final,
+          };
+        });
+        const finalReply = threads.findLast((r) => r.search === final);
+        const finalRows = finalReply ? rowsAfter(finalReply.end) : null;
+        const echo = page.input.map(([at], index) =>
+          keys[index] === undefined ? null : at - keys[index],
+        );
+        const result = {
+          name: `typing: ${text}`,
+          error,
+          readyMs: finalRows === null ? null : finalRows - lastKey,
+          settledMs: Math.max(...page.rows, lastKey) - lastKey,
+          mainLoopMaxMs: loopMax,
+          mainCpuMs: cpu,
+          mainCpuPerKeyMs: Math.round(cpu / keys.length),
+          echoMaxMs: Math.max(0, ...echo.filter((x) => x !== null)),
+          echoMedianMs: median(echo),
+          started: threads.length,
+          interrupted: perRequest.filter((r) => r.interrupted).length,
+          stale: perRequest.filter((r) => r.stale).length,
+          perRequest,
+          slowSql,
+          rpc: log.map((r) => [r.tag, Math.round(r.ms * 10) / 10, r.bytes, r.payload]),
+        };
+        process.stderr.write(`${JSON.stringify({ ...result, rpc: undefined })}\n`);
+        results.push(result);
+        // Enter submits and closes suggestions. Down then selects a result rather than a
+        // contact suggestion; Enter into results follows the same handoff in the field.
+        await evaluate(
+          `document.querySelector('input[aria-label="Search mail"]').dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))`,
+        );
+        await sleep(300);
+        // Down from the submitted field selects the first result and opens its match highlights.
+        results.push(
+          await measure(
+            `typing: ${values["results-key"] === "Enter" ? "Enter" : "Down"} opens first result`,
+            `document.querySelector('input[aria-label="Search mail"]').dispatchEvent(new KeyboardEvent("keydown", { key: ${JSON.stringify(values["results-key"])}, bubbles: true }))`,
+            `!!document.querySelector('[data-mail-pane="reader"] article[data-message-id]')`,
+          ),
+        );
+        await sleep(800);
+        results.push(
+          await measure(
+            "typing: clear search → Inbox",
+            `document.querySelector('button[aria-label="Clear search"]').click()`,
+            titleIs("Inbox"),
+          ),
+        );
+      }
     }
     // Stress: Changed events at --rate per minute (SetPrefs that alternate the shortcut set and the
     // menu-bar count, so the application menu and tray inputs change each time), counting the
@@ -1026,7 +1185,7 @@ for (let l = 0; l < launches; l++) {
     socket: () => app.cdp.socket,
   });
   try {
-    const result = await run(app, l === 0);
+    const result = await run(app, l === 0 || values["every-launch"]);
     allLaunches.push(result);
     process.stderr.write(
       `Launch ${l + 1}: first row ${Math.round(result.launch.spawnToFirstRowMs)} ms\n`,
@@ -1074,6 +1233,18 @@ for (const name of names) {
     bodyRemounted: xs.filter((r) => r.bodyRemounted).length,
     rpcPerRun: rpcCounts,
     rpcMaxMs: median(xs.map((r) => Math.max(0, ...(r.rpc ?? []).map(([, ms]) => ms)))),
+    ...(xs[0]?.perRequest
+      ? {
+          mainCpuPerKeyMs: median(xs.map((r) => r.mainCpuPerKeyMs)),
+          echoMaxMs: median(xs.map((r) => r.echoMaxMs)),
+          echoMedianMs: median(xs.map((r) => r.echoMedianMs)),
+          queriesStarted: median(xs.map((r) => r.started)),
+          queriesInterrupted: median(xs.map((r) => r.interrupted)),
+          queriesStale: median(xs.map((r) => r.stale)),
+          queryMainMs: median(xs.flatMap((r) => r.perRequest.map((q) => q.mainMs))),
+          queryToRowsMs: median(xs.flatMap((r) => r.perRequest.map((q) => q.toRowsMs))),
+        }
+      : {}),
     errors: xs.filter((r) => r.error).length,
   });
 }
@@ -1087,6 +1258,7 @@ summaries.push({
 });
 const report = {
   label: values.label ?? "",
+  scope: values.scope,
   db: values.db ?? values.home,
   summaries,
   launches: allLaunches,
@@ -1094,5 +1266,5 @@ const report = {
 if (values.out) await writeFile(values.out, JSON.stringify(report, null, 2));
 for (const s of summaries)
   process.stdout.write(
-    `${s.name.padEnd(40)} ready ${String(Math.round(s.readyMs ?? -1)).padStart(6)}  settled ${String(Math.round(s.settledMs ?? -1)).padStart(6)}  long ${String(Math.round(s.longTaskMs ?? -1)).padStart(5)}  maxLT ${String(Math.round(s.maxLongTaskMs ?? -1)).padStart(5)}  mainBlk ${String(s.mainLoopMaxMs ?? "-").padStart(6)}  mainCpu ${String(s.mainCpuMs ?? "-").padStart(6)}  rows ${String(s.maxRowsInDom ?? "-").padStart(4)}  remount ${s.listRemounted ?? "-"}/${s.bodyRemounted ?? "-"}  ${JSON.stringify(s.rpcPerRun ?? s.rpc)}\n`,
+    `${s.name.padEnd(40)} ready ${String(Math.round(s.readyMs ?? -1)).padStart(6)}  settled ${String(Math.round(s.settledMs ?? -1)).padStart(6)}  long ${String(Math.round(s.longTaskMs ?? -1)).padStart(5)}  maxLT ${String(Math.round(s.maxLongTaskMs ?? -1)).padStart(5)}  mainBlk ${String(s.mainLoopMaxMs ?? "-").padStart(6)}  mainCpu ${String(s.mainCpuMs ?? "-").padStart(6)}  rows ${String(s.maxRowsInDom ?? "-").padStart(4)}  remount ${s.listRemounted ?? "-"}/${s.bodyRemounted ?? "-"}  ${JSON.stringify(s.rpcPerRun ?? s.rpc)}${s.queriesStarted === undefined ? "" : `  perKeyCpu ${s.mainCpuPerKeyMs} echoMax ${s.echoMaxMs} queries ${s.queriesStarted}/int ${s.queriesInterrupted}/stale ${s.queriesStale} queryMain ${s.queryMainMs} queryToRows ${s.queryToRowsMs}`}\n`,
   );
